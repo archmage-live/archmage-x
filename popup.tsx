@@ -1,21 +1,20 @@
-import { useState } from "react"
+import { ChakraProvider } from '@chakra-ui/react'
+import { MemoryRouter, Route, Routes } from 'react-router-dom'
 
-function IndexPopup() {
-  const [data, setData] = useState("")
+import { PopupLayout } from '~components/PopupLayout'
+import Home from '~pages/Home'
+import { theme } from '~theme'
 
+export default function Popup() {
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        padding: 16
-      }}>
-      <h1>
-        Welcome to your <a href="https://www.plasmo.com">Plasmo</a> Extension!
-      </h1>
-      <input onChange={(e) => setData(e.target.value)} value={data} />
-    </div>
+    <ChakraProvider resetCSS theme={theme}>
+      <PopupLayout>
+        <MemoryRouter>
+          <Routes>
+            <Route path="/" element={<Home />} />
+          </Routes>
+        </MemoryRouter>
+      </PopupLayout>
+    </ChakraProvider>
   )
 }
-
-export default IndexPopup
