@@ -21,8 +21,8 @@ export const Navbar = ({ value, onChange }: NavbarProps) => {
       variant="ghost"
       colorScheme="gray"
       color={btnColor}
-      _active={{  color: btnActiveColor }}
-      _hover={{  color: btnActiveColor }}
+      _active={{ color: btnActiveColor }}
+      _hover={{ color: btnActiveColor }}
       icon={icon}
       aria-label={target}
       fontSize="2rem"
