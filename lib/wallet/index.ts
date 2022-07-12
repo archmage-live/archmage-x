@@ -12,5 +12,9 @@ export interface WalletOpts {
   prefix?: string // for Cosm
 }
 
+export interface SigningWallet {
+  // TODO
+}
+
 export * from './evm'
 export * from './cosm'

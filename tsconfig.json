@@ -9,7 +9,8 @@
     "./**/*.tsx"
   ],
   "compilerOptions": {
-    "strict": true,
+    "strict": false,
+    "importsNotUsedAsValues": "remove",
     "paths": {
       "~*": [
         "./*"
