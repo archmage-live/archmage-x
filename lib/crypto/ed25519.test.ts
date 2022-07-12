@@ -1,9 +1,3 @@
-import { hexlify } from '@ethersproject/bytes'
-import { Keypair } from '@solana/web3.js'
-import { AptosAccount } from 'aptos'
-import bs58 from 'bs58'
-import { arrayify } from 'ethers/lib/utils'
-
 import { HDNode } from './ed25519'
 
 interface HDNodeTestVector {
@@ -14,10 +8,11 @@ interface HDNodeTestVector {
   publicKey: string
 }
 
-describe("ED25519 'DNode", () => {
-  it('', () => {
+describe('ED25519 HDNode', () => {
+  it('derive path', () => {
     const seed = '0x000102030405060708090a0b0c0d0e0f'
 
+    // https://github.com/satoshilabs/slips/blob/master/slip-0010.md
     const cases: HDNodeTestVector[] = [
       {
         path: 'm',
@@ -81,31 +76,15 @@ describe("ED25519 'DNode", () => {
       }
     ]
 
-    const node = HDNode.fromSeed(seed)
-    console.log(node)
-    console.log(node.extendedKey)
+    const master = HDNode.fromSeed(seed)
+    // console.log(master)
 
     for (const c of cases) {
-      const derived = node.derivePath(c.path)
+      const derived = master.derivePath(c.path)
       expect(derived.parentFingerprint.substring(2)).toEqual(c.fingerprint)
       expect(derived.chainCode.substring(2)).toEqual(c.chainCode)
       expect(derived.privateKey.substring(2)).toEqual(c.privateKey)
       expect(derived.publicKey.substring(2)).toEqual(c.publicKey.substring(2))
     }
-
-    const sol = Keypair.fromSeed(arrayify(node.privateKey))
-    console.log(
-      'solana:',
-      hexlify(sol.secretKey),
-      hexlify(sol.publicKey.toBuffer())
-    )
-
-    const aptos = new AptosAccount(arrayify(node.privateKey))
-    console.log(
-      'aptos:',
-      hexlify(aptos.signingKey.secretKey),
-      aptos.pubKey().hex(),
-      aptos.address().hex()
-    )
   })
 })

@@ -52,7 +52,7 @@ export function computeAddress(key: BytesLike | string): string {
   return '0x' + hash.hex()
 }
 
-const HardenedBit = 0x80000000
+export const HardenedBit = 0x80000000
 
 const _constructorGuard: any = {}
 
@@ -231,15 +231,17 @@ export class HDNode extends BaseHDNode {
     return result
   }
 
+  unhardenedIndex() {
+    return this.index - HardenedBit
+  }
+
   static _fromSeed(seed: BytesLike, mnemonic: Mnemonic | null): HDNode {
     const seedArray: Uint8Array = arrayify(seed)
     if (seedArray.length < 16 || seedArray.length > 64) {
       throw new Error('invalid seed')
     }
 
-    console.log(hexlify(seed))
     const { key, chainCode } = getMasterKeyFromSeed(hexlify(seed).substring(2))
-    console.log(hexlify(key), hexlify(chainCode))
 
     return new HDNode(
       _constructorGuard,

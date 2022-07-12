@@ -1,19 +1,19 @@
-import { arrayify, hexlify } from '@ethersproject/bytes'
-import { AptosAccount } from 'aptos'
+import { Keypair } from '@solana/web3.js'
 import assert from 'assert'
+import bs58 from 'bs58'
+import { arrayify } from 'ethers/lib/utils'
 import { sign } from 'tweetnacl'
 
 import { HDNode, HardenedBit } from '~lib/crypto/ed25519'
 import { keystore } from '~lib/keystore'
 import { WalletOpts, WalletType } from '~lib/wallet/index'
 
-// TODO
-export const defaultPath = "44'/60'/0'"
+export const defaultPath = "44'/501'/0'"
 
-export class AptosWallet {
-  wallet: HDNode | AptosAccount
+export class SolWallet {
+  wallet: HDNode | Keypair
 
-  static async from({ id, type, path }: WalletOpts): Promise<AptosWallet> {
+  static async from({ id, type, path }: WalletOpts): Promise<SolWallet> {
     const ks = await keystore.get(id)
     assert(ks)
     const mnemonic = ks.mnemonic
@@ -28,50 +28,43 @@ export class AptosWallet {
         path = defaultPath
       }
       const node = HDNode.fromMnemonic(mnemonic.phrase).derivePath(path)
-      wallet = new AptosAccount(arrayify(node.privateKey))
+      wallet = Keypair.fromSeed(arrayify(node.privateKey))
     } else {
       assert(!path)
-      wallet = new AptosAccount(arrayify(ks.privateKey))
+      wallet = Keypair.fromSeed(arrayify(ks.privateKey))
     }
 
-    return { wallet } as AptosWallet
+    return { wallet } as SolWallet
   }
 
-  derive(prefixPath: string, index: number): AptosWallet {
+  derive(prefixPath: string, index: number): SolWallet {
     assert(index < HardenedBit)
     assert(this.wallet instanceof HDNode)
     const path = `${prefixPath}/${index}'`
     const wallet = this.wallet.derivePath(path)
     return {
       wallet
-    } as AptosWallet
+    } as SolWallet
   }
 
-  private _account?: AptosAccount
-  get account() {
-    if (!this._account) {
-      this._account =
-        this.wallet instanceof HDNode
-          ? new AptosAccount(arrayify(this.wallet.privateKey))
-          : this.wallet
+  address(): string {
+    return this.publicKeyBase58()
+  }
+
+  publicKeyBase58(): string {
+    if (this.wallet instanceof HDNode) {
+      return bs58.encode(arrayify(this.wallet.publicKey))
+    } else {
+      return this.wallet.publicKey.toBase58()
     }
-    return this._account
   }
 
-  get address() {
-    return this.account.address()
-  }
-
-  get publicKey() {
-    return this.account.pubKey()
-  }
-
-  get privateKey() {
-    return hexlify(this.account.signingKey.secretKey.slice(0, 32))
+  secretKeyBase58(): string {
+    return bs58.encode(arrayify(this.wallet.secretKey))
   }
 
   sign(msg: Uint8Array): Uint8Array {
-    return sign.detached(msg, arrayify(this.account.signingKey.secretKey))
+    return sign.detached(msg, arrayify(this.wallet.secretKey))
   }
 
   signHex(msg: string): Uint8Array {
@@ -79,7 +72,11 @@ export class AptosWallet {
   }
 
   verify(msg: Uint8Array, sig: Uint8Array): boolean {
-    return sign.detached.verify(msg, sig, this.account.signingKey.publicKey)
+    const publicKey =
+      this.wallet instanceof HDNode
+        ? arrayify(this.wallet.publicKey)
+        : this.wallet.publicKey.toBytes()
+    return sign.detached.verify(msg, sig, publicKey)
   }
 
   verifyHex(msg: string, sig: Uint8Array): boolean {
