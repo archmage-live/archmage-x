@@ -63,6 +63,7 @@ export class SolWallet {
     return bs58.encode(arrayify(this.wallet.secretKey))
   }
 
+  // https://github.com/solana-labs/solana-web3.js/blob/master/src/transaction.ts
   sign(msg: Uint8Array): Uint8Array {
     return sign.detached(msg, arrayify(this.wallet.secretKey))
   }
