@@ -7,11 +7,11 @@ import { HDNode, HardenedBit } from '~lib/crypto/ed25519'
 import { keystore } from '~lib/keystore'
 import { WalletOpts, WalletType } from '~lib/wallet/index'
 
-// TODO
-export const defaultPath = "44'/60'/0'"
-
 export class AptosWallet {
-  wallet: HDNode | AptosAccount
+  // TODO
+  static defaultPath = "44'/60'/0'"
+
+  wallet!: HDNode | AptosAccount
 
   static async from({ id, type, path }: WalletOpts): Promise<AptosWallet> {
     const ks = await keystore.get(id)
@@ -25,7 +25,7 @@ export class AptosWallet {
     } else if (type === WalletType.MNEMONIC_PRIVATE_KEY) {
       assert(mnemonic)
       if (!path) {
-        path = defaultPath
+        path = AptosWallet.defaultPath
       }
       const node = HDNode.fromMnemonic(mnemonic.phrase).derivePath(path)
       wallet = new AptosAccount(arrayify(node.privateKey))

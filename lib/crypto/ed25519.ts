@@ -57,7 +57,7 @@ export const HardenedBit = 0x80000000
 const _constructorGuard: any = {}
 
 export class HDNode extends BaseHDNode {
-  readonly secretKey: string
+  readonly secretKey!: string | null
 
   /**
    *  This constructor should not be called directly.

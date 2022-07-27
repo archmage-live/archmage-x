@@ -17,6 +17,14 @@ interface Response {
 
 const hello = 'hello'
 
+/**
+ * RPC client side.
+ * Constraints:
+ * - The server side must be the unique listener on the channel.
+ * - The server side must reply handshake to new connected clients.
+ * - The server side must reply any rpc call, even if errors/exceptions occurred.
+ * - The client must not send rpc call when disconnected to the server side.
+ */
 export class RpcClient {
   private waits = new Map<number, [Promise<Response>, Function]>()
   private port!: browser.Runtime.Port
@@ -53,6 +61,7 @@ export class RpcClient {
   }
 
   onMessage = (msg: Response | typeof hello) => {
+    // handshake
     if (msg === hello) {
       this.connected = true
       return
@@ -78,6 +87,12 @@ export class RpcClient {
   }
 }
 
+/**
+ * RPC server side.
+ * Constraints:
+ * - It must be the unique listener on the channel.
+ * - It accepts connections from multiple RPC clients.
+ */
 export class RpcServer {
   private handlers = new Map<
     string,
@@ -107,6 +122,7 @@ export class RpcServer {
 
     this.ports.push(port)
     port.onMessage.addListener(this.onMessage)
+    // say hello to handshake
     port.postMessage(hello)
   }
 

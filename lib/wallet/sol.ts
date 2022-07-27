@@ -8,10 +8,10 @@ import { HDNode, HardenedBit } from '~lib/crypto/ed25519'
 import { keystore } from '~lib/keystore'
 import { WalletOpts, WalletType } from '~lib/wallet/index'
 
-export const defaultPath = "44'/501'/0'"
-
 export class SolWallet {
-  wallet: HDNode | Keypair
+  static defaultPath = "44'/501'/0'"
+
+  wallet!: HDNode | Keypair
 
   static async from({ id, type, path }: WalletOpts): Promise<SolWallet> {
     const ks = await keystore.get(id)
@@ -25,7 +25,7 @@ export class SolWallet {
     } else if (type === WalletType.MNEMONIC_PRIVATE_KEY) {
       assert(mnemonic)
       if (!path) {
-        path = defaultPath
+        path = SolWallet.defaultPath
       }
       const node = HDNode.fromMnemonic(mnemonic.phrase).derivePath(path)
       wallet = Keypair.fromSeed(arrayify(node.privateKey))
@@ -60,12 +60,12 @@ export class SolWallet {
   }
 
   secretKeyBase58(): string {
-    return bs58.encode(arrayify(this.wallet.secretKey))
+    return bs58.encode(arrayify(this.wallet.secretKey!))
   }
 
   // https://github.com/solana-labs/solana-web3.js/blob/master/src/transaction.ts
   sign(msg: Uint8Array): Uint8Array {
-    return sign.detached(msg, arrayify(this.wallet.secretKey))
+    return sign.detached(msg, arrayify(this.wallet.secretKey!))
   }
 
   signHex(msg: string): Uint8Array {
