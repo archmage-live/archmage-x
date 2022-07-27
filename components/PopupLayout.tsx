@@ -15,8 +15,10 @@ export const PopupLayout = ({ children }: PopupLayoutProps) => {
   return (
     <Flex
       direction="column"
-      width="360px"
-      height="600px"
+      minW="360px"
+      minH="600px"
+      w="100vw"
+      h="100vh"
       justify="space-between">
       <Toolbar />
 
