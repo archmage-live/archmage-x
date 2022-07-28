@@ -1,14 +1,14 @@
 import { stringToPath } from '@cosmjs/crypto'
-import assert from 'assert'
-import { ethers } from 'ethers'
-
-import { keystore } from '~lib/keystore'
-import type { WalletOpts } from '~lib/wallet/index'
-import { WalletType } from '~lib/wallet/index'
 import {
   DirectSecp256k1HdWallet,
   DirectSecp256k1Wallet
-} from '~node_modules/@cosmjs/proto-signing'
+} from '@cosmjs/proto-signing'
+import assert from 'assert'
+import { ethers } from 'ethers'
+
+import { KEYSTORE } from '~lib/keystore'
+import type { WalletOpts } from '~lib/wallet'
+import { WalletType } from '~lib/wallet'
 
 export class CosmWallet {
   wallet!: DirectSecp256k1HdWallet | DirectSecp256k1Wallet
@@ -21,7 +21,7 @@ export class CosmWallet {
     path,
     prefix
   }: WalletOpts): Promise<CosmWallet> {
-    const ks = await keystore.get(id)
+    const ks = await KEYSTORE.get(id)
     assert(ks)
     const mnemonic = ks.mnemonic
 

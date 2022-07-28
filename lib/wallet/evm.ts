@@ -1,7 +1,7 @@
 import assert from 'assert'
 import { ethers } from 'ethers'
 
-import { keystore } from '~lib/keystore'
+import { KEYSTORE } from '~lib/keystore'
 import type { WalletOpts } from '~lib/wallet'
 import { WalletType } from '~lib/wallet'
 
@@ -9,7 +9,7 @@ export class EvmWallet {
   wallet!: ethers.utils.HDNode | ethers.Wallet
 
   static async from({ id, type, path }: WalletOpts): Promise<EvmWallet> {
-    const ks = await keystore.get(id)
+    const ks = await KEYSTORE.get(id)
     assert(ks)
     const mnemonic = ks.mnemonic
 

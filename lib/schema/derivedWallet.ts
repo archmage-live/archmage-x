@@ -1,4 +1,4 @@
-import { db } from '~lib/db'
+import { DB } from '~lib/db'
 
 export interface IDerivedWallet {
   id?: number
@@ -48,7 +48,7 @@ export class DerivedWallet implements IDerivedWallet {
 
   async exists() {
     return (
-      (await db.derivedWallets
+      (await DB.derivedWallets
         .where('[masterId+prefixPath+index]')
         .equals([this.masterId, this.prefixPath, this.index])
         .count()) > 0
@@ -56,10 +56,10 @@ export class DerivedWallet implements IDerivedWallet {
   }
 
   async create() {
-    this.id = await db.derivedWallets.add(this)
+    this.id = await DB.derivedWallets.add(this)
   }
 
   async delete() {
-    await db.wallets.delete(this.id)
+    await DB.wallets.delete(this.id)
   }
 }

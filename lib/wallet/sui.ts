@@ -8,7 +8,7 @@ import {
 import assert from 'assert'
 
 import { HDNode, HardenedBit } from '~lib/crypto/ed25519'
-import { keystore } from '~lib/keystore'
+import { KEYSTORE } from '~lib/keystore'
 import { WalletOpts, WalletType } from '~lib/wallet'
 
 export class SuiWallet {
@@ -18,7 +18,7 @@ export class SuiWallet {
   wallet!: HDNode | Ed25519Keypair
 
   static async from({ id, type, path }: WalletOpts): Promise<SuiWallet> {
-    const ks = await keystore.get(id)
+    const ks = await KEYSTORE.get(id)
     assert(ks)
     const mnemonic = ks.mnemonic
 

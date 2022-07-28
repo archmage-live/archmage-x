@@ -1,14 +1,14 @@
 import { decryptKeystore } from '@ethersproject/json-wallets'
 import type { KeystoreAccount } from '@ethersproject/json-wallets/lib/keystore'
 
-import { db } from '~lib/db'
+import { DB } from '~lib/db'
 
 export class Keystore {
   private accounts = new Map<number, KeystoreAccount>() // id -> decrypted keystore
   private ready = new Map<number, [Promise<unknown>, Function]>()
 
   async init() {
-    await db.wallets.toCollection().eachPrimaryKey((id) => {
+    await DB.wallets.toCollection().eachPrimaryKey((id) => {
       this.initReady(id)
     })
   }
@@ -17,7 +17,7 @@ export class Keystore {
     // batch processing for memory efficiency
     const limit = 100
     for (let offset = 0; ; offset += limit) {
-      const wallets = await db.wallets.offset(offset).limit(limit).toArray()
+      const wallets = await DB.wallets.offset(offset).limit(limit).toArray()
       if (!wallets.length) {
         break
       }
@@ -73,4 +73,5 @@ export class Keystore {
   }
 }
 
-export const keystore = new Keystore()
+// Global keystore singleton
+export const KEYSTORE = new Keystore()

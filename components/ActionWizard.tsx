@@ -46,8 +46,6 @@ const ActionWizardHeader = ({ skipFirstStep }: { skipFirstStep?: boolean }) => {
     handleStep
   } = useWizard()
 
-  console.log(`activeStep: ${activeStep}, stepCount: ${stepCount}`)
-
   if (skipFirstStep && isFirstStep) {
     return <></>
   }
@@ -78,7 +76,7 @@ const ActionWizardHeader = ({ skipFirstStep }: { skipFirstStep?: boolean }) => {
             }
           )}
         </HStack>
-        <Box></Box>
+        <Box w="10"></Box>
       </HStack>
 
       <Divider />

@@ -1,12 +1,12 @@
+import { encryptKeystore } from '@ethersproject/json-wallets'
 import type { _KeystoreAccount } from '@ethersproject/json-wallets/lib/keystore'
 import { KeystoreAccount } from '@ethersproject/json-wallets/lib/keystore'
 import assert from 'assert'
 import { ethers } from 'ethers'
 
-import { db, generateName, getNextSortId } from '~lib/db'
-import { keystore } from '~lib/keystore'
+import { DB, generateName, getNextSortId } from '~lib/db'
+import { KEYSTORE } from '~lib/keystore'
 import { WalletType } from '~lib/wallet'
-import { encryptKeystore } from '~node_modules/@ethersproject/json-wallets'
 
 export interface IWallet {
   id?: number
@@ -56,11 +56,11 @@ export class Wallet implements IWallet {
       ethWallet = ethers.utils.HDNode.fromMnemonic(mnemonic)
       type = WalletType.HD
     } else if (!privateKey) {
-      assert(mnemonic)
+      assert(mnemonic && path)
       ethWallet = ethers.Wallet.fromMnemonic(mnemonic, path)
       type = WalletType.MNEMONIC_PRIVATE_KEY
     } else {
-      assert(!mnemonic)
+      assert(!mnemonic && !path)
       ethWallet = new ethers.Wallet(privateKey)
       type = WalletType.PRIVATE_KEY
     }
@@ -74,12 +74,13 @@ export class Wallet implements IWallet {
       _isKeystoreAccount: true
     }
 
+    // time-consuming encrypting
     const encrypted = await encryptKeystore(ethWallet, password)
 
     const wallet = new Wallet({
-      sortId: await getNextSortId(db.wallets),
+      sortId: await getNextSortId(DB.wallets),
       type,
-      name: name || (await generateName(db.wallets)),
+      name: name || (await generateName(DB.wallets)),
       path,
       hash: address // use address as hash
     })
@@ -95,20 +96,20 @@ export class Wallet implements IWallet {
 
   async exists({ name, hash }: { name?: string; hash?: string }) {
     if (name) {
-      return (await db.wallets.where('name').equals(this.name).count()) > 0
+      return (await DB.wallets.where('name').equals(this.name).count()) > 0
     }
     if (hash) {
-      return (await db.wallets.where('hash').equals(this.hash).count()) > 0
+      return (await DB.wallets.where('hash').equals(this.hash).count()) > 0
     }
   }
 
-  async create(decrypted: KeystoreAccount, encrypted: string) {
-    this.id = await db.wallets.add({
+  async create(decrypted: _KeystoreAccount, encrypted: string) {
+    this.id = await DB.wallets.add({
       ...this,
       keystore: encrypted
     })
 
-    keystore.set(this.id, new KeystoreAccount(decrypted))
+    KEYSTORE.set(this.id, new KeystoreAccount(decrypted))
   }
 
   async update() {
@@ -116,7 +117,7 @@ export class Wallet implements IWallet {
   }
 
   async delete() {
-    await db.wallets.delete(this.id)
+    await DB.wallets.delete(this.id)
   }
 
   static async get() {

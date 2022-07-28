@@ -1,6 +1,6 @@
 import browser from 'webextension-polyfill'
 
-import { db } from '~lib/db'
+import { DB } from '~lib/db'
 import { EvmWallet } from '~lib/wallet'
 
 console.log('Hello from background script!')

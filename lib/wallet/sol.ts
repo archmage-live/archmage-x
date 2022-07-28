@@ -5,7 +5,7 @@ import { arrayify } from 'ethers/lib/utils'
 import { sign } from 'tweetnacl'
 
 import { HDNode, HardenedBit } from '~lib/crypto/ed25519'
-import { keystore } from '~lib/keystore'
+import { KEYSTORE } from '~lib/keystore'
 import { WalletOpts, WalletType } from '~lib/wallet/index'
 
 export class SolWallet {
@@ -14,7 +14,7 @@ export class SolWallet {
   wallet!: HDNode | Keypair
 
   static async from({ id, type, path }: WalletOpts): Promise<SolWallet> {
-    const ks = await keystore.get(id)
+    const ks = await KEYSTORE.get(id)
     assert(ks)
     const mnemonic = ks.mnemonic
 

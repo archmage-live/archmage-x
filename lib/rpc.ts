@@ -1,3 +1,12 @@
+/**
+ * RPC server and client.
+ * Constraints:
+ * - The server side must be the unique listener on the channel.
+ * - The server side must reply handshake to new connected clients.
+ * - The server side must reply any rpc call, even if errors/exceptions occurred.
+ * - The server side accepts connections from multiple RPC clients.
+ * - The client must not send rpc call when disconnected to the server side.
+ */
 import browser from 'webextension-polyfill'
 
 import { Platform, getPlatform } from '~lib/platform'
@@ -19,11 +28,6 @@ const hello = 'hello'
 
 /**
  * RPC client side.
- * Constraints:
- * - The server side must be the unique listener on the channel.
- * - The server side must reply handshake to new connected clients.
- * - The server side must reply any rpc call, even if errors/exceptions occurred.
- * - The client must not send rpc call when disconnected to the server side.
  */
 export class RpcClient {
   private waits = new Map<number, [Promise<Response>, Function]>()
@@ -37,6 +41,33 @@ export class RpcClient {
     this.port = browser.runtime.connect({ name: this.channel })
     this.port.onMessage.addListener(this.onMessage)
     this.port.onDisconnect.addListener(this.onDisconnect)
+  }
+
+  disconnect() {
+    this.port.disconnect()
+    this.onDisconnect()
+  }
+
+  service<Service>(serviceName: string): Service {
+    return new Proxy(
+      {},
+      {
+        get: (target: {}, method: string | symbol) => {
+          const msg = {
+            service: serviceName,
+            method
+          } as Request
+          return this.callPartial(msg)
+        }
+      }
+    ) as Service
+  }
+
+  private callPartial(msg: Request): (...args: any[]) => Promise<any> {
+    return (...args: any[]) => {
+      msg.args = args
+      return this.call(msg)
+    }
   }
 
   async call(msg: Request): Promise<any> {
@@ -69,9 +100,10 @@ export class RpcClient {
 
     const wait = this.waits.get(msg.id)
     if (!wait) {
-      console.error(`rpc response to nobody: ${msg}`)
+      console.error(`rpc received response, but no receiver: ${msg}`)
       return
     }
+    this.waits.delete(msg.id)
     wait[1](msg)
   }
 
@@ -89,21 +121,40 @@ export class RpcClient {
 
 /**
  * RPC server side.
- * Constraints:
- * - It must be the unique listener on the channel.
- * - It accepts connections from multiple RPC clients.
  */
 export class RpcServer {
   private handlers = new Map<
     string,
     Map<string, (...args: any[]) => Promise<any>>
-  >()
+  >() // serviceName -> methodName -> handler
+  private services = new Map<string, object>()
   private ports: browser.Runtime.Port[] = []
 
   constructor(private channel: string) {}
 
+  registerHandlers(
+    serviceName: string,
+    handlers: Map<string, (...args: any[]) => Promise<any>>
+  ) {
+    if (this.handlers.has(serviceName) || this.services.has(serviceName)) {
+      throw new Error(`service ${serviceName} has been registered`)
+    }
+    this.handlers.set(serviceName, handlers)
+  }
+
+  registerService(serviceName: string, service: object) {
+    if (this.handlers.has(serviceName) || this.services.has(serviceName)) {
+      throw new Error(`service ${serviceName} has been registered`)
+    }
+    this.services.set(serviceName, service)
+  }
+
   listen() {
     browser.runtime.onConnect.addListener(this.onConnect)
+  }
+
+  connections() {
+    return this.ports.length
   }
 
   onConnect = (port: browser.Runtime.Port) => {
@@ -112,7 +163,8 @@ export class RpcServer {
       platform === Platform.FIREFOX ||
       (port.sender as any).origin === `chrome-extension://${browser.runtime.id}`
     if (port.name !== this.channel || !isInternal) {
-      console.error(
+      port.disconnect()
+      console.warn(
         `invalid connection, port: ${port.name}, sender: ${
           (port.sender as any).origin
         }`
@@ -122,39 +174,63 @@ export class RpcServer {
 
     this.ports.push(port)
     port.onMessage.addListener(this.onMessage)
+    port.onDisconnect.addListener(this.onDisconnect)
     // say hello to handshake
     port.postMessage(hello)
   }
 
+  onDisconnect = (port: browser.Runtime.Port) => {
+    const index = this.ports.findIndex((p) => p === port)
+    if (index >= 0) {
+      this.ports.splice(index, 1)
+    }
+  }
+
   onMessage = (msg: Request, port: browser.Runtime.Port) => {
     const id = msg.id
-    const service = this.handlers.get(msg.service)
-    if (!service) {
+    const handlers = this.handlers.get(msg.service)
+    const service = this.services.get(msg.service)
+    if (!handlers && !service) {
       port.postMessage({
         id,
         error: `rpc service not found: ${msg.service}`
       })
       return
     }
-    const method = service.get(msg.method)
-    if (!method) {
+    let promise: Promise<any> | undefined
+    const method = handlers?.get(msg.method)
+    if (method) {
+      promise = method(...msg.args)
+    } else if (service) {
+      try {
+        promise = (service as any)[msg.method](...msg.args)
+      } catch (err) {
+        port.postMessage({
+          id,
+          error: `rpc service call failed: ${msg.service}.${msg.method}, error: ${err}`
+        })
+        return
+      }
+    }
+    if (!promise) {
       port.postMessage({
         id,
-        error: `rpc service method not found: ${service}.${msg.method}`
+        error: `rpc service method not found: ${msg.service}.${msg.method}`
       })
       return
     }
-    method(...msg.args)
+
+    promise
       .then((result) => {
         port.postMessage({
           id,
           result
         })
       })
-      .catch((e) => {
+      .catch((err) => {
         port.postMessage({
           id,
-          error: e.toString()
+          error: err.toString()
         })
       })
   }

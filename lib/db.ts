@@ -25,7 +25,8 @@ export class Database extends Dexie {
   }
 }
 
-export const db = new Database()
+// Global db singleton
+export const DB = new Database()
 
 type StringLiteral<T> = T extends `${string & T}` ? T : never
 
@@ -52,7 +53,7 @@ export async function generateName<T>(
   if (!(await table.get({ [key]: name }))) {
     return name
   }
-  for (let num = 1; ; num++) {
+  for (let num = 2; ; num++) {
     const nameNum = `${name}-${num}`
     if (!(await table.get({ [key]: nameNum }))) {
       return nameNum

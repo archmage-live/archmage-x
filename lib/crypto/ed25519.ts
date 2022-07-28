@@ -214,7 +214,7 @@ export class HDNode extends BaseHDNode {
     let result: HDNode = this
     for (let i = 0; i < components.length; i++) {
       const component = components[i]
-      if (!component.match(/^[0-9]+'$/)) {
+      if (!component.match(/^\d+'$/)) {
         // As per SLIP-0010, all derivation-path indexes must be hardened.
         throw new Error('invalid path component - ' + component)
       }
