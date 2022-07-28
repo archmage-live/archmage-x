@@ -30,7 +30,7 @@ export class Wallet implements IWallet {
   hash!: string
   keystore?: string
 
-  constructor(wallet: IWallet) {
+  private constructor(wallet: IWallet) {
     Object.assign(this, wallet)
   }
 
@@ -94,12 +94,12 @@ export class Wallet implements IWallet {
     }
   }
 
-  async exists({ name, hash }: { name?: string; hash?: string }) {
+  static async exists({ name, hash }: { name?: string; hash?: string }) {
     if (name) {
-      return (await DB.wallets.where('name').equals(this.name).count()) > 0
+      return (await DB.wallets.where('name').equals(name).count()) > 0
     }
     if (hash) {
-      return (await DB.wallets.where('hash').equals(this.hash).count()) > 0
+      return (await DB.wallets.where('hash').equals(hash).count()) > 0
     }
   }
 

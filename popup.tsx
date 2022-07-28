@@ -3,10 +3,13 @@ import { HashRouter, Route, Routes } from 'react-router-dom'
 
 import { PopupLayout } from '~components/PopupLayout'
 import { LanguageProvider } from '~lib/i18n'
+import { SERVICE_WORKER_CLIENT } from '~lib/rpc'
 import AddWalletPage from '~pages/AddWallet'
 import PopupHomePage from '~pages/PopupHome'
 import WelcomePage from '~pages/Welcome'
 import { theme } from '~theme'
+
+SERVICE_WORKER_CLIENT.connect()
 
 export default function Popup() {
   return (

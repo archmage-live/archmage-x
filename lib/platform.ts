@@ -6,7 +6,10 @@ export enum Platform {
   OPERA = 'Opera'
 }
 
-export function getPlatform(): Platform {
+export function getPlatform(): Platform | undefined {
+  if (typeof window === 'undefined') {
+    return undefined
+  }
   const { navigator } = window
   const { userAgent } = navigator
 

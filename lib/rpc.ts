@@ -45,7 +45,6 @@ export class RpcClient {
 
   disconnect() {
     this.port.disconnect()
-    this.onDisconnect()
   }
 
   service<Service>(serviceName: string): Service {
@@ -94,6 +93,7 @@ export class RpcClient {
   onMessage = (msg: Response | typeof hello) => {
     // handshake
     if (msg === hello) {
+      console.log(`rpc connected`)
       this.connected = true
       return
     }
@@ -108,6 +108,7 @@ export class RpcClient {
   }
 
   onDisconnect = () => {
+    console.log(`rpc disconnected`)
     this.connected = false
     for (const [id, [promise, resolve]] of this.waits.entries()) {
       resolve({
@@ -235,3 +236,8 @@ export class RpcServer {
       })
   }
 }
+
+const SERVICE_WORKER_CHANNEL = 'service-worker'
+
+export const SERVICE_WORKER_SERVER = new RpcServer(SERVICE_WORKER_CHANNEL)
+export const SERVICE_WORKER_CLIENT = new RpcClient(SERVICE_WORKER_CHANNEL)

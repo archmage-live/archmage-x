@@ -1,12 +1,9 @@
-import browser from 'webextension-polyfill'
-
 import { DB } from '~lib/db'
+import { SERVICE_WORKER_SERVER } from '~lib/rpc'
 import { EvmWallet } from '~lib/wallet'
 
 console.log('Hello from background script!')
 
-browser.runtime.onConnect.addListener(function (port) {
-  console.log('received on port:', port.name)
-})
+SERVICE_WORKER_SERVER.listen()
 
 export {}
