@@ -27,7 +27,7 @@ export default function AddWallet() {
 
           <StepAddWalletSelect />
 
-          {addWalletKind !== AddWalletKind.NEW_HD ? (
+          {addWalletKind === AddWalletKind.NEW_HD ? (
             <StepGenerateMnemonic />
           ) : addWalletKind === AddWalletKind.IMPORT_HD ||
             addWalletKind === AddWalletKind.IMPORT_MNEMONIC_PRIVATE_KEY ||
@@ -37,7 +37,7 @@ export default function AddWallet() {
             <StepConnectHardwareWallet />
           )}
 
-          {addWalletKind !== AddWalletKind.NEW_HD && <StepRememberMnemonic />}
+          {addWalletKind === AddWalletKind.NEW_HD && <StepRememberMnemonic />}
 
           <StepAddWalletDone />
         </ActionWizard>

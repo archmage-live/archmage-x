@@ -9,7 +9,7 @@ export const StepAddWalletSelect = () => {
   const [_, setAddWalletKind] = useAddWalletKind()
   useEffect(() => {
     setAddWalletKind(undefined)
-  })
+  }, [])
 
   return (
     <Stack p="4" pt="16">
