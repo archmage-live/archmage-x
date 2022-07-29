@@ -26,7 +26,9 @@ export const ActionWizard = ({
 }: ActionWizardProps) => {
   return (
     <Card w="32rem" {...props}>
-      <Wizard header={<ActionWizardHeader skipFirstStep={skipFirstStep} />}>
+      <Wizard
+        startIndex={2}
+        header={<ActionWizardHeader skipFirstStep={skipFirstStep} />}>
         {children}
       </Wizard>
     </Card>

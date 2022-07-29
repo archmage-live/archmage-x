@@ -2,7 +2,6 @@ import { Container } from '@chakra-ui/react'
 
 import { ActionWizard } from '~components/ActionWizard'
 import { TitleBar } from '~components/TitleBar'
-import { WalletType } from '~lib/wallet'
 
 import { StepAddWalletDone } from './StepAddWalletDone'
 import { StepAddWalletSelect } from './StepAddWalletSelect'
@@ -11,12 +10,12 @@ import { StepCreatePassword } from './StepCreatePassword'
 import { StepGenerateMnemonic } from './StepGenerateMnemonic'
 import { StepImportWallet } from './StepImportWallet'
 import { StepRememberMnemonic } from './StepRememberMnemonic'
-import { useWalletType } from './state'
+import { AddWalletKind, useAddWalletKind } from './state'
 
 export default function AddWallet() {
   const hasPassword = false
 
-  const [walletType] = useWalletType()
+  const [addWalletKind] = useAddWalletKind()
 
   return (
     <>
@@ -28,16 +27,17 @@ export default function AddWallet() {
 
           <StepAddWalletSelect />
 
-          {walletType === WalletType.HD ? (
+          {addWalletKind !== AddWalletKind.NEW_HD ? (
             <StepGenerateMnemonic />
-          ) : walletType === WalletType.PRIVATE_KEY ||
-            walletType === WalletType.MNEMONIC_PRIVATE_KEY ? (
+          ) : addWalletKind === AddWalletKind.IMPORT_HD ||
+            addWalletKind === AddWalletKind.IMPORT_MNEMONIC_PRIVATE_KEY ||
+            addWalletKind === AddWalletKind.IMPORT_PRIVATE_KEY ? (
             <StepImportWallet />
           ) : (
             <StepConnectHardwareWallet />
           )}
 
-          {walletType === WalletType.HD && <StepRememberMnemonic />}
+          {addWalletKind !== AddWalletKind.NEW_HD && <StepRememberMnemonic />}
 
           <StepAddWalletDone />
         </ActionWizard>

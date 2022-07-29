@@ -2,15 +2,13 @@ import { Button, HStack, Stack, Text } from '@chakra-ui/react'
 import { useEffect } from 'react'
 import { useWizard } from 'react-use-wizard'
 
-import { WalletType } from '~lib/wallet'
-
-import { useWalletType } from './state'
+import { AddWalletKind, useAddWalletKind } from './state'
 
 export const StepAddWalletSelect = () => {
   const { nextStep } = useWizard()
-  const [_, setWalletType] = useWalletType()
+  const [_, setAddWalletKind] = useAddWalletKind()
   useEffect(() => {
-    setWalletType(undefined)
+    setAddWalletKind(undefined)
   })
 
   return (
@@ -34,7 +32,7 @@ export const StepAddWalletSelect = () => {
           variant="outline"
           borderRadius="8px"
           onClick={() => {
-            setWalletType(WalletType.HD)
+            setAddWalletKind(AddWalletKind.NEW_HD)
             nextStep()
           }}>
           Create new wallet
@@ -46,7 +44,7 @@ export const StepAddWalletSelect = () => {
           variant="outline"
           borderRadius="8px"
           onClick={() => {
-            setWalletType(WalletType.PRIVATE_KEY)
+            setAddWalletKind(AddWalletKind.IMPORT_HD)
             nextStep()
           }}>
           Import existing wallet
@@ -58,7 +56,7 @@ export const StepAddWalletSelect = () => {
           variant="outline"
           borderRadius="8px"
           onClick={() => {
-            setWalletType(WalletType.LEDGER)
+            setAddWalletKind(AddWalletKind.CONNECT_LEDGER)
             nextStep()
           }}>
           Connect hardware wallet

@@ -51,6 +51,19 @@ export const theme: Record<string, any> = extendTheme(
         defaultProps: {
           size: '2xs'
         }
+      },
+      Modal: {
+        ...baseTheme.components.Modal,
+        baseStyle: (props: StyleFunctionProps) => {
+          const baseStyle = baseTheme.components.Modal.baseStyle(props)
+          return {
+            ...baseStyle,
+            dialog: {
+              ...baseStyle.dialog,
+              bg: mode('white', 'gray.800')(props)
+            }
+          }
+        }
       }
     }
   }

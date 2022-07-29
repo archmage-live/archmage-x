@@ -9,7 +9,11 @@ import PopupHomePage from '~pages/PopupHome'
 import WelcomePage from '~pages/Welcome'
 import { theme } from '~theme'
 
-SERVICE_WORKER_CLIENT.connect()
+// If you are working on some UI detail adjustment, you may comment out
+// the following line. Otherwise, the message connection reestablishment
+// after live-reloading will automatically close the extension tab page,
+// which is quite annoying.
+// SERVICE_WORKER_CLIENT.connect()
 
 export default function Popup() {
   return (
