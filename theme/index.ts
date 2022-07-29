@@ -64,6 +64,38 @@ export const theme: Record<string, any> = extendTheme(
             }
           }
         }
+      },
+      Button: {
+        ...baseTheme.components.Button,
+        variants: {
+          ...baseTheme.components.Button.variants,
+          solid: (props: StyleFunctionProps) => {
+            const { colorScheme: c } = props
+            if (c === 'gray') {
+              return baseTheme.components.Button.variants.solid
+            }
+
+            const bg = mode(`${c}.600`, `${c}.500`)(props)
+            const grayBg = mode(`gray.100`, `whiteAlpha.200`)(props)
+
+            return {
+              bg,
+              color: mode('white', `gray.100`)(props),
+              _hover: {
+                bg: mode(`${c}.700`, `${c}.600`)(props),
+                _disabled: {
+                  bg: grayBg
+                }
+              },
+              _disabled: {
+                opacity: 1,
+                color: mode('gray.500', `gray.400`)(props),
+                bg: grayBg
+              },
+              _active: { bg: mode(`${c}.700`, `${c}.600`)(props) }
+            }
+          }
+        }
       }
     }
   }

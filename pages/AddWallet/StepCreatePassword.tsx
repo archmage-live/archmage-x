@@ -133,7 +133,7 @@ export const StepCreatePassword = () => {
       <Button
         h="14"
         size="lg"
-        variant="outline"
+        colorScheme="purple"
         borderRadius="8px"
         disabled={!(passwordStrength >= 2 && confirmPassword)}
         onClick={createPassword}>

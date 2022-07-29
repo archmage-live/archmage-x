@@ -5,7 +5,6 @@ import {
   ButtonGroup,
   Center,
   Checkbox,
-  Container,
   HStack,
   Modal,
   ModalBody,
@@ -118,7 +117,7 @@ export const StepGenerateMnemonic = () => {
       <Button
         h="14"
         size="lg"
-        variant="outline"
+        colorScheme="purple"
         borderRadius="8px"
         disabled={!isChecked}
         onClick={nextStep}>

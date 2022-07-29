@@ -2,7 +2,6 @@ import {
   Box,
   Button,
   Checkbox,
-  HStack,
   SimpleGrid,
   Stack,
   Text,
@@ -119,7 +118,7 @@ export const StepRememberMnemonic = () => {
       <Button
         h="14"
         size="lg"
-        variant="outline"
+        colorScheme="purple"
         borderRadius="8px"
         disabled={!(isChecked || remembered)}
         onClick={nextStep}>
