@@ -2,14 +2,29 @@ import { Button, HStack, Stack, Text } from '@chakra-ui/react'
 import { useEffect } from 'react'
 import { useWizard } from 'react-use-wizard'
 
-import { AddWalletKind, useAddWalletKind } from './state'
+import {
+  AddWalletKind,
+  useAddWalletKind,
+  useHdPath,
+  useMnemonic,
+  useName,
+  usePrivateKey
+} from './addWallet'
 
 export const StepAddWalletSelect = () => {
   const { nextStep } = useWizard()
-  const [_, setAddWalletKind] = useAddWalletKind()
+  const [, setAddWalletKind] = useAddWalletKind()
+
+  const [, setMnemonic] = useMnemonic()
+  const [, setHdPath] = useHdPath()
+  const [, setPrivateKey] = usePrivateKey()
+  const [, setName] = useName()
   useEffect(() => {
-    setAddWalletKind(undefined)
-  }, [])
+    setMnemonic([])
+    setHdPath('')
+    setPrivateKey('')
+    setName('')
+  }, [setHdPath, setMnemonic, setName, setPrivateKey])
 
   return (
     <Stack p="4" pt="16">

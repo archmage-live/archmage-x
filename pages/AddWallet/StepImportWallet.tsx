@@ -10,13 +10,27 @@ import {
   SimpleGrid,
   Stack,
   Text,
+  Textarea,
   chakra
 } from '@chakra-ui/react'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useWizard } from 'react-use-wizard'
 
+import { AlertText } from '~components/AlertText'
 import { HdPathInput } from '~components/HdPathInput'
-import { SwitchBar } from '~pages/AddWallet/SwitchBar'
+import { isMnemonic, isPrivateKey } from '~lib/utils'
+
+import { NameInput } from './NameInput'
+import { SwitchBar } from './SwitchBar'
+import {
+  AddWalletKind,
+  useAddWallet,
+  useAddWalletKind,
+  useHdPath,
+  useMnemonic,
+  useName,
+  usePrivateKey
+} from './addWallet'
 
 const importKinds = ['Mnemonic', 'Private Key']
 const mnemonicLengths = [12, 15, 18, 21, 24]
@@ -27,10 +41,10 @@ export const StepImportWallet = () => {
   const [kind, setKind] = useState(importKinds[0])
 
   const [mnemonicLen, setMnemonicLen] = useState(mnemonicLengths[0])
-  const [words, setWords] = useState<string[]>([])
+  const [mnemonic, setMnemonic] = useMnemonic()
 
   useEffect(() => {
-    setWords((words) => {
+    setMnemonic((words) => {
       if (words.length < mnemonicLen) {
         return words.concat(...new Array(mnemonicLen - words.length).fill(''))
       } else if (words.length > mnemonicLen) {
@@ -38,14 +52,14 @@ export const StepImportWallet = () => {
       }
       return words
     })
-  }, [mnemonicLen])
+  }, [mnemonicLen, setMnemonic])
 
   const resetWords = () => {
-    setWords((words) => words.slice().fill(''))
+    setMnemonic((words) => words.slice().fill(''))
   }
 
   const onWordInput = (word: string, index: number) => {
-    setWords((words) => {
+    setMnemonic((words) => {
       const splits = word.split(' ').filter((v) => v)
       if (splits.length >= mnemonicLengths[0]) {
         if (splits.length < words.length) {
@@ -61,9 +75,58 @@ export const StepImportWallet = () => {
   }
 
   const [isOneAccountChecked, setIsOneAccountChecked] = useState(false)
-  const [hdPath, setHdPath] = useState<string | undefined>("m/44'/60'/0'/0/0")
+  const [hdPath, setHdPath] = useHdPath()
+  useEffect(() => {
+    setHdPath("m/44'/60'/0'/0/0")
+  }, [setHdPath])
 
-  const [privateKey, setPrivateKey] = useState('')
+  const [, setAddWalletKind] = useAddWalletKind()
+  const [privateKey, setPrivateKey] = usePrivateKey()
+  const [name, setName] = useName()
+
+  const [alert, setAlert] = useState('')
+
+  useEffect(() => {
+    setAlert('')
+  }, [mnemonic, privateKey, name])
+
+  const addWallet = useAddWallet()
+
+  const onImport = useCallback(async () => {
+    if (kind === importKinds[0]) {
+      if (!isMnemonic(mnemonic.join(' '))) {
+        setAlert('Invalid secret recovery phrase')
+        return
+      }
+      setAddWalletKind(
+        !isOneAccountChecked
+          ? AddWalletKind.IMPORT_HD
+          : AddWalletKind.IMPORT_MNEMONIC_PRIVATE_KEY
+      )
+    } else {
+      if (!isPrivateKey(privateKey)) {
+        setAlert('Invalid private key')
+        return
+      }
+      setAddWalletKind(AddWalletKind.IMPORT_PRIVATE_KEY)
+    }
+
+    const { error } = await addWallet()
+    if (error) {
+      setAlert(error)
+      return
+    }
+
+    nextStep()
+  }, [
+    addWallet,
+    isOneAccountChecked,
+    kind,
+    mnemonic,
+    nextStep,
+    privateKey,
+    setAddWalletKind
+  ])
 
   return (
     <Stack p="4" pt="16" spacing="12">
@@ -84,67 +147,73 @@ export const StepImportWallet = () => {
 
         <Divider />
 
-        {kind === 'Mnemonic' ? (
-          <Stack spacing={8}>
-            <Stack spacing={4}>
-              <HStack justify="end">
-                <Button variant="outline" onClick={resetWords}>
-                  Reset
-                </Button>
-                <Select
-                  w={32}
-                  value={mnemonicLen}
-                  onChange={(e) => setMnemonicLen(+e.target.value)}>
-                  {mnemonicLengths.map((len) => {
+        <Stack spacing={8}>
+          {kind === importKinds[0] ? (
+            <>
+              <Stack spacing={4}>
+                <HStack justify="end">
+                  <Button variant="outline" onClick={resetWords}>
+                    Reset
+                  </Button>
+                  <Select
+                    w={32}
+                    value={mnemonicLen}
+                    onChange={(e) => setMnemonicLen(+e.target.value)}>
+                    {mnemonicLengths.map((len) => {
+                      return (
+                        <option key={len} value={len}>
+                          {len} words
+                        </option>
+                      )
+                    })}
+                  </Select>
+                </HStack>
+
+                <SimpleGrid columns={3} gap={4}>
+                  {mnemonic.map((word, index) => {
                     return (
-                      <option key={len} value={len}>
-                        {len} words
-                      </option>
+                      <WordInput
+                        key={index}
+                        index={index}
+                        value={word}
+                        onChange={onWordInput}
+                      />
                     )
                   })}
-                </Select>
-              </HStack>
+                </SimpleGrid>
+              </Stack>
 
-              <SimpleGrid columns={3} gap={4}>
-                {words.map((word, index) => {
-                  return (
-                    <WordInput
-                      key={index}
-                      index={index}
-                      value={word}
-                      onChange={onWordInput}
-                    />
-                  )
-                })}
-              </SimpleGrid>
-            </Stack>
+              <Stack spacing={4}>
+                <Checkbox
+                  size="lg"
+                  colorScheme="purple"
+                  isChecked={isOneAccountChecked}
+                  onChange={(e) => setIsOneAccountChecked(e.target.checked)}>
+                  <chakra.span color="gray.400" fontSize="xl">
+                    Import only one account at specified HD path.
+                  </chakra.span>
+                </Checkbox>
 
-            <Stack spacing={4}>
-              <Checkbox
-                size="lg"
-                colorScheme="purple"
-                isChecked={isOneAccountChecked}
-                onChange={(e) => setIsOneAccountChecked(e.target.checked)}>
-                <chakra.span color="gray.400" fontSize="xl">
-                  Import only one account at specified HD path.
-                </chakra.span>
-              </Checkbox>
-
-              {isOneAccountChecked && (
-                <HdPathInput value={hdPath} onChange={setHdPath} />
-              )}
-            </Stack>
-          </Stack>
-        ) : (
-          <>
-            <Input
-              type="password"
+                {isOneAccountChecked && (
+                  <HdPathInput value={hdPath} onChange={setHdPath} />
+                )}
+              </Stack>
+            </>
+          ) : (
+            <Textarea
               size="lg"
+              resize="none"
+              placeholder="Private Key"
+              sx={{ WebkitTextSecurity: 'disc' }}
               value={privateKey}
-              onChange={(e) => setPrivateKey(e.target.value)}
+              onChange={(e) => setPrivateKey(e.target.value.trim())}
             />
-          </>
-        )}
+          )}
+
+          <NameInput value={name} onChange={setName} />
+
+          <AlertText>{alert}</AlertText>
+        </Stack>
       </Stack>
 
       <Button
@@ -152,7 +221,12 @@ export const StepImportWallet = () => {
         size="lg"
         colorScheme="purple"
         borderRadius="8px"
-        onClick={nextStep}>
+        disabled={
+          kind === importKinds[0]
+            ? mnemonic.length !== mnemonicLen || !mnemonic.every((w) => w)
+            : !privateKey
+        }
+        onClick={onImport}>
         Import Wallet
       </Button>
     </Stack>

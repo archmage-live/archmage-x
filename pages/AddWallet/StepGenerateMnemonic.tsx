@@ -26,7 +26,7 @@ import { useWizard } from 'react-use-wizard'
 
 import { WALLET_SERVICE } from '~lib/services/walletService'
 
-import { useMnemonic } from './state'
+import { useMnemonic } from './addWallet'
 
 export const StepGenerateMnemonic = () => {
   const { nextStep } = useWizard()
@@ -35,7 +35,7 @@ export const StepGenerateMnemonic = () => {
   const [isChecked, setIsChecked] = useState(false)
 
   useEffect(() => {
-    if (!mnemonic) {
+    if (!mnemonic.length) {
       setMnemonic(WALLET_SERVICE.generateMnemonic().split(' '))
     }
   }, [mnemonic, setMnemonic])

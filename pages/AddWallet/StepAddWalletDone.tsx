@@ -2,7 +2,15 @@ import { QuestionIcon } from '@chakra-ui/icons'
 import { Button, Link, Stack, Text } from '@chakra-ui/react'
 import { SiTwitter } from 'react-icons/si'
 
+import { useFinished } from './addWallet'
+
 export const StepAddWalletDone = () => {
+  const [finished] = useFinished()
+
+  const onDone = () => {
+    window.close()
+  }
+
   return (
     <Stack p="4" pt="16" spacing="12">
       <Stack>
@@ -53,7 +61,9 @@ export const StepAddWalletDone = () => {
         size="lg"
         colorScheme="purple"
         borderRadius="8px"
-        onClick={() => window.close()}>
+        isLoading={!finished}
+        loadingText="Almost done..."
+        onClick={onDone}>
         Done
       </Button>
     </Stack>

@@ -8,15 +8,19 @@ import {
   chakra
 } from '@chakra-ui/react'
 import { shuffled } from '@ethersproject/random'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useWizard } from 'react-use-wizard'
 
-import { useMnemonic } from '~pages/AddWallet/state'
+import { AlertText } from '~components/AlertText'
+
+import { NameInput } from './NameInput'
+import { useAddWallet, useMnemonic, useName } from './addWallet'
 
 export const StepRememberMnemonic = () => {
   const { nextStep } = useWizard()
 
   const [mnemonic] = useMnemonic()
+  const [name, setName] = useName()
 
   const [candidate, setCandidate] = useState<string[]>([])
   const [selected, setSelected] = useState<string[]>([])
@@ -57,6 +61,24 @@ export const StepRememberMnemonic = () => {
       })
     }
   }
+
+  const [alert, setAlert] = useState('')
+
+  useEffect(() => {
+    setAlert('')
+  }, [mnemonic, name])
+
+  const addWallet = useAddWallet()
+
+  const onNext = useCallback(async () => {
+    const { error } = await addWallet()
+    if (error) {
+      setAlert(error)
+      return
+    }
+
+    nextStep()
+  }, [addWallet, nextStep])
 
   return (
     <Stack p="4" pt="16" spacing="12">
@@ -115,13 +137,17 @@ export const StepRememberMnemonic = () => {
         </chakra.span>
       </Checkbox>
 
+      <NameInput value={name} onChange={setName} />
+
+      <AlertText>{alert}</AlertText>
+
       <Button
         h="14"
         size="lg"
         colorScheme="purple"
         borderRadius="8px"
         disabled={!(isChecked || remembered)}
-        onClick={nextStep}>
+        onClick={onNext}>
         Continue
       </Button>
     </Stack>

@@ -3,7 +3,7 @@ import { encryptKeystore } from '@ethersproject/json-wallets'
 import {
   KeystoreAccount,
   _KeystoreAccount
-} from '@ethersproject/json-wallets/lib/keystore'
+} from '@ethersproject/json-wallets/lib.esm/keystore'
 import { randomBytes } from '@ethersproject/random'
 import { sha256 } from '@ethersproject/sha2'
 import assert from 'assert'
@@ -54,10 +54,8 @@ class WalletService {
     name?: string
   }): Promise<{
     wallet: IWallet
-    keystore: {
-      encrypted: any
-      decrypted: any
-    }
+    decrypted: _KeystoreAccount
+    encrypted: Promise<string>
   }> {
     let ethWallet
     let type
@@ -85,7 +83,7 @@ class WalletService {
     }
 
     // time-consuming encrypting
-    const encrypted = await encryptKeystore(ethWallet, password)
+    const encrypted = encryptKeystore(ethWallet, password)
 
     const wallet = {
       sortId: await getNextSortId(DB.wallets),
@@ -97,31 +95,26 @@ class WalletService {
 
     return {
       wallet,
-      keystore: {
-        encrypted,
-        decrypted
-      }
+      decrypted,
+      encrypted
     }
   }
 
-  async hasWallet(wallet: IWallet) {
-    if (wallet.name) {
-      return (await DB.wallets.where('name').equals(wallet.name).count()) > 0
-    }
-    if (wallet.hash) {
-      return (await DB.wallets.where('hash').equals(wallet.hash).count()) > 0
-    }
+  async existsName(name: string) {
+    return (await DB.wallets.where('name').equals(name).count()) > 0
+  }
+
+  async existsSecret(wallet: IWallet) {
+    return (await DB.wallets.where('hash').equals(wallet.hash).count()) > 0
   }
 
   async createWallet(
     wallet: IWallet,
     decrypted: _KeystoreAccount,
-    encrypted: string
+    encrypted: Promise<string>
   ) {
-    wallet.id = await DB.wallets.add({
-      ...wallet,
-      keystore: encrypted
-    })
+    wallet.keystore = await encrypted
+    wallet.id = await DB.wallets.add(wallet)
 
     KEYSTORE.set(wallet.id, new KeystoreAccount(decrypted))
   }

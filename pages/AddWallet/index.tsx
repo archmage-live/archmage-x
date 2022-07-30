@@ -10,7 +10,7 @@ import { StepCreatePassword } from './StepCreatePassword'
 import { StepGenerateMnemonic } from './StepGenerateMnemonic'
 import { StepImportWallet } from './StepImportWallet'
 import { StepRememberMnemonic } from './StepRememberMnemonic'
-import { AddWalletKind, useAddWalletKind } from './state'
+import { AddWalletKind, useAddWalletKind } from './addWallet'
 
 export default function AddWallet() {
   const hasPassword = false
