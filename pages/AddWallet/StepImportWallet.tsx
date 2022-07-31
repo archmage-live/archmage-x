@@ -84,11 +84,23 @@ export const StepImportWallet = () => {
   const [privateKey, setPrivateKey] = usePrivateKey()
   const [name, setName] = useName()
 
+  useEffect(() => {
+    if (kind === importKinds[0]) {
+      setAddWalletKind(
+        !isOneAccountChecked
+          ? AddWalletKind.IMPORT_HD
+          : AddWalletKind.IMPORT_MNEMONIC_PRIVATE_KEY
+      )
+    } else {
+      setAddWalletKind(AddWalletKind.IMPORT_PRIVATE_KEY)
+    }
+  }, [isOneAccountChecked, kind, setAddWalletKind])
+
   const [alert, setAlert] = useState('')
 
   useEffect(() => {
     setAlert('')
-  }, [mnemonic, privateKey, name])
+  }, [mnemonic, privateKey, name, isOneAccountChecked])
 
   const addWallet = useAddWallet()
 
@@ -98,17 +110,11 @@ export const StepImportWallet = () => {
         setAlert('Invalid secret recovery phrase')
         return
       }
-      setAddWalletKind(
-        !isOneAccountChecked
-          ? AddWalletKind.IMPORT_HD
-          : AddWalletKind.IMPORT_MNEMONIC_PRIVATE_KEY
-      )
     } else {
       if (!isPrivateKey(privateKey)) {
         setAlert('Invalid private key')
         return
       }
-      setAddWalletKind(AddWalletKind.IMPORT_PRIVATE_KEY)
     }
 
     const { error } = await addWallet()
@@ -118,15 +124,7 @@ export const StepImportWallet = () => {
     }
 
     nextStep()
-  }, [
-    addWallet,
-    isOneAccountChecked,
-    kind,
-    mnemonic,
-    nextStep,
-    privateKey,
-    setAddWalletKind
-  ])
+  }, [addWallet, kind, mnemonic, nextStep, privateKey])
 
   return (
     <Stack p="4" pt="16" spacing="12">

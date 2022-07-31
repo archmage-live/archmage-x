@@ -127,12 +127,12 @@ class WalletService {
     await DB.wallets.delete(id)
   }
 
-  static async getWallet() {
+  async getWallet() {
     // TODO
   }
 
-  static async queryWallet() {
-    // TODO
+  async listWallets(): Promise<IWallet[]> {
+    return DB.wallets.toArray()
   }
 }
 

@@ -1,71 +1,56 @@
-import { QuestionIcon } from '@chakra-ui/icons'
-import { Button, Link, Stack, Text } from '@chakra-ui/react'
-import { SiTwitter } from 'react-icons/si'
+import { Button, Stack, Text } from '@chakra-ui/react'
+import { useWizard } from 'react-use-wizard'
 
-import { useFinished } from './addWallet'
+import { useClear, useCreated } from './addWallet'
 
 export const StepAddWalletDone = () => {
-  const [finished] = useFinished()
+  const { goToStep } = useWizard()
 
-  const onDone = () => {
-    window.close()
-  }
+  const [created] = useCreated()
+  const clear = useClear()
 
   return (
     <Stack p="4" pt="16" spacing="12">
       <Stack>
         <Text fontSize="4xl" fontWeight="bold" textAlign="center">
-          You&#39;re all done!
+          {!created ? (
+            <>Wallet is being saved...</>
+          ) : (
+            <>Wallet saved successfully!</>
+          )}
         </Text>
         <Text fontSize="lg" color="gray.500" textAlign="center">
-          Follow along with product updates or reach out if you have any
-          questions.
+          You can check your new wallet by clicking the Archmage X extension.
         </Text>
       </Stack>
 
       <Stack>
-        <Link
-          href="https://twitter.com/archmage-live"
-          isExternal
-          _hover={{ textDecoration: undefined }}>
-          <Button
-            h="14"
-            w="full"
-            size="lg"
-            variant="outline"
-            borderRadius="8px"
-            justifyContent="start"
-            leftIcon={<SiTwitter />}>
-            Follow us on Twitter
-          </Button>
-        </Link>
-        <Link
-          href="https://help.archmage.live"
-          isExternal
-          _hover={{ textDecoration: undefined }}>
-          <Button
-            h="14"
-            w="full"
-            size="lg"
-            variant="outline"
-            borderRadius="8px"
-            justifyContent="start"
-            leftIcon={<QuestionIcon />}>
-            Visit the help center
-          </Button>
-        </Link>
+        <Button
+          h="14"
+          size="lg"
+          colorScheme="purple"
+          borderRadius="8px"
+          isLoading={!created}
+          loadingText="Saving..."
+          onClick={() => {
+            clear()
+            window.close()
+          }}>
+          Done
+        </Button>
+        <Button
+          h="14"
+          size="lg"
+          variant="outline"
+          borderRadius="8px"
+          disabled={!created}
+          onClick={() => {
+            clear()
+            goToStep(0)
+          }}>
+          Add another wallet
+        </Button>
       </Stack>
-
-      <Button
-        h="14"
-        size="lg"
-        colorScheme="purple"
-        borderRadius="8px"
-        isLoading={!finished}
-        loadingText="Almost done..."
-        onClick={onDone}>
-        Done
-      </Button>
     </Stack>
   )
 }

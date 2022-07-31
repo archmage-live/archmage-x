@@ -6,7 +6,7 @@ import { sign } from 'tweetnacl'
 
 import { HDNode, HardenedBit } from '~lib/crypto/ed25519'
 import { KEYSTORE } from '~lib/keystore'
-import { WalletOpts, WalletType } from '~lib/wallet/index'
+import { WalletOpts, WalletType } from '~lib/wallet'
 
 export class SolWallet {
   static defaultPath = "44'/501'/0'"

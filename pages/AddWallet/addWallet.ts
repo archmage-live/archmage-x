@@ -17,7 +17,7 @@ const mnemonicAtom = atom<string[]>([])
 const hdPathAtom = atom('')
 const privateKeyAtom = atom('')
 const nameAtom = atom('')
-const finishedAtom = atom(false)
+const createdAtom = atom(false)
 
 export function usePassword() {
   return useAtom(passwordAtom)
@@ -43,8 +43,23 @@ export function useName() {
   return useAtom(nameAtom)
 }
 
-export function useFinished() {
-  return useAtom(finishedAtom)
+export function useCreated() {
+  return useAtom(createdAtom)
+}
+
+export function useClear() {
+  const [, setMnemonic] = useMnemonic()
+  const [, setHdPath] = useHdPath()
+  const [, setPrivateKey] = usePrivateKey()
+  const [, setName] = useName()
+  const [, setCreated] = useCreated()
+  return useCallback(() => {
+    setMnemonic([])
+    setHdPath('')
+    setPrivateKey('')
+    setName('')
+    setCreated(false)
+  }, [setCreated, setHdPath, setMnemonic, setName, setPrivateKey])
 }
 
 export function useAddWallet() {
@@ -54,24 +69,32 @@ export function useAddWallet() {
   const [hdPath] = useHdPath()
   const [privateKey] = usePrivateKey()
   const [name] = useName()
-  const [, setFinished] = useFinished()
+  const [, setCreated] = useCreated()
 
   return useCallback(async (): Promise<{ error?: string }> => {
     if (name && (await WALLET_SERVICE.existsName(name))) {
       return { error: 'Invalid secret recovery phrase' }
     }
 
+    const isHD =
+      addWalletKind === AddWalletKind.NEW_HD ||
+      addWalletKind === AddWalletKind.IMPORT_HD
+
     const { wallet, decrypted, encrypted } = await WALLET_SERVICE.newWallet({
       password,
-      isHD:
-        addWalletKind === AddWalletKind.NEW_HD ||
-        addWalletKind === AddWalletKind.IMPORT_HD,
-      mnemonic: mnemonic.join(' '),
+      isHD,
+      mnemonic:
+        isHD || addWalletKind === AddWalletKind.IMPORT_MNEMONIC_PRIVATE_KEY
+          ? mnemonic.join(' ')
+          : undefined,
       path:
         addWalletKind === AddWalletKind.IMPORT_MNEMONIC_PRIVATE_KEY
           ? hdPath
           : undefined,
-      privateKey,
+      privateKey:
+        addWalletKind === AddWalletKind.IMPORT_PRIVATE_KEY
+          ? privateKey
+          : undefined,
       name
     })
 
@@ -80,9 +103,9 @@ export function useAddWallet() {
     }
 
     WALLET_SERVICE.createWallet(wallet, decrypted, encrypted).finally(() => {
-      setFinished(true)
+      setCreated(true)
     })
 
     return {}
-  }, [addWalletKind, hdPath, mnemonic, name, password, privateKey, setFinished])
+  }, [addWalletKind, hdPath, mnemonic, name, password, privateKey, setCreated])
 }

@@ -2,7 +2,6 @@ import { ChevronLeftIcon } from '@chakra-ui/icons'
 import {
   Box,
   BoxProps,
-  Button,
   Center,
   Divider,
   HStack,
@@ -15,40 +14,44 @@ import { Wizard, useWizard } from 'react-use-wizard'
 import { Card } from '~components/Card'
 
 interface ActionWizardProps extends BoxProps {
-  skipFirstStep?: boolean
+  skipFirstStepHeader?: boolean
+  hideLastStepBackButton?: boolean
   children: React.ReactNode
 }
 
 export const ActionWizard = ({
-  skipFirstStep,
+  skipFirstStepHeader,
+  hideLastStepBackButton,
   children,
   ...props
 }: ActionWizardProps) => {
   return (
     <Card w="36rem" {...props}>
       <Wizard
-        startIndex={1}
-        header={<ActionWizardHeader skipFirstStep={skipFirstStep} />}>
+        startIndex={0}
+        header={
+          <ActionWizardHeader
+            skipFirstStepHeader={skipFirstStepHeader}
+            hideLastStepBackButton={hideLastStepBackButton}
+          />
+        }>
         {children}
       </Wizard>
     </Card>
   )
 }
 
-const ActionWizardHeader = ({ skipFirstStep }: { skipFirstStep?: boolean }) => {
-  const {
-    isLoading,
-    isLastStep,
-    isFirstStep,
-    activeStep,
-    stepCount,
-    previousStep,
-    nextStep,
-    goToStep,
-    handleStep
-  } = useWizard()
+const ActionWizardHeader = ({
+  skipFirstStepHeader,
+  hideLastStepBackButton
+}: {
+  skipFirstStepHeader?: boolean
+  hideLastStepBackButton?: boolean
+}) => {
+  const { isLastStep, isFirstStep, activeStep, stepCount, previousStep } =
+    useWizard()
 
-  if (skipFirstStep && isFirstStep) {
+  if (skipFirstStepHeader && isFirstStep) {
     return <></>
   }
 
@@ -56,7 +59,11 @@ const ActionWizardHeader = ({ skipFirstStep }: { skipFirstStep?: boolean }) => {
     <Stack>
       <HStack justify="space-between">
         <IconButton
-          visibility={isFirstStep ? 'hidden' : 'visible'}
+          visibility={
+            isFirstStep || (isLastStep && hideLastStepBackButton)
+              ? 'hidden'
+              : 'visible'
+          }
           icon={<ChevronLeftIcon />}
           aria-label="Previous step"
           variant="ghost"
@@ -66,7 +73,7 @@ const ActionWizardHeader = ({ skipFirstStep }: { skipFirstStep?: boolean }) => {
           onClick={previousStep}
         />
         <HStack spacing="4">
-          {[...Array(stepCount - (skipFirstStep ? 1 : 0)).keys()].map(
+          {[...Array(stepCount - (skipFirstStepHeader ? 1 : 0)).keys()].map(
             (step) => {
               return (
                 <StepCircle

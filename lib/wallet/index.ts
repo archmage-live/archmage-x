@@ -17,7 +17,7 @@ export interface SigningWallet {
 }
 
 export * from './evm'
-export * from './cosm'
+// export * from './cosm'
 export * from './aptos'
 export * from './sui'
 export * from './aleo'
