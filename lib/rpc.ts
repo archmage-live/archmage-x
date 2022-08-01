@@ -33,11 +33,18 @@ export class RpcClient {
   private waits = new Map<number, [Promise<Response>, Function]>()
   private port!: browser.Runtime.Port
   private connected: boolean = false
+  private firstConnected?: [Promise<boolean>, Function]
   private nextId = 0
 
   constructor(private channel: string) {}
 
   connect() {
+    let resolve
+    const promise = new Promise((r: (value: boolean) => void) => {
+      resolve = r
+    })
+    this.firstConnected = [promise, resolve as any]
+
     this.port = browser.runtime.connect({ name: this.channel })
     this.port.onMessage.addListener(this.onMessage)
     this.port.onDisconnect.addListener(this.onDisconnect)
@@ -47,19 +54,20 @@ export class RpcClient {
     this.port.disconnect()
   }
 
-  service<Service>(serviceName: string): Service {
-    return new Proxy(
-      {},
-      {
-        get: (target: {}, method: string | symbol) => {
-          const msg = {
-            service: serviceName,
-            method
-          } as Request
-          return this.callPartial(msg)
+  service<Service>(serviceName: string, service?: Service): Service {
+    return new Proxy(service ?? {}, {
+      get: (target: Service, method: string | symbol) => {
+        if (typeof (target as any)[method] === 'function') {
+          return (target as any)[method].bind(target)
         }
+
+        const msg = {
+          service: serviceName,
+          method
+        } as Request
+        return this.callPartial(msg)
       }
-    ) as Service
+    }) as Service
   }
 
   private callPartial(msg: Request): (...args: any[]) => Promise<any> {
@@ -70,6 +78,11 @@ export class RpcClient {
   }
 
   async call(msg: Request): Promise<any> {
+    if (!this.firstConnected) {
+      this.connect()
+    }
+    await this.firstConnected![0]
+
     msg.id = this.nextId++
     if (!this.connected) {
       throw new Error(`rpc not connected`)
@@ -95,6 +108,7 @@ export class RpcClient {
     if (msg === hello) {
       console.log(`rpc connected`)
       this.connected = true
+      this.firstConnected![1](true)
       return
     }
 

@@ -6,10 +6,11 @@ import { NavTarget, Navbar } from '~components/Navbar'
 import { Toolbar } from '~components/Toolbar'
 
 interface PopupLayoutProps {
+  vanilla?: boolean
   children?: ReactNode
 }
 
-export const PopupLayout = ({ children }: PopupLayoutProps) => {
+export const PopupLayout = ({ vanilla, children }: PopupLayoutProps) => {
   const [navTarget, setNavTarget] = useState<NavTarget>('Assets')
 
   return (
@@ -20,11 +21,11 @@ export const PopupLayout = ({ children }: PopupLayoutProps) => {
       w="100vw"
       h="100vh"
       justify="space-between">
-      <Toolbar />
+      {!vanilla && <Toolbar />}
 
       <Container flex="1">{children}</Container>
 
-      <Navbar value={navTarget} onChange={setNavTarget} />
+      {!vanilla && <Navbar value={navTarget} onChange={setNavTarget} />}
     </Flex>
   )
 }

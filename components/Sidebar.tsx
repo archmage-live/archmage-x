@@ -3,6 +3,8 @@ import { Button, Divider, HStack, Icon, Stack, Text } from '@chakra-ui/react'
 import { useNavigate } from 'react-router-dom'
 import browser from 'webextension-polyfill'
 
+import { WALLET_SERVICE } from '~lib/services/walletService'
+
 interface SidebarProps {
   isOpen: boolean
 
@@ -18,6 +20,11 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
     browser.tabs.create({
       url: window.location.href + '#/tab'
     })
+  }
+
+  const lock = async () => {
+    await WALLET_SERVICE.lock()
+    navigate('/', { replace: true })
   }
 
   return (
@@ -55,7 +62,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
 
       <Divider />
 
-      <Button variant="ghost" w="full" justifyContent="start">
+      <Button variant="ghost" w="full" justifyContent="start" onClick={lock}>
         <HStack spacing="3">
           <LockIcon />
           <Text fontSize="lg">Lock</Text>

@@ -35,9 +35,12 @@ export const StepGenerateMnemonic = () => {
   const [isChecked, setIsChecked] = useState(false)
 
   useEffect(() => {
-    if (!mnemonic.length) {
-      setMnemonic(WALLET_SERVICE.generateMnemonic().split(' '))
+    const effect = async () => {
+      if (!mnemonic.length) {
+        setMnemonic((await WALLET_SERVICE.generateMnemonic()).split(' '))
+      }
     }
+    effect()
   }, [mnemonic, setMnemonic])
 
   const {
