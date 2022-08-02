@@ -11,11 +11,13 @@ export enum StoreKey {
   KEYSTORE_PREFIX = 'keystore'
 }
 
+// local persistent
 export const LOCAL_STORE = new Storage({
   area: 'local',
   secretKeyList: [StoreKey.PASSWORD_HASH]
 })
 
+// memory cached
 export const SESSION_STORE = new Storage({
   area: 'session',
   secretKeyList: [StoreKey.PASSWORD]

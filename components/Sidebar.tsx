@@ -1,8 +1,10 @@
 import { AddIcon, DragHandleIcon, LockIcon } from '@chakra-ui/icons'
 import { Button, Divider, HStack, Icon, Stack, Text } from '@chakra-ui/react'
+import { useLiveQuery } from 'dexie-react-hooks'
 import { useNavigate } from 'react-router-dom'
 import browser from 'webextension-polyfill'
 
+import { DB } from '~lib/db'
 import { WALLET_SERVICE } from '~lib/services/walletService'
 
 interface SidebarProps {
@@ -11,14 +13,25 @@ interface SidebarProps {
   onClose(): void
 }
 
+function getRootHref() {
+  let href = window.location.href
+  const url = new URL(href)
+  const searchIndex = url.search ? href.lastIndexOf(url.search) : -1
+  const hashIndex = url.hash ? href.lastIndexOf(url.hash) : -1
+  return href.slice(
+    0,
+    searchIndex > -1 ? searchIndex : hashIndex > -1 ? hashIndex : href.length
+  )
+}
+
 export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
-  const wallets = ['Wallet1', 'Wallet2', 'Wallet3']
+  const wallets = useLiveQuery(() => DB.wallets.toArray())
 
   const navigate = useNavigate()
 
   const addWallet = () => {
     browser.tabs.create({
-      url: window.location.href + '#/tab'
+      url: getRootHref() + '#/tab/add-wallet'
     })
   }
 
@@ -32,10 +45,10 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
       <Divider />
 
       <Stack spacing="4">
-        {wallets.map((w) => {
+        {wallets?.map((w) => {
           return (
-            <Button key={w} variant="ghost" w="full" justifyContent="start">
-              <Text fontSize="lg">{w}</Text>
+            <Button key={w.id} variant="ghost" w="full" justifyContent="start">
+              <Text fontSize="lg">{w.name}</Text>
             </Button>
           )
         })}

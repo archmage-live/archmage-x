@@ -126,6 +126,7 @@ export class RpcClient {
   onDisconnect = () => {
     console.log(`rpc disconnected`)
     this.connected = false
+    this.firstConnected = undefined // enable reconnect
     for (const [id, [promise, resolve]] of this.waits.entries()) {
       resolve({
         id,
