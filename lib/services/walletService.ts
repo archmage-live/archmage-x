@@ -1,5 +1,4 @@
 import { entropyToMnemonic } from '@ethersproject/hdnode'
-import { encryptKeystore } from '@ethersproject/json-wallets'
 import {
   KeystoreAccount,
   _KeystoreAccount
@@ -32,7 +31,6 @@ export interface IWalletService {
   generateMnemonic(opts?: { locale?: string }): Promise<string>
 
   newWallet(opts: {
-    password: string
     isHD: boolean
     mnemonic?: string
     path?: string
@@ -41,18 +39,13 @@ export interface IWalletService {
   }): Promise<{
     wallet: IWallet
     decrypted: _KeystoreAccount
-    encrypted: Promise<string>
   }>
 
   existsName(name: string): Promise<boolean>
 
   existsSecret(wallet: IWallet): Promise<boolean>
 
-  createWallet(
-    wallet: IWallet,
-    decrypted: _KeystoreAccount,
-    encrypted: Promise<string>
-  ): Promise<void>
+  createWallet(wallet: IWallet, decrypted: _KeystoreAccount): Promise<void>
 
   updateWallet(): Promise<void>
 
@@ -100,14 +93,7 @@ class WalletService extends WalletServicePartial {
     const unlocked = await PASSWORD.unlock(password)
 
     if (unlocked) {
-      // TODO
       KEYSTORE.unlock()
-        .then(() => {
-          console.log('Unlock wallets succeeded')
-        })
-        .catch(() => {
-          console.error('Unlock wallets failed')
-        })
     }
 
     return unlocked
@@ -119,14 +105,12 @@ class WalletService extends WalletServicePartial {
   }
 
   async newWallet({
-    password,
     isHD,
     mnemonic,
     path,
     privateKey,
     name
   }: {
-    password: string
     isHD: boolean
     mnemonic?: string
     path?: string
@@ -135,35 +119,31 @@ class WalletService extends WalletServicePartial {
   }): Promise<{
     wallet: IWallet
     decrypted: _KeystoreAccount
-    encrypted: Promise<string>
   }> {
-    let ethWallet
+    let account
     let type
     if (isHD) {
       assert(mnemonic && !path && !privateKey)
-      ethWallet = ethers.utils.HDNode.fromMnemonic(mnemonic)
+      account = ethers.utils.HDNode.fromMnemonic(mnemonic)
       type = WalletType.HD
     } else if (!privateKey) {
       assert(mnemonic && path)
-      ethWallet = ethers.Wallet.fromMnemonic(mnemonic, path)
+      account = ethers.Wallet.fromMnemonic(mnemonic, path)
       type = WalletType.MNEMONIC_PRIVATE_KEY
     } else {
       assert(!mnemonic && !path)
-      ethWallet = new ethers.Wallet(privateKey)
+      account = new ethers.Wallet(privateKey)
       type = WalletType.PRIVATE_KEY
     }
 
-    const address = ethWallet.address
+    const address = account.address
 
     const decrypted: _KeystoreAccount = {
       address,
-      privateKey: ethWallet.privateKey,
-      mnemonic: ethWallet.mnemonic,
+      privateKey: account.privateKey,
+      mnemonic: account.mnemonic,
       _isKeystoreAccount: true
     }
-
-    // time-consuming encrypting
-    const encrypted = encryptKeystore(ethWallet, password)
 
     const wallet = {
       sortId: await getNextSortId(DB.wallets),
@@ -175,20 +155,16 @@ class WalletService extends WalletServicePartial {
 
     return {
       wallet,
-      decrypted,
-      encrypted
+      decrypted
     }
   }
 
-  async createWallet(
-    wallet: IWallet,
-    decrypted: _KeystoreAccount,
-    encrypted: Promise<string>
-  ) {
-    wallet.keystore = await encrypted
+  async createWallet(wallet: IWallet, decrypted: _KeystoreAccount) {
     wallet.id = await DB.wallets.add(wallet)
 
-    KEYSTORE.set(wallet.id, new KeystoreAccount(decrypted))
+    await KEYSTORE.set(wallet.id, new KeystoreAccount(decrypted))
+    // time-consuming, so do not wait for it
+    KEYSTORE.persist(wallet)
   }
 
   async updateWallet() {

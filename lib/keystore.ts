@@ -1,12 +1,18 @@
-import { decryptKeystore } from '@ethersproject/json-wallets'
+import { decryptKeystore, encryptKeystore } from '@ethersproject/json-wallets'
 import type { KeystoreAccount } from '@ethersproject/json-wallets/lib/keystore'
 import browser from 'webextension-polyfill'
 
 import { Storage } from '@plasmohq/storage'
 
 import { DB } from '~lib/db'
+import { ENV } from '~lib/env'
 import { PASSWORD } from '~lib/password'
+import { IWallet } from '~lib/schema/wallet'
 import { SESSION_STORE, StoreKey } from '~lib/store'
+
+function keystoreKey(id: number): string {
+  return `${StoreKey.KEYSTORE_PREFIX}_${id}`
+}
 
 class Accounts {
   private accounts = new Map<number, KeystoreAccount>() // id -> decrypted keystore
@@ -14,7 +20,7 @@ class Accounts {
   async set(id: number, account: KeystoreAccount) {
     this.accounts.set(id, account)
 
-    const key = `${StoreKey.KEYSTORE_PREFIX}_${id}`
+    const key = keystoreKey(id)
     await new Storage({
       area: 'session',
       secretKeyList: [key]
@@ -23,13 +29,18 @@ class Accounts {
 
   async get(id: number): Promise<KeystoreAccount | undefined> {
     if (!this.accounts.has(id)) {
-      const account = await SESSION_STORE.get<KeystoreAccount>(id.toString())
+      const account = await SESSION_STORE.get<KeystoreAccount>(keystoreKey(id))
 
       if (account) {
         this.accounts.set(id, account)
       }
     }
     return this.accounts.get(id)
+  }
+
+  async remove(id: number) {
+    this.accounts.delete(id)
+    await SESSION_STORE.remove(keystoreKey(id))
   }
 
   async clear() {
@@ -50,27 +61,52 @@ export class Keystore {
   private accounts = new Accounts()
   private ready = new Map<number, [Promise<unknown>, Function]>()
 
+  constructor() {
+    this.unlock()
+  }
+
   async unlock() {
+    if (!ENV.inServiceWorker) {
+      return
+    }
     const password = await PASSWORD.get()
     if (!password) {
       return
     }
     // batch processing for memory efficiency
     const limit = 100
-    const concurrent = 2
+    const concurrent = 4
     for (let offset = 0; ; offset += limit) {
       const wallets = await DB.wallets.offset(offset).limit(limit).toArray()
       if (!wallets.length) {
         break
       }
+
+      if (await PASSWORD.isLocked()) {
+        break
+      }
+
       for (let i = 0; i < wallets.length; i += concurrent) {
         const promises = []
         for (let j = i; j < i + concurrent && j < wallets.length; j++) {
-          promises.push(this.fetch(wallets[j].id!))
+          const wallet = wallets[j]
+
+          if (!wallet.keystore) {
+            promises.push(this.persist(wallet))
+          }
+
+          promises.push(this.fetch(wallet.id!))
         }
+
         await Promise.all(promises)
+
+        if (await PASSWORD.isLocked()) {
+          break
+        }
       }
     }
+
+    console.log('Unlock keystore succeeded')
   }
 
   async lock() {
@@ -87,6 +123,35 @@ export class Keystore {
 
   async get(id: number): Promise<KeystoreAccount | undefined> {
     return await this.fetch(id)
+  }
+
+  async persist(wallet: IWallet) {
+    if (wallet.keystore) {
+      // has persisted
+      return
+    }
+    const account = await this.accounts.get(wallet.id!)
+    const password = await PASSWORD.get()
+    if (!account) {
+      await DB.wallets.delete(wallet.id!)
+      console.log(
+        `keystore for wallet ${wallet.id} cannot be recovered anymore, so delete it`
+      )
+      return
+    }
+    if (!password) {
+      // maybe locked, so it will be recovered next time
+      return
+    }
+    // time-consuming encrypting
+    wallet.keystore = await encryptKeystore(account, password, {
+      scrypt: {
+        N: undefined
+        // N: 1 << 14 // fast
+      }
+    })
+    await DB.wallets.update(wallet.id!, { keystore: wallet.keystore })
+    console.log(`keystore for wallet ${wallet.id} is persistent`)
   }
 
   private async fetch(id: number): Promise<KeystoreAccount | undefined> {
@@ -111,6 +176,10 @@ export class Keystore {
       // time-consuming decrypting
       const keystore = await decryptKeystore(wallet.keystore!, password)
       await this.accounts.set(id, keystore)
+
+      if (await PASSWORD.isLocked()) {
+        await this.accounts.remove(id)
+      }
 
       this.resolveReady(id)
 

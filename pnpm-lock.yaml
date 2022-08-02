@@ -16,6 +16,7 @@ specifiers:
   '@ctrl/tinycolor': ^3.4.1
   '@emotion/react': ^11.9.3
   '@emotion/styled': ^11.9.3
+  '@ethersproject/abstract-signer': ^5.6.2
   '@ethersproject/bignumber': ^5.6.2
   '@ethersproject/bytes': ^5.6.1
   '@ethersproject/hdnode': ^5.6.2
@@ -90,6 +91,7 @@ dependencies:
   '@ctrl/tinycolor': 3.4.1
   '@emotion/react': 11.9.3_4jaruczdv2uxjj3lb2xbkiuci4
   '@emotion/styled': 11.9.3_toiz7tndcw4z2b7gxmmeo5fkcu
+  '@ethersproject/abstract-signer': 5.6.2
   '@ethersproject/bignumber': 5.6.2
   '@ethersproject/bytes': 5.6.1
   '@ethersproject/hdnode': 5.6.2

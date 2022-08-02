@@ -114,7 +114,9 @@ export class RpcClient {
 
     const wait = this.waits.get(msg.id)
     if (!wait) {
-      console.error(`rpc received response, but no receiver: ${msg}`)
+      console.error(
+        `rpc received response, but no receiver: ${JSON.stringify(msg)}`
+      )
       return
     }
     this.waits.delete(msg.id)

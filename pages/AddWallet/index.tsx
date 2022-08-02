@@ -1,7 +1,10 @@
 import { Container } from '@chakra-ui/react'
+import { useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 import { ActionWizard } from '~components/ActionWizard'
 import { TitleBar } from '~components/TitleBar'
+import { usePassword } from '~lib/password'
 
 import { StepAddWalletDone } from './StepAddWalletDone'
 import { StepAddWalletSelect } from './StepAddWalletSelect'
@@ -13,17 +16,24 @@ import { StepRememberMnemonic } from './StepRememberMnemonic'
 import { AddWalletKind, useAddWalletKind } from './addWallet'
 
 export default function AddWallet() {
-  const hasPassword = false
+  const { exists: passwordExists, isLocked } = usePassword()
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    if (passwordExists && isLocked) {
+      navigate(`/?redirect=/tab/add-wallet`, { replace: true })
+    }
+  }, [passwordExists, isLocked, navigate])
 
   const [addWalletKind] = useAddWalletKind()
 
-  return (
+  return passwordExists !== undefined ? (
     <>
       <TitleBar />
 
       <Container centerContent mt="16">
         <ActionWizard hideLastStepBackButton>
-          {!hasPassword && <StepCreatePassword />}
+          {!passwordExists && <StepCreatePassword />}
 
           <StepAddWalletSelect />
 
@@ -43,5 +53,7 @@ export default function AddWallet() {
         </ActionWizard>
       </Container>
     </>
+  ) : (
+    <></>
   )
 }

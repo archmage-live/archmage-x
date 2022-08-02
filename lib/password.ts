@@ -1,19 +1,31 @@
 import { sha256 } from '@ethersproject/sha2'
+import { useEffect, useMemo, useState } from 'react'
 
-import { LOCAL_STORE, SESSION_STORE, StoreKey } from '~lib/store'
+import { useStorage } from '@plasmohq/storage'
+
+import { ENV } from '~lib/env'
+import { LOCAL_STORE, SESSION_STORE, StoreArea, StoreKey } from '~lib/store'
 
 class Password {
   private password!: string
 
+  constructor(private cacheLocal: boolean) {}
+
   async get() {
     if (!this.password) {
-      this.password = await SESSION_STORE.get(StoreKey.PASSWORD)
+      const password = await SESSION_STORE.get(StoreKey.PASSWORD)
+      if (!this.cacheLocal) {
+        return password
+      }
+      this.password = password
     }
     return this.password
   }
 
   private async cache(password: string) {
-    this.password = password
+    if (this.cacheLocal) {
+      this.password = password
+    }
     if (password) {
       await SESSION_STORE.set(StoreKey.PASSWORD, password)
     } else {
@@ -47,8 +59,12 @@ class Password {
     )
   }
 
+  async isLocked() {
+    return !(await this.get())
+  }
+
   async isUnlocked() {
-    return !!(await this.get())
+    return !(await this.isLocked())
   }
 
   async unlock(password: string) {
@@ -71,4 +87,40 @@ class Password {
   }
 }
 
-export const PASSWORD = new Password()
+export const PASSWORD = new Password(ENV.inServiceWorker)
+
+export function usePassword(): {
+  exists: boolean | undefined
+  isLocked: boolean | undefined
+  isUnlocked: boolean | undefined
+} {
+  const [exists, setExists] = useState<boolean | undefined>(undefined)
+  const [isLocked, setIsLocked] = useState<boolean | undefined>(undefined)
+  const [isUnlocked, setIsUnlocked] = useState<boolean | undefined>(undefined)
+
+  const [p1] = useStorage({
+    key: StoreKey.PASSWORD_HASH,
+    area: StoreArea.LOCAL
+  })
+  const [p2] = useStorage({
+    key: StoreKey.PASSWORD,
+    area: StoreArea.SESSION
+  })
+
+  useEffect(() => {
+    const effect = async () => {
+      setExists(await PASSWORD.exists())
+      const isLocked = await PASSWORD.isLocked()
+      setIsLocked(isLocked)
+      setIsUnlocked(!isLocked)
+    }
+    effect()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [p1, p2])
+
+  return {
+    exists,
+    isLocked,
+    isUnlocked
+  }
+}

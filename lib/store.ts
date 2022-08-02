@@ -1,5 +1,10 @@
 import { Storage } from '@plasmohq/storage'
 
+export enum StoreArea {
+  LOCAL = 'local',
+  SESSION = 'session'
+}
+
 export enum StoreKey {
   PASSWORD_HASH = 'password_hash',
   PASSWORD = 'password',

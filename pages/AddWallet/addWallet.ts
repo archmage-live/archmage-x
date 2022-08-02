@@ -11,17 +11,12 @@ export enum AddWalletKind {
   CONNECT_LEDGER
 }
 
-const passwordAtom = atom<string>('')
 const addWalletKindAtom = atom<AddWalletKind>(AddWalletKind.NEW_HD)
 const mnemonicAtom = atom<string[]>([])
 const hdPathAtom = atom('')
 const privateKeyAtom = atom('')
 const nameAtom = atom('')
 const createdAtom = atom(false)
-
-export function usePassword() {
-  return useAtom(passwordAtom)
-}
 
 export function useAddWalletKind() {
   return useAtom(addWalletKindAtom)
@@ -63,7 +58,6 @@ export function useClear() {
 }
 
 export function useAddWallet() {
-  const [password] = usePassword()
   const [addWalletKind] = useAddWalletKind()
   const [mnemonic] = useMnemonic()
   const [hdPath] = useHdPath()
@@ -80,8 +74,7 @@ export function useAddWallet() {
       addWalletKind === AddWalletKind.NEW_HD ||
       addWalletKind === AddWalletKind.IMPORT_HD
 
-    const { wallet, decrypted, encrypted } = await WALLET_SERVICE.newWallet({
-      password,
+    const { wallet, decrypted } = await WALLET_SERVICE.newWallet({
       isHD,
       mnemonic:
         isHD || addWalletKind === AddWalletKind.IMPORT_MNEMONIC_PRIVATE_KEY
@@ -102,10 +95,10 @@ export function useAddWallet() {
       return { error: 'There exists wallet with the same secret' }
     }
 
-    WALLET_SERVICE.createWallet(wallet, decrypted, encrypted).finally(() => {
+    WALLET_SERVICE.createWallet(wallet, decrypted).finally(() => {
       setCreated(true)
     })
 
     return {}
-  }, [addWalletKind, hdPath, mnemonic, name, password, privateKey, setCreated])
+  }, [addWalletKind, hdPath, mnemonic, name, privateKey, setCreated])
 }

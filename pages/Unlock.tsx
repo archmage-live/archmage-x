@@ -3,11 +3,13 @@ import { useCallback, useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 
 import { AlertText } from '~components/AlertText'
+import { usePassword } from '~lib/password'
 import { WALLET_SERVICE } from '~lib/services/walletService'
 
 export default function Unlock() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
+  const { isUnlocked } = usePassword()
 
   const [locked, setLocked] = useState(false)
   const [password, setPassword] = useState('')
@@ -27,15 +29,12 @@ export default function Unlock() {
   }, [navigate, searchParams])
 
   useEffect(() => {
-    const effect = async () => {
-      if (await WALLET_SERVICE.isUnlocked()) {
-        redirect()
-      } else {
-        setLocked(true)
-      }
+    if (isUnlocked) {
+      redirect()
+    } else if (isUnlocked === false) {
+      setLocked(true)
     }
-    effect()
-  }, [redirect])
+  }, [isUnlocked, redirect])
 
   const unlock = useCallback(
     (event: any) => {

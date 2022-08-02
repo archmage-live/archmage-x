@@ -17,8 +17,6 @@ import { useWizard } from 'react-use-wizard'
 import { AlertText } from '~components/AlertText'
 import { WALLET_SERVICE } from '~lib/services/walletService'
 
-import { usePassword } from './addWallet'
-
 zxcvbnOptions.setOptions({
   translations: zxcvbnEn.translations,
   graphs: zxcvbnCommon.adjacencyGraphs,
@@ -34,13 +32,7 @@ const passwordStrengthColors = ['red', 'red', 'orange', 'green', 'green']
 export const StepCreatePassword = () => {
   const { nextStep } = useWizard()
 
-  const [password, setPassword] = usePassword()
-  useEffect(
-    () => setPassword(''),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    []
-  )
-
+  const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [passwordStrength, setPasswordStrength] = useState(-1)
   const [alert, setAlert] = useState<ReactNode | string>('')
