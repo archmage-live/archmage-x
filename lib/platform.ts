@@ -7,10 +7,7 @@ export enum Platform {
 }
 
 export function getPlatform(): Platform | undefined {
-  if (typeof window === 'undefined') {
-    return undefined
-  }
-  const { navigator } = window
+  const { navigator } = globalThis
   const { userAgent } = navigator
 
   if (userAgent.includes('Firefox')) {

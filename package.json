@@ -28,6 +28,7 @@
     "@ethersproject/hdnode": "^5.6.2",
     "@ethersproject/json-wallets": "^5.6.1",
     "@ethersproject/properties": "^5.6.0",
+    "@ethersproject/providers": "^5.6.8",
     "@ethersproject/random": "^5.6.1",
     "@ethersproject/sha2": "^5.6.1",
     "@ethersproject/signing-key": "^5.6.2",
@@ -94,10 +95,11 @@
   },
   "manifest": {
     "host_permissions": [
-      "https://*/*"
+      "<all_urls>"
     ],
     "permissions": [
-      "tabs"
+      "tabs",
+      "scripting"
     ]
   },
   "peerDependencies": {
