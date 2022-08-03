@@ -22,15 +22,10 @@ if (!global.archmage) {
   global.archmage = {}
 }
 
-let service: IEvmProviderService
-
 function getService() {
-  if (!service) {
-    service = (
-      global.archmage._service_client as RpcClientInjected
-    ).service<IEvmProviderService>(EVM_PROVIDER_NAME)
-  }
-  return service
+  return (
+    global.archmage._service_client_proxy as RpcClientInjected
+  ).service<IEvmProviderService>(EVM_PROVIDER_NAME)
 }
 
 global.archmage.evm = {

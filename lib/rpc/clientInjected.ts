@@ -41,12 +41,25 @@ export abstract class AbstractRpcClient {
   abstract call(msg: Request): Promise<any>
 }
 
+const version = `RpcClient-${Date.now()}`
+window.postMessage({
+  version
+})
+
 export class RpcClientInjected extends AbstractRpcClient {
   constructor() {
     super()
 
-    window.addEventListener('message', (event) => {
+    const listener = (event: MessageEvent) => {
       if (event.source !== window) {
+        return
+      }
+
+      if (
+        event.data.version?.startsWith('RpcClient') &&
+        event.data.version !== version
+      ) {
+        window.removeEventListener('message', listener)
         return
       }
 
@@ -66,7 +79,9 @@ export class RpcClientInjected extends AbstractRpcClient {
       }
       this.waits.delete(msg.id)
       wait[1](msg)
-    })
+    }
+
+    window.addEventListener('message', listener)
   }
 
   async call(msg: Request): Promise<any> {
@@ -92,4 +107,4 @@ const global = globalThis as any
 if (!global.archmage) {
   global.archmage = {}
 }
-global.archmage._service_client = new RpcClientInjected()
+global.archmage._service_client_proxy = new RpcClientInjected()

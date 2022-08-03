@@ -9,15 +9,11 @@
  */
 // import browser from "webextension-polyfill";
 
-///*
-const browser = ((globalThis as any).browser || globalThis.chrome) as any
 namespace browser {
   export namespace Runtime {
     export type Port = any
   }
 }
-
-//*/
 
 export interface Request {
   id: number
@@ -47,14 +43,17 @@ export class RpcClient {
 
   constructor(private channel: string) {}
 
-  connect(extensionId?: string) {
+  connect() {
     let resolve
     const promise = new Promise((r: (value: boolean) => void) => {
       resolve = r
     })
+    console.log('rpc connecting...')
+
+    const browser = ((globalThis as any).browser || globalThis.chrome) as any
+    this.port = browser.runtime.connect({ name: this.channel })
     this.firstConnected = [promise, resolve as any]
 
-    this.port = browser.runtime.connect(extensionId, { name: this.channel })
     this.port.onMessage.addListener(this.onMessage)
     this.port.onDisconnect.addListener(this.onDisconnect)
   }
@@ -142,6 +141,7 @@ export class RpcClient {
         error: `rpc disconnected`
       })
     }
+    this.port = undefined
     this.waits.clear()
   }
 }
