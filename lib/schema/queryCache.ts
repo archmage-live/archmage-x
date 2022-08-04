@@ -1,8 +1,9 @@
+import { PersistedClient } from '@tanstack/react-query-persist-client'
+
 export interface IQueryCache {
   id: string
-  data: any
-  accessedTime: number
+  persisted: PersistedClient
 }
 
-// unique key
-export const queryCacheSchemaV1 = 'id, accessedTime'
+// unique id
+export const queryCacheSchemaV1 = 'id'
