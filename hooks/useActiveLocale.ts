@@ -27,7 +27,7 @@ function parseLocale(
 }
 
 async function browserLocale(): Promise<SupportedLocale> {
-  let acceptLocaleCodes = []
+  let acceptLocaleCodes: string[] = []
   try {
     acceptLocaleCodes = await browser.i18n.getAcceptLanguages()
   } catch (e) {

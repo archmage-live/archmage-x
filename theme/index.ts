@@ -1,5 +1,9 @@
 import { ThemeConfig, theme as baseTheme, extendTheme } from '@chakra-ui/react'
-import { StyleFunctionProps, mode } from '@chakra-ui/theme-tools'
+import {
+  StyleFunctionProps,
+  mode,
+  transparentize
+} from '@chakra-ui/theme-tools'
 
 export const theme: Record<string, any> = extendTheme(
   {
@@ -8,7 +12,7 @@ export const theme: Record<string, any> = extendTheme(
         body: {
           fontFamily: 'body',
           color: mode('gray.800', 'whiteAlpha.900')(props),
-          bg: mode('white', 'gray.800')(props),
+          bg: mode('purple.50', 'gray.800')(props),
           lineHeight: 'base'
         },
         '*::placeholder': {
@@ -93,6 +97,33 @@ export const theme: Record<string, any> = extendTheme(
                 bg: grayBg
               },
               _active: { bg: mode(`${c}.700`, `${c}.600`)(props) }
+            }
+          },
+          ghost: (props: StyleFunctionProps) => {
+            const { colorScheme: c, theme } = props
+
+            if (c === 'gray') {
+              return {
+                color: mode(`inherit`, `whiteAlpha.900`)(props),
+                _hover: {
+                  bg: mode(`gray.100`, `whiteAlpha.200`)(props)
+                },
+                _active: { bg: mode(`gray.200`, `whiteAlpha.300`)(props) }
+              }
+            }
+
+            const darkHoverBg = transparentize(`${c}.100`, 0.06)(theme)
+            const darkActiveBg = transparentize(`${c}.100`, 0.12)(theme)
+
+            return {
+              color: mode(`${c}.600`, `${c}.200`)(props),
+              bg: 'transparent',
+              _hover: {
+                bg: mode(`${c}.50`, darkHoverBg)(props)
+              },
+              _active: {
+                bg: mode(`${c}.100`, darkActiveBg)(props)
+              }
             }
           }
         }

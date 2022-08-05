@@ -71,6 +71,7 @@ specifiers:
   plasmo: 0.45.2
   prettier: 2.7.1
   react: 18.2.0
+  react-blockies: ^1.4.1
   react-dom: 18.2.0
   react-icons: ^4.4.0
   react-router-dom: ^6.3.0
@@ -134,6 +135,7 @@ dependencies:
   path-browserify: 1.0.1
   plasmo: 0.45.2
   react: 18.2.0
+  react-blockies: 1.4.1_react@18.2.0
   react-dom: 18.2.0_react@18.2.0
   react-icons: 4.4.0_react@18.2.0
   react-router-dom: 6.3.0_biqbaboplfbrettd7655fr4n2y
@@ -8559,6 +8561,15 @@ packages:
     dependencies:
       randombytes: 2.1.0
       safe-buffer: 5.2.1
+    dev: false
+
+  /react-blockies/1.4.1_react@18.2.0:
+    resolution: {integrity: sha512-4N015X5oPNnD3xQPsiqolOFzPZSSWyc5mJhJUZShUCHtiGUxVN+1qsWTcglkHMNySux9hUofaispqcw9QkWP5Q==}
+    peerDependencies:
+      react: '>=15.0.0'
+    dependencies:
+      prop-types: 15.8.1
+      react: 18.2.0
     dev: false
 
   /react-clientside-effect/1.2.6_react@18.2.0:
