@@ -8,6 +8,8 @@ export enum StoreArea {
 export enum StoreKey {
   PASSWORD_HASH = 'password_hash',
   PASSWORD = 'password',
+  LAST_UNLOCK_TIME = 'lastUnlockTime',
+  AUTO_LOCK_TIME = 'autoLockTime',
   KEYSTORE_PREFIX = 'keystore'
 }
 

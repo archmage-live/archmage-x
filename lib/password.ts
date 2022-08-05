@@ -1,5 +1,5 @@
 import { sha256 } from '@ethersproject/sha2'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import { useStorage } from '@plasmohq/storage'
 

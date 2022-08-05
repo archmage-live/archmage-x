@@ -7,6 +7,7 @@ import { randomBytes } from '@ethersproject/random'
 import assert from 'assert'
 import { ethers } from 'ethers'
 
+import { setUnlockTime } from '~hooks/useLockTime'
 import { DB, generateName, getNextSortId } from '~lib/db'
 import { ENV } from '~lib/env'
 import { KEYSTORE } from '~lib/keystore'
@@ -74,7 +75,8 @@ class WalletServicePartial implements IWalletService {
 
 class WalletService extends WalletServicePartial {
   async createPassword(password: string) {
-    return PASSWORD.create(password)
+    await PASSWORD.create(password)
+    await setUnlockTime()
   }
 
   async checkPassword(password: string): Promise<boolean> {
@@ -93,6 +95,7 @@ class WalletService extends WalletServicePartial {
     const unlocked = await PASSWORD.unlock(password)
 
     if (unlocked) {
+      await setUnlockTime()
       KEYSTORE.unlock()
     }
 
