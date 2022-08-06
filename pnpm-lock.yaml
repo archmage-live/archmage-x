@@ -50,6 +50,7 @@ specifiers:
   '@zxcvbn-ts/language-en': ^2.0.1
   aptos: ^1.2.0
   assert: ^2.0.0
+  avvvatars-react: ^0.4.2
   babel-plugin-macros: ^3.1.0
   bs58: ^5.0.0
   buffer: ^6.0.3
@@ -119,6 +120,7 @@ dependencies:
   '@zxcvbn-ts/language-en': 2.0.1
   aptos: 1.2.0
   assert: 2.0.0
+  avvvatars-react: 0.4.2_vt6aeitzauirmcdhimiad2yjxy
   bs58: 5.0.0
   buffer: 6.0.3
   crypto-browserify: 3.12.0
@@ -4342,6 +4344,19 @@ packages:
     engines: {node: '>= 0.4'}
     dev: false
 
+  /avvvatars-react/0.4.2_vt6aeitzauirmcdhimiad2yjxy:
+    resolution: {integrity: sha512-D/bnSM+P6pQi71dFeFVqQsqmv+ct5XG7uO2lvJoiksALpXLd6kPgpRR1SUQxFZJkJNrkmg0NPgbhIgJgOsDYRQ==}
+    peerDependencies:
+      react: '>= 16'
+      react-dom: '>= 16'
+    dependencies:
+      goober: 2.1.10_csstype@3.1.0
+      react: 18.2.0
+      react-dom: 18.2.0_react@18.2.0
+    transitivePeerDependencies:
+      - csstype
+    dev: false
+
   /axe-core/4.4.2:
     resolution: {integrity: sha512-LVAaGp/wkkgYJcjmHsoKx4juT1aQvJyPcW09MLCjVTh3V2cc6PnyempiLMNH5iMdfIX/zdbjUx2KDjMLCTdPeA==}
     engines: {node: '>=12'}
@@ -6236,6 +6251,14 @@ packages:
 
   /globrex/0.1.2:
     resolution: {integrity: sha512-uHJgbwAMwNFf5mLst7IWLNg14x1CkeqglJb/K3doi4dw6q2IvAAmM/Y81kevy83wP+Sst+nutFTYOGg3d1lsxg==}
+    dev: false
+
+  /goober/2.1.10_csstype@3.1.0:
+    resolution: {integrity: sha512-7PpuQMH10jaTWm33sQgBQvz45pHR8N4l3Cu3WMGEWmHShAcTuuP7I+5/DwKo39fwti5A80WAjvqgz6SSlgWmGA==}
+    peerDependencies:
+      csstype: ^3.0.10
+    dependencies:
+      csstype: 3.1.0
     dev: false
 
   /got/12.1.0:

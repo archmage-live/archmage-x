@@ -11,4 +11,4 @@ export interface IWallet {
 }
 
 // unique name, unique hash
-export const walletSchemaV1 = '++id, sortId, walletType, &name, &hash'
+export const walletSchemaV1 = '++id, sortId, type, &name, &hash'

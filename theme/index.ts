@@ -20,6 +20,13 @@ export const theme: Record<string, any> = extendTheme(
         },
         '*, *::before, &::after': {
           borderColor: mode('gray.200', 'whiteAlpha.300')(props)
+        },
+        '*::-webkit-scrollbar': {
+          display: 'none'
+        },
+        '*': {
+          msOverflowStyle: 'none',
+          scrollbarWidth: 'none'
         }
       })
     },

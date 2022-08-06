@@ -5,11 +5,12 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { AlertText } from '~components/AlertText'
 import { usePassword } from '~lib/password'
 import { WALLET_SERVICE } from '~lib/services/walletService'
+import { createTab } from '~lib/util'
 
 export default function Unlock() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
-  const { isUnlocked } = usePassword()
+  const { exists: passwordExists, isUnlocked } = usePassword()
 
   const [locked, setLocked] = useState(false)
   const [password, setPassword] = useState('')
@@ -19,14 +20,24 @@ export default function Unlock() {
     setAlert('')
   }, [password])
 
-  const redirect = useCallback(() => {
-    const redirect = searchParams.get('redirect')
-    if (redirect) {
-      navigate(redirect, { replace: true })
-    } else {
-      navigate('/home', { replace: true })
+  const redirect = useCallback(
+    (to?: string, inTab?: boolean) => {
+      to = to || searchParams.get('redirect') || '/home'
+      if (!inTab) {
+        navigate(to, { replace: true })
+      } else {
+        createTab(to)
+      }
+    },
+    [navigate, searchParams]
+  )
+
+  useEffect(() => {
+    if (passwordExists === false) {
+      redirect('/tab/add-wallet', true)
+      window.close()
     }
-  }, [navigate, searchParams])
+  }, [passwordExists, redirect])
 
   useEffect(() => {
     if (isUnlocked) {

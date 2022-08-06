@@ -2,26 +2,15 @@ import { AddIcon, DragHandleIcon, LockIcon } from '@chakra-ui/icons'
 import { Button, Divider, HStack, Icon, Stack, Text } from '@chakra-ui/react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useNavigate } from 'react-router-dom'
-import browser from 'webextension-polyfill'
 
 import { DB } from '~lib/db'
 import { WALLET_SERVICE } from '~lib/services/walletService'
+import { createTab } from '~lib/util'
 
 interface SidebarProps {
   isOpen: boolean
 
   onClose(): void
-}
-
-function getRootHref() {
-  let href = window.location.href
-  const url = new URL(href)
-  const searchIndex = url.search ? href.lastIndexOf(url.search) : -1
-  const hashIndex = url.hash ? href.lastIndexOf(url.hash) : -1
-  return href.slice(
-    0,
-    searchIndex > -1 ? searchIndex : hashIndex > -1 ? hashIndex : href.length
-  )
 }
 
 export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
@@ -30,9 +19,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
   const navigate = useNavigate()
 
   const addWallet = () => {
-    browser.tabs.create({
-      url: getRootHref() + '#/tab/add-wallet'
-    })
+    createTab('#/tab/add-wallet')
   }
 
   const lock = async () => {

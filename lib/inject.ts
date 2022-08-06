@@ -36,7 +36,9 @@ browser.tabs.onUpdated.addListener(async (tabId, info) => {
 function filterUrl(url?: string) {
   return (
     url &&
-    (url.startsWith('chrome://') || url.startsWith('chrome-extension://'))
+    (url.startsWith('chrome://') ||
+      url.startsWith('chrome-extension://') ||
+      url.startsWith('https://chrome.google.com/webstore'))
   )
 }
 

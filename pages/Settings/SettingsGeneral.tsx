@@ -1,5 +1,4 @@
-import { IconButton, Select, Stack, useColorMode } from '@chakra-ui/react'
-import { FaMoon, FaSun } from 'react-icons/fa'
+import { Select, Stack, useColorMode } from '@chakra-ui/react'
 
 import { SaveInput } from '~components/SaveInput'
 import { LOCALE_LABEL } from '~constants/locales'
@@ -9,7 +8,7 @@ import { useLockTime } from '~hooks/useLockTime'
 import { SettingItem } from './SettingItem'
 
 export const SettingsGeneral = () => {
-  const { colorMode, toggleColorMode } = useColorMode()
+  const { colorMode, setColorMode } = useColorMode()
   const { userLocale, setUserLocale } = useUserLocale()
   const [lockTime, setLockTime] = useLockTime()
 
@@ -19,21 +18,13 @@ export const SettingsGeneral = () => {
         title="Theme"
         description="Choose your preferred theme."
         setting={
-          colorMode === 'light' ? (
-            <IconButton
-              colorScheme="purple"
-              icon={<FaMoon fontSize="1.25rem" />}
-              aria-label="Dark mode"
-              onClick={toggleColorMode}
-            />
-          ) : (
-            <IconButton
-              colorScheme="purple"
-              icon={<FaSun fontSize="1.25rem" />}
-              aria-label="Light mode"
-              onClick={toggleColorMode}
-            />
-          )
+          <Select
+            w={32}
+            value={colorMode!}
+            onChange={(e) => setColorMode(e.target.value)}>
+            <option value="light">Light</option>
+            <option value="dark">Dark</option>
+          </Select>
         }
       />
 
