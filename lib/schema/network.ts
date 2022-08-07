@@ -9,7 +9,7 @@ export interface INetwork {
   search: string
 }
 
-export const networkSchemaV1 = '++id, sortId, &[type+chainId], &search'
+export const networkSchemaV1 = '++id, sortId, &[type+chainId], search'
 
 export function createSearchString(...args: (string | undefined)[]) {
   let search: string[] = []

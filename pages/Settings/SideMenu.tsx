@@ -27,7 +27,7 @@ interface SideMenuProps {}
 export const SideMenu = ({}: SideMenuProps) => {
   return (
     <Flex as="section" minH="100%">
-      <Flex flex="1" maxW="2xs" py={6}>
+      <Flex flex="1" maxW="2xs">
         <Stack justify="space-between" spacing="1" width="full">
           <Stack spacing="4" shouldWrapChildren>
             {menu.map((item) => (

@@ -16,12 +16,12 @@ import {
 import { useCallback, useEffect, useState } from 'react'
 import { useWizard } from 'react-use-wizard'
 
+import { SwitchBar } from '~/components/SwitchBar'
 import { AlertText } from '~components/AlertText'
 import { HdPathInput } from '~components/HdPathInput'
 import { isMnemonic, isPrivateKey } from '~lib/utils'
 
 import { NameInput } from './NameInput'
-import { SwitchBar } from './SwitchBar'
 import {
   AddWalletKind,
   useAddWallet,
@@ -138,7 +138,7 @@ export const StepImportWallet = () => {
             private key.
           </Text>
 
-          <HStack justify="center">
+          <HStack justify="center" pt="4">
             <SwitchBar targets={importKinds} value={kind} onChange={setKind} />
           </HStack>
         </Stack>

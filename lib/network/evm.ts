@@ -37,7 +37,7 @@ interface ChainParent {
   bridges: { url: string }[]
 }
 
-export const EVM_NETWORKS_PRESETS: EvmChainInfo[] = [
+export const EVM_NETWORKS_PRESET: EvmChainInfo[] = [
   {
     name: 'Ethereum Mainnet',
     chain: 'ETH',

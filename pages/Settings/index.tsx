@@ -29,8 +29,8 @@ export default function Settings() {
       <TitleBar />
 
       <Container centerContent maxW="100%" pb="16" flex="1">
-        <Card w="96rem" minH="100%" pt={8}>
-          <Stack px={4}>
+        <Card w="96rem" h="100%" pt={8}>
+          <Stack px={4} h="100%">
             <HStack justify={'space-between'} pb={4}>
               <Text fontSize="3xl">Settings</Text>
 
@@ -48,10 +48,12 @@ export default function Settings() {
 
             <Divider />
 
-            <HStack align="start">
+            <HStack align="start" flex={1} spacing={6} py={6}>
               <SideMenu />
 
-              <Box flex={1} p={6} px={12}>
+              <Divider orientation="vertical" />
+
+              <Box flex={1} h="full">
                 <Routes>
                   <Route path="*" element={<Navigate to="general" replace />} />
                   <Route path="/general" element={<SettingsGeneral />} />

@@ -9,14 +9,13 @@ interface SwitchBarProps {
 
 export const SwitchBar = ({ targets, value, onChange }: SwitchBarProps) => {
   const btnColor = useColorModeValue('gray.500', 'gray.400')
-  const btnActiveColor = useColorModeValue('gray.900', 'white')
+  const btnActiveColor = useColorModeValue('purple.500', 'white')
   const btnActiveBg = useColorModeValue('gray.50', 'gray.800')
 
   return (
     <HStack
-      mt="4"
       bg={useColorModeValue('white', 'gray.900')}
-      boxShadow={useColorModeValue('lg', 'dark-lg')}
+      boxShadow={useColorModeValue('md', 'dark-lg')}
       borderRadius="3xl">
       {targets.map((target) => {
         return (
