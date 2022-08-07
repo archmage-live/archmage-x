@@ -20,3 +20,28 @@ export function useNetworks(type?: NetworkType) {
     }
   }, [type])
 }
+
+export async function reorderNetworks(startSortId: number, endSortId: number) {
+  const clockwise = startSortId < endSortId
+  const [lower, upper] = clockwise
+    ? [startSortId, endSortId]
+    : [endSortId, startSortId]
+
+  await DB.transaction('rw', [DB.networks], async () => {
+    const items = await DB.networks
+      .where('sortId')
+      .between(lower, upper, true, true)
+      .sortBy('sortId')
+    if (!items.length) {
+      return
+    }
+
+    for (let i = 0; i < items.length; i++) {
+      let sortId = items[i].sortId + (clockwise ? -1 : 1)
+      if (sortId > upper) sortId = lower
+      else if (sortId < lower) sortId = upper
+
+      await DB.networks.update(items[i], { sortId })
+    }
+  })
+}
