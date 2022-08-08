@@ -1,8 +1,9 @@
-import { Box, HStack, SimpleGrid, Stack } from '@chakra-ui/react'
+import { Box, Button, HStack, SimpleGrid, Stack } from '@chakra-ui/react'
 import { useEffect, useState } from 'react'
 
 import { SwitchBar } from '~components/SwitchBar'
 import { NetworkType } from '~lib/network'
+import { INetwork } from '~lib/schema/network'
 import { useNetworks } from '~lib/services/network'
 
 import { NetworkEdit } from './NetworkEdit'
@@ -21,11 +22,20 @@ export const SettingsNetworks = () => {
   const [kind, setKind] = useState<NetworkKind>(networkKinds[0])
 
   const networks = useNetworks(networkTypes[kind])
-  const [selected, setSelected] = useState(0)
+  const [selectedId, setSelectedId] = useState<number>()
+  const [editNetwork, setEditNetwork] = useState<INetwork>()
 
   useEffect(() => {
-    setSelected(0)
+    setSelectedId(undefined)
   }, [kind])
+
+  useEffect(() => {
+    if (selectedId !== undefined) {
+      setEditNetwork(networks?.find((net) => net.id === selectedId))
+    } else {
+      setEditNetwork(undefined)
+    }
+  }, [networks, selectedId])
 
   return (
     <Stack spacing={12} h="full">
@@ -35,18 +45,24 @@ export const SettingsNetworks = () => {
             <SwitchBar targets={networkKinds} value={kind} onChange={setKind} />
           </HStack>
 
-          {networks && (
+          {networks?.length && (
             <NetworksLists
               networks={networks}
-              selected={selected}
-              onSelected={setSelected}
+              selectedId={selectedId}
+              onSelectedId={setSelectedId}
             />
           )}
         </Stack>
 
-        <Box>
-          <NetworkEdit network={networks?.[selected]} />
-        </Box>
+        <Stack spacing={4}>
+          <HStack justify="end">
+            <Button size="md" colorScheme="purple">
+              Add Network
+            </Button>
+          </HStack>
+
+          <NetworkEdit network={editNetwork} />
+        </Stack>
       </SimpleGrid>
     </Stack>
   )

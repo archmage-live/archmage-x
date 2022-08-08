@@ -79,59 +79,70 @@ const NetworkItem = ({
     ? 'hidden'
     : ''
 
-  return (
-    <HStack
-      px={4}
-      py={2}
-      spacing={8}
-      align="center"
-      borderRadius="xl"
-      justify="space-between"
-      cursor="pointer"
-      bg={bg}
-      _hover={{ bg: hoverBg }}
-      transition="background 0.1s ease-out"
-      onClick={onClick}
-      data-group>
-      <HStack spacing={4}>
-        <Avvvatars
-          value={info.name}
-          displayValue={info.name ? info.name[0] : undefined}
-        />
-        <Text fontSize="lg" noOfLines={1} userSelect="none">
-          {info.name}
-        </Text>
-      </HStack>
+  const [transition, setTransition] = useState<string>()
+  useEffect(() => {
+    if (infoVisible === undefined) {
+      setTimeout(() => setTransition('background 0.1s ease-out'), 200)
+    } else {
+      setTransition(undefined)
+    }
+  }, [infoVisible])
 
+  return (
+    <Box py={1}>
       <HStack
-        spacing={4}
-        visibility={infoVisibility || 'hidden'}
-        _groupHover={{ visibility: infoVisibility || 'visible' }}>
-        <Stack fontSize="sm" color="gray.500">
-          <Text noOfLines={1} userSelect="none">
-            {info.description}
+        px={4}
+        py={2}
+        spacing={8}
+        align="center"
+        borderRadius="xl"
+        justify="space-between"
+        cursor="pointer"
+        bg={bg}
+        _hover={{ bg: hoverBg }}
+        transition={transition}
+        onClick={onClick}
+        data-group>
+        <HStack spacing={4}>
+          <Avvvatars
+            value={info.name}
+            displayValue={info.name ? info.name[0] : undefined}
+          />
+          <Text fontSize="lg" noOfLines={1} userSelect="none">
+            {info.name}
           </Text>
-          <HStack>
-            <Text userSelect="none">Chain ID: {info.chainId}</Text>
-            <Text userSelect="none">Currency: {info.currencySymbol}</Text>
-          </HStack>
-        </Stack>
-        <Box {...dragHandleProps}>
-          <Icon as={MdDragIndicator} fontSize="xl" />
-        </Box>
+        </HStack>
+
+        <HStack
+          spacing={4}
+          visibility={infoVisibility || 'hidden'}
+          _groupHover={{ visibility: infoVisibility || 'visible' }}>
+          <Stack fontSize="sm" color="gray.500">
+            <Text noOfLines={1} userSelect="none">
+              {info.description}
+            </Text>
+            <HStack>
+              <Text userSelect="none">Chain ID: {info.chainId}</Text>
+              <Text userSelect="none">Currency: {info.currencySymbol}</Text>
+            </HStack>
+          </Stack>
+          <Box {...dragHandleProps} p={2}>
+            <Icon as={MdDragIndicator} fontSize="xl" />
+          </Box>
+        </HStack>
       </HStack>
-    </HStack>
+    </Box>
   )
 }
 
 export const NetworksLists = ({
   networks: nets,
-  selected,
-  onSelected
+  selectedId,
+  onSelectedId
 }: {
   networks: INetwork[]
-  selected?: number
-  onSelected(selected: number): void
+  selectedId?: number
+  onSelectedId(selectedId: number): void
 }) => {
   const [networks, setNetworks] = useState<INetwork[]>([])
   useEffect(() => {
@@ -237,21 +248,21 @@ export const NetworksLists = ({
                           left={0}
                           transform={`translateY(${item.start}px)`}
                           w="full"
-                          h="64px"
-                          py={1}>
+                          h="64px">
                           <Box
                             ref={provided.innerRef}
-                            {...provided.draggableProps}>
+                            {...provided.draggableProps}
+                            h="full">
                             <NetworkItem
                               info={info}
-                              bg={item.index === selected ? hoverBg : undefined}
+                              bg={net.id === selectedId ? hoverBg : undefined}
                               hoverBg={hoverBg}
                               infoVisible={
                                 dragIndex !== undefined
                                   ? dragIndex === item.index
                                   : undefined
                               }
-                              onClick={() => onSelected(item.index)}
+                              onClick={() => onSelectedId(net.id!)}
                               dragHandleProps={provided.dragHandleProps}
                             />
                           </Box>

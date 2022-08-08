@@ -63,13 +63,13 @@ export const SettingsGeneral = () => {
               keepWithinRange: true,
               precision: 0
             }}
-            value={lockTime}
+            value={lockTime + ''}
             validate={(value) => {
               const n = +value
               if (isNaN(n)) {
                 return false
               }
-              return Math.min(n, 10000)
+              return Math.min(n, 10000) + ''
             }}
             onChange={(value) => setLockTime(+value)}
           />

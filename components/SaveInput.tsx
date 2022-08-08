@@ -11,41 +11,91 @@ import {
   NumberInputStepper
 } from '@chakra-ui/react'
 import { useEffect, useState } from 'react'
+import { useDebounce } from 'react-use'
 
-interface SaveInputProps<Value = string | number> {
+interface SaveInputProps {
   isNumber?: boolean
+  hideSaveIfNoChange?: boolean
+  stretchInput?: boolean
   props?: InputProps | NumberInputProps
 
-  value: Value
+  value: string
 
-  validate(value: Value): boolean | Value
+  validate(value: string): boolean | string
 
-  onChange(value: Value): void
+  asyncValidate?(value: string): Promise<boolean>
+
+  onChange(value: string): void
+
+  onInvalid?(value: boolean): void
 }
 
 export const SaveInput = ({
   isNumber,
+  hideSaveIfNoChange,
+  stretchInput,
   props = {},
   value,
+  validate,
+  asyncValidate,
   onChange,
-  validate
+  onInvalid
 }: SaveInputProps) => {
-  const [input, setInput] = useState<typeof value>('')
+  const [input, setInput] = useState(value)
   useEffect(() => {
     setInput(value)
   }, [value])
 
-  const onInput = (value: string) => {
-    const v = validate(value)
-    if (v === false) {
-      return
+  useEffect(() => {
+    onInvalid?.(false)
+  }, [input, onInvalid])
+
+  const [saveVisibility, setSaveVisibility] = useState<any>('hidden')
+  const [saveColorScheme, setSaveColorScheme] = useState('gray')
+  useDebounce(
+    () => {
+      setSaveVisibility(
+        hideSaveIfNoChange && input === value ? 'hidden' : 'visible'
+      )
+      setSaveColorScheme(input === value ? 'gray' : 'purple')
+    },
+    200,
+    [value, input]
+  )
+
+  const onValidate = (val: string) => {
+    let v = validate(val)
+    console.log(v, val, value)
+    switch (v) {
+      case false:
+        v = value
+        break
+      case true:
+        v = val
+        break
+      default:
+        break
     }
-    setInput(v !== true ? v : value)
+    setInput(v)
+    return v
   }
 
-  const onSave = () => {
-    if (input !== value) {
-      onChange(input)
+  const [isLoading, setIsLoading] = useState(false)
+
+  const onSave = async () => {
+    const save = onValidate(input)
+    if (save !== value) {
+      let willChange = true
+      if (asyncValidate) {
+        setIsLoading(true)
+        willChange = await asyncValidate(save)
+        setIsLoading(false)
+      }
+      if (willChange) {
+        onChange(save)
+      } else {
+        onInvalid?.(true)
+      }
     }
   }
 
@@ -55,14 +105,22 @@ export const SaveInput = ({
         <Input
           value={input}
           onChange={(e) => {
-            onInput(e.target.value)
+            setInput(e.target.value)
           }}
+          onBlur={(e) => {
+            onValidate(e.target.value)
+          }}
+          flex={stretchInput ? 1 : undefined}
           {...(props as InputProps)}
         />
       ) : (
         <NumberInput
           value={input}
-          onChange={onInput}
+          onChange={setInput}
+          onBlur={(e) => {
+            onValidate(e.target.value)
+          }}
+          flex={stretchInput ? 1 : undefined}
           {...(props as NumberInputProps)}>
           <NumberInputField />
           <NumberInputStepper>
@@ -73,7 +131,10 @@ export const SaveInput = ({
       )}
 
       <Button
-        colorScheme={input === value ? 'gray' : 'purple'}
+        visibility={saveVisibility}
+        colorScheme={saveColorScheme}
+        transition="all 0.2s"
+        isLoading={isLoading}
         onClick={onSave}>
         Save
       </Button>
