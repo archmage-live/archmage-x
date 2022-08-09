@@ -1,65 +1,12 @@
-import { DB } from '~lib/db'
-
 export interface IDerivedWallet {
   id?: number
   masterId: number // master wallet id
-  prefixPath: string // hd derivation path prefix
+  sortId: number
   index: number
-  name: string // may not unique
+  name: string
 }
 
-export const derivedWalletSchemaV1 = '++id, &[masterId+prefixPath+index]'
+// for specific masterId, unique index and unique name
+export const derivedWalletSchemaV1 = '++id, &[masterId+sortId], &[masterId+index], &[masterId+name]'
 
 const namePrefix = 'Wallet-'
-
-export class DerivedWallet implements IDerivedWallet {
-  id!: number
-  masterId!: number
-  prefixPath!: string
-  index!: number
-  name!: string
-
-  constructor(derivedWallet: IDerivedWallet) {
-    Object.assign(this, derivedWallet)
-  }
-
-  get path(): string {
-    return `${this.prefixPath}/${this.index}`
-  }
-
-  static derive({
-    masterId,
-    prefixPath,
-    index,
-    name
-  }: {
-    masterId: number
-    prefixPath: string
-    index: number
-    name?: string
-  }): DerivedWallet {
-    return new DerivedWallet({
-      masterId,
-      prefixPath,
-      index,
-      name: name || `${namePrefix}${index}`
-    })
-  }
-
-  async exists() {
-    return (
-      (await DB.derivedWallets
-        .where('[masterId+prefixPath+index]')
-        .equals([this.masterId, this.prefixPath, this.index])
-        .count()) > 0
-    )
-  }
-
-  async create() {
-    this.id = await DB.derivedWallets.add(this)
-  }
-
-  async delete() {
-    await DB.wallets.delete(this.id)
-  }
-}

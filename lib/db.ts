@@ -9,23 +9,29 @@ import {
 
 import type { IDerivedWallet } from '~lib/schema/derivedWallet'
 import { derivedWalletSchemaV1 } from '~lib/schema/derivedWallet'
+import { IHdPath, hdPathSchemaV1 } from '~lib/schema/hdPath'
 import { INetwork, networkSchemaV1 } from '~lib/schema/network'
 import { IQueryCache, queryCacheSchemaV1 } from '~lib/schema/queryCache'
 import type { IWallet } from '~lib/schema/wallet'
 import { walletSchemaV1 } from '~lib/schema/wallet'
+import { IWalletInfo, walletInfoSchemaV1 } from '~lib/schema/walletInfo'
 
 export class Database extends Dexie {
   wallets!: Dexie.Table<IWallet, number>
-  derivedWallets!: Dexie.Table<IDerivedWallet, number>
   networks!: Dexie.Table<INetwork, number>
+  hdPaths!: Dexie.Table<IHdPath, number>
+  derivedWallets!: Dexie.Table<IDerivedWallet, number>
+  walletInfos!: Dexie.Table<IWalletInfo, number>
   queryCache!: Dexie.Table<IQueryCache, number>
 
   constructor() {
     super('database')
     this.version(1).stores({
       wallets: walletSchemaV1,
-      derivedWallets: derivedWalletSchemaV1,
       networks: networkSchemaV1,
+      hdPaths: hdPathSchemaV1,
+      derivedWallets: derivedWalletSchemaV1,
+      walletInfos: walletInfoSchemaV1,
       queryCache: queryCacheSchemaV1
     })
   }

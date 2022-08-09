@@ -6,6 +6,9 @@ import type { WalletOpts } from '~lib/wallet'
 import { WalletType } from '~lib/wallet'
 
 export class EvmWallet {
+  static defaultPathPrefix = "m/44'/60'/0'/0"
+  static defaultPath = EvmWallet.defaultPathPrefix + '/0'
+
   wallet!: ethers.utils.HDNode | ethers.Wallet
 
   static async from({ id, type, path }: WalletOpts): Promise<EvmWallet> {
@@ -19,6 +22,9 @@ export class EvmWallet {
       wallet = ethers.utils.HDNode.fromMnemonic(mnemonic.phrase)
     } else if (type === WalletType.MNEMONIC_PRIVATE_KEY) {
       assert(mnemonic)
+      if (!path) {
+        path = EvmWallet.defaultPath
+      }
       wallet = ethers.Wallet.fromMnemonic(mnemonic.phrase, path)
     } else {
       assert(!path)

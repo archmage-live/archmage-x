@@ -10,33 +10,29 @@ import {
   DroppableProvided
 } from 'react-beautiful-dnd'
 
-import { INetwork } from '~lib/schema/network'
-import { reorderNetworks } from '~lib/services/network'
-import {
-  NetworkItem,
-  getBasicInfo
-} from '~pages/Settings/SettingsNetworks/NetworkItem'
+import { IWallet } from '~lib/schema/wallet'
+import { useWallets } from '~lib/services/walletService'
+import { WalletItem } from '~pages/Settings/SettingsWallets/WalletItem'
 
-export const NetworksLists = ({
-  networks: nets,
-  selectedId,
-  onSelectedId
-}: {
-  networks: INetwork[]
+interface WalletListProps {
   selectedId?: number
+
   onSelectedId(selectedId: number): void
-}) => {
-  const [networks, setNetworks] = useState<INetwork[]>([])
+}
+
+export const WalletList = ({ selectedId, onSelectedId }: WalletListProps) => {
+  const ws = useWallets()
+  const [wallets, setWallets] = useState<IWallet[]>([])
   useEffect(() => {
-    setNetworks(nets)
-  }, [nets])
+    if (ws) setWallets(ws)
+  }, [ws])
 
   const parentRef = useRef(null)
-  const networksVirtualizer = useVirtualizer({
-    count: networks.length,
+  const walletsVirtualizer = useVirtualizer({
+    count: wallets.length,
     getScrollElement: () => parentRef.current,
     estimateSize: () => 64,
-    getItemKey: (index) => networks[index].id!
+    getItemKey: (index) => wallets[index].id!
   })
 
   const hoverBg = useColorModeValue('purple.100', 'gray.800')
@@ -47,40 +43,16 @@ export const NetworksLists = ({
     setDragIndex(source.index)
   }, [])
 
-  const onDragEnd = useCallback(
-    async ({ source, destination }: DropResult) => {
-      setDragIndex(undefined)
+  const onDragEnd = useCallback(async ({ source, destination }: DropResult) => {
+    setDragIndex(undefined)
 
-      if (!destination) {
-        return
-      }
-      if (destination.index === source.index) {
-        return
-      }
-
-      // local sort
-      const [startSortId, endSortId] = [
-        networks[source.index].sortId,
-        networks[destination.index].sortId
-      ]
-      const nets = networks.slice()
-      const [lower, upper] = [
-        Math.min(source.index, destination.index),
-        Math.max(source.index, destination.index)
-      ]
-      const sortIds = nets.slice(lower, upper + 1).map((net) => net.sortId)
-      const [removed] = nets.splice(source.index, 1)
-      nets.splice(destination.index, 0, removed)
-      for (let index = lower; index <= upper; ++index) {
-        nets[index].sortId = sortIds[index - lower]
-      }
-      setNetworks(nets)
-
-      // async persist sort
-      await reorderNetworks(startSortId, endSortId)
-    },
-    [networks]
-  )
+    if (!destination) {
+      return
+    }
+    if (destination.index === source.index) {
+      return
+    }
+  }, [])
 
   return (
     <Box
@@ -95,15 +67,14 @@ export const NetworksLists = ({
           droppableId="list"
           mode="virtual"
           renderClone={(provided, snapshot, rubric) => {
-            const net = networks[rubric.source.index]
-            const info = getBasicInfo(net)
+            const wallet = wallets[rubric.source.index]
             return (
               <Box
                 ref={provided.innerRef}
                 {...provided.dragHandleProps}
                 {...provided.draggableProps}>
-                <NetworkItem
-                  info={info}
+                <WalletItem
+                  wallet={wallet}
                   bg={hoverBg}
                   infoVisible={
                     dragIndex !== undefined
@@ -116,14 +87,13 @@ export const NetworksLists = ({
           }}>
           {(provided: DroppableProvided) => (
             <div ref={provided.innerRef} {...provided.droppableProps}>
-              <Box h={networksVirtualizer.getTotalSize()} position="relative">
-                {networksVirtualizer.getVirtualItems().map((item) => {
-                  const net = networks[item.index]
-                  const info = getBasicInfo(net)
+              <Box h={walletsVirtualizer.getTotalSize()} position="relative">
+                {walletsVirtualizer.getVirtualItems().map((item) => {
+                  const wallet = wallets[item.index]
                   return (
                     <Draggable
-                      key={net.id}
-                      draggableId={net.id + ''}
+                      key={wallet.id}
+                      draggableId={wallet.id + ''}
                       index={item.index}>
                       {(provided) => (
                         <Box
@@ -138,16 +108,18 @@ export const NetworksLists = ({
                             ref={provided.innerRef}
                             {...provided.draggableProps}
                             h="full">
-                            <NetworkItem
-                              info={info}
-                              bg={net.id === selectedId ? hoverBg : undefined}
+                            <WalletItem
+                              wallet={wallet}
+                              bg={
+                                wallet.id === selectedId ? hoverBg : undefined
+                              }
                               hoverBg={hoverBg}
                               infoVisible={
                                 dragIndex !== undefined
                                   ? dragIndex === item.index
                                   : undefined
                               }
-                              onClick={() => onSelectedId(net.id!)}
+                              onClick={() => onSelectedId(wallet.id!)}
                               dragHandleProps={provided.dragHandleProps}
                             />
                           </Box>

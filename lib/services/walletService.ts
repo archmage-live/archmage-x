@@ -5,6 +5,8 @@ import {
 } from '@ethersproject/json-wallets/lib.esm/keystore'
 import { randomBytes } from '@ethersproject/random'
 import assert from 'assert'
+import Dexie from 'dexie'
+import { useLiveQuery } from 'dexie-react-hooks'
 import { ethers } from 'ethers'
 
 import { setUnlockTime } from '~hooks/useLockTime'
@@ -153,7 +155,8 @@ class WalletService extends WalletServicePartial {
       type,
       name: name || (await generateName(DB.wallets)),
       path,
-      hash: address // use address as hash
+      hash: address, // use address as hash
+      createdAt: Date.now()
     } as IWallet
 
     return {
@@ -204,3 +207,31 @@ function createWalletService(): IWalletService {
 }
 
 export const WALLET_SERVICE = createWalletService()
+
+export function useWallets() {
+  return useLiveQuery(() => {
+    return DB.wallets.orderBy('sortId').toArray()
+  })
+}
+
+export function useSubWallets(walletId: number, nextSortId = 0, limit = 96) {
+  return useLiveQuery(() => {
+    return (
+      DB.derivedWallets
+        .where('[masterId+sortId]')
+        // .between([walletId, nextSortId], [walletId, Dexie.maxKey])
+        .between([walletId, Dexie.minKey], [walletId, Dexie.maxKey])
+        // .limit(limit)
+        .toArray()
+    )
+  }, [walletId])
+}
+
+export function useWallet(walletId?: number) {
+  return useLiveQuery(() => {
+    if (walletId === undefined) {
+      return undefined
+    }
+    return DB.wallets.get(walletId)
+  }, [walletId])
+}

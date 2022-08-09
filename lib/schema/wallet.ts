@@ -7,6 +7,7 @@ export interface IWallet {
   name: string // unique
   path?: string
   hash: string // ensure the uniqueness of secret phrase
+  createdAt: number
   keystore?: string // encrypted keystore
 }
 

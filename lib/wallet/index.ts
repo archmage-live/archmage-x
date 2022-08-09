@@ -1,3 +1,8 @@
+import { NetworkKind } from '~lib/network'
+import { CosmWallet } from '~lib/wallet/cosm'
+import { EvmWallet } from '~lib/wallet/evm'
+import { SolWallet } from '~lib/wallet/sol'
+
 export enum WalletType {
   HD = 'hd',
   MNEMONIC_PRIVATE_KEY = 'mnemonic_private_key',
@@ -17,8 +22,19 @@ export interface SigningWallet {
 }
 
 export * from './evm'
-// export * from './cosm'
+export * from './cosm'
 export * from './aptos'
 export * from './sui'
 export * from './aleo'
 export * from './sol'
+
+export function getDefaultPathPrefix(networkKind: NetworkKind): string {
+  switch (networkKind) {
+    case NetworkKind.EVM:
+      return EvmWallet.defaultPathPrefix
+    case NetworkKind.COSM:
+      return CosmWallet.defaultPathPrefix
+    case NetworkKind.SOL:
+      return SolWallet.defaultPathPrefix
+  }
+}

@@ -102,7 +102,7 @@ export const HdPathInput = ({
         return (
           <HStack key={index}>
             <Text>/</Text>
-            <Component
+            <PathComponent
               value={
                 component.toNumber() -
                 (component.isHardened() ? HardenedBit : 0)
@@ -128,7 +128,7 @@ export const HdPathInput = ({
             onClick={onAddComponent}
           />
         )}
-        {hdPath.length > 3 && (
+        {hdPath.length > 2 && (
           <IconButton
             size="xs"
             aria-label="Remove HD path component"
@@ -141,7 +141,7 @@ export const HdPathInput = ({
   )
 }
 
-const Component = ({
+const PathComponent = ({
   value,
   onChange,
   changeable

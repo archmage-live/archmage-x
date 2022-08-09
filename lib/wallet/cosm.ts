@@ -12,6 +12,9 @@ import type { WalletOpts } from '~lib/wallet'
 import { WalletType } from '~lib/wallet'
 
 export class CosmWallet {
+  static defaultPathPrefix = "m/44'/118'/0'/0"
+  static defaultPath = CosmWallet.defaultPathPrefix + '/0'
+
   wallet!: DirectSecp256k1HdWallet | DirectSecp256k1Wallet
   mnemonic?: string
   prefix?: string
@@ -33,10 +36,13 @@ export class CosmWallet {
       wallet.prefix = prefix
     } else if (type === WalletType.MNEMONIC_PRIVATE_KEY) {
       assert(mnemonic)
+      if (!path) {
+        path = CosmWallet.defaultPath
+      }
       wallet.wallet = await DirectSecp256k1HdWallet.fromMnemonic(
         mnemonic.phrase,
         {
-          hdPaths: path ? [stringToPath(path)] : undefined,
+          hdPaths: [stringToPath(path)],
           prefix
         }
       )

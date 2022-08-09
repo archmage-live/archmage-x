@@ -51,6 +51,7 @@
     "bs58": "^5.0.0",
     "buffer": "^6.0.3",
     "crypto-browserify": "^3.12.0",
+    "dayjs": "^1.11.4",
     "dexie": "^3.2.2",
     "dexie-react-hooks": "^1.1.1",
     "ed25519-hd-key": "^1.2.0",
@@ -92,6 +93,7 @@
     "@types/node": "18.0.1",
     "@types/react": "18.0.14",
     "@types/react-beautiful-dnd": "^13.1.2",
+    "@types/react-blockies": "^1.4.1",
     "@types/react-dom": "18.0.5",
     "@types/webextension-polyfill": "^0.9.0",
     "babel-plugin-macros": "^3.1.0",
@@ -120,7 +122,11 @@
   "resolutions": {
     "libsodium": "file:./resolutions/noop",
     "libsodium-wrappers": "file:./resolutions/noop",
-    "readable-stream": "^4.1.0"
+    "readable-stream": "^4.1.0",
+    "@cosmjs/crypto": "file:./resolutions/@cosmjs/crypto",
+    "randombytes": "file:./resolutions/randombytes",
+    "pbkdf2": "file:./resolutions/pbkdf2",
+    "randomfill": "file:./resolutions/randomfill"
   },
   "alias": {
     "stream": "./resolutions/stream.js"

@@ -1,33 +1,26 @@
-import { Box, Button, HStack, SimpleGrid, Stack } from '@chakra-ui/react'
+import { Button, HStack, SimpleGrid, Stack } from '@chakra-ui/react'
 import { useEffect, useState } from 'react'
 
 import { SwitchBar } from '~components/SwitchBar'
-import { NetworkType } from '~lib/network'
+import { NETWORK_SCOPES, NetworkScope, getNetworkType } from '~lib/network'
 import { INetwork } from '~lib/schema/network'
 import { useNetworks } from '~lib/services/network'
 
 import { NetworkEdit } from './NetworkEdit'
 import { NetworksLists } from './NetworkLists'
 
-const networkKinds = ['All', 'EVM', 'Cosm', 'Experimental']
-type NetworkKind = typeof networkKinds[number]
-const networkTypes: { [key in NetworkKind]: NetworkType | undefined } = {
-  All: undefined,
-  EVM: NetworkType.EVM,
-  Cosm: NetworkType.COSM,
-  Experimental: NetworkType.OTHER
-}
-
 export const SettingsNetworks = () => {
-  const [kind, setKind] = useState<NetworkKind>(networkKinds[0])
+  const [networkScope, setNetworkScope] = useState<NetworkScope>(
+    NETWORK_SCOPES[0]
+  )
 
-  const networks = useNetworks(networkTypes[kind])
+  const networks = useNetworks(getNetworkType(networkScope))
   const [selectedId, setSelectedId] = useState<number>()
   const [editNetwork, setEditNetwork] = useState<INetwork>()
 
   useEffect(() => {
     setSelectedId(undefined)
-  }, [kind])
+  }, [networkScope])
 
   useEffect(() => {
     if (selectedId !== undefined) {
@@ -42,7 +35,11 @@ export const SettingsNetworks = () => {
       <SimpleGrid columns={2} spacing={16} h="full">
         <Stack spacing={6}>
           <HStack justify="center">
-            <SwitchBar targets={networkKinds} value={kind} onChange={setKind} />
+            <SwitchBar
+              targets={NETWORK_SCOPES}
+              value={networkScope}
+              onChange={setNetworkScope}
+            />
           </HStack>
 
           {networks?.length && (
@@ -54,7 +51,7 @@ export const SettingsNetworks = () => {
           )}
         </Stack>
 
-        <Stack spacing={4}>
+        <Stack spacing={6}>
           <HStack justify="end">
             <Button size="md" colorScheme="purple">
               Add Network

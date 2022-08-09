@@ -9,7 +9,8 @@ import { KEYSTORE } from '~lib/keystore'
 import { WalletOpts, WalletType } from '~lib/wallet'
 
 export class SolWallet {
-  static defaultPath = "44'/501'/0'"
+  static defaultPathPrefix = "44'/501'/0'"
+  static defaultPath = SolWallet.defaultPathPrefix + "/0'"
 
   wallet!: HDNode | Keypair
 
