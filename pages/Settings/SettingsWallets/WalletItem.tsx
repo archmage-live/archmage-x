@@ -1,12 +1,14 @@
-import { Box, HStack, Icon, Stack, Text } from '@chakra-ui/react'
-import { useEffect, useState } from 'react'
+import { Box, HStack, Icon, Stack, Text, useDisclosure } from '@chakra-ui/react'
+import { useEffect, useRef, useState } from 'react'
 import { DraggableProvidedDragHandleProps } from 'react-beautiful-dnd'
 import Blockies from 'react-blockies'
 import { MdDragIndicator } from 'react-icons/md'
+import { useDebounce } from 'react-use'
 
 import { dayjs } from '~lib/dayjs'
 import { IWallet } from '~lib/schema/wallet'
 import { WalletType } from '~lib/wallet'
+import { SubWalletList } from '~pages/Settings/SettingsWallets/SubWalletList'
 
 function getWalletType(type: WalletType) {
   switch (type) {
@@ -21,21 +23,38 @@ function getWalletType(type: WalletType) {
   }
 }
 
-export const WalletItem = ({
-  wallet,
-  bg,
-  hoverBg,
-  infoVisible,
-  onClick,
-  dragHandleProps = {} as DraggableProvidedDragHandleProps
-}: {
+interface WalletItemProps {
   wallet: IWallet
   bg?: string
   hoverBg?: string
   infoVisible?: boolean
   onClick?: () => void
   dragHandleProps?: DraggableProvidedDragHandleProps
-}) => {
+  measureElement?: (element?: HTMLElement | null) => any
+  closed?: boolean
+}
+
+export const WalletItem = ({
+  wallet,
+  bg,
+  hoverBg,
+  infoVisible,
+  onClick,
+  dragHandleProps = {} as DraggableProvidedDragHandleProps,
+  measureElement
+}: WalletItemProps) => {
+  const elRef = useRef(null)
+  const { isOpen, onToggle } = useDisclosure()
+  useDebounce(
+    () => {
+      measureElement?.(elRef.current)
+    },
+    50,
+    [isOpen, measureElement]
+  )
+
+  const [selectedSubWalletId, setSelectedSubWalletId] = useState<number>()
+
   const infoVisibility = infoVisible
     ? 'visible'
     : infoVisible === false
@@ -52,7 +71,7 @@ export const WalletItem = ({
   }, [infoVisible])
 
   return (
-    <Box py={1}>
+    <Box py={1} ref={elRef}>
       <HStack
         px={4}
         py={2}
@@ -65,16 +84,13 @@ export const WalletItem = ({
         _hover={{ bg: hoverBg }}
         transition={transition}
         onClick={onClick}
+        onDoubleClick={onToggle}
         data-group>
         <HStack spacing={4}>
           <Box borderRadius="50%" overflow="hidden">
-            <Blockies
-              seed={wallet.hash}
-              size={10}
-              scale={3}
-            />
+            <Blockies seed={wallet.hash} size={10} scale={3} />
           </Box>
-          <Text fontSize="lg" noOfLines={1} userSelect="none">
+          <Text fontSize="lg" noOfLines={1}>
             {wallet.name}
           </Text>
         </HStack>
@@ -84,18 +100,22 @@ export const WalletItem = ({
           visibility={infoVisibility || 'hidden'}
           _groupHover={{ visibility: infoVisibility || 'visible' }}>
           <Stack fontSize="sm" color="gray.500">
-            <Text noOfLines={1} userSelect="none">
-              {getWalletType(wallet.type)}
-            </Text>
-            <Text userSelect="none">
-              Created At: {dayjs(wallet.createdAt).fromNow()}
-            </Text>
+            <Text noOfLines={1}>{getWalletType(wallet.type)}</Text>
+            <Text>Created At: {dayjs(wallet.createdAt).fromNow()}</Text>
           </Stack>
           <Box {...dragHandleProps} p={2}>
             <Icon as={MdDragIndicator} fontSize="xl" />
           </Box>
         </HStack>
       </HStack>
+
+      {isOpen && wallet.type === WalletType.HD && (
+        <SubWalletList
+          masterId={wallet.id!}
+          selectedId={selectedSubWalletId}
+          onSelectedId={setSelectedSubWalletId}
+        />
+      )}
     </Box>
   )
 }

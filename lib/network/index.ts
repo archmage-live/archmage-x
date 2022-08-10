@@ -4,7 +4,7 @@ export enum NetworkType {
   OTHER = 'other'
 }
 
-export const NETWORK_SCOPES = ['All', 'EVM', 'Cosm', 'Experimental']
+export const NETWORK_SCOPES = ['All', 'EVM', 'Cosm', 'Other']
 
 export type NetworkScope = typeof NETWORK_SCOPES[number]
 
@@ -12,7 +12,7 @@ const NETWORK_TYPES: { [key in NetworkScope]: NetworkType | undefined } = {
   All: undefined,
   EVM: NetworkType.EVM,
   Cosm: NetworkType.COSM,
-  Experimental: NetworkType.OTHER
+  Other: NetworkType.OTHER
 }
 
 export function getNetworkType(scope: NetworkScope): NetworkType | undefined {

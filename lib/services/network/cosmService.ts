@@ -36,7 +36,6 @@ export class CosmNetworkService implements ICosmNetworkService {
         search: createSearchString(net.chainId, net.chainName)
       } as INetwork
     })
-    console.log(nets)
     await DB.networks.bulkAdd(nets)
     console.log('initialized cosm networks')
   }

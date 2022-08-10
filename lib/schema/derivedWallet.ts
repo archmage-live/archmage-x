@@ -8,7 +8,7 @@ export interface IDerivedWallet {
 
 // for specific masterId, unique sortId/index/name
 export const derivedWalletSchemaV1 =
-  '++id, &[masterId+sortId], &[masterId+index], &[masterId+name]'
+  '++id, [masterId+sortId], &[masterId+index], &[masterId+name]'
 
 const namePrefix = 'Wallet '
 

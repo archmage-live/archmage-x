@@ -2,6 +2,7 @@ import { Box, useColorModeValue } from '@chakra-ui/react'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
+  BeforeCapture,
   DragDropContext,
   DragStart,
   Draggable,
@@ -11,7 +12,7 @@ import {
 } from 'react-beautiful-dnd'
 
 import { IWallet } from '~lib/schema/wallet'
-import { useWallets } from '~lib/services/walletService'
+import { reorderWallets, useWallets } from '~lib/services/walletService'
 import { WalletItem } from '~pages/Settings/SettingsWallets/WalletItem'
 
 interface WalletListProps {
@@ -43,16 +44,38 @@ export const WalletList = ({ selectedId, onSelectedId }: WalletListProps) => {
     setDragIndex(source.index)
   }, [])
 
-  const onDragEnd = useCallback(async ({ source, destination }: DropResult) => {
-    setDragIndex(undefined)
+  const onDragEnd = useCallback(
+    async ({ source, destination }: DropResult) => {
+      setDragIndex(undefined)
 
-    if (!destination) {
-      return
-    }
-    if (destination.index === source.index) {
-      return
-    }
-  }, [])
+      if (!destination) {
+        return
+      }
+      if (destination.index === source.index) {
+        return
+      }
+
+      const [startSortId, endSortId] = [
+        wallets[source.index].sortId,
+        wallets[destination.index].sortId
+      ]
+      const ws = wallets.slice()
+      const [lower, upper] = [
+        Math.min(source.index, destination.index),
+        Math.max(source.index, destination.index)
+      ]
+      const sortIds = ws.slice(lower, upper + 1).map((w) => w.sortId)
+      const [removed] = ws.splice(source.index, 1)
+      ws.splice(destination.index, 0, removed)
+      for (let index = lower; index <= upper; ++index) {
+        ws[index].sortId = sortIds[index - lower]
+      }
+      setWallets(ws)
+
+      await reorderWallets(startSortId, endSortId)
+    },
+    [wallets]
+  )
 
   return (
     <Box
@@ -61,8 +84,9 @@ export const WalletList = ({ selectedId, onSelectedId }: WalletListProps) => {
       overflowY="auto"
       borderRadius="xl"
       p="14px"
+      userSelect="none"
       bg={useColorModeValue('purple.50', 'blackAlpha.400')}>
-      <DragDropContext onDragEnd={onDragEnd} onDragStart={onDragStart}>
+      <DragDropContext onDragStart={onDragStart} onDragEnd={onDragEnd}>
         <Droppable
           droppableId="list"
           mode="virtual"
@@ -97,17 +121,15 @@ export const WalletList = ({ selectedId, onSelectedId }: WalletListProps) => {
                       index={item.index}>
                       {(provided) => (
                         <Box
-                          ref={item.measureElement}
                           position="absolute"
                           top={0}
                           left={0}
                           transform={`translateY(${item.start}px)`}
                           w="full"
-                          h="64px">
+                          minH="64px">
                           <Box
                             ref={provided.innerRef}
-                            {...provided.draggableProps}
-                            h="full">
+                            {...provided.draggableProps}>
                             <WalletItem
                               wallet={wallet}
                               bg={
@@ -121,6 +143,7 @@ export const WalletList = ({ selectedId, onSelectedId }: WalletListProps) => {
                               }
                               onClick={() => onSelectedId(wallet.id!)}
                               dragHandleProps={provided.dragHandleProps}
+                              measureElement={item.measureElement}
                             />
                           </Box>
                         </Box>

@@ -89,6 +89,7 @@ export const NetworksLists = ({
       overflowY="auto"
       borderRadius="xl"
       p="14px"
+      userSelect="none"
       bg={useColorModeValue('purple.50', 'blackAlpha.400')}>
       <DragDropContext onDragEnd={onDragEnd} onDragStart={onDragStart}>
         <Droppable

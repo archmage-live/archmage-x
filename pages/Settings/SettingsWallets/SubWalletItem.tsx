@@ -1,55 +1,23 @@
 import { Box, HStack, Icon, Stack, Text } from '@chakra-ui/react'
-import Avvvatars from 'avvvatars-react'
 import { useEffect, useState } from 'react'
 import { DraggableProvidedDragHandleProps } from 'react-beautiful-dnd'
+import Blockies from 'react-blockies'
 import { MdDragIndicator } from 'react-icons/md'
 
-import { NetworkType } from '~lib/network'
-import { AppChainInfo as CosmChainInfo } from '~lib/network/cosm'
-import { EvmChainInfo } from '~lib/network/evm'
-import { INetwork } from '~lib/schema/network'
+import { dayjs } from '~lib/dayjs'
+import { IDerivedWallet } from '~lib/schema/derivedWallet'
+import { IWallet } from '~lib/schema/wallet'
+import { WalletType } from '~lib/wallet'
 
-interface NetworkBasicInfo {
-  name: string
-  description?: string
-  chainId: number | string
-  currencySymbol: string
-}
-
-export function getBasicInfo(network: INetwork): NetworkBasicInfo {
-  switch (network.type) {
-    case NetworkType.EVM: {
-      const info = network.info as EvmChainInfo
-      return {
-        name: info.name,
-        description: info.title || info.name,
-        chainId: info.chainId,
-        currencySymbol: info.nativeCurrency.symbol
-      }
-    }
-    case NetworkType.COSM: {
-      const info = network.info as CosmChainInfo
-      return {
-        name: info.chainName,
-        description: info.chainName,
-        chainId: info.chainId,
-        currencySymbol: info.feeCurrencies?.[0].coinDenom
-      }
-    }
-    default:
-      return {} as NetworkBasicInfo
-  }
-}
-
-export const NetworkItem = ({
-  info,
+export const SubWalletItem = ({
+  wallet,
   bg,
   hoverBg,
   infoVisible,
   onClick,
   dragHandleProps = {} as DraggableProvidedDragHandleProps
 }: {
-  info: NetworkBasicInfo
+  wallet: IDerivedWallet
   bg?: string
   hoverBg?: string
   infoVisible?: boolean
@@ -87,12 +55,15 @@ export const NetworkItem = ({
         onClick={onClick}
         data-group>
         <HStack spacing={4}>
-          <Avvvatars
-            value={info.name}
-            displayValue={info.name ? info.name[0] : undefined}
-          />
+          <Box borderRadius="50%" overflow="hidden">
+            <Blockies
+              seed={`${wallet.masterId}-${wallet.index}`}
+              size={10}
+              scale={3}
+            />
+          </Box>
           <Text fontSize="lg" noOfLines={1}>
-            {info.name}
+            {wallet.name}
           </Text>
         </HStack>
 
@@ -100,13 +71,7 @@ export const NetworkItem = ({
           spacing={4}
           visibility={infoVisibility || 'hidden'}
           _groupHover={{ visibility: infoVisibility || 'visible' }}>
-          <Stack fontSize="sm" color="gray.500">
-            <Text noOfLines={1}>{info.description}</Text>
-            <HStack>
-              <Text>Chain ID: {info.chainId}</Text>
-              <Text>Currency: {info.currencySymbol}</Text>
-            </HStack>
-          </Stack>
+          <Stack fontSize="sm" color="gray.500"></Stack>
           <Box {...dragHandleProps} p={2}>
             <Icon as={MdDragIndicator} fontSize="xl" />
           </Box>
