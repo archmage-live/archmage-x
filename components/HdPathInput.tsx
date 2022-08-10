@@ -84,7 +84,9 @@ export const HdPathInput = ({
       hdPath
         .slice()
         .concat(
-          isEd25519Curve ? Slip10RawIndex.hardened(0) : Slip10RawIndex.normal(0)
+          isEd25519Curve || hdPath.length < 3
+            ? Slip10RawIndex.hardened(0)
+            : Slip10RawIndex.normal(0)
         )
     )
     onChange(path)

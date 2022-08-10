@@ -10,13 +10,19 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { ethers } from 'ethers'
 
 import { setUnlockTime } from '~hooks/useLockTime'
-import { DB, generateName, getNextSortId } from '~lib/db'
+import { DB, generateName, getNextField } from '~lib/db'
 import { ENV } from '~lib/env'
 import { KEYSTORE } from '~lib/keystore'
+import { NetworkKind } from '~lib/network'
 import { PASSWORD } from '~lib/password'
 import { SERVICE_WORKER_CLIENT, SERVICE_WORKER_SERVER } from '~lib/rpc'
+import {
+  IDerivedWallet,
+  getDefaultDerivedName
+} from '~lib/schema/derivedWallet'
 import { IWallet } from '~lib/schema/wallet'
-import { WalletType } from '~lib/wallet'
+import { IWalletInfo } from '~lib/schema/walletInfo'
+import { WalletType, getDefaultPathPrefix, getSigningWallet } from '~lib/wallet'
 
 export interface IWalletService {
   createPassword(password: string): Promise<void>
@@ -54,9 +60,11 @@ export interface IWalletService {
 
   deleteWallet(id: number): Promise<void>
 
-  getWallet(): Promise<void>
+  getWallet(id: number): Promise<IWallet | undefined>
 
   listWallets(): Promise<IWallet[]>
+
+  deriveSubWallets(id: number, num: number): Promise<void>
 }
 
 // @ts-ignore
@@ -151,7 +159,7 @@ class WalletService extends WalletServicePartial {
     }
 
     const wallet = {
-      sortId: await getNextSortId(DB.wallets),
+      sortId: await getNextField(DB.wallets),
       type,
       name: name || (await generateName(DB.wallets)),
       path,
@@ -166,9 +174,13 @@ class WalletService extends WalletServicePartial {
   }
 
   async createWallet(wallet: IWallet, decrypted: _KeystoreAccount) {
-    wallet.id = await DB.wallets.add(wallet)
+    await DB.transaction('rw', [DB.wallets, DB.hdPaths], async () => {
+      wallet.id = await DB.wallets.add(wallet)
 
-    await KEYSTORE.set(wallet.id, new KeystoreAccount(decrypted))
+      await this.createHdPaths(wallet.id)
+    })
+
+    await KEYSTORE.set(wallet.id!, new KeystoreAccount(decrypted))
     // time-consuming, so do not wait for it
     KEYSTORE.persist(wallet)
   }
@@ -181,12 +193,165 @@ class WalletService extends WalletServicePartial {
     await DB.wallets.delete(id)
   }
 
-  async getWallet() {
-    // TODO
+  async getWallet(id: number): Promise<IWallet | undefined> {
+    return DB.wallets.get(id)
   }
 
   async listWallets(): Promise<IWallet[]> {
     return DB.wallets.toArray()
+  }
+
+  async deriveSubWallets(id: number, num: number) {
+    const nextSortId = await getNextField(
+      DB.derivedWallets,
+      'sortId',
+      '[masterId+sortId]'
+    )
+    const nextIndex = await getNextField(
+      DB.derivedWallets,
+      'index',
+      '[masterId+index]'
+    )
+    const subWallets = [...Array(num).keys()].map((n) => {
+      return {
+        masterId: id,
+        sortId: nextSortId + n,
+        index: nextIndex + n,
+        name: getDefaultDerivedName(nextIndex + n)
+      } as IDerivedWallet
+    })
+    await DB.derivedWallets.bulkAdd(subWallets)
+  }
+
+  async getSubWallets(id: number, startIndex = 0, num = 50) {
+    return DB.derivedWallets
+      .where('[masterId+index]')
+      .between([id, startIndex], [id, startIndex + num])
+      .toArray()
+  }
+
+  async ensureWalletInfo(
+    wallet: IWallet,
+    index: number | undefined,
+    networkKind: NetworkKind,
+    chainId: number | string
+  ) {
+    assert(
+      index !== undefined
+        ? wallet.type === WalletType.HD
+        : wallet.type !== WalletType.HD
+    )
+    const signingWallet = await getSigningWallet(wallet, networkKind, chainId)
+    let address
+    if (wallet.type === WalletType.HD) {
+      const hdPath = await DB.hdPaths
+        .where({ masterId: wallet.id, networkKind })
+        .first()
+      assert(hdPath)
+      const subSigningWallet = await signingWallet.derive(hdPath.path, index!)
+      address = subSigningWallet.address
+    } else {
+      address = signingWallet.address
+    }
+    const existing = await DB.walletInfos
+      .where({
+        masterId: wallet.id,
+        index,
+        networkKind,
+        chainId
+      })
+      .first()
+    if (existing) {
+      return
+    }
+    await DB.walletInfos.add({
+      masterId: wallet.id!,
+      index,
+      networkKind,
+      chainId,
+      address,
+      info: {}
+    })
+  }
+
+  async ensureSubWalletsInfo(
+    id: number,
+    networkKind: NetworkKind,
+    chainId: number | string
+  ) {
+    const wallet = await this.getWallet(id)
+    assert(wallet)
+    const signingWallet = await getSigningWallet(wallet, networkKind, chainId)
+    const hdPath = await DB.hdPaths.where({ masterId: id, networkKind }).first()
+    assert(hdPath)
+
+    const subWallets = await DB.derivedWallets
+      .where('[masterId+index]')
+      .between([id, Dexie.minKey], [id, Dexie.maxKey])
+      .toArray()
+    if (!subWallets.length) {
+      return
+    }
+    const walletInfos = await DB.walletInfos
+      .where('[masterId+networkKind+chainId+index]')
+      .between(
+        [id, networkKind, chainId, subWallets[0].index],
+        [id, networkKind, chainId, subWallets[subWallets.length - 1].index],
+        true,
+        true
+      )
+      .toArray()
+    if (walletInfos.length === subWallets.length) {
+      return
+    }
+    const set = new Set()
+    for (const info of walletInfos) {
+      set.add(info.index)
+    }
+    const bulkAdd = []
+    for (const subWallet of subWallets) {
+      if (set.has(subWallet.index)) {
+        continue
+      }
+      const subSigningWallet = await signingWallet.derive(
+        hdPath.path,
+        subWallet.index
+      )
+      bulkAdd.push({
+        masterId: id,
+        index: subWallet.index,
+        networkKind,
+        chainId,
+        address: subSigningWallet.address
+      } as IWalletInfo)
+    }
+    await DB.walletInfos.bulkAdd(bulkAdd)
+  }
+
+  async getSubWalletsInfo(
+    id: number,
+    networkKind: NetworkKind,
+    chainId: number | string,
+    startIndex = 0,
+    num = 50
+  ) {
+    return DB.walletInfos
+      .where('[masterId+networkKind+chainId+index]')
+      .between(
+        [id, networkKind, chainId, startIndex],
+        [id, networkKind, chainId, startIndex + num]
+      )
+      .toArray()
+  }
+
+  private async createHdPaths(id: number) {
+    for (const networkKind of Object.values(NetworkKind) as NetworkKind[]) {
+      await DB.hdPaths.add({
+        masterId: id,
+        networkKind,
+        path: getDefaultPathPrefix(networkKind)
+      })
+    }
   }
 }
 
@@ -233,5 +398,24 @@ export function useWallet(walletId?: number) {
       return undefined
     }
     return DB.wallets.get(walletId)
+  }, [walletId])
+}
+
+export function useHdPaths(
+  walletId?: number
+): Map<NetworkKind, string> | undefined {
+  return useLiveQuery(async () => {
+    if (walletId === undefined) {
+      return undefined
+    }
+    const m = new Map<NetworkKind, string>()
+    const hdPaths = await DB.hdPaths
+      .where('masterId')
+      .equals(walletId)
+      .toArray()
+    for (const hdPath of hdPaths) {
+      m.set(hdPath.networkKind, hdPath.path)
+    }
+    return m
   }, [walletId])
 }

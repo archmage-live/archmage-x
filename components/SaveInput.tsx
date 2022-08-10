@@ -17,6 +17,7 @@ interface SaveInputProps {
   isNumber?: boolean
   hideSaveIfNoChange?: boolean
   stretchInput?: boolean
+  saveTitle?: string
   props?: InputProps | NumberInputProps
 
   value: string
@@ -34,6 +35,7 @@ export const SaveInput = ({
   isNumber,
   hideSaveIfNoChange,
   stretchInput,
+  saveTitle,
   props = {},
   value,
   validate,
@@ -65,7 +67,6 @@ export const SaveInput = ({
 
   const onValidate = (val: string) => {
     let v = validate(val)
-    console.log(v, val, value)
     switch (v) {
       case false:
         v = value
@@ -136,7 +137,7 @@ export const SaveInput = ({
         transition="all 0.2s"
         isLoading={isLoading}
         onClick={onSave}>
-        Save
+        {saveTitle || 'Save'}
       </Button>
     </HStack>
   )

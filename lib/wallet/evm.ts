@@ -2,10 +2,11 @@ import assert from 'assert'
 import { ethers } from 'ethers'
 
 import { KEYSTORE } from '~lib/keystore'
-import type { WalletOpts } from '~lib/wallet'
-import { WalletType } from '~lib/wallet'
 
-export class EvmWallet {
+import type { SigningWallet, WalletOpts } from './base'
+import { WalletType } from './base'
+
+export class EvmWallet implements SigningWallet {
   static defaultPathPrefix = "m/44'/60'/0'/0"
   static defaultPath = EvmWallet.defaultPathPrefix + '/0'
 
@@ -36,12 +37,16 @@ export class EvmWallet {
     } as EvmWallet
   }
 
-  derive(prefixPath: string, index: number): EvmWallet {
+  async derive(prefixPath: string, index: number): Promise<EvmWallet> {
     assert(this.wallet instanceof ethers.utils.HDNode)
     const path = `${prefixPath}/${index}`
     const wallet = this.wallet.derivePath(path)
     return {
       wallet
     } as EvmWallet
+  }
+
+  get address(): string {
+    return this.wallet.address
   }
 }

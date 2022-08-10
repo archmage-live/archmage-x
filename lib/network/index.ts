@@ -37,8 +37,6 @@ const NETWORK_KIND_TYPES: {
   Solana: NetworkKind.SOL
 }
 
-export function getNetworkKind(
-  scope: NetworkKindScope
-): NetworkKind | undefined {
-  return NETWORK_KIND_TYPES[scope]
+export function getNetworkKind(scope: NetworkKindScope): NetworkKind {
+  return NETWORK_KIND_TYPES[scope]!
 }

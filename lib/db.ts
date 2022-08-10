@@ -42,11 +42,18 @@ export const DB = new Database()
 
 type StringLiteral<T> = T extends `${string & T}` ? T : never
 
-export async function getNextSortId<
+export async function getNextField<
   K,
   T extends { [P in StringLiteral<K>]: number }
->(table: Dexie.Table<T>, key = 'sortId' as StringLiteral<K>): Promise<number> {
-  const lastBySortId = await table.orderBy(key).last()
+>(
+  table: Dexie.Table<T>,
+  key = 'sortId' as StringLiteral<K>,
+  orderBy?: string
+): Promise<number> {
+  const lastBySortId = await table
+    .orderBy(orderBy || key)
+    .reverse()
+    .first()
   return lastBySortId && lastBySortId[key] !== undefined
     ? lastBySortId[key] + 1
     : 0

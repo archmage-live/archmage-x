@@ -1,13 +1,18 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 
-import { DB, getNextSortId } from '~lib/db'
+import { DB, getNextField } from '~lib/db'
 import { ENV } from '~lib/env'
-import { NetworkType } from '~lib/network'
+import { NetworkKind, NetworkType } from '~lib/network'
 import { EmbedChainInfos as CosmChainInfos } from '~lib/network/cosm'
 import { SERVICE_WORKER_CLIENT, SERVICE_WORKER_SERVER } from '~lib/rpc'
 import { INetwork, createSearchString } from '~lib/schema/network'
 
-export interface ICosmNetworkService {}
+export interface ICosmNetworkService {
+  getNetwork(
+    kind: NetworkKind,
+    chainId: string | number
+  ): Promise<INetwork | undefined>
+}
 
 export class CosmNetworkService implements ICosmNetworkService {
   static async init() {
@@ -20,11 +25,12 @@ export class CosmNetworkService implements ICosmNetworkService {
         ['cosmoshub-4', 'osmosis-1', 'secret-4'].indexOf(net.chainId) > -1
     )
 
-    const nextSortId = await getNextSortId(DB.networks)
+    const nextSortId = await getNextField(DB.networks)
     const nets = COSM_NETWORKS_PRESET.map((net, index) => {
       return {
         sortId: nextSortId + index,
         type: NetworkType.COSM,
+        kind: NetworkKind.COSM,
         chainId: net.chainId,
         info: net,
         search: createSearchString(net.chainId, net.chainName)
@@ -33,6 +39,13 @@ export class CosmNetworkService implements ICosmNetworkService {
     console.log(nets)
     await DB.networks.bulkAdd(nets)
     console.log('initialized cosm networks')
+  }
+
+  async getNetwork(
+    kind: NetworkKind,
+    chainId: string | number
+  ): Promise<INetwork | undefined> {
+    return DB.networks.where({ kind, chainId }).first()
   }
 }
 

@@ -1,15 +1,17 @@
-import { NetworkType } from '~lib/network'
+import { NetworkKind, NetworkType } from '~lib/network'
 
 export interface INetwork {
   id?: number
   sortId: number
   type: NetworkType
+  kind: NetworkKind
   chainId: number | string
   info: any
   search: string
 }
 
-export const networkSchemaV1 = '++id, sortId, &[type+chainId], search'
+export const networkSchemaV1 =
+  '++id, sortId, &[type+chainId], &[kind+chainId], search'
 
 export function createSearchString(...args: (string | undefined)[]) {
   let search: string[] = []

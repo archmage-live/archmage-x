@@ -1,8 +1,8 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 
-import { DB, getNextSortId } from '~lib/db'
+import { DB, getNextField } from '~lib/db'
 import { ENV } from '~lib/env'
-import { NetworkType } from '~lib/network'
+import { NetworkKind, NetworkType } from '~lib/network'
 import { EVM_NETWORKS_PRESET } from '~lib/network/evm'
 import { SERVICE_WORKER_CLIENT, SERVICE_WORKER_SERVER } from '~lib/rpc'
 import { INetwork, createSearchString } from '~lib/schema/network'
@@ -15,11 +15,12 @@ export class EvmNetworkService implements IEvmNetworkService {
       return
     }
 
-    const nextSortId = await getNextSortId(DB.networks)
+    const nextSortId = await getNextField(DB.networks)
     const nets = EVM_NETWORKS_PRESET.map((net, index) => {
       return {
         sortId: nextSortId + index,
         type: NetworkType.EVM,
+        kind: NetworkKind.EVM,
         chainId: net.chainId,
         info: net,
         search: createSearchString(

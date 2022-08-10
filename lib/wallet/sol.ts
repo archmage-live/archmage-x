@@ -6,10 +6,12 @@ import { sign } from 'tweetnacl'
 
 import { HDNode, HardenedBit } from '~lib/crypto/ed25519'
 import { KEYSTORE } from '~lib/keystore'
-import { WalletOpts, WalletType } from '~lib/wallet'
 
-export class SolWallet {
-  static defaultPathPrefix = "44'/501'/0'"
+import type { SigningWallet, WalletOpts } from './base'
+import { WalletType } from './base'
+
+export class SolWallet implements SigningWallet {
+  static defaultPathPrefix = "m/44'/501'/0'"
   static defaultPath = SolWallet.defaultPathPrefix + "/0'"
 
   wallet!: HDNode | Keypair
@@ -38,7 +40,7 @@ export class SolWallet {
     return { wallet } as SolWallet
   }
 
-  derive(prefixPath: string, index: number): SolWallet {
+  async derive(prefixPath: string, index: number): Promise<SolWallet> {
     assert(index < HardenedBit)
     assert(this.wallet instanceof HDNode)
     const path = `${prefixPath}/${index}'`
@@ -48,7 +50,7 @@ export class SolWallet {
     } as SolWallet
   }
 
-  address(): string {
+  get address(): string {
     return this.publicKeyBase58()
   }
 

@@ -1,26 +1,16 @@
+import assert from 'assert'
+
 import { NetworkKind } from '~lib/network'
-import { CosmWallet } from '~lib/wallet/cosm'
-import { EvmWallet } from '~lib/wallet/evm'
-import { SolWallet } from '~lib/wallet/sol'
+import { CosmChainInfo } from '~lib/network/cosm'
+import { IWallet } from '~lib/schema/wallet'
+import { COSM_NETWORK_SERVICE } from '~lib/services/network/cosmService'
 
-export enum WalletType {
-  HD = 'hd',
-  MNEMONIC_PRIVATE_KEY = 'mnemonic_private_key',
-  PRIVATE_KEY = 'private_key',
-  LEDGER = 'ledger'
-}
+import { SigningWallet, WalletOpts } from './base'
+import { CosmWallet } from './cosm'
+import { EvmWallet } from './evm'
+import { SolWallet } from './sol'
 
-export interface WalletOpts {
-  id: number // wallet id in db
-  type: WalletType
-  path?: string
-  prefix?: string // for Cosm
-}
-
-export interface SigningWallet {
-  // TODO
-}
-
+export * from './base'
 export * from './evm'
 export * from './cosm'
 export * from './aptos'
@@ -36,5 +26,33 @@ export function getDefaultPathPrefix(networkKind: NetworkKind): string {
       return CosmWallet.defaultPathPrefix
     case NetworkKind.SOL:
       return SolWallet.defaultPathPrefix
+  }
+}
+
+export async function getSigningWallet(
+  wallet: IWallet,
+  networkKind: NetworkKind,
+  chainId: number | string
+): Promise<SigningWallet> {
+  assert(wallet.id !== undefined)
+  const opts: WalletOpts = {
+    id: wallet.id!,
+    type: wallet.type,
+    path: wallet.path
+  }
+  switch (networkKind) {
+    case NetworkKind.EVM:
+      return EvmWallet.from(opts)
+    case NetworkKind.COSM:
+      const network = await COSM_NETWORK_SERVICE.getNetwork(
+        networkKind,
+        chainId
+      )
+      assert(network !== undefined)
+      const info = network.info as CosmChainInfo
+      opts.prefix = info.bech32Config.bech32PrefixAccAddr
+      return CosmWallet.from(opts)
+    case NetworkKind.SOL:
+      return SolWallet.from(opts)
   }
 }

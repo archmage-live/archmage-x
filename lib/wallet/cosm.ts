@@ -8,16 +8,19 @@ import assert from 'assert'
 import { ethers } from 'ethers'
 
 import { KEYSTORE } from '~lib/keystore'
-import type { WalletOpts } from '~lib/wallet'
-import { WalletType } from '~lib/wallet'
 
-export class CosmWallet {
+import type { SigningWallet, WalletOpts } from './base'
+import { WalletType } from './base'
+
+export class CosmWallet implements SigningWallet {
   static defaultPathPrefix = "m/44'/118'/0'/0"
   static defaultPath = CosmWallet.defaultPathPrefix + '/0'
 
   wallet!: DirectSecp256k1HdWallet | DirectSecp256k1Wallet
   mnemonic?: string
   prefix?: string
+
+  address!: string
 
   static async from({
     id,
@@ -46,12 +49,14 @@ export class CosmWallet {
           prefix
         }
       )
+      wallet.address = (await wallet.wallet.getAccounts())[0].address
     } else {
       assert(!path)
       wallet.wallet = await DirectSecp256k1Wallet.fromKey(
         ethers.utils.arrayify(ks.privateKey),
         prefix
       )
+      wallet.address = (await wallet.wallet.getAccounts())[0].address
     }
     return wallet
   }
@@ -64,7 +69,8 @@ export class CosmWallet {
       prefix: this.prefix
     })
     return {
-      wallet
+      ...wallet,
+      address: (await wallet.getAccounts())[0].address
     } as CosmWallet
   }
 }

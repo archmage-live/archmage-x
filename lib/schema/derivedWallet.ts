@@ -6,7 +6,12 @@ export interface IDerivedWallet {
   name: string
 }
 
-// for specific masterId, unique index and unique name
-export const derivedWalletSchemaV1 = '++id, &[masterId+sortId], &[masterId+index], &[masterId+name]'
+// for specific masterId, unique sortId/index/name
+export const derivedWalletSchemaV1 =
+  '++id, &[masterId+sortId], &[masterId+index], &[masterId+name]'
 
-const namePrefix = 'Wallet-'
+const namePrefix = 'Wallet '
+
+export function getDefaultDerivedName(index: number) {
+  return namePrefix + (index + 1)
+}
