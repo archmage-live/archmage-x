@@ -22,6 +22,8 @@ export class CosmWallet implements SigningWallet {
 
   address!: string
 
+  private constructor() {}
+
   static async from({
     id,
     type,
@@ -32,7 +34,7 @@ export class CosmWallet implements SigningWallet {
     assert(ks)
     const mnemonic = ks.mnemonic
 
-    const wallet = {} as CosmWallet
+    const wallet = new CosmWallet()
     if (type === WalletType.HD) {
       assert(!path && mnemonic)
       wallet.mnemonic = mnemonic.phrase
@@ -68,9 +70,8 @@ export class CosmWallet implements SigningWallet {
       hdPaths: [hdPath],
       prefix: this.prefix
     })
-    return {
-      ...wallet,
-      address: (await wallet.getAccounts())[0].address
-    } as CosmWallet
+    const ws = new CosmWallet()
+    ws.address = (await wallet.getAccounts())[0].address
+    return ws
   }
 }

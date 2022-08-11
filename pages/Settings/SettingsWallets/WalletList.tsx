@@ -2,7 +2,6 @@ import { Box, useColorModeValue } from '@chakra-ui/react'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
-  BeforeCapture,
   DragDropContext,
   DragStart,
   Draggable,
@@ -11,18 +10,47 @@ import {
   DroppableProvided
 } from 'react-beautiful-dnd'
 
+import { INetwork } from '~lib/schema/network'
 import { IWallet } from '~lib/schema/wallet'
-import { reorderWallets, useWallets } from '~lib/services/walletService'
+import {
+  WALLET_SERVICE,
+  reorderWallets,
+  useWallets
+} from '~lib/services/walletService'
 import { WalletItem } from '~pages/Settings/SettingsWallets/WalletItem'
 
 interface WalletListProps {
+  network?: INetwork
+
   selectedId?: number
 
   onSelectedId(selectedId: number): void
 }
 
-export const WalletList = ({ selectedId, onSelectedId }: WalletListProps) => {
+export const WalletList = ({
+  network,
+  selectedId,
+  onSelectedId
+}: WalletListProps) => {
   const ws = useWallets()
+  useEffect(() => {
+    const effect = async () => {
+      if (!network) {
+        return
+      }
+      if (ws) {
+        for (const w of ws) {
+          await WALLET_SERVICE.ensureSubWalletsInfo(
+            w,
+            network.kind,
+            network.chainId
+          )
+        }
+      }
+    }
+    effect()
+  }, [network, ws])
+
   const [wallets, setWallets] = useState<IWallet[]>([])
   useEffect(() => {
     if (ws) setWallets(ws)
@@ -131,6 +159,7 @@ export const WalletList = ({ selectedId, onSelectedId }: WalletListProps) => {
                             ref={provided.innerRef}
                             {...provided.draggableProps}>
                             <WalletItem
+                              network={network}
                               wallet={wallet}
                               bg={
                                 wallet.id === selectedId ? hoverBg : undefined

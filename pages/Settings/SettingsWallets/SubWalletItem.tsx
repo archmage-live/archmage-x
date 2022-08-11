@@ -7,10 +7,13 @@ import { MdDragIndicator } from 'react-icons/md'
 import { dayjs } from '~lib/dayjs'
 import { IDerivedWallet } from '~lib/schema/derivedWallet'
 import { IWallet } from '~lib/schema/wallet'
+import { IWalletInfo } from '~lib/schema/walletInfo'
+import { shortenAddress } from '~lib/utils'
 import { WalletType } from '~lib/wallet'
 
 export const SubWalletItem = ({
   wallet,
+  info,
   bg,
   hoverBg,
   infoVisible,
@@ -18,6 +21,7 @@ export const SubWalletItem = ({
   dragHandleProps = {} as DraggableProvidedDragHandleProps
 }: {
   wallet: IDerivedWallet
+  info?: IWalletInfo
   bg?: string
   hoverBg?: string
   infoVisible?: boolean
@@ -56,11 +60,7 @@ export const SubWalletItem = ({
         data-group>
         <HStack spacing={4}>
           <Box borderRadius="50%" overflow="hidden">
-            <Blockies
-              seed={`${wallet.masterId}-${wallet.index}`}
-              size={10}
-              scale={3}
-            />
+            <Blockies seed={info?.address + ''} size={10} scale={3} />
           </Box>
           <Text fontSize="lg" noOfLines={1}>
             {wallet.name}
@@ -72,6 +72,7 @@ export const SubWalletItem = ({
           visibility={infoVisibility || 'hidden'}
           _groupHover={{ visibility: infoVisibility || 'visible' }}>
           <Stack fontSize="sm" color="gray.500">
+            <Text noOfLines={1}>{shortenAddress(info?.address, 6)}</Text>
             <Text>Index: {wallet.index}</Text>
           </Stack>
           <Box {...dragHandleProps} p={2}>

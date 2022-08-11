@@ -9,7 +9,7 @@ import { AppChainInfo as CosmChainInfo } from '~lib/network/cosm'
 import { EvmChainInfo } from '~lib/network/evm'
 import { INetwork } from '~lib/schema/network'
 
-interface NetworkBasicInfo {
+export interface NetworkBasicInfo {
   name: string
   description?: string
   chainId: number | string

@@ -1,11 +1,12 @@
 import { Box, HStack, Icon, Stack, Text, useDisclosure } from '@chakra-ui/react'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { DraggableProvidedDragHandleProps } from 'react-beautiful-dnd'
 import Blockies from 'react-blockies'
 import { MdDragIndicator } from 'react-icons/md'
 import { useDebounce } from 'react-use'
 
 import { dayjs } from '~lib/dayjs'
+import { INetwork } from '~lib/schema/network'
 import { IWallet } from '~lib/schema/wallet'
 import { WalletType } from '~lib/wallet'
 import { SubWalletList } from '~pages/Settings/SettingsWallets/SubWalletList'
@@ -24,6 +25,7 @@ function getWalletType(type: WalletType) {
 }
 
 interface WalletItemProps {
+  network?: INetwork
   wallet: IWallet
   bg?: string
   hoverBg?: string
@@ -35,6 +37,7 @@ interface WalletItemProps {
 }
 
 export const WalletItem = ({
+  network,
   wallet,
   bg,
   hoverBg,
@@ -45,12 +48,17 @@ export const WalletItem = ({
 }: WalletItemProps) => {
   const elRef = useRef(null)
   const { isOpen, onToggle } = useDisclosure()
+
+  const measure = useCallback(() => {
+    measureElement?.(elRef.current)
+  }, [measureElement])
+
   useDebounce(
     () => {
-      measureElement?.(elRef.current)
+      measure()
     },
     50,
-    [isOpen, measureElement]
+    [isOpen, measure]
   )
 
   const [selectedSubWalletId, setSelectedSubWalletId] = useState<number>()
@@ -109,11 +117,13 @@ export const WalletItem = ({
         </HStack>
       </HStack>
 
-      {isOpen && wallet.type === WalletType.HD && (
+      {isOpen && network && wallet.type === WalletType.HD && (
         <SubWalletList
+          network={network}
           masterId={wallet.id!}
           selectedId={selectedSubWalletId}
           onSelectedId={setSelectedSubWalletId}
+          measure={measure}
         />
       )}
     </Box>

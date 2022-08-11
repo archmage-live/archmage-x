@@ -26,6 +26,7 @@ export enum NetworkKind {
 }
 
 export const NETWORK_KIND_SCOPES = ['EVM', 'Cosmos', 'Solana']
+export const NETWORK_KIND_SCOPE_ANY = 'Any Network Kind'
 
 export type NetworkKindScope = typeof NETWORK_KIND_SCOPES[number]
 
@@ -37,6 +38,6 @@ const NETWORK_KIND_TYPES: {
   Solana: NetworkKind.SOL
 }
 
-export function getNetworkKind(scope: NetworkKindScope): NetworkKind {
-  return NETWORK_KIND_TYPES[scope]!
+export function getNetworkKind(scope?: NetworkKindScope): NetworkKind {
+  return NETWORK_KIND_TYPES[scope as any]!
 }

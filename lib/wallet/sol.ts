@@ -14,7 +14,7 @@ export class SolWallet implements SigningWallet {
   static defaultPathPrefix = "m/44'/501'/0'"
   static defaultPath = SolWallet.defaultPathPrefix + "/0'"
 
-  wallet!: HDNode | Keypair
+  private constructor(private wallet: HDNode | Keypair) {}
 
   static async from({ id, type, path }: WalletOpts): Promise<SolWallet> {
     const ks = await KEYSTORE.get(id)
@@ -37,7 +37,7 @@ export class SolWallet implements SigningWallet {
       wallet = Keypair.fromSeed(arrayify(ks.privateKey))
     }
 
-    return { wallet } as SolWallet
+    return new SolWallet(wallet)
   }
 
   async derive(prefixPath: string, index: number): Promise<SolWallet> {
@@ -45,9 +45,7 @@ export class SolWallet implements SigningWallet {
     assert(this.wallet instanceof HDNode)
     const path = `${prefixPath}/${index}'`
     const wallet = this.wallet.derivePath(path)
-    return {
-      wallet
-    } as SolWallet
+    return new SolWallet(wallet)
   }
 
   get address(): string {

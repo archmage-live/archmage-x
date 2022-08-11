@@ -7,6 +7,7 @@ import {
   HStack,
   Select,
   Stack,
+  Text,
   useDisclosure
 } from '@chakra-ui/react'
 import { useCallback, useEffect, useState } from 'react'
@@ -153,7 +154,15 @@ export const WalletEdit = ({ wallet }: WalletEditProps) => {
 
       <Stack spacing={6}>
         <FormControl>
-          <FormLabel>Derived Wallets: {subWallets?.length}</FormLabel>
+          <HStack spacing={8}>
+            <Text fontSize="md" fontWeight="medium">
+              Derived Wallets: {subWallets?.length}
+            </Text>
+
+            <Button variant="outline" colorScheme="purple">
+              Reset Sorting
+            </Button>
+          </HStack>
         </FormControl>
 
         <FormControl>
@@ -171,7 +180,12 @@ export const WalletEdit = ({ wallet }: WalletEditProps) => {
               return Math.min(Math.max(+value, 0), 1000) + ''
             }}
             onChange={(value: string) => {
-              WALLET_SERVICE.deriveSubWallets(wallet.id!, +value)
+              setDeriveNum(+value)
+              WALLET_SERVICE.deriveSubWallets(wallet.id!, +value).finally(
+                () => {
+                  setDeriveNum(0)
+                }
+              )
             }}
           />
         </FormControl>

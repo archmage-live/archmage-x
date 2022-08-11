@@ -8,6 +8,7 @@ import assert from 'assert'
 import Dexie from 'dexie'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { ethers } from 'ethers'
+import PQueue from 'p-queue'
 
 import { setUnlockTime } from '~hooks/useLockTime'
 import { DB, generateName, getNextField } from '~lib/db'
@@ -67,6 +68,12 @@ export interface IWalletService {
   listWallets(): Promise<IWallet[]>
 
   deriveSubWallets(id: number, num: number): Promise<void>
+
+  ensureSubWalletsInfo(
+    wallet: IWallet,
+    networkKind: NetworkKind,
+    chainId?: number | string
+  ): Promise<void>
 }
 
 // @ts-ignore
@@ -229,11 +236,13 @@ class WalletService extends WalletServicePartial {
     await DB.derivedWallets.bulkAdd(subWallets)
   }
 
-  async getSubWallets(id: number, startIndex = 0, num = 50) {
-    return DB.derivedWallets
-      .where('[masterId+index]')
-      .between([id, startIndex], [id, startIndex + num])
-      .toArray()
+  async ensureSubWalletsInfo(
+    wallet: IWallet,
+    networkKind: NetworkKind,
+    chainId?: number | string
+  ) {
+    // time-consuming
+    await ensureSubWalletsInfo(wallet, networkKind, chainId)
   }
 
   async ensureWalletInfo(
@@ -278,76 +287,6 @@ class WalletService extends WalletServicePartial {
       address,
       info: {}
     })
-  }
-
-  async ensureSubWalletsInfo(
-    id: number,
-    networkKind: NetworkKind,
-    chainId: number | string
-  ) {
-    const wallet = await this.getWallet(id)
-    assert(wallet)
-    const signingWallet = await getSigningWallet(wallet, networkKind, chainId)
-    const hdPath = await DB.hdPaths.where({ masterId: id, networkKind }).first()
-    assert(hdPath)
-
-    const subWallets = await DB.derivedWallets
-      .where('[masterId+index]')
-      .between([id, Dexie.minKey], [id, Dexie.maxKey])
-      .toArray()
-    if (!subWallets.length) {
-      return
-    }
-    const walletInfos = await DB.walletInfos
-      .where('[masterId+networkKind+chainId+index]')
-      .between(
-        [id, networkKind, chainId, subWallets[0].index],
-        [id, networkKind, chainId, subWallets[subWallets.length - 1].index],
-        true,
-        true
-      )
-      .toArray()
-    if (walletInfos.length === subWallets.length) {
-      return
-    }
-    const set = new Set()
-    for (const info of walletInfos) {
-      set.add(info.index)
-    }
-    const bulkAdd = []
-    for (const subWallet of subWallets) {
-      if (set.has(subWallet.index)) {
-        continue
-      }
-      const subSigningWallet = await signingWallet.derive(
-        hdPath.path,
-        subWallet.index
-      )
-      bulkAdd.push({
-        masterId: id,
-        index: subWallet.index,
-        networkKind,
-        chainId,
-        address: subSigningWallet.address
-      } as IWalletInfo)
-    }
-    await DB.walletInfos.bulkAdd(bulkAdd)
-  }
-
-  async getSubWalletsInfo(
-    id: number,
-    networkKind: NetworkKind,
-    chainId: number | string,
-    startIndex = 0,
-    num = 50
-  ) {
-    return DB.walletInfos
-      .where('[masterId+networkKind+chainId+index]')
-      .between(
-        [id, networkKind, chainId, startIndex],
-        [id, networkKind, chainId, startIndex + num]
-      )
-      .toArray()
   }
 
   private async createHdPaths(id: number) {
@@ -396,6 +335,22 @@ export function useSubWallets(walletId: number, nextSortId = 0, limit = 96) {
         .toArray()
     )
   }, [walletId])
+}
+
+export function useSubWalletsInfo(
+  id: number,
+  networkKind: NetworkKind,
+  chainId: number | string
+) {
+  return useLiveQuery(() => {
+    return DB.walletInfos
+      .where('[masterId+networkKind+chainId+index]')
+      .between(
+        [id, networkKind, chainId, Dexie.minKey],
+        [id, networkKind, chainId, Dexie.maxKey]
+      )
+      .toArray()
+  }, [id, networkKind, chainId])
 }
 
 export function useWallet(walletId?: number) {
@@ -478,4 +433,90 @@ export async function reorderSubWallets(
       await DB.derivedWallets.update(items[i], { sortId })
     }
   })
+}
+
+export async function ensureSubWalletsInfo(
+  wallet: IWallet,
+  networkKind: NetworkKind,
+  chainId?: number | string
+) {
+  if (chainId === undefined) {
+    const firstNetwork = await DB.networks
+      .where('kind')
+      .equals(networkKind)
+      .first()
+    if (firstNetwork === undefined) {
+      return
+    }
+    chainId = firstNetwork.chainId
+  }
+  const signingWallet = await getSigningWallet(wallet, networkKind, chainId)
+  const hdPath = await DB.hdPaths
+    .where({ masterId: wallet.id, networkKind })
+    .first()
+  assert(hdPath)
+
+  let tick = Date.now()
+  const subWallets = await DB.derivedWallets
+    .where('[masterId+index]')
+    .between([wallet.id, Dexie.minKey], [wallet.id, Dexie.maxKey])
+    .toArray()
+  if (!subWallets.length) {
+    return
+  }
+  // console.log(`get derived wallets: ${(Date.now() - tick) / 1000}s`)
+  tick = Date.now()
+
+  const walletInfos = await DB.walletInfos
+    .where('[masterId+networkKind+chainId+index]')
+    .between(
+      [wallet.id, networkKind, chainId, subWallets[0].index],
+      [
+        wallet.id,
+        networkKind,
+        chainId,
+        subWallets[subWallets.length - 1].index
+      ],
+      true,
+      true
+    )
+    .toArray()
+  // console.log(`get wallets info: ${(Date.now() - tick) / 1000}s`)
+  tick = Date.now()
+  if (walletInfos.length === subWallets.length) {
+    return
+  }
+
+  const existing = new Set()
+  for (const info of walletInfos) {
+    existing.add(info.index)
+  }
+  const bulkAdd: IWalletInfo[] = []
+  const queue = new PQueue({ concurrency: 4 })
+  for (const subWallet of subWallets) {
+    if (existing.has(subWallet.index)) {
+      continue
+    }
+    const _ = queue.add(async () => {
+      const subSigningWallet = await signingWallet.derive(
+        hdPath.path,
+        subWallet.index
+      )
+      bulkAdd.push({
+        masterId: wallet.id,
+        index: subWallet.index,
+        networkKind,
+        chainId,
+        address: subSigningWallet.address
+      } as IWalletInfo)
+    })
+  }
+  await queue.onIdle()
+  console.log(`derive wallets: ${(Date.now() - tick) / 1000}s`)
+  tick = Date.now()
+  await DB.walletInfos.bulkAdd(bulkAdd)
+  // console.log(`add wallets info: ${(Date.now() - tick) / 1000}s`)
+  console.log(
+    `ensured info for derived wallets: master wallet ${wallet.id}, network: ${networkKind}, chainID: ${chainId}`
+  )
 }

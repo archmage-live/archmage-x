@@ -1,7 +1,8 @@
+import assert from 'assert'
 import { useLiveQuery } from 'dexie-react-hooks'
 
 import { DB } from '~lib/db'
-import { NetworkType } from '~lib/network'
+import { NetworkKind, NetworkType } from '~lib/network'
 
 import { CosmNetworkService } from './cosmService'
 import { EvmNetworkService } from './evmService'
@@ -11,14 +12,26 @@ export async function initNetworks() {
   await CosmNetworkService.init()
 }
 
-export function useNetworks(type?: NetworkType) {
+export function useNetworks(type?: NetworkType, kind?: NetworkKind) {
+  assert(!(type && kind))
   return useLiveQuery(() => {
-    if (type === undefined) {
-      return DB.networks.orderBy('sortId').toArray()
-    } else {
+    if (type) {
       return DB.networks.where('type').equals(type).sortBy('sortId')
+    } else if (kind) {
+      return DB.networks.where('kind').equals(kind).sortBy('sortId')
+    } else {
+      return DB.networks.orderBy('sortId').toArray()
     }
-  }, [type])
+  }, [type, kind])
+}
+
+export function useNetwork(id?: number) {
+  return useLiveQuery(() => {
+    if (id === undefined) {
+      return undefined
+    }
+    return DB.networks.get(id)
+  }, [id])
 }
 
 export async function reorderNetworks(startSortId: number, endSortId: number) {

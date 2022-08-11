@@ -1,6 +1,6 @@
 import { Box, useColorModeValue } from '@chakra-ui/react'
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   DragDropContext,
   DragStart,
@@ -9,28 +9,49 @@ import {
   Droppable,
   DroppableProvided
 } from 'react-beautiful-dnd'
+import { useDebounce } from 'react-use'
 
 import { IDerivedWallet } from '~lib/schema/derivedWallet'
-import { reorderSubWallets, useSubWallets } from '~lib/services/walletService'
+import { INetwork } from '~lib/schema/network'
+import { IWalletInfo } from '~lib/schema/walletInfo'
+import {
+  reorderSubWallets,
+  useSubWallets,
+  useSubWalletsInfo
+} from '~lib/services/walletService'
 import { SubWalletItem } from '~pages/Settings/SettingsWallets/SubWalletItem'
 
 interface SubWalletListProps {
+  network: INetwork
   masterId: number
   selectedId?: number
 
   onSelectedId(selectedId: number): void
+
+  measure(): void
 }
 
 export const SubWalletList = ({
+  network,
   masterId,
   selectedId,
-  onSelectedId
+  onSelectedId,
+  measure
 }: SubWalletListProps) => {
   const sw = useSubWallets(masterId)
   const [wallets, setWallets] = useState<IDerivedWallet[]>([])
   useEffect(() => {
     if (sw) setWallets(sw)
   }, [sw])
+
+  useDebounce(measure, 50, [measure, wallets])
+
+  const infos = useSubWalletsInfo(masterId, network.kind, network.chainId)
+  const infoMap = useMemo(() => {
+    const m = new Map<string, IWalletInfo>()
+    infos?.forEach((info) => m.set(`${info.masterId}-${info.index}`, info))
+    return m
+  }, [infos])
 
   const parentRef = useRef(null)
   const walletsVirtualizer = useVirtualizer({
@@ -123,6 +144,9 @@ export const SubWalletList = ({
                 <Box h={walletsVirtualizer.getTotalSize()} position="relative">
                   {walletsVirtualizer.getVirtualItems().map((item) => {
                     const wallet = wallets[item.index]
+                    const info = infoMap.get(
+                      `${wallet.masterId}-${wallet.index}`
+                    )
                     return (
                       <Draggable
                         key={wallet.id}
@@ -143,6 +167,7 @@ export const SubWalletList = ({
                               h="full">
                               <SubWalletItem
                                 wallet={wallet}
+                                info={info}
                                 bg={
                                   wallet.id === selectedId ? hoverBg : undefined
                                 }
