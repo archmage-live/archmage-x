@@ -164,12 +164,13 @@ export class Keystore {
 
       const wallet = await DB.wallets.get(id)
       if (!wallet) {
-        this.resolveReady(id)
+        this.resolveReady(id, true)
         return undefined
       }
 
       const password = await PASSWORD.get()
       if (!password) {
+        this.resolveReady(id, true)
         return undefined
       }
 
@@ -179,6 +180,8 @@ export class Keystore {
 
       if (await PASSWORD.isLocked()) {
         await this.accounts.remove(id)
+        this.resolveReady(id, true)
+        return undefined
       }
 
       this.resolveReady(id)
@@ -209,10 +212,13 @@ export class Keystore {
     }
   }
 
-  private resolveReady(id: number) {
+  private resolveReady(id: number, remove?: boolean) {
     const ready = this.ready.get(id)
     if (ready) {
       ready[1]()
+    }
+    if (remove) {
+      this.ready.delete(id)
     }
   }
 }

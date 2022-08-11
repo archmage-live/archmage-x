@@ -15,6 +15,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 
 import { Card } from '~components/Card'
 import { TitleBar } from '~components/TitleBar'
+import { useCheckUnlocked } from '~lib/password'
 
 import { SettingsGeneral } from './SettingsGeneral'
 import { SettingsNetworks } from './SettingsNetworks'
@@ -22,6 +23,8 @@ import { SettingsWallets } from './SettingsWallets'
 import { SideMenu } from './SideMenu'
 
 export default function Settings() {
+  useCheckUnlocked()
+
   const inputColor = 'purple.500'
 
   return (

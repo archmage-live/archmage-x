@@ -71,7 +71,9 @@ export const SubWalletItem = ({
           spacing={4}
           visibility={infoVisibility || 'hidden'}
           _groupHover={{ visibility: infoVisibility || 'visible' }}>
-          <Stack fontSize="sm" color="gray.500"></Stack>
+          <Stack fontSize="sm" color="gray.500">
+            <Text>Index: {wallet.index}</Text>
+          </Stack>
           <Box {...dragHandleProps} p={2}>
             <Icon as={MdDragIndicator} fontSize="xl" />
           </Box>

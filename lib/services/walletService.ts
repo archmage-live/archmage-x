@@ -37,6 +37,8 @@ export interface IWalletService {
 
   lock(): Promise<void>
 
+  getKeystore(id: number): Promise<KeystoreAccount | undefined>
+
   generateMnemonic(opts?: { locale?: string }): Promise<string>
 
   newWallet(opts: {
@@ -115,6 +117,10 @@ class WalletService extends WalletServicePartial {
   async lock() {
     await PASSWORD.lock()
     await KEYSTORE.lock()
+  }
+
+  async getKeystore(id: number): Promise<KeystoreAccount | undefined> {
+    return KEYSTORE.get(id)
   }
 
   async newWallet({

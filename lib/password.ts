@@ -1,5 +1,6 @@
 import { sha256 } from '@ethersproject/sha2'
 import { useEffect, useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 
 import { useStorage } from '@plasmohq/storage'
 
@@ -123,4 +124,16 @@ export function usePassword(): {
     isLocked,
     isUnlocked
   }
+}
+
+export function useCheckUnlocked() {
+  const location = useLocation()
+  const navigate = useNavigate()
+  const { isLocked } = usePassword()
+
+  useEffect(() => {
+    if (isLocked) {
+      navigate(`/?redirect=${location.pathname}`, { replace: true })
+    }
+  }, [location, navigate, isLocked])
 }

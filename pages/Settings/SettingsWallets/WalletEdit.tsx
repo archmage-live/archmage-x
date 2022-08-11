@@ -6,7 +6,8 @@ import {
   FormLabel,
   HStack,
   Select,
-  Stack
+  Stack,
+  useDisclosure
 } from '@chakra-ui/react'
 import { useCallback, useEffect, useState } from 'react'
 import { useDebounce } from 'react-use'
@@ -22,6 +23,7 @@ import {
   useSubWallets
 } from '~lib/services/walletService'
 import { getDefaultPathPrefix } from '~lib/wallet'
+import { ExportMnemonicModal } from '~pages/Settings/SettingsWallets/ExportMnemonicModal'
 
 interface WalletEditProps {
   wallet: IWallet
@@ -79,6 +81,12 @@ export const WalletEdit = ({ wallet }: WalletEditProps) => {
   }, [changed, hdPath, networkScope, wallet])
 
   const [deriveNum, setDeriveNum] = useState(0)
+
+  const {
+    isOpen: isExportOpen,
+    onOpen: onExportOpen,
+    onClose: onExportClose
+  } = useDisclosure()
 
   return (
     <Stack spacing="12">
@@ -168,6 +176,19 @@ export const WalletEdit = ({ wallet }: WalletEditProps) => {
           />
         </FormControl>
       </Stack>
+
+      <HStack justify="end">
+        <Button variant="outline" colorScheme="purple" onClick={onExportOpen}>
+          Export Secret Phrase
+        </Button>
+        <Button colorScheme="red">Delete Wallet</Button>
+      </HStack>
+
+      <ExportMnemonicModal
+        walletId={wallet.id!}
+        isOpen={isExportOpen}
+        onClose={onExportClose}
+      />
     </Stack>
   )
 }
