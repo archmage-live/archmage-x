@@ -21,6 +21,7 @@ import { HardenedBit } from '~lib/crypto/ed25519'
 interface HdPathInputProps {
   isEd25519Curve?: boolean
   forcePrefix?: string
+  fixedLength?: boolean
   value?: string
 
   onChange(value: string): void
@@ -28,8 +29,9 @@ interface HdPathInputProps {
 
 export const HdPathInput = ({
   isEd25519Curve,
-  forcePrefix = "m/44'",
-  value = "m/44'",
+  forcePrefix = 'm',
+  fixedLength,
+  value = 'm',
   onChange
 }: HdPathInputProps) => {
   if (!value.startsWith(forcePrefix)) {
@@ -121,24 +123,26 @@ export const HdPathInput = ({
         )
       })}
 
-      <HStack ps={4}>
-        {hdPath.length < 5 && (
-          <IconButton
-            size="xs"
-            aria-label="Add HD path component"
-            icon={<AddIcon />}
-            onClick={onAddComponent}
-          />
-        )}
-        {hdPath.length > 2 && (
-          <IconButton
-            size="xs"
-            aria-label="Remove HD path component"
-            icon={<MinusIcon />}
-            onClick={onRemoveComponent}
-          />
-        )}
-      </HStack>
+      {!fixedLength && (
+        <HStack ps={4}>
+          {hdPath.length < 5 && (
+            <IconButton
+              size="xs"
+              aria-label="Add HD path component"
+              icon={<AddIcon />}
+              onClick={onAddComponent}
+            />
+          )}
+          {hdPath.length > 2 && (
+            <IconButton
+              size="xs"
+              aria-label="Remove HD path component"
+              icon={<MinusIcon />}
+              onClick={onRemoveComponent}
+            />
+          )}
+        </HStack>
+      )}
     </HStack>
   )
 }

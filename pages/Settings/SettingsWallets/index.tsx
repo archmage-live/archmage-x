@@ -17,9 +17,11 @@ import {
   NetworkBasicInfo,
   getBasicInfo
 } from '~pages/Settings/SettingsNetworks/NetworkItem'
+import { SubWalletEdit } from '~pages/Settings/SettingsWallets/SubWalletEdit'
 import { WalletEdit } from '~pages/Settings/SettingsWallets/WalletEdit'
 
 import { WalletList } from './WalletList'
+import { useSelectedWallet } from './select'
 
 export const SettingsWallets = () => {
   const [networkScope, setNetworkScope] = useState<
@@ -42,8 +44,14 @@ export const SettingsWallets = () => {
     }
   }, [networksOfKind])
 
-  const [selectedId, setSelectedId] = useState<number>()
-  const selectedWallet = useWallet(selectedId)
+  const {
+    selectedId,
+    selectedSubId,
+    selectedWallet,
+    selectedSubWallet,
+    setSelectedId,
+    setSelectedSubId
+  } = useSelectedWallet()
 
   return (
     <Stack spacing={12} h="full">
@@ -92,7 +100,9 @@ export const SettingsWallets = () => {
           <WalletList
             network={network}
             selectedId={selectedId}
+            selectedSubId={selectedSubId}
             onSelectedId={setSelectedId}
+            onSelectedSubId={setSelectedSubId}
           />
         </Stack>
 
@@ -108,7 +118,16 @@ export const SettingsWallets = () => {
             </Button>
           </HStack>
 
-          {selectedWallet && <WalletEdit wallet={selectedWallet} />}
+          {selectedSubWallet
+            ? network &&
+              selectedWallet && (
+                <SubWalletEdit
+                  network={network}
+                  master={selectedWallet}
+                  wallet={selectedSubWallet}
+                />
+              )
+            : selectedWallet && <WalletEdit wallet={selectedWallet} />}
         </Stack>
       </SimpleGrid>
     </Stack>

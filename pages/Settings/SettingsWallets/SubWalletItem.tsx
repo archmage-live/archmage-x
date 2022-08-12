@@ -4,18 +4,15 @@ import { DraggableProvidedDragHandleProps } from 'react-beautiful-dnd'
 import Blockies from 'react-blockies'
 import { MdDragIndicator } from 'react-icons/md'
 
-import { dayjs } from '~lib/dayjs'
-import { IDerivedWallet } from '~lib/schema/derivedWallet'
-import { IWallet } from '~lib/schema/wallet'
-import { IWalletInfo } from '~lib/schema/walletInfo'
+import { IDerivedWallet, IWalletInfo } from '~lib/schema'
 import { shortenAddress } from '~lib/utils'
-import { WalletType } from '~lib/wallet'
 
 export const SubWalletItem = ({
   wallet,
   info,
   bg,
   hoverBg,
+  borderColor,
   infoVisible,
   onClick,
   dragHandleProps = {} as DraggableProvidedDragHandleProps
@@ -24,6 +21,7 @@ export const SubWalletItem = ({
   info?: IWalletInfo
   bg?: string
   hoverBg?: string
+  borderColor?: string
   infoVisible?: boolean
   onClick?: () => void
   dragHandleProps?: DraggableProvidedDragHandleProps
@@ -51,6 +49,8 @@ export const SubWalletItem = ({
         spacing={8}
         align="center"
         borderRadius="xl"
+        borderWidth="1px"
+        borderColor={borderColor}
         justify="space-between"
         cursor="pointer"
         bg={bg}

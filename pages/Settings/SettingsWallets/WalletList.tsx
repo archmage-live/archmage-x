@@ -23,14 +23,19 @@ interface WalletListProps {
   network?: INetwork
 
   selectedId?: number
+  selectedSubId?: number
 
   onSelectedId(selectedId: number): void
+
+  onSelectedSubId(selectedSubId: number): void
 }
 
 export const WalletList = ({
   network,
   selectedId,
-  onSelectedId
+  selectedSubId,
+  onSelectedId,
+  onSelectedSubId
 }: WalletListProps) => {
   const ws = useWallets()
   useEffect(() => {
@@ -128,6 +133,9 @@ export const WalletList = ({
                 <WalletItem
                   wallet={wallet}
                   bg={hoverBg}
+                  borderColor={
+                    wallet.id === selectedId ? 'purple.500' : undefined
+                  }
                   infoVisible={
                     dragIndex !== undefined
                       ? dragIndex === rubric.source.index
@@ -165,6 +173,11 @@ export const WalletList = ({
                                 wallet.id === selectedId ? hoverBg : undefined
                               }
                               hoverBg={hoverBg}
+                              borderColor={
+                                wallet.id === selectedId
+                                  ? 'purple.500'
+                                  : undefined
+                              }
                               infoVisible={
                                 dragIndex !== undefined
                                   ? dragIndex === item.index
@@ -173,6 +186,8 @@ export const WalletList = ({
                               onClick={() => onSelectedId(wallet.id!)}
                               dragHandleProps={provided.dragHandleProps}
                               measureElement={item.measureElement}
+                              selectedSubId={selectedSubId}
+                              onSelectedSubId={onSelectedSubId}
                             />
                           </Box>
                         </Box>

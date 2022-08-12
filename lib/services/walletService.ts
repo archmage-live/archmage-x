@@ -215,16 +215,14 @@ class WalletService extends WalletServicePartial {
   }
 
   async deriveSubWallets(id: number, num: number) {
-    const nextSortId = await getNextField(
-      DB.derivedWallets,
-      'sortId',
-      '[masterId+sortId]'
-    )
-    const nextIndex = await getNextField(
-      DB.derivedWallets,
-      'index',
-      '[masterId+index]'
-    )
+    const nextSortId = await getNextField(DB.derivedWallets, 'sortId', {
+      key: 'masterId',
+      value: id
+    })
+    const nextIndex = await getNextField(DB.derivedWallets, 'index', {
+      key: 'masterId',
+      value: id
+    })
     const subWallets = [...Array(num).keys()].map((n) => {
       return {
         masterId: id,
@@ -351,6 +349,20 @@ export function useSubWalletsInfo(
       )
       .toArray()
   }, [id, networkKind, chainId])
+}
+
+export function useSubWalletInfo(
+  id: number,
+  networkKind: NetworkKind,
+  chainId: number | string,
+  index: number
+) {
+  return useLiveQuery(() => {
+    return DB.walletInfos
+      .where('[masterId+networkKind+chainId+index]')
+      .equals([id, networkKind, chainId, index])
+      .first()
+  }, [id, networkKind, chainId, index])
 }
 
 export function useWallet(walletId?: number) {

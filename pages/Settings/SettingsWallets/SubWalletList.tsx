@@ -122,6 +122,7 @@ export const SubWalletList = ({
             mode="virtual"
             renderClone={(provided, snapshot, rubric) => {
               const wallet = wallets[rubric.source.index]
+              const info = infoMap.get(`${wallet.masterId}-${wallet.index}`)
               return (
                 <Box
                   ref={provided.innerRef}
@@ -129,7 +130,11 @@ export const SubWalletList = ({
                   {...provided.draggableProps}>
                   <SubWalletItem
                     wallet={wallet}
+                    info={info}
                     bg={hoverBg}
+                    borderColor={
+                      wallet.id === selectedId ? 'purple.500' : undefined
+                    }
                     infoVisible={
                       dragIndex !== undefined
                         ? dragIndex === rubric.source.index
@@ -172,6 +177,11 @@ export const SubWalletList = ({
                                   wallet.id === selectedId ? hoverBg : undefined
                                 }
                                 hoverBg={hoverBg}
+                                borderColor={
+                                  wallet.id === selectedId
+                                    ? 'purple.500'
+                                    : undefined
+                                }
                                 infoVisible={
                                   dragIndex !== undefined
                                     ? dragIndex === item.index

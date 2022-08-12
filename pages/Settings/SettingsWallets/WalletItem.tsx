@@ -29,11 +29,16 @@ interface WalletItemProps {
   wallet: IWallet
   bg?: string
   hoverBg?: string
+  borderColor?: string
   infoVisible?: boolean
   onClick?: () => void
   dragHandleProps?: DraggableProvidedDragHandleProps
   measureElement?: (element?: HTMLElement | null) => any
   closed?: boolean
+
+  selectedSubId?: number
+
+  onSelectedSubId?(selectedSubId: number): void
 }
 
 export const WalletItem = ({
@@ -41,10 +46,14 @@ export const WalletItem = ({
   wallet,
   bg,
   hoverBg,
+  borderColor,
   infoVisible,
   onClick,
   dragHandleProps = {} as DraggableProvidedDragHandleProps,
-  measureElement
+  measureElement,
+
+  selectedSubId,
+  onSelectedSubId
 }: WalletItemProps) => {
   const elRef = useRef(null)
   const { isOpen, onToggle } = useDisclosure()
@@ -60,8 +69,6 @@ export const WalletItem = ({
     50,
     [isOpen, measure]
   )
-
-  const [selectedSubWalletId, setSelectedSubWalletId] = useState<number>()
 
   const infoVisibility = infoVisible
     ? 'visible'
@@ -86,6 +93,8 @@ export const WalletItem = ({
         spacing={8}
         align="center"
         borderRadius="xl"
+        borderWidth="1px"
+        borderColor={borderColor}
         justify="space-between"
         cursor="pointer"
         bg={bg}
@@ -121,8 +130,8 @@ export const WalletItem = ({
         <SubWalletList
           network={network}
           masterId={wallet.id!}
-          selectedId={selectedSubWalletId}
-          onSelectedId={setSelectedSubWalletId}
+          selectedId={selectedSubId}
+          onSelectedId={(id) => onSelectedSubId?.(id)}
           measure={measure}
         />
       )}

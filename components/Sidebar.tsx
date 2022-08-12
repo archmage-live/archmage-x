@@ -22,6 +22,10 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
     createTab('#/tab/add-wallet')
   }
 
+  const manageWallets = () => {
+    createTab('#/tab/settings/wallets')
+  }
+
   const lock = async () => {
     await WALLET_SERVICE.lock()
     navigate('/', { replace: true })
@@ -53,7 +57,11 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
           <Text fontSize="lg">Add Wallet</Text>
         </HStack>
       </Button>
-      <Button variant="ghost" w="full" justifyContent="start">
+      <Button
+        variant="ghost"
+        w="full"
+        justifyContent="start"
+        onClick={manageWallets}>
         <HStack spacing="3">
           <DragHandleIcon />
           <Text fontSize="lg">Manage Wallets</Text>

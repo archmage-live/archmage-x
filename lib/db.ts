@@ -48,12 +48,14 @@ export async function getNextField<
 >(
   table: Dexie.Table<T>,
   key = 'sortId' as StringLiteral<K>,
-  orderBy?: string
+  leading?: { key: string; value: string | number }
 ): Promise<number> {
-  const lastBySortId = await table
-    .orderBy(orderBy || key)
-    .reverse()
-    .first()
+  const collection = !leading
+    ? table.orderBy(key)
+    : table
+        .where(`[${leading.key}+${key}]`)
+        .between([leading.value, Dexie.minKey], [leading.value, Dexie.maxKey])
+  const lastBySortId = await collection.reverse().first()
   return lastBySortId && lastBySortId[key] !== undefined
     ? lastBySortId[key] + 1
     : 0
