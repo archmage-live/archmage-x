@@ -1,11 +1,47 @@
 import assert from 'assert'
 import { useLiveQuery } from 'dexie-react-hooks'
+import { useMemo } from 'react'
 
 import { DB } from '~lib/db'
 import { NetworkKind, NetworkType } from '~lib/network'
+import { AppChainInfo as CosmChainInfo } from '~lib/network/cosm'
+import { EvmChainInfo } from '~lib/network/evm'
+import { INetwork } from '~lib/schema'
 
 import { CosmNetworkService } from './cosmService'
 import { EvmNetworkService } from './evmService'
+
+export interface NetworkInfo {
+  name: string
+  description?: string
+  chainId: number | string
+  currencySymbol: string
+}
+
+export function getNetworkInfo(network: INetwork): NetworkInfo {
+  switch (network.type) {
+    case NetworkType.EVM: {
+      const info = network.info as EvmChainInfo
+      return {
+        name: info.name,
+        description: info.title || info.name,
+        chainId: info.chainId,
+        currencySymbol: info.nativeCurrency.symbol
+      }
+    }
+    case NetworkType.COSM: {
+      const info = network.info as CosmChainInfo
+      return {
+        name: info.chainName,
+        description: info.chainName,
+        chainId: info.chainId,
+        currencySymbol: info.feeCurrencies?.[0].coinDenom
+      }
+    }
+    default:
+      return {} as NetworkInfo
+  }
+}
 
 export async function initNetworks() {
   await EvmNetworkService.init()
@@ -23,6 +59,10 @@ export function useNetworks(type?: NetworkType, kind?: NetworkKind) {
       return DB.networks.orderBy('sortId').toArray()
     }
   }, [type, kind])
+}
+
+export function useNetworksInfo(networks?: INetwork[]) {
+  return useMemo(() => networks?.map((net) => getNetworkInfo(net)), [networks])
 }
 
 export function useNetwork(id?: number) {

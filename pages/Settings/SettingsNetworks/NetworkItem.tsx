@@ -4,42 +4,7 @@ import { useEffect, useState } from 'react'
 import { DraggableProvidedDragHandleProps } from 'react-beautiful-dnd'
 import { MdDragIndicator } from 'react-icons/md'
 
-import { NetworkType } from '~lib/network'
-import { AppChainInfo as CosmChainInfo } from '~lib/network/cosm'
-import { EvmChainInfo } from '~lib/network/evm'
-import { INetwork } from '~lib/schema/network'
-
-export interface NetworkBasicInfo {
-  name: string
-  description?: string
-  chainId: number | string
-  currencySymbol: string
-}
-
-export function getBasicInfo(network: INetwork): NetworkBasicInfo {
-  switch (network.type) {
-    case NetworkType.EVM: {
-      const info = network.info as EvmChainInfo
-      return {
-        name: info.name,
-        description: info.title || info.name,
-        chainId: info.chainId,
-        currencySymbol: info.nativeCurrency.symbol
-      }
-    }
-    case NetworkType.COSM: {
-      const info = network.info as CosmChainInfo
-      return {
-        name: info.chainName,
-        description: info.chainName,
-        chainId: info.chainId,
-        currencySymbol: info.feeCurrencies?.[0].coinDenom
-      }
-    }
-    default:
-      return {} as NetworkBasicInfo
-  }
-}
+import { NetworkInfo } from '~lib/services/network'
 
 export const NetworkItem = ({
   info,
@@ -49,7 +14,7 @@ export const NetworkItem = ({
   onClick,
   dragHandleProps = {} as DraggableProvidedDragHandleProps
 }: {
-  info: NetworkBasicInfo
+  info: NetworkInfo
   bg?: string
   hoverBg?: string
   infoVisible?: boolean

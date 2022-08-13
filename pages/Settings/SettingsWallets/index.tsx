@@ -1,7 +1,6 @@
 import { Button, HStack, Select, SimpleGrid, Stack } from '@chakra-ui/react'
 import { useEffect, useState } from 'react'
 
-import { SwitchBar } from '~components/SwitchBar'
 import {
   NETWORK_KIND_SCOPES,
   NETWORK_KIND_SCOPE_ANY,
@@ -9,14 +8,8 @@ import {
   NetworkKindScope,
   getNetworkKind
 } from '~lib/network'
-import { INetwork } from '~lib/schema/network'
-import { useNetwork, useNetworks } from '~lib/services/network'
-import { useWallet } from '~lib/services/walletService'
+import { getNetworkInfo, useNetwork, useNetworks } from '~lib/services/network'
 import { createTab } from '~lib/util'
-import {
-  NetworkBasicInfo,
-  getBasicInfo
-} from '~pages/Settings/SettingsNetworks/NetworkItem'
 import { SubWalletEdit } from '~pages/Settings/SettingsWallets/SubWalletEdit'
 import { WalletEdit } from '~pages/Settings/SettingsWallets/WalletEdit'
 
@@ -87,7 +80,7 @@ export const SettingsWallets = () => {
                 setNetworkId(+e.target.value)
               }}>
               {networksOfKind?.map((net) => {
-                const info = getBasicInfo(net)
+                const info = getNetworkInfo(net)
                 return (
                   <option key={net.id} value={net.id}>
                     {info.name}

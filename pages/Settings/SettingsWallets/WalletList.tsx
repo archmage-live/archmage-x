@@ -10,14 +10,14 @@ import {
   DroppableProvided
 } from 'react-beautiful-dnd'
 
-import { INetwork } from '~lib/schema/network'
-import { IWallet } from '~lib/schema/wallet'
+import { INetwork, IWallet } from '~lib/schema'
 import {
   WALLET_SERVICE,
   reorderWallets,
   useWallets
 } from '~lib/services/walletService'
-import { WalletItem } from '~pages/Settings/SettingsWallets/WalletItem'
+
+import { WalletItem } from './WalletItem'
 
 interface WalletListProps {
   network?: INetwork

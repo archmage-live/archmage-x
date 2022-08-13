@@ -11,13 +11,11 @@ import {
 } from 'react-beautiful-dnd'
 
 import { INetwork } from '~lib/schema/network'
-import { reorderNetworks } from '~lib/services/network'
-import {
-  NetworkItem,
-  getBasicInfo
-} from '~pages/Settings/SettingsNetworks/NetworkItem'
+import { getNetworkInfo, reorderNetworks } from '~lib/services/network'
 
-export const NetworksLists = ({
+import { NetworkItem } from './NetworkItem'
+
+export const NetworkList = ({
   networks: nets,
   selectedId,
   onSelectedId
@@ -97,7 +95,7 @@ export const NetworksLists = ({
           mode="virtual"
           renderClone={(provided, snapshot, rubric) => {
             const net = networks[rubric.source.index]
-            const info = getBasicInfo(net)
+            const info = getNetworkInfo(net)
             return (
               <Box
                 ref={provided.innerRef}
@@ -120,7 +118,7 @@ export const NetworksLists = ({
               <Box h={networksVirtualizer.getTotalSize()} position="relative">
                 {networksVirtualizer.getVirtualItems().map((item) => {
                   const net = networks[item.index]
-                  const info = getBasicInfo(net)
+                  const info = getNetworkInfo(net)
                   return (
                     <Draggable
                       key={net.id}

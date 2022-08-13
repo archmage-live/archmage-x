@@ -9,7 +9,8 @@ import { dayjs } from '~lib/dayjs'
 import { INetwork } from '~lib/schema/network'
 import { IWallet } from '~lib/schema/wallet'
 import { WalletType } from '~lib/wallet'
-import { SubWalletList } from '~pages/Settings/SettingsWallets/SubWalletList'
+
+import { SubWalletList } from './SubWalletList'
 
 function getWalletType(type: WalletType) {
   switch (type) {
@@ -34,7 +35,6 @@ interface WalletItemProps {
   onClick?: () => void
   dragHandleProps?: DraggableProvidedDragHandleProps
   measureElement?: (element?: HTMLElement | null) => any
-  closed?: boolean
 
   selectedSubId?: number
 

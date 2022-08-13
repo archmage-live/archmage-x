@@ -11,15 +11,14 @@ import {
 } from 'react-beautiful-dnd'
 import { useDebounce } from 'react-use'
 
-import { IDerivedWallet } from '~lib/schema/derivedWallet'
-import { INetwork } from '~lib/schema/network'
-import { IWalletInfo } from '~lib/schema/walletInfo'
+import { IDerivedWallet, INetwork, IWalletInfo } from '~lib/schema'
 import {
   reorderSubWallets,
   useSubWallets,
   useSubWalletsInfo
 } from '~lib/services/walletService'
-import { SubWalletItem } from '~pages/Settings/SettingsWallets/SubWalletItem'
+
+import { SubWalletItem } from './SubWalletItem'
 
 interface SubWalletListProps {
   network: INetwork

@@ -7,7 +7,7 @@ import { INetwork } from '~lib/schema/network'
 import { useNetworks } from '~lib/services/network'
 
 import { NetworkEdit } from './NetworkEdit'
-import { NetworksLists } from './NetworkLists'
+import { NetworkList } from './NetworkList'
 
 export const SettingsNetworks = () => {
   const [networkScope, setNetworkScope] = useState<NetworkScope>(
@@ -43,7 +43,7 @@ export const SettingsNetworks = () => {
           </HStack>
 
           {networks?.length && (
-            <NetworksLists
+            <NetworkList
               networks={networks}
               selectedId={selectedId}
               onSelectedId={setSelectedId}
