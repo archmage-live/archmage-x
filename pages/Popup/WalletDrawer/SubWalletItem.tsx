@@ -1,3 +1,4 @@
+import { CheckIcon } from '@chakra-ui/icons'
 import { Box, Button, HStack, Text } from '@chakra-ui/react'
 import Blockies from 'react-blockies'
 
@@ -8,31 +9,50 @@ export const SubWalletItem = ({
   wallet,
   info,
   selected,
-  onSelected
+  onSelected,
+  active
 }: {
   wallet: IDerivedWallet
   info?: IWalletInfo
   selected?: boolean
   onSelected?: () => void
+  active?: boolean
 }) => {
   return (
     <Button
       key={wallet.id}
       variant="ghost"
+      size="lg"
       w="full"
+      h={16}
+      px={4}
       justifyContent="start"
-      isActive={selected}
       onClick={onSelected}>
-      <HStack spacing={4}>
-        <Box borderRadius="50%" overflow="hidden">
-          <Blockies seed={info?.address + ''} size={10} scale={3} />
-        </Box>
-        <Text fontSize="lg" noOfLines={1}>
-          {wallet.name}
-        </Text>
-        <Text fontSize="lg" color="gray.500" noOfLines={1}>
-          {shortenAddress(info?.address)}
-        </Text>
+      <HStack w="full" justify="space-between">
+        <HStack w="calc(100% - 29.75px)" justify="space-between">
+          <Box
+            borderRadius="50%"
+            overflow="hidden"
+            transform="scale(0.8)"
+            m="-3px">
+            <Blockies seed={info?.address + ''} size={10} scale={3} />
+          </Box>
+
+          <HStack
+            w="calc(100% - 31px)"
+            justify="space-between"
+            align="baseline">
+            <Text fontSize="lg" noOfLines={1} display="block">
+              {wallet.name}
+            </Text>
+
+            <Text fontSize="sm" color="gray.500">
+              {shortenAddress(info?.address, 4)}
+            </Text>
+          </HStack>
+        </HStack>
+
+        {active && <CheckIcon fontSize="lg" color="green.500" />}
       </HStack>
     </Button>
   )

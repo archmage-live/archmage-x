@@ -365,13 +365,22 @@ export function useSubWalletInfo(
   }, [id, networkKind, chainId, index])
 }
 
-export function useWallet(walletId?: number) {
+export function useWallet(id?: number) {
   return useLiveQuery(() => {
-    if (walletId === undefined) {
+    if (id === undefined) {
       return undefined
     }
-    return DB.wallets.get(walletId)
-  }, [walletId])
+    return DB.wallets.get(id)
+  }, [id])
+}
+
+export function useSubWallet(id?: number) {
+  return useLiveQuery(() => {
+    if (id === undefined) {
+      return undefined
+    }
+    return DB.derivedWallets.get(id)
+  }, [id])
 }
 
 export function useHdPaths(

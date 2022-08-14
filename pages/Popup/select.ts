@@ -2,7 +2,7 @@ import Dexie from 'dexie'
 import { useEffect, useState } from 'react'
 
 import { DB } from '~lib/db'
-import { INetwork } from '~lib/schema'
+import { IDerivedWallet, INetwork, IWallet } from '~lib/schema'
 import { StoreKey, useLocalStorage } from '~lib/store'
 import { WalletType } from '~lib/wallet'
 import { useSelectedWallet as useVolatileSelectedWallet } from '~pages/Settings/SettingsWallets/select'
@@ -42,72 +42,93 @@ export function useSelectedNetwork() {
   }
 }
 
+export interface ActiveId {
+  masterId: number
+  derivedId: number | undefined
+}
+
 export function useSelectedWallet() {
-  const {
-    selectedId,
-    selectedSubId,
-    selectedWallet,
-    selectedSubWallet,
-    setSelectedId,
-    setSelectedSubId
-  } = useVolatileSelectedWallet()
+  const { selectedId, selectedSubId, setSelectedId, setSelectedSubId } =
+    useVolatileSelectedWallet()
 
-  const [storedSelectedWallet, setStoredSelectedWallet] = useLocalStorage<{
-    masterId: number
-    derivedId: number | undefined
-  }>(StoreKey.SELECTED_WALLET)
-
-  useEffect(() => {
-    const effect = async () => {
-      if (!storedSelectedWallet) {
-        const firstWallet = await DB.wallets.orderBy('sortId').first()
-        if (!firstWallet) {
+  const [activeId, setActiveId] = useLocalStorage<ActiveId | undefined>(
+    StoreKey.SELECTED_WALLET,
+    async (storedSelectedWallet) => {
+      if (storedSelectedWallet !== undefined) {
+        return storedSelectedWallet
+      }
+      const firstWallet = await DB.wallets.orderBy('sortId').first()
+      if (!firstWallet) {
+        return
+      }
+      if (firstWallet.type === WalletType.HD) {
+        const firstSubWallet = await DB.derivedWallets
+          .where('[masterId+sortId]')
+          .between(
+            [firstWallet.id, Dexie.minKey],
+            [firstWallet.id, Dexie.maxKey]
+          )
+          .first()
+        if (!firstSubWallet) {
           return
         }
-        if (firstWallet.type === WalletType.HD) {
-          const firstSubWallet = await DB.derivedWallets
-            .where('[masterId+sortId]')
-            .between(
-              [firstWallet.id, Dexie.minKey],
-              [firstWallet.id, Dexie.maxKey]
-            )
-            .first()
-          if (!firstSubWallet) {
-            return
-          }
-          await setStoredSelectedWallet({
-            masterId: firstWallet.id!,
-            derivedId: firstSubWallet.id
-          })
-        } else {
-          await setStoredSelectedWallet({
-            masterId: firstWallet.id!,
-            derivedId: undefined
-          })
+        return {
+          masterId: firstWallet.id!,
+          derivedId: firstSubWallet.id
+        }
+      } else {
+        return {
+          masterId: firstWallet.id!,
+          derivedId: undefined
         }
       }
     }
+  )
 
-    effect()
-  }, [setStoredSelectedWallet, storedSelectedWallet])
+  const [activeWallet, setActiveWallet] = useState<
+    | {
+        master: IWallet
+        derived: IDerivedWallet | undefined
+      }
+    | undefined
+  >()
 
   useEffect(() => {
     const effect = async () => {
-      if (storedSelectedWallet && selectedId === undefined) {
-        if (storedSelectedWallet.derivedId === undefined) {
-          setSelectedId(storedSelectedWallet.masterId)
+      console.log(activeId, selectedId, selectedSubId)
+      if (activeId && selectedId === undefined) {
+        if (activeId.derivedId === undefined) {
+          setSelectedId(activeId.masterId)
         } else {
-          setSelectedSubId(storedSelectedWallet.derivedId)
+          setSelectedSubId(activeId.derivedId)
         }
       } else if (
         selectedId !== undefined &&
-        (storedSelectedWallet.masterId !== selectedId ||
-          storedSelectedWallet.derivedId !== selectedSubId)
+        (activeId.masterId !== selectedId ||
+          activeId.derivedId !== selectedSubId)
       ) {
-        await setStoredSelectedWallet({
+        const master = await DB.wallets.get(selectedId)
+        if (!master) {
+          return
+        }
+        if (master.type !== WalletType.HD) {
+          await setActiveId({
+            masterId: selectedId,
+            derivedId: undefined
+          })
+          setActiveWallet({ master, derived: undefined })
+          return
+        }
+
+        if (selectedSubId === undefined) {
+          return
+        }
+        const derived = await DB.derivedWallets.get(selectedSubId)
+        await setActiveId({
           masterId: selectedId,
           derivedId: selectedSubId
         })
+        setActiveWallet({ master, derived })
       }
     }
 
@@ -117,16 +138,16 @@ export function useSelectedWallet() {
     selectedSubId,
     setSelectedId,
     setSelectedSubId,
-    setStoredSelectedWallet,
-    storedSelectedWallet
+    setActiveId,
+    activeId
   ])
 
   return {
     selectedId,
     selectedSubId,
-    selectedWallet,
-    selectedSubWallet,
     setSelectedId,
-    setSelectedSubId
+    setSelectedSubId,
+    activeId,
+    activeWallet
   }
 }

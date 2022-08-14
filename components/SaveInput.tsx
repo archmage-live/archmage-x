@@ -62,7 +62,7 @@ export const SaveInput = ({
       setSaveColorScheme(input === value ? 'gray' : 'purple')
     },
     200,
-    [value, input]
+    [hideSaveIfNoChange, value, input]
   )
 
   const onValidate = (val: string) => {

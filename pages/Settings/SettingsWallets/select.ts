@@ -1,32 +1,19 @@
 import { useCallback, useEffect, useState } from 'react'
 
-import { DB } from '~lib/db'
-import { IDerivedWallet, IWallet } from '~lib/schema'
+import { useSubWallet, useWallet } from '~lib/services/walletService'
 
 export function useSelectedWallet() {
   const [id, setId] = useState<number>()
   const [subId, setSubId] = useState<number>()
-  const [wallet, setWallet] = useState<IWallet>()
-  const [subWallet, setSubWallet] = useState<IDerivedWallet>()
+
+  const wallet = useWallet(id)
+  const subWallet = useSubWallet(subId)
 
   useEffect(() => {
-    if (id === undefined) {
-      setWallet(undefined)
-    } else {
-      DB.wallets.get(id).then((w) => setWallet(w))
+    if (subWallet) {
+      setId(subWallet.masterId)
     }
-  }, [id, setWallet])
-
-  useEffect(() => {
-    if (subId === undefined) {
-      setSubWallet(undefined)
-    } else {
-      DB.derivedWallets.get(subId).then((w) => {
-        setId(w?.masterId)
-        setSubWallet(w)
-      })
-    }
-  }, [setId, setSubWallet, subId])
+  }, [subWallet])
 
   const setSelectedId = useCallback(
     (id: number) => {

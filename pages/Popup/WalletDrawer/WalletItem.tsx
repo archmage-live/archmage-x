@@ -1,12 +1,13 @@
+import { CheckIcon } from '@chakra-ui/icons'
 import { Box, Button, HStack, Text, useDisclosure } from '@chakra-ui/react'
-import { useCallback, useRef } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import Blockies from 'react-blockies'
-import { useDebounce } from 'react-use'
 
 import { INetwork } from '~lib/schema/network'
 import { IWallet } from '~lib/schema/wallet'
 import { WalletType } from '~lib/wallet'
 
+import { ActiveId } from '../select'
 import { SubWalletList } from './SubWalletList'
 
 interface WalletItemProps {
@@ -16,6 +17,8 @@ interface WalletItemProps {
   onSelected?: () => void
   selectedSubId?: number
   onSelectedSubId?: (selectedSubId: number) => void
+  activeId?: ActiveId
+  onClose: () => void
   measureElement?: (element?: HTMLElement | null) => any
 }
 
@@ -26,6 +29,8 @@ export const WalletItem = ({
   onSelected,
   selectedSubId,
   onSelectedSubId,
+  activeId,
+  onClose,
   measureElement
 }: WalletItemProps) => {
   const elRef = useRef(null)
@@ -35,33 +40,48 @@ export const WalletItem = ({
     measureElement?.(elRef.current)
   }, [measureElement])
 
-  useDebounce(
-    () => {
-      measure()
-    },
-    50,
-    [isOpen, measure]
-  )
+  useEffect(() => {
+    measure()
+  }, [isOpen, measure])
 
   return (
-    <Box py={1} ref={elRef}>
+    <Box ref={elRef}>
       <Button
         key={wallet.id}
         variant="ghost"
+        size="lg"
         w="full"
+        h={16}
+        px={4}
         justifyContent="start"
-        isActive={selected}
         onClick={() => {
           onSelected?.()
-          onToggle()
+          if (wallet.type === WalletType.HD) {
+            onToggle()
+          } else {
+            onClose()
+          }
         }}>
-        <HStack spacing={4}>
-          <Box borderRadius="50%" overflow="hidden">
-            <Blockies seed={wallet.hash} size={10} scale={3} />
-          </Box>
-          <Text fontSize="lg" noOfLines={1}>
-            {wallet.name}
-          </Text>
+        <HStack w="full" justify="space-between">
+          <HStack w="calc(100% - 29.75px)" justify="space-between">
+            <Box
+              borderRadius="50%"
+              overflow="hidden"
+              transform="scale(0.8)"
+              m="-3px">
+              <Blockies seed={wallet.hash} size={10} scale={3} />
+            </Box>
+
+            <HStack w="calc(100% - 31px)" justify="space-between">
+              <Text fontSize="lg" noOfLines={1} display="block">
+                {wallet.name}
+              </Text>
+            </HStack>
+          </HStack>
+
+          {activeId?.masterId === wallet.id && (
+            <CheckIcon fontSize="lg" color="green.500" />
+          )}
         </HStack>
       </Button>
 
@@ -70,7 +90,11 @@ export const WalletItem = ({
           network={network}
           masterId={wallet.id!}
           selectedId={selectedSubId}
-          onSelectedId={(id) => onSelectedSubId?.(id)}
+          onSelectedId={(id) => {
+            onSelectedSubId?.(id)
+            onClose()
+          }}
+          activeId={activeId}
           measure={measure}
         />
       )}

@@ -1,20 +1,20 @@
 import { Box } from '@chakra-ui/react'
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { useMemo, useRef } from 'react'
-import { useDebounce } from 'react-use'
+import { useEffect, useMemo, useRef } from 'react'
 
 import { INetwork } from '~lib/schema/network'
 import { IWalletInfo } from '~lib/schema/walletInfo'
 import { useSubWallets, useSubWalletsInfo } from '~lib/services/walletService'
 
+import { ActiveId } from '../select'
 import { SubWalletItem } from './SubWalletItem'
 
 interface SubWalletListProps {
   network: INetwork
   masterId: number
   selectedId?: number
-
-  onSelectedId(selectedId: number): void
+  onSelectedId: (selectedId: number) => void
+  activeId?: ActiveId
 
   measure(): void
 }
@@ -24,11 +24,12 @@ export const SubWalletList = ({
   masterId,
   selectedId,
   onSelectedId,
+  activeId,
   measure
 }: SubWalletListProps) => {
   const wallets = useSubWallets(masterId)
 
-  useDebounce(measure, 50, [measure, wallets])
+  useEffect(measure, [measure, wallets])
 
   const infos = useSubWalletsInfo(masterId, network.kind, network.chainId)
   const infoMap = useMemo(() => {
@@ -41,7 +42,7 @@ export const SubWalletList = ({
   const walletsVirtualizer = useVirtualizer({
     count: wallets?.length || 0,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 64,
+    estimateSize: () => 56,
     getItemKey: (index) => wallets?.[index].id!
   })
 
@@ -50,13 +51,8 @@ export const SubWalletList = ({
   }
 
   return (
-    <Box py={2} px={8}>
-      <Box
-        ref={parentRef}
-        maxH="540px"
-        overflowY="auto"
-        borderRadius="xl"
-        p="14px">
+    <Box py={2} px={4}>
+      <Box ref={parentRef} maxH="336px" overflowY="auto" borderRadius="xl">
         <Box h={walletsVirtualizer.getTotalSize()} position="relative">
           {walletsVirtualizer.getVirtualItems().map((item) => {
             const wallet = wallets[item.index]
@@ -70,12 +66,13 @@ export const SubWalletList = ({
                 left={0}
                 transform={`translateY(${item.start}px)`}
                 w="full"
-                h="64px">
+                h="56px">
                 <SubWalletItem
                   wallet={wallet}
                   info={info}
                   selected={wallet.id === selectedId}
                   onSelected={() => onSelectedId(wallet.id!)}
+                  active={activeId?.derivedId === wallet.id}
                 />
               </Box>
             )
