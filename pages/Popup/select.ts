@@ -2,7 +2,8 @@ import Dexie from 'dexie'
 import { useEffect, useState } from 'react'
 
 import { DB } from '~lib/db'
-import { IDerivedWallet, INetwork, IWallet } from '~lib/schema'
+import { INetwork } from '~lib/schema'
+import { useSubWallet, useWallet } from '~lib/services/walletService'
 import { StoreKey, useLocalStorage } from '~lib/store'
 import { WalletType } from '~lib/wallet'
 import { useSelectedWallet as useVolatileSelectedWallet } from '~pages/Settings/SettingsWallets/select'
@@ -85,14 +86,6 @@ export function useSelectedWallet() {
     }
   )
 
-  const [activeWallet, setActiveWallet] = useState<
-    | {
-        master: IWallet
-        derived: IDerivedWallet | undefined
-      }
-    | undefined
-  >()
-
   useEffect(() => {
     const effect = async () => {
       console.log(activeId, selectedId, selectedSubId)
@@ -116,19 +109,16 @@ export function useSelectedWallet() {
             masterId: selectedId,
             derivedId: undefined
           })
-          setActiveWallet({ master, derived: undefined })
           return
         }
 
         if (selectedSubId === undefined) {
           return
         }
-        const derived = await DB.derivedWallets.get(selectedSubId)
         await setActiveId({
           masterId: selectedId,
           derivedId: selectedSubId
         })
-        setActiveWallet({ master, derived })
       }
     }
 
@@ -147,7 +137,17 @@ export function useSelectedWallet() {
     selectedSubId,
     setSelectedId,
     setSelectedSubId,
-    activeId,
-    activeWallet
+    activeId
+  }
+}
+
+export function useActiveWallet() {
+  const { activeId } = useSelectedWallet()
+  const wallet = useWallet(activeId?.masterId)
+  const subWallet = useSubWallet(activeId?.derivedId)
+
+  return {
+    wallet,
+    subWallet
   }
 }

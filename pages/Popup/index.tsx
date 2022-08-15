@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { Route, Routes } from 'react-router-dom'
 
 import { NavTarget, Navbar } from '~components/Navbar'
-import PopupHomePage from '~pages/PopupHome'
+import AssetsPage from '~pages/Popup/Assets'
 import UnlockPage from '~pages/Unlock'
 
 import { Toolbar } from './Toolbar'
@@ -36,7 +36,7 @@ export default function Popup() {
 
               <Container flex="1">
                 <Routes>
-                  <Route path="/home" element={<PopupHomePage />} />
+                  <Route path="/home" element={<AssetsPage />} />
                 </Routes>
               </Container>
 

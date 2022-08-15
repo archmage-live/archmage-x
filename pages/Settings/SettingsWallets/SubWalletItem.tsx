@@ -62,7 +62,7 @@ export const SubWalletItem = ({
           <Box borderRadius="50%" overflow="hidden">
             <Blockies seed={info?.address + ''} size={10} scale={3} />
           </Box>
-          <Text fontSize="lg" noOfLines={1} w="200px">
+          <Text fontSize="lg" noOfLines={1} w="160px">
             {wallet.name}
           </Text>
         </HStack>

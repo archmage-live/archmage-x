@@ -352,12 +352,20 @@ export function useSubWalletsInfo(
 }
 
 export function useSubWalletInfo(
-  id: number,
-  networkKind: NetworkKind,
-  chainId: number | string,
-  index: number
+  id?: number,
+  networkKind?: NetworkKind,
+  chainId?: number | string,
+  index?: number
 ) {
   return useLiveQuery(() => {
+    if (
+      id === undefined ||
+      networkKind === undefined ||
+      chainId === undefined ||
+      index === undefined
+    ) {
+      return undefined
+    }
     return DB.walletInfos
       .where('[masterId+networkKind+chainId+index]')
       .equals([id, networkKind, chainId, index])

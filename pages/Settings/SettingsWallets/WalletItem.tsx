@@ -107,7 +107,7 @@ export const WalletItem = ({
           <Box borderRadius="50%" overflow="hidden">
             <Blockies seed={wallet.hash} size={10} scale={3} />
           </Box>
-          <Text fontSize="lg" noOfLines={1} w="200px">
+          <Text fontSize="lg" noOfLines={1} w="160px">
             {wallet.name}
           </Text>
         </HStack>
