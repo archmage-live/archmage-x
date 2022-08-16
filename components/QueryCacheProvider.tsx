@@ -2,7 +2,7 @@ import { QueryClient } from '@tanstack/react-query'
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client'
 import { ReactNode } from 'react'
 
-import { createQueryCachePersister } from '~lib/queryCache'
+import { createQueryCachePersister } from '~lib/query'
 
 interface QueryCacheProviderProps {
   children: ReactNode

@@ -14,6 +14,7 @@ import {
 import { FiCheckCircle, FiCopy } from 'react-icons/fi'
 import { MdMoreVert } from 'react-icons/md'
 
+import { useBalance } from '~lib/services/provider'
 import { useSubWalletInfo } from '~lib/services/walletService'
 import { shortenAddress } from '~lib/utils'
 
@@ -34,9 +35,11 @@ export default function Assets() {
 
   const { hasCopied, onCopy } = useClipboard('')
 
+  const balance = useBalance(network, info)
+
   return (
-    <Stack w="full">
-      <HStack justify="space-between" py={8}>
+    <Stack w="full" pt={8} spacing={8}>
+      <HStack justify="space-between">
         <Center
           w="4"
           h="4"
@@ -69,6 +72,17 @@ export default function Assets() {
             icon={<Icon as={MdMoreVert} fontSize="xl" />}
           />
         </Menu>
+      </HStack>
+
+      <HStack justify="center">
+        <Text fontSize="4xl" fontWeight="medium">
+          {balance?.amount} {balance?.symbol}
+        </Text>
+      </HStack>
+
+      <HStack justify="center" spacing={4}>
+        <Button size="md" w={28}>Deposit</Button>
+        <Button size="md" w={28}>Send</Button>
       </HStack>
     </Stack>
   )

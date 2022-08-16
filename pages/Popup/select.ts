@@ -52,43 +52,10 @@ export function useSelectedWallet() {
   const { selectedId, selectedSubId, setSelectedId, setSelectedSubId } =
     useVolatileSelectedWallet()
 
-  const [activeId, setActiveId] = useLocalStorage<ActiveId | undefined>(
-    StoreKey.SELECTED_WALLET,
-    async (storedSelectedWallet) => {
-      if (storedSelectedWallet !== undefined) {
-        return storedSelectedWallet
-      }
-      const firstWallet = await DB.wallets.orderBy('sortId').first()
-      if (!firstWallet) {
-        return
-      }
-      if (firstWallet.type === WalletType.HD) {
-        const firstSubWallet = await DB.derivedWallets
-          .where('[masterId+sortId]')
-          .between(
-            [firstWallet.id, Dexie.minKey],
-            [firstWallet.id, Dexie.maxKey]
-          )
-          .first()
-        if (!firstSubWallet) {
-          return
-        }
-        return {
-          masterId: firstWallet.id!,
-          derivedId: firstSubWallet.id
-        }
-      } else {
-        return {
-          masterId: firstWallet.id!,
-          derivedId: undefined
-        }
-      }
-    }
-  )
+  const { activeId, setActiveId } = useActiveWallet()
 
   useEffect(() => {
     const effect = async () => {
-      console.log(activeId, selectedId, selectedSubId)
       if (activeId && selectedId === undefined) {
         if (activeId.derivedId === undefined) {
           setSelectedId(activeId.masterId)
@@ -128,8 +95,8 @@ export function useSelectedWallet() {
     selectedSubId,
     setSelectedId,
     setSelectedSubId,
-    setActiveId,
-    activeId
+    activeId,
+    setActiveId
   ])
 
   return {
@@ -142,11 +109,46 @@ export function useSelectedWallet() {
 }
 
 export function useActiveWallet() {
-  const { activeId } = useSelectedWallet()
+  const [activeId, setActiveId] = useLocalStorage<ActiveId | undefined>(
+    StoreKey.SELECTED_WALLET,
+    async (storedSelectedWallet) => {
+      if (storedSelectedWallet !== undefined) {
+        return storedSelectedWallet
+      }
+      const firstWallet = await DB.wallets.orderBy('sortId').first()
+      if (!firstWallet) {
+        return
+      }
+      if (firstWallet.type === WalletType.HD) {
+        const firstSubWallet = await DB.derivedWallets
+          .where('[masterId+sortId]')
+          .between(
+            [firstWallet.id, Dexie.minKey],
+            [firstWallet.id, Dexie.maxKey]
+          )
+          .first()
+        if (!firstSubWallet) {
+          return
+        }
+        return {
+          masterId: firstWallet.id!,
+          derivedId: firstSubWallet.id
+        }
+      } else {
+        return {
+          masterId: firstWallet.id!,
+          derivedId: undefined
+        }
+      }
+    }
+  )
+
   const wallet = useWallet(activeId?.masterId)
   const subWallet = useSubWallet(activeId?.derivedId)
 
   return {
+    activeId,
+    setActiveId,
     wallet,
     subWallet
   }

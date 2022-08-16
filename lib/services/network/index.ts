@@ -16,6 +16,7 @@ export interface NetworkInfo {
   description?: string
   chainId: number | string
   currencySymbol: string
+  decimals: number
 }
 
 export function getNetworkInfo(network: INetwork): NetworkInfo {
@@ -26,7 +27,8 @@ export function getNetworkInfo(network: INetwork): NetworkInfo {
         name: info.name,
         description: info.title || info.name,
         chainId: info.chainId,
-        currencySymbol: info.nativeCurrency.symbol
+        currencySymbol: info.nativeCurrency.symbol,
+        decimals: info.nativeCurrency.decimals
       }
     }
     case NetworkType.COSM: {
@@ -35,7 +37,8 @@ export function getNetworkInfo(network: INetwork): NetworkInfo {
         name: info.chainName,
         description: info.chainName,
         chainId: info.chainId,
-        currencySymbol: info.feeCurrencies?.[0].coinDenom
+        currencySymbol: info.feeCurrencies?.[0].coinDenom,
+        decimals: info.feeCurrencies?.[0].coinDecimals
       }
     }
     default:

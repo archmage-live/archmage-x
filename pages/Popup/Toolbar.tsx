@@ -48,7 +48,6 @@ export const Toolbar = () => {
         <Button
           variant="outline"
           maxW={44}
-          colorScheme="purple"
           onClick={onNetworkToggle}>
           <Text noOfLines={1} display="block">
             {networkInfo?.name}

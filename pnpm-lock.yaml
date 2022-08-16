@@ -25,12 +25,15 @@ specifiers:
   '@ethersproject/bytes': ^5.6.1
   '@ethersproject/hdnode': ^5.6.2
   '@ethersproject/json-wallets': ^5.6.1
+  '@ethersproject/logger': ^5.6.0
+  '@ethersproject/networks': ^5.6.4
   '@ethersproject/properties': ^5.6.0
   '@ethersproject/providers': ^5.6.8
   '@ethersproject/random': ^5.6.1
   '@ethersproject/sha2': ^5.6.1
   '@ethersproject/signing-key': ^5.6.2
   '@ethersproject/transactions': ^5.6.2
+  '@ethersproject/web': ^5.6.1
   '@ethersproject/wordlists': ^5.6.1
   '@keplr-wallet/cosmos': ^0.10.15
   '@keplr-wallet/types': ^0.10.15
@@ -41,6 +44,7 @@ specifiers:
   '@mysten/sui.js': ^0.6.0
   '@plasmohq/storage': ^0.8.1
   '@solana/web3.js': ^1.47.3
+  '@tanstack/query-core': ^4.1.3
   '@tanstack/react-query': ^4.0.10
   '@tanstack/react-query-persist-client': ^4.0.10
   '@tanstack/react-virtual': 3.0.0-beta.17
@@ -64,6 +68,7 @@ specifiers:
   buffer: ^6.0.3
   crypto-browserify: ^3.12.0
   dayjs: ^1.11.4
+  decimal.js: ^10.4.0
   dexie: ^3.2.2
   dexie-react-hooks: ^1.1.1
   ed25519-hd-key: ^1.2.0
@@ -113,18 +118,22 @@ dependencies:
   '@ethersproject/bytes': 5.6.1
   '@ethersproject/hdnode': 5.6.2
   '@ethersproject/json-wallets': 5.6.1
+  '@ethersproject/logger': 5.6.0
+  '@ethersproject/networks': 5.6.4
   '@ethersproject/properties': 5.6.0
   '@ethersproject/providers': 5.6.8
   '@ethersproject/random': 5.6.1
   '@ethersproject/sha2': 5.6.1
   '@ethersproject/signing-key': 5.6.2
   '@ethersproject/transactions': 5.6.2
+  '@ethersproject/web': 5.6.1
   '@ethersproject/wordlists': 5.6.1
   '@keplr-wallet/cosmos': 0.10.15
   '@keplr-wallet/types': 0.10.15
   '@mysten/sui.js': 0.6.0
   '@plasmohq/storage': 0.8.1_react@18.2.0
   '@solana/web3.js': 1.47.3
+  '@tanstack/query-core': 4.1.3
   '@tanstack/react-query': 4.0.10_biqbaboplfbrettd7655fr4n2y
   '@tanstack/react-query-persist-client': 4.0.10
   '@tanstack/react-virtual': 3.0.0-beta.17_react@18.2.0
@@ -138,6 +147,7 @@ dependencies:
   buffer: 6.0.3
   crypto-browserify: 3.12.0
   dayjs: 1.11.4
+  decimal.js: 10.4.0
   dexie: 3.2.2
   dexie-react-hooks: 1.1.1_teemydzqvzub6ifcj7zwp2bddi
   ed25519-hd-key: 1.2.0
@@ -3999,8 +4009,8 @@ packages:
       defer-to-connect: 2.0.1
     dev: false
 
-  /@tanstack/query-core/4.0.10:
-    resolution: {integrity: sha512-9LsABpZXkWZHi4P1ozRETEDXQocLAxVzQaIhganxbNuz/uA3PsCAJxJTiQrknG5htLMzOF5MqM9G10e6DCxV1A==}
+  /@tanstack/query-core/4.1.3:
+    resolution: {integrity: sha512-mSWGovlZnEiVwC99t+Q9uLwGdV9hnq+Z2+sHNAr8tsujzMPRLFNSmWAh/AayAaxIRWPwF4Ce9dmhV2BrYmuK1A==}
     dev: false
 
   /@tanstack/react-query-persist-client/4.0.10:
@@ -4019,7 +4029,7 @@ packages:
       react-native:
         optional: true
     dependencies:
-      '@tanstack/query-core': 4.0.10
+      '@tanstack/query-core': 4.1.3
       '@types/use-sync-external-store': 0.0.3
       react: 18.2.0
       react-dom: 18.2.0_react@18.2.0
@@ -5631,6 +5641,10 @@ packages:
         optional: true
     dependencies:
       ms: 2.1.2
+
+  /decimal.js/10.4.0:
+    resolution: {integrity: sha512-Nv6ENEzyPQ6AItkGwLE2PGKinZZ9g59vSh2BeH6NqPu0OTKZ5ruJsVqh/orbAnqXc9pBbgXAIrc2EyaCj8NpGg==}
+    dev: false
 
   /decompress-response/6.0.0:
     resolution: {integrity: sha512-aW35yZM6Bb/4oJlZncMH2LCoZtJXTRxES17vE3hoRiowU2kWHaJKFkSBDnDR+cm9J+9QhXmREyIfv0pji9ejCQ==}
