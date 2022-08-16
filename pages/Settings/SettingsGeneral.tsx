@@ -4,12 +4,14 @@ import { SaveInput } from '~components/SaveInput'
 import { LOCALE_LABEL } from '~constants/locales'
 import { useUserLocale } from '~hooks/useActiveLocale'
 import { useLockTime } from '~hooks/useLockTime'
+import { QUOTE_CURRENCY_LABEL, useQuoteCurrency } from '~lib/quoteCurrency'
 
 import { SettingItem } from './SettingItem'
 
 export const SettingsGeneral = () => {
   const { colorMode, setColorMode } = useColorMode()
   const { userLocale, setUserLocale } = useUserLocale()
+  const { quoteCurrency, setQuoteCurrency } = useQuoteCurrency()
   const [lockTime, setLockTime] = useLockTime()
 
   return (
@@ -45,6 +47,25 @@ export const SettingsGeneral = () => {
                   </option>
                 )
               })}
+          </Select>
+        }
+      />
+
+      <SettingItem
+        title="Quote Currency"
+        description="Choose the quote currency used to display exchange rate"
+        setting={
+          <Select
+            w={64}
+            value={quoteCurrency}
+            onChange={(e) => setQuoteCurrency(e.target.value)}>
+            {Object.entries(QUOTE_CURRENCY_LABEL).map(([currency, text]) => {
+              return (
+                <option key={currency} value={currency}>
+                  {currency} - {text}
+                </option>
+              )
+            })}
           </Select>
         }
       />
