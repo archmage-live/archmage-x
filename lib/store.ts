@@ -14,7 +14,8 @@ export enum StoreKey {
   AUTO_LOCK_TIME = 'autoLockTime',
   KEYSTORE_PREFIX = 'keystore',
   SELECTED_NETWORK = 'selectedNetwork',
-  SELECTED_WALLET = 'selectedWallet'
+  SELECTED_WALLET = 'selectedWallet',
+  TX_REQUESTS = 'txRequests'
 }
 
 // local persistent

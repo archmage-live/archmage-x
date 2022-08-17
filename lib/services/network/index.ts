@@ -3,6 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { useMemo } from 'react'
 
 import { DB } from '~lib/db'
+import { ENV } from '~lib/env'
 import { NetworkKind, NetworkType } from '~lib/network'
 import { AppChainInfo as CosmChainInfo } from '~lib/network/cosm'
 import { EvmChainInfo } from '~lib/network/evm'
@@ -46,10 +47,24 @@ export function getNetworkInfo(network: INetwork): NetworkInfo {
   }
 }
 
-export async function initNetworks() {
-  await EvmNetworkService.init()
-  await CosmNetworkService.init()
+class NetworkService {
+  constructor() {
+    if (ENV.inServiceWorker) {
+      this.init()
+    }
+  }
+
+  private async init() {
+    await EvmNetworkService.init()
+    await CosmNetworkService.init()
+  }
+
+  async getNetwork(id: number): Promise<INetwork | undefined> {
+    return DB.networks.get(id)
+  }
 }
+
+export const NETWORK_SERVICE = new NetworkService()
 
 export function useNetworks(type?: NetworkType, kind?: NetworkKind) {
   assert(!(type && kind))

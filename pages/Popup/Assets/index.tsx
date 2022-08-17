@@ -81,8 +81,12 @@ export default function Assets() {
       </HStack>
 
       <HStack justify="center" spacing={4}>
-        <Button size="md" w={28}>Deposit</Button>
-        <Button size="md" w={28}>Send</Button>
+        <Button size="md" w={28}>
+          Deposit
+        </Button>
+        <Button size="md" w={28}>
+          Send
+        </Button>
       </HStack>
     </Stack>
   )

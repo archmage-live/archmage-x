@@ -74,4 +74,9 @@ export class CosmWallet implements SigningWallet {
     ws.address = (await wallet.getAccounts())[0].address
     return ws
   }
+
+  async signTransaction(transaction: any): Promise<string> {
+    // TODO
+    throw new Error('not implemented')
+  }
 }

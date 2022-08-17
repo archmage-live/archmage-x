@@ -23,7 +23,11 @@ import {
 } from '~lib/schema/derivedWallet'
 import { IWallet } from '~lib/schema/wallet'
 import { IWalletInfo } from '~lib/schema/walletInfo'
-import { WalletType, getDefaultPathPrefix, getSigningWallet } from '~lib/wallet'
+import {
+  WalletType,
+  getDefaultPathPrefix,
+  getMasterSigningWallet
+} from '~lib/wallet'
 
 export interface IWalletService {
   createPassword(password: string): Promise<void>
@@ -64,6 +68,8 @@ export interface IWalletService {
   deleteWallet(id: number): Promise<void>
 
   getWallet(id: number): Promise<IWallet | undefined>
+
+  getWalletInfo(id: number): Promise<IWalletInfo | undefined>
 
   listWallets(): Promise<IWallet[]>
 
@@ -210,6 +216,10 @@ class WalletService extends WalletServicePartial {
     return DB.wallets.get(id)
   }
 
+  async getWalletInfo(id: number): Promise<IWalletInfo | undefined> {
+    return DB.walletInfos.get(id)
+  }
+
   async listWallets(): Promise<IWallet[]> {
     return DB.wallets.toArray()
   }
@@ -254,7 +264,11 @@ class WalletService extends WalletServicePartial {
         ? wallet.type === WalletType.HD
         : wallet.type !== WalletType.HD
     )
-    const signingWallet = await getSigningWallet(wallet, networkKind, chainId)
+    const signingWallet = await getMasterSigningWallet(
+      wallet,
+      networkKind,
+      chainId
+    )
     let address
     if (wallet.type === WalletType.HD) {
       const hdPath = await DB.hdPaths
@@ -479,7 +493,11 @@ export async function ensureSubWalletsInfo(
     }
     chainId = firstNetwork.chainId
   }
-  const signingWallet = await getSigningWallet(wallet, networkKind, chainId)
+  const signingWallet = await getMasterSigningWallet(
+    wallet,
+    networkKind,
+    chainId
+  )
   const hdPath = await DB.hdPaths
     .where({ masterId: wallet.id, networkKind })
     .first()

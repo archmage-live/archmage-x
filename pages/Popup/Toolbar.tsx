@@ -45,10 +45,7 @@ export const Toolbar = () => {
     <Box width="full" p="4" boxShadow={useColorModeValue('sm', 'sm')}>
       <Flex justify="space-between" align="center">
         <Image boxSize="24px" src={icon} alt="Logo" />
-        <Button
-          variant="outline"
-          maxW={44}
-          onClick={onNetworkToggle}>
+        <Button variant="outline" maxW={44} onClick={onNetworkToggle}>
           <Text noOfLines={1} display="block">
             {networkInfo?.name}
           </Text>

@@ -84,4 +84,9 @@ export class SolWallet implements SigningWallet {
   verifyHex(msg: string, sig: Uint8Array): boolean {
     return this.verify(arrayify(msg), sig)
   }
+
+  async signTransaction(transaction: any): Promise<string> {
+    // TODO
+    throw new Error('not implemented')
+  }
 }

@@ -16,4 +16,6 @@ export interface SigningWallet {
   address: string
 
   derive(prefixPath: string, index: number): Promise<SigningWallet>
+
+  signTransaction(transaction: any): Promise<string>
 }

@@ -1,3 +1,4 @@
+import { TransactionRequest } from '@ethersproject/providers'
 import assert from 'assert'
 import { ethers } from 'ethers'
 
@@ -44,5 +45,13 @@ export class EvmWallet implements SigningWallet {
 
   get address(): string {
     return this.wallet.address
+  }
+
+  signTransaction(transaction: TransactionRequest): Promise<string> {
+    const wallet =
+      this.wallet instanceof ethers.utils.HDNode
+        ? new ethers.Wallet(this.wallet)
+        : this.wallet
+    return wallet.signTransaction(transaction)
   }
 }

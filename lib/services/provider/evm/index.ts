@@ -11,7 +11,13 @@ import { version } from '@ethersproject/providers/lib/_version'
 import { ConnectionInfo } from '@ethersproject/web'
 
 import { EvmChainInfo } from '~lib/network/evm'
-import { INetwork } from '~lib/schema'
+import { INetwork, IWalletInfo } from '~lib/schema'
+import { ProviderAdaptor } from '~lib/services/provider/types'
+import {
+  TRANSACTION_SERVICE,
+  TransactionRequest
+} from '~lib/services/transactionService'
+import { getSigningWallet } from '~lib/wallet'
 
 const logger = new Logger(version)
 
@@ -99,7 +105,26 @@ export class EvmProvider extends UrlJsonRpcProvider {
   }
 }
 
-export class EvmProviderAdaptor {
+export class EvmProviderWithSigner extends EvmProvider {
+  constructor(private net: INetwork, private wallet: IWalletInfo) {
+    super(net)
+  }
+
+  send(method: string, params: Array<any>): Promise<any> {
+    switch (method) {
+      case 'sendTransaction':
+        return TRANSACTION_SERVICE.requestTransaction({
+          networkId: this.net.id,
+          walletInfoId: this.wallet.id,
+          payload: params[0]
+        } as TransactionRequest)
+    }
+
+    return super.send(method, params)
+  }
+}
+
+export class EvmProviderAdaptor implements ProviderAdaptor {
   provider: EvmProvider
 
   constructor(network: INetwork) {
@@ -114,5 +139,14 @@ export class EvmProviderAdaptor {
   async getTransactions(address: string): Promise<any> {
     // TODO
     return
+  }
+
+  async signTransaction(wallet: IWalletInfo, transaction: any): Promise<any> {
+    const signer = await getSigningWallet(wallet)
+    return signer.signTransaction(transaction)
+  }
+
+  async sendTransaction(signedTransaction: any): Promise<any> {
+    return this.provider.sendTransaction(signedTransaction)
   }
 }

@@ -10,7 +10,7 @@ import { getNetworkInfo } from '~lib/services/network'
 import { EvmProviderAdaptor } from './evm'
 import { Balance, ProviderAdaptor } from './types'
 
-function getProvider(network: INetwork): ProviderAdaptor {
+export function getProvider(network: INetwork): ProviderAdaptor {
   switch (network.kind) {
     case NetworkKind.EVM:
       return new EvmProviderAdaptor(network)
