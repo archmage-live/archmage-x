@@ -1,6 +1,8 @@
 import { BigNumber } from '@ethersproject/bignumber'
 import { ethers } from 'ethers'
 
+import { CODEFI_GAS_API } from '~lib/services/datasource/codefi'
+
 import { EvmProvider } from './'
 
 const MAX_NUMBER_OF_BLOCKS_PER_ETH_FEE_HISTORY_CALL = 1024
@@ -19,7 +21,7 @@ type NextFeeHistoryBlock = {
 
 type FeeHistoryBlock = ExistingFeeHistoryBlock | NextFeeHistoryBlock
 
-export async function fetchBlockFeeHistory({
+async function fetchBlockFeeHistory({
   provider,
   numberOfBlocks: givenNumberOfBlocks,
   endBlock: givenEndBlock = 'latest',
@@ -166,7 +168,7 @@ export type Eip1559GasFee = {
   suggestedMaxFeePerGas: string // a GWEI decimal number
 }
 
-type SourcedGasFeeEstimates = {
+export type SourcedGasFeeEstimates = {
   low: Eip1559GasFee
   medium: Eip1559GasFee
   high: Eip1559GasFee
@@ -179,13 +181,13 @@ type SourcedGasFeeEstimates = {
   networkCongestion: number
 }
 
-type FallbackGasFeeEstimates = {
+export type FallbackGasFeeEstimates = {
   low: Eip1559GasFee
   medium: Eip1559GasFee
   high: Eip1559GasFee
 }
 
-type GasFeeEstimates = SourcedGasFeeEstimates | FallbackGasFeeEstimates
+export type GasFeeEstimates = SourcedGasFeeEstimates | FallbackGasFeeEstimates
 
 function calculateGasFeeEstimatesForPriorityLevels(
   feeHistory: FeeHistoryBlock[]
@@ -238,7 +240,7 @@ function calculateGasFeeEstimatesForPriorityLevels(
   return gasFeeEstimates
 }
 
-async function fetchGasEstimatesViaFeeHistory(
+async function fetchGasFeeEstimatesViaFeeHistory(
   provider: EvmProvider
 ): Promise<GasFeeEstimates> {
   const latestBlock = await provider.getBlock('latest')
@@ -263,7 +265,125 @@ async function fetchGasEstimatesViaFeeHistory(
   }
 }
 
-async function fetchLegacyGasPriceEstimates() {
+export type EstimatedGasFeeTimeBounds = {
+  lowerTimeBound?: number
+  upperTimeBound?: number
+}
+
+function calculateTimeEstimate(
+  maxPriorityFeePerGas: string,
+  maxFeePerGas: string,
+  gasFeeEstimates: GasFeeEstimates
+): EstimatedGasFeeTimeBounds {
+  const { low, medium, high } = gasFeeEstimates
+  const estimatedBaseFee =
+    (gasFeeEstimates as SourcedGasFeeEstimates).estimatedBaseFee || 0
+
+  let effectiveMaxPriorityFee =
+    BigNumber.from(maxFeePerGas).sub(estimatedBaseFee)
+  if (effectiveMaxPriorityFee.gt(maxPriorityFeePerGas)) {
+    effectiveMaxPriorityFee = BigNumber.from(maxPriorityFeePerGas)
+  }
+
+  if (effectiveMaxPriorityFee.lt(low.suggestedMaxPriorityFeePerGas)) {
+    return {
+      lowerTimeBound: undefined,
+      upperTimeBound: undefined
+    }
+  } else if (effectiveMaxPriorityFee.lt(medium.suggestedMaxPriorityFeePerGas)) {
+    return {
+      lowerTimeBound: low.minWaitTimeEstimate,
+      upperTimeBound: low.maxWaitTimeEstimate
+    }
+  } else if (effectiveMaxPriorityFee.lt(high.suggestedMaxPriorityFeePerGas)) {
+    return {
+      lowerTimeBound: medium.minWaitTimeEstimate,
+      upperTimeBound: medium.maxWaitTimeEstimate
+    }
+  } else if (effectiveMaxPriorityFee.eq(high.suggestedMaxPriorityFeePerGas)) {
+    return {
+      lowerTimeBound: high.minWaitTimeEstimate,
+      upperTimeBound: high.maxWaitTimeEstimate
+    }
+  } else {
+    return {
+      lowerTimeBound: 0,
+      upperTimeBound: high.maxWaitTimeEstimate
+    }
+  }
+}
+
+export type LegacyGasPriceEstimate = {
+  low: string
+  medium: string
+  high: string
+}
+
+export type EthGasPriceEstimate = {
+  gasPrice: string
+}
+
+enum GasEstimateType {
+  FEE_MARKET = 'fee_market',
+  LEGACY = 'legacy',
+  ETH_GAS_PRICE = 'eth_gasPrice'
+}
+
+export type GasFeeEstimation = {
+  gasFeeEstimates:
+    | GasFeeEstimates
+    | LegacyGasPriceEstimate
+    | EthGasPriceEstimate
+  estimatedGasFeeTimeBounds?: EstimatedGasFeeTimeBounds
+  gasEstimateType: GasEstimateType
+}
+
+export async function fetchGasFeeEstimates(
+  provider: EvmProvider
+): Promise<GasFeeEstimation> {
+  const network = await provider.getNetwork()
+  const latestBlock = await provider.getBlock('latest')
+  const supportEip1559 = !!latestBlock.baseFeePerGas
+
+  try {
+    if (supportEip1559) {
+      let gasFeeEstimates: GasFeeEstimates
+      try {
+        gasFeeEstimates = await CODEFI_GAS_API.suggestedGasFees(network.chainId)
+      } catch {
+        gasFeeEstimates = await fetchGasFeeEstimatesViaFeeHistory(provider)
+      }
+      const { suggestedMaxPriorityFeePerGas, suggestedMaxFeePerGas } =
+        gasFeeEstimates.medium
+      const estimatedGasFeeTimeBounds = calculateTimeEstimate(
+        suggestedMaxPriorityFeePerGas,
+        suggestedMaxFeePerGas,
+        gasFeeEstimates
+      )
+      return {
+        gasFeeEstimates,
+        estimatedGasFeeTimeBounds,
+        gasEstimateType: GasEstimateType.FEE_MARKET
+      }
+    } else if (network.chainId === 1) {
+      // legacy only for Ethereum mainnet
+      const gasFeeEstimates = await CODEFI_GAS_API.gasPrices(network.chainId)
+      return {
+        gasFeeEstimates,
+        gasEstimateType: GasEstimateType.LEGACY
+      }
+    }
+  } catch {
+    // fallback as follows
+  }
+
+  const gasPrice = await provider.getGasPrice()
+  return {
+    gasFeeEstimates: {
+      gasPrice: ethers.utils.formatUnits(gasPrice, 'gwei')
+    } as EthGasPriceEstimate,
+    gasEstimateType: GasEstimateType.ETH_GAS_PRICE
+  }
 }
 
 function medianOf(numbers: BigNumber[]): BigNumber {
