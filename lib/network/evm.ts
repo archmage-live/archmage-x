@@ -15,13 +15,13 @@ export interface EvmChainInfo {
   parent?: ChainParent
 }
 
-interface EvmExplorer {
+export interface EvmExplorer {
   name: string
   url: string
   standard: 'EIP3091' | 'none'
 }
 
-interface NativeCurrency {
+export interface NativeCurrency {
   name: string
   symbol: string
   decimals: number

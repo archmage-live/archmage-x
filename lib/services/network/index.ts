@@ -59,8 +59,31 @@ class NetworkService {
     await CosmNetworkService.init()
   }
 
-  async getNetwork(id: number): Promise<INetwork | undefined> {
-    return DB.networks.get(id)
+  async getNetwork(
+    id: number | { kind: NetworkKind; chainId: number | string }
+  ): Promise<INetwork | undefined> {
+    if (typeof id === 'number') {
+      return DB.networks.get(id)
+    } else {
+      return DB.networks.where({ kind: id.kind, chainId: id.chainId }).first()
+    }
+  }
+
+  async addNetwork(
+    kind: NetworkKind,
+    chainId: number | string,
+    info: any
+  ): Promise<INetwork> {
+    switch (kind) {
+      case NetworkKind.EVM:
+        return EvmNetworkService.addNetwork(chainId, info)
+    }
+    // TODO
+    return {} as INetwork
+  }
+
+  async deleteNetwork(id: number) {
+    await DB.networks.delete(id)
   }
 }
 

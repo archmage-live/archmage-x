@@ -75,6 +75,7 @@ specifiers:
   eslint: '>=7.23.0 <8.0.0 || >=8.0.0-0 <8.0.0 || >=8.0.0 <9.0.0'
   eslint-config-next: ^12.2.1
   eslint-config-prettier: ^8.5.0
+  eth-rpc-errors: ^4.0.3
   ethers: ^5.6.9
   framer-motion: ^6.4.2
   jest: ^28.1.2
@@ -153,6 +154,7 @@ dependencies:
   ed25519-hd-key: 1.2.0
   eslint-config-next: 12.2.1_4x5o4skxv6sl53vpwefgt23khm
   eslint-config-prettier: 8.5.0_eslint@8.19.0
+  eth-rpc-errors: 4.0.3
   ethers: 5.6.9
   framer-motion: 6.4.2_biqbaboplfbrettd7655fr4n2y
   jotai: 1.7.4_2sb3a56iojvze2npkgcccbebf4
@@ -6258,6 +6260,12 @@ packages:
     resolution: {integrity: sha512-kVscqXk4OCp68SZ0dkgEKVi6/8ij300KBWTJq32P/dYeWTSwK41WyTxalN1eRmA5Z9UU/LX9D7FWSmV9SAYx6g==}
     engines: {node: '>=0.10.0'}
 
+  /eth-rpc-errors/4.0.3:
+    resolution: {integrity: sha512-Z3ymjopaoft7JDoxZcEb3pwdGh7yiYMhOwm2doUt6ASXlMavpNlK6Cre0+IMl2VSGyEU9rkiperQhp5iRxn5Pg==}
+    dependencies:
+      fast-safe-stringify: 2.1.1
+    dev: false
+
   /ethers/5.6.9:
     resolution: {integrity: sha512-lMGC2zv9HC5EC+8r429WaWu3uWJUCgUCt8xxKCFqkrFuBDZXDYIdzDUECxzjf2BMF8IVBByY1EBoGSL3RTm8RA==}
     dependencies:
@@ -6407,6 +6415,10 @@ packages:
       '@types/pako': 1.0.4
       iobuffer: 5.1.0
       pako: 2.0.4
+    dev: false
+
+  /fast-safe-stringify/2.1.1:
+    resolution: {integrity: sha512-W+KJc2dmILlPplD/H4K9l9LcAHAfPtP6BY84uVLXQ6Evcz9Lcg33Y2z1IVblT6xdY54PXYVHEv+0Wpq8Io6zkA==}
     dev: false
 
   /fast-shallow-equal/1.0.0:

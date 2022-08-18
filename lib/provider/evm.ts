@@ -4,17 +4,7 @@ import type { IEvmProviderService } from '~/lib/services/provider/evmService'
 export const EVM_PROVIDER_NAME = 'evmProvider' as const
 
 export interface IEvmProvider {
-  sendAsync: (
-    request: { method: string; params?: Array<any> },
-    callback: (error: any, response: any) => void
-  ) => void
-
-  send: (
-    request: { method: string; params?: Array<any> },
-    callback: (error: any, response: any) => void
-  ) => void
-
-  request: (request: { method: string; params?: Array<any> }) => Promise<any>
+  request: (args: { method: string; params?: Array<any> }) => Promise<any>
 }
 
 const global = globalThis as any
@@ -29,27 +19,50 @@ function getService() {
 }
 
 global.archmage.evm = {
+  request(args: { method: string; params?: Array<any> }): Promise<any> {
+    return getService().request(args)
+  }
+} as IEvmProvider
+
+global.ethereum = {
+  ...global.archmage.evm,
+
+  isMetaMask: true,
+
+  connected: false,
+  isConnected: () => global.ethereum.connected,
+
+  _metamask: {
+    isUnlocked: () => false
+  },
+
+  // deprecated
+  chainId: '',
+  networkVersion: '',
+  selectedAddress: null,
+
+  // deprecated
+  enable: () => global.ethereum.request({ method: 'eth_requestAccounts' }),
+
+  // deprecated
   sendAsync(
     request: { method: string; params?: Array<any> },
     callback: (error: any, response: any) => void
   ) {
     getService()
-      .request(request.method, request.params)
+      .request(request)
       .then((rep) => callback(undefined, rep))
       .catch((err) => callback(err, undefined))
   },
 
+  // deprecated
   send(
     request: { method: string; params?: Array<any> },
     callback: (error: any, response: any) => void
   ) {
     getService()
-      .request(request.method, request.params)
+      .request(request)
       .then((rep) => callback(undefined, rep))
       .catch((err) => callback(err, undefined))
-  },
-
-  request(request: { method: string; params?: Array<any> }): Promise<any> {
-    return getService().request(request.method, request.params)
   }
-} as IEvmProvider
+}

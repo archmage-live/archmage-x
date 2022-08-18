@@ -69,7 +69,9 @@ export interface IWalletService {
 
   getWallet(id: number): Promise<IWallet | undefined>
 
-  getWalletInfo(id: number): Promise<IWalletInfo | undefined>
+  getWalletInfo(
+    id: number | { masterId: number; index?: number }
+  ): Promise<IWalletInfo | undefined>
 
   listWallets(): Promise<IWallet[]>
 
@@ -216,8 +218,14 @@ class WalletService extends WalletServicePartial {
     return DB.wallets.get(id)
   }
 
-  async getWalletInfo(id: number): Promise<IWalletInfo | undefined> {
-    return DB.walletInfos.get(id)
+  async getWalletInfo(
+    id: number | { masterId: number; index?: number }
+  ): Promise<IWalletInfo | undefined> {
+    if (typeof id === 'number') {
+      return DB.walletInfos.get(id)
+    } else {
+      return DB.walletInfos.where(id).first()
+    }
   }
 
   async listWallets(): Promise<IWallet[]> {

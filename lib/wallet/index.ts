@@ -5,7 +5,7 @@ import { NetworkKind } from '~lib/network'
 import { CosmChainInfo } from '~lib/network/cosm'
 import { IWalletInfo } from '~lib/schema'
 import { IWallet } from '~lib/schema/wallet'
-import { COSM_NETWORK_SERVICE } from '~lib/services/network/cosmService'
+import { NETWORK_SERVICE } from '~lib/services/network'
 import { WALLET_SERVICE } from '~lib/services/walletService'
 
 import { SigningWallet, WalletOpts, WalletType } from './base'
@@ -47,10 +47,10 @@ export async function getMasterSigningWallet(
     case NetworkKind.EVM:
       return EvmWallet.from(opts)
     case NetworkKind.COSM:
-      const network = await COSM_NETWORK_SERVICE.getNetwork(
-        networkKind,
+      const network = await NETWORK_SERVICE.getNetwork({
+        kind: networkKind,
         chainId
-      )
+      })
       assert(network !== undefined)
       const info = network.info as CosmChainInfo
       opts.prefix = info.bech32Config.bech32PrefixAccAddr

@@ -1,6 +1,7 @@
 import Dexie from 'dexie'
 import { useEffect, useState } from 'react'
 
+import { ActiveWalletId } from '~lib/active'
 import { DB } from '~lib/db'
 import { INetwork } from '~lib/schema'
 import { useSubWallet, useWallet } from '~lib/services/walletService'
@@ -41,11 +42,6 @@ export function useSelectedNetwork() {
     setSelectedNetworkId,
     selectedNetwork
   }
-}
-
-export interface ActiveId {
-  masterId: number
-  derivedId: number | undefined
 }
 
 export function useSelectedWallet() {
@@ -109,7 +105,7 @@ export function useSelectedWallet() {
 }
 
 export function useActiveWallet() {
-  const [activeId, setActiveId] = useLocalStorage<ActiveId | undefined>(
+  const [activeId, setActiveId] = useLocalStorage<ActiveWalletId | undefined>(
     StoreKey.SELECTED_WALLET,
     async (storedSelectedWallet) => {
       if (storedSelectedWallet !== undefined) {

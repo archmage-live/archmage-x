@@ -7,7 +7,7 @@ import { INetwork } from '~lib/schema/network'
 import { IWallet } from '~lib/schema/wallet'
 import { WalletType } from '~lib/wallet'
 
-import { ActiveId } from '../select'
+import { ActiveWalletId } from '../select'
 import { SubWalletList } from './SubWalletList'
 
 interface WalletItemProps {

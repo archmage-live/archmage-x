@@ -6,7 +6,7 @@ import { INetwork } from '~lib/schema/network'
 import { IWalletInfo } from '~lib/schema/walletInfo'
 import { useSubWallets, useSubWalletsInfo } from '~lib/services/walletService'
 
-import { ActiveId } from '../select'
+import { ActiveWalletId } from '../select'
 import { SubWalletItem } from './SubWalletItem'
 
 interface SubWalletListProps {

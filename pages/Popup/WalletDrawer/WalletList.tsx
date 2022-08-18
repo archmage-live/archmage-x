@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from 'react'
 import { INetwork, IWallet } from '~lib/schema'
 import { WALLET_SERVICE, useWallets } from '~lib/services/walletService'
 
-import { ActiveId } from '../select'
+import { ActiveWalletId } from '../select'
 import { WalletItem } from './WalletItem'
 
 interface WalletListProps {

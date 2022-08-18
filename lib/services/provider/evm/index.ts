@@ -13,10 +13,6 @@ import { ConnectionInfo } from '@ethersproject/web'
 import { EvmChainInfo } from '~lib/network/evm'
 import { INetwork, IWalletInfo } from '~lib/schema'
 import { ProviderAdaptor } from '~lib/services/provider/types'
-import {
-  TRANSACTION_SERVICE,
-  TransactionRequest
-} from '~lib/services/transactionService'
 import { getSigningWallet } from '~lib/wallet'
 
 const logger = new Logger(version)
@@ -102,25 +98,6 @@ export class EvmProvider extends UrlJsonRpcProvider {
       throw new Error('empty evm rpc urls')
     }
     return { url: rpcUrls[0], allowGzip: true } as ConnectionInfo
-  }
-}
-
-export class EvmProviderWithSigner extends EvmProvider {
-  constructor(private net: INetwork, private wallet: IWalletInfo) {
-    super(net)
-  }
-
-  send(method: string, params: Array<any>): Promise<any> {
-    switch (method) {
-      case 'sendTransaction':
-        return TRANSACTION_SERVICE.requestTransaction({
-          networkId: this.net.id,
-          walletInfoId: this.wallet.id,
-          payload: params[0]
-        } as TransactionRequest)
-    }
-
-    return super.send(method, params)
   }
 }
 

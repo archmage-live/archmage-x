@@ -7,6 +7,10 @@ import {
   uniqueNamesGenerator
 } from 'unique-names-generator'
 
+import {
+  IConnectedSite,
+  connectedSiteSchemaV1
+} from '~lib/schema/connectedSite'
 import type { IDerivedWallet } from '~lib/schema/derivedWallet'
 import { derivedWalletSchemaV1 } from '~lib/schema/derivedWallet'
 import { IHdPath, hdPathSchemaV1 } from '~lib/schema/hdPath'
@@ -22,6 +26,7 @@ export class Database extends Dexie {
   hdPaths!: Dexie.Table<IHdPath, number>
   derivedWallets!: Dexie.Table<IDerivedWallet, number>
   walletInfos!: Dexie.Table<IWalletInfo, number>
+  connectedSites!: Dexie.Table<IConnectedSite, number>
   queryCache!: Dexie.Table<IQueryCache, number>
 
   constructor() {
@@ -32,6 +37,7 @@ export class Database extends Dexie {
       hdPaths: hdPathSchemaV1,
       derivedWallets: derivedWalletSchemaV1,
       walletInfos: walletInfoSchemaV1,
+      connectedSites: connectedSiteSchemaV1,
       queryCache: queryCacheSchemaV1
     })
   }
