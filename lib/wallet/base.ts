@@ -18,4 +18,8 @@ export interface SigningWallet {
   derive(prefixPath: string, index: number): Promise<SigningWallet>
 
   signTransaction(transaction: any): Promise<string>
+
+  signMessage(message: any): Promise<string>
+
+  signTypedData(typedData: any): Promise<string>
 }

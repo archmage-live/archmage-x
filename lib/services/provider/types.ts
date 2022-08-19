@@ -8,6 +8,10 @@ export interface ProviderAdaptor {
   signTransaction(wallet: IWalletInfo, transaction: any): Promise<any>
 
   sendTransaction(signedTransaction: any): Promise<any>
+
+  signMessage(wallet: IWalletInfo, message: any): Promise<any>
+
+  signTypedData(wallet: IWalletInfo, typedData: any): Promise<any>
 }
 
 export interface Balance {

@@ -8,14 +8,14 @@ export enum StoreArea {
 }
 
 export enum StoreKey {
-  PASSWORD_HASH = 'password_hash',
+  PASSWORD_HASH = 'passwordHash',
   PASSWORD = 'password',
   LAST_UNLOCK_TIME = 'lastUnlockTime',
   AUTO_LOCK_TIME = 'autoLockTime',
   KEYSTORE_PREFIX = 'keystore',
   SELECTED_NETWORK = 'selectedNetwork',
   SELECTED_WALLET = 'selectedWallet',
-  TX_REQUESTS = 'txRequests'
+  CONSENT_REQUESTS = 'consentRequests'
 }
 
 // local persistent

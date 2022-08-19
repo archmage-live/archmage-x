@@ -126,4 +126,14 @@ export class EvmProviderAdaptor implements ProviderAdaptor {
   async sendTransaction(signedTransaction: any): Promise<any> {
     return this.provider.sendTransaction(signedTransaction)
   }
+
+  async signMessage(wallet: IWalletInfo, message: any): Promise<any> {
+    const signer = await getSigningWallet(wallet)
+    return signer.signMessage(message)
+  }
+
+  async signTypedData(wallet: IWalletInfo, typedData: any): Promise<any> {
+    const signer = await getSigningWallet(wallet)
+    return signer.signTypedData(typedData)
+  }
 }

@@ -1,7 +1,6 @@
 import { EVM_PROVIDER_NAME } from '~lib/provider/evm'
 import { SERVICE_WORKER_SERVER } from '~lib/rpc'
-import { INetwork, IWalletInfo } from '~lib/schema'
-import { EvmClientProvider } from '~lib/services/provider/evm/transaction'
+import { EvmPermissionedProvider } from '~lib/services/provider/evm/permissioned'
 
 export interface IEvmProviderService {
   request(
@@ -22,7 +21,7 @@ class EvmProviderService implements IEvmProviderService {
     // check fromUrl
     // check method and params
     // get its connected network and wallet
-    const provider = await EvmClientProvider.from(fromUrl)
+    const provider = await EvmPermissionedProvider.from(fromUrl)
     return provider.send(args.method, args.params ?? [])
   }
 }

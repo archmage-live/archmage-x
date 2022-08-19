@@ -47,11 +47,21 @@ export class EvmWallet implements SigningWallet {
     return this.wallet.address
   }
 
+  private get signingWallet() {
+    return this.wallet instanceof ethers.utils.HDNode
+      ? new ethers.Wallet(this.wallet)
+      : this.wallet
+  }
+
   signTransaction(transaction: TransactionRequest): Promise<string> {
-    const wallet =
-      this.wallet instanceof ethers.utils.HDNode
-        ? new ethers.Wallet(this.wallet)
-        : this.wallet
-    return wallet.signTransaction(transaction)
+    return this.signingWallet.signTransaction(transaction)
+  }
+
+  signMessage(message: any): Promise<string> {
+    return this.signingWallet.signMessage(message)
+  }
+
+  signTypedData({ domain, types, value }: any): Promise<string> {
+    return this.signingWallet._signTypedData(domain, types, value)
   }
 }

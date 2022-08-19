@@ -16,11 +16,12 @@ import { NetworkKind } from '~lib/network'
 import { EvmChainInfo, EvmExplorer, NativeCurrency } from '~lib/network/evm'
 import { INetwork, IWalletInfo } from '~lib/schema'
 import { CONNECTED_SITE_SERVICE } from '~lib/services/connectedSiteService'
-import { NETWORK_SERVICE } from '~lib/services/network'
 import {
-  TRANSACTION_SERVICE,
-  TransactionRequest
-} from '~lib/services/transactionService'
+  CONSENT_SERVICE,
+  ConsentRequest,
+  ConsentType
+} from '~lib/services/consentService'
+import { NETWORK_SERVICE } from '~lib/services/network'
 import { WALLET_SERVICE } from '~lib/services/walletService'
 
 import { EvmProvider } from '.'
@@ -61,7 +62,7 @@ export const allowedTransactionKeys: Array<string> = [
   'value'
 ]
 
-export class EvmClientProvider {
+export class EvmPermissionedProvider {
   network: INetwork
   provider: EvmProvider
   origin: string
@@ -73,14 +74,14 @@ export class EvmClientProvider {
     this.origin = new URL(fromUrl).origin
   }
 
-  static async from(fromUrl: string): Promise<EvmClientProvider> {
+  static async from(fromUrl: string): Promise<EvmPermissionedProvider> {
     const activeNetwork = await getActiveNetwork()
     if (!activeNetwork) {
       // no active network
       throw ethErrors.provider.disconnected()
     }
 
-    const client = new EvmClientProvider(activeNetwork, fromUrl)
+    const client = new EvmPermissionedProvider(activeNetwork, fromUrl)
 
     const connections = await CONNECTED_SITE_SERVICE.getConnectedSitesBySite(
       client.origin
@@ -144,6 +145,8 @@ export class EvmClientProvider {
 
   async send(method: string, params: Array<any>): Promise<any> {
     switch (method) {
+      case 'eth_accounts':
+        return this.getAccounts()
       case 'eth_requestAccounts':
         return this.requestAccounts()
       case 'wallet_getPermissions':
@@ -156,22 +159,51 @@ export class EvmClientProvider {
         return this.switchEthereumChain(params)
       case 'wallet_watchAsset':
         return this.watchAsset(params)
+      case 'eth_sign':
+        return this.legacySignMessage(params)
+      case 'personal_sign':
+        return this.signMessage(params)
+      case 'eth_signTypedData':
+      // fallthrough
+      case 'eth_signTypedData_v1':
+      // fallthrough
+      case 'eth_signTypedData_v3':
+        throw ethErrors.provider.unsupportedMethod(
+          'Please use eth_signTypedData_v4 instead.'
+        )
+      case 'eth_signTypedData_v4':
+        return this.signTypedData(params)
       case 'eth_sendTransaction':
-        if (!this.wallet) {
-          throw ethErrors.provider.unauthorized()
-        }
-
-        const voidSigner = new VoidSigner(this.wallet.address, this.provider)
-        const txRequest = await voidSigner.populateTransaction(params[0])
-
-        return TRANSACTION_SERVICE.requestTransaction({
-          networkId: this.network.id,
-          walletInfoId: this.wallet.id,
-          payload: txRequest
-        } as TransactionRequest)
+        return this.sendTransaction(params)
     }
 
     return this.provider.send(method, params)
+  }
+
+  async sendTransaction([params]: Array<any>) {
+    if (!this.wallet) {
+      throw ethErrors.provider.unauthorized()
+    }
+
+    const voidSigner = new VoidSigner(this.wallet.address, this.provider)
+    const txRequest = await voidSigner.populateTransaction(params[0])
+
+    return CONSENT_SERVICE.requestConsent({
+      networkId: this.network.id,
+      walletInfoId: this.wallet.id,
+      type: ConsentType.TRANSACTION,
+      payload: txRequest
+    } as ConsentRequest)
+  }
+
+  async legacySignMessage([params]: Array<any>) {}
+
+  async signMessage([params]: Array<any>) {}
+
+  async signTypedData([params]: Array<any>) {}
+
+  async getAccounts() {
+    return this.wallet ? [this.wallet.address] : []
   }
 
   // https://eips.ethereum.org/EIPS/eip-1102
@@ -296,6 +328,8 @@ export class EvmClientProvider {
   // https://eips.ethereum.org/EIPS/eip-747
   async watchAsset([params]: Array<any>) {
     // TODO
+
+    return true
   }
 
   private checkChainId(chainId: string) {
@@ -322,4 +356,14 @@ interface AddEthereumChainParameter {
 
 interface SwitchEthereumChainParameter {
   chainId: string
+}
+
+interface WatchAssetParameters {
+  type: string // The asset's interface, e.g. 'ERC20'
+  options: {
+    address: string // The hexadecimal Ethereum address of the token contract
+    symbol?: string // A ticker symbol or shorthand, up to 5 alphanumerical characters
+    decimals?: number // The number of asset decimals
+    image?: string // A string url of the token logo
+  }
 }

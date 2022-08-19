@@ -89,4 +89,14 @@ export class SolWallet implements SigningWallet {
     // TODO
     throw new Error('not implemented')
   }
+
+  async signMessage(message: any): Promise<string> {
+    // TODO
+    throw new Error('not implemented')
+  }
+
+  async signTypedData(typedData: any): Promise<string> {
+    // TODO
+    throw new Error('not implemented')
+  }
 }
