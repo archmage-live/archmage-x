@@ -22,7 +22,7 @@ export default function Unlock() {
 
   const redirect = useCallback(
     (to?: string, inTab?: boolean) => {
-      to = to || searchParams.get('redirect') || '/home'
+      to = to || searchParams.get('redirect') || '/consent'
       if (!inTab) {
         navigate(to, { replace: true })
       } else {

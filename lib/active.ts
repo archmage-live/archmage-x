@@ -1,6 +1,6 @@
 import assert from 'assert'
 
-import { IDerivedWallet, INetwork, IWallet, IWalletInfo } from '~lib/schema'
+import { IDerivedWallet, INetwork, IWallet, IWalletInfo, mayUndefinedToNumber, reconcileWalletInfo } from "~lib/schema";
 import { LOCAL_STORE, StoreKey } from '~lib/store'
 
 import { DB } from './db'
@@ -43,9 +43,9 @@ export async function getActiveWallet(): Promise<
       ? await DB.derivedWallets.get(activeId.derivedId)
       : undefined
 
-  const walletInfo = await DB.walletInfos
-    .where({ masterId: wallet.id, index: subWallet?.index })
-    .first()
+  const walletInfo = reconcileWalletInfo(await DB.walletInfos
+    .where({ masterId: wallet.id, index: mayUndefinedToNumber(subWallet?.index) })
+    .first())
   assert(walletInfo)
 
   return { wallet, subWallet, walletInfo }

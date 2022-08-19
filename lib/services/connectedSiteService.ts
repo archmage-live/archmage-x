@@ -1,16 +1,19 @@
+import assert from 'assert'
+import browser from 'webextension-polyfill'
+
 import { DB } from '~lib/db'
 import { ENV } from '~lib/env'
 import { SERVICE_WORKER_CLIENT, SERVICE_WORKER_SERVER } from '~lib/rpc'
-import { IWalletInfo } from '~lib/schema'
+import { IWalletInfo, booleanToNumber } from '~lib/schema'
 import { IConnectedSite } from '~lib/schema/connectedSite'
 
 interface IConnectedSiteService {
   connectSite(
-    wallet: IWalletInfo,
+    wallet: IWalletInfo[],
     href: string,
     iconUrl?: string,
     connected?: boolean
-  ): Promise<IConnectedSite>
+  ): Promise<IConnectedSite[]>
 
   getConnectedSite(
     wallet: IWalletInfo,
@@ -37,34 +40,57 @@ interface IConnectedSiteService {
 
 class ConnectedSiteService implements IConnectedSiteService {
   async connectSite(
-    wallet: IWalletInfo,
+    wallets: IWalletInfo[],
     href: string,
-    iconUrl?: string,
-    connected = true
-  ): Promise<IConnectedSite> {
-    const existing = await this.getConnectedSite(wallet, href, false)
-    if (existing) {
-      existing.connected = true
-      existing.info.connectedAt = Date.now()
-      await DB.connectedSites.put(existing)
-      return existing
-    }
+    iconUrl?: string
+  ): Promise<IConnectedSite[]> {
+    assert(wallets.length)
 
     const origin = new URL(href).origin
 
-    const connectedSite = {
-      masterId: wallet.masterId,
-      index: wallet.index,
-      origin,
-      iconUrl,
-      connected,
-      info: {
-        connectedAt: Date.now()
+    if (!iconUrl) {
+      const tabs = await browser.tabs.query({})
+      const tab = tabs.find(
+        (tab) => tab.url && new URL(tab.url).origin === origin
+      )
+      if (tab) {
+        iconUrl = tab.favIconUrl
       }
-    } as IConnectedSite
-    connectedSite.id = await DB.connectedSites.add(connectedSite)
+    }
 
-    return connectedSite
+    const conns: IConnectedSite[] = []
+    for (const wallet of wallets) {
+      const existing = await this.getConnectedSite(wallet, href, false)
+      if (existing) {
+        existing.iconUrl = iconUrl || existing.iconUrl
+        existing.connected = booleanToNumber(true)
+        existing.info.connectedAt = Date.now()
+        conns.push(existing)
+      } else {
+        const add = {
+          masterId: wallet.masterId,
+          index: wallet.index,
+          origin,
+          iconUrl,
+          connected: booleanToNumber(true),
+          info: {
+            connectedAt: Date.now()
+          }
+        } as IConnectedSite
+        conns.push(add)
+      }
+    }
+
+    const ids = await DB.connectedSites.bulkPut(conns, { allKeys: true })
+    ids.forEach((id, index) => {
+      if (conns[index].id === undefined) {
+        conns[index].id = id
+      } else {
+        assert(conns[index].id === id)
+      }
+    })
+
+    return conns
   }
 
   async getConnectedSite(
@@ -75,7 +101,7 @@ class ConnectedSiteService implements IConnectedSiteService {
     const origin = new URL(href).origin
     return DB.connectedSites
       .where('[masterId+index+origin+connected]')
-      .equals([wallet.masterId, wallet.index, origin, connected] as Array<any>)
+      .equals([wallet.masterId, wallet.index, origin, booleanToNumber(connected)] as Array<any>)
       .first()
   }
 
@@ -85,7 +111,7 @@ class ConnectedSiteService implements IConnectedSiteService {
   ): Promise<IConnectedSite[]> {
     return DB.connectedSites
       .where('[masterId+index+connected]')
-      .equals([wallet.masterId, wallet.index, connected] as Array<any>)
+      .equals([wallet.masterId, wallet.index, booleanToNumber(connected)] as Array<any>)
       .toArray()
   }
 
@@ -96,18 +122,18 @@ class ConnectedSiteService implements IConnectedSiteService {
     const origin = new URL(href).origin
     return DB.connectedSites
       .where('[origin+connected]')
-      .equals([origin, connected] as Array<any>)
+      .equals([origin, booleanToNumber(connected)] as Array<any>)
       .toArray()
   }
 
   async disconnectSite(id: number) {
-    await DB.connectedSites.delete(id)
+    await DB.connectedSites.update(id, { connected: false })
   }
 
   async disconnectSitesByWallet(wallet: IWalletInfo) {
     await DB.connectedSites
       .where('[masterId+index+connected]')
-      .equals([wallet.masterId, wallet.index, true] as Array<any>)
+      .equals([wallet.masterId, wallet.index, booleanToNumber(true)] as Array<any>)
       .modify({ connected: false })
   }
 
@@ -115,7 +141,7 @@ class ConnectedSiteService implements IConnectedSiteService {
     const origin = new URL(href).origin
     await DB.connectedSites
       .where('[origin+connected]')
-      .equals([origin, true] as Array<any>)
+      .equals([origin, booleanToNumber(true)] as Array<any>)
       .modify({ connected: false })
   }
 }

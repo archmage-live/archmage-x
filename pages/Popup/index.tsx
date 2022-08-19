@@ -4,6 +4,7 @@ import { Route, Routes } from 'react-router-dom'
 
 import { NavTarget, Navbar } from '~components/Navbar'
 import AssetsPage from '~pages/Popup/Assets'
+import ConsentPage from '~pages/Popup/Consent'
 import UnlockPage from '~pages/Unlock'
 
 import { Toolbar } from './Toolbar'
@@ -37,6 +38,7 @@ export default function Popup() {
               <Container flex="1">
                 <Routes>
                   <Route path="/home" element={<AssetsPage />} />
+                  <Route path="/consent" element={<ConsentPage />} />
                 </Routes>
               </Container>
 

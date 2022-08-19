@@ -4,7 +4,7 @@ export interface IConnectedSite {
   index: number | undefined // derived wallet index; undefined for imported single wallet
   origin: string // URL.origin
   iconUrl?: string
-  connected: boolean
+  connected: 0 | 1 // boolean is not indexable
   info: any
 }
 

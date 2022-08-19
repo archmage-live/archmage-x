@@ -11,7 +11,13 @@ import browser from 'webextension-polyfill'
 
 import { Platform, getPlatform } from '~lib/platform'
 
-import { HELLO, Request, Response, SERVICE_WORKER_CHANNEL } from './client'
+import {
+  Context,
+  HELLO,
+  Request,
+  Response,
+  SERVICE_WORKER_CHANNEL
+} from './client'
 
 /**
  * RPC server side.
@@ -89,7 +95,7 @@ export class RpcServer {
   }
 
   onMessageInternal = (msg: Request, port: browser.Runtime.Port) => {
-    msg.fromInternal = true
+    msg.ctx.fromInternal = true
     this.onMessage(msg, port)
   }
 
@@ -99,7 +105,7 @@ export class RpcServer {
     const service = this.services.get(msg.service)
     if (
       (!handlers && !service) ||
-      (!msg.fromInternal && (handlers?.[1] || service?.[1]))
+      (!msg.ctx.fromInternal && (handlers?.[1] || service?.[1]))
     ) {
       port.postMessage({
         id,
@@ -108,7 +114,13 @@ export class RpcServer {
       return
     }
 
-    const args = msg.fromInternal ? msg.args : [...msg.args, port.sender?.url]
+    const args = [
+      ...msg.args,
+      {
+        ...msg.ctx,
+        fromUrl: msg.ctx?.fromInternal ? undefined : port.sender?.url
+      } as Context
+    ]
 
     let promise: Promise<any> | undefined
     const method = handlers?.[0].get(msg.method)

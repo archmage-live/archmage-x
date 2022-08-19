@@ -2,11 +2,11 @@ import { Box } from '@chakra-ui/react'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { useEffect, useMemo, useRef } from 'react'
 
+import { ActiveWalletId } from '~lib/active'
 import { INetwork } from '~lib/schema/network'
 import { IWalletInfo } from '~lib/schema/walletInfo'
 import { useSubWallets, useSubWalletsInfo } from '~lib/services/walletService'
 
-import { ActiveWalletId } from '../select'
 import { SubWalletItem } from './SubWalletItem'
 
 interface SubWalletListProps {
@@ -14,7 +14,7 @@ interface SubWalletListProps {
   masterId: number
   selectedId?: number
   onSelectedId: (selectedId: number) => void
-  activeId?: ActiveId
+  activeId?: ActiveWalletId
 
   measure(): void
 }

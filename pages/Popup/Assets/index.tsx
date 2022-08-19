@@ -39,7 +39,7 @@ export default function Assets() {
 
   return (
     <Stack w="full" pt={8} spacing={8}>
-      <HStack justify="space-between">
+      <HStack justify="space-between" minH={16}>
         <Center
           w="4"
           h="4"
@@ -74,7 +74,7 @@ export default function Assets() {
         </Menu>
       </HStack>
 
-      <HStack justify="center">
+      <HStack justify="center" minH={16}>
         <Text fontSize="4xl" fontWeight="medium">
           {balance?.amount} {balance?.symbol}
         </Text>

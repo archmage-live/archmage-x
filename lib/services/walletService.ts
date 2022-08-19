@@ -17,12 +17,13 @@ import { KEYSTORE } from '~lib/keystore'
 import { NetworkKind } from '~lib/network'
 import { PASSWORD } from '~lib/password'
 import { SERVICE_WORKER_CLIENT, SERVICE_WORKER_SERVER } from '~lib/rpc'
+import { mayUndefinedToNumber } from '~lib/schema'
 import {
   IDerivedWallet,
   getDefaultDerivedName
 } from '~lib/schema/derivedWallet'
 import { IWallet } from '~lib/schema/wallet'
-import { IWalletInfo } from '~lib/schema/walletInfo'
+import { IWalletInfo, reconcileWalletInfo } from '~lib/schema/walletInfo'
 import {
   WalletType,
   getDefaultPathPrefix,
@@ -72,6 +73,8 @@ export interface IWalletService {
   getWalletInfo(
     id: number | { masterId: number; index?: number }
   ): Promise<IWalletInfo | undefined>
+
+  getWalletsInfo(ids: number[]): Promise<IWalletInfo[]>
 
   listWallets(): Promise<IWallet[]>
 
@@ -222,10 +225,18 @@ class WalletService extends WalletServicePartial {
     id: number | { masterId: number; index?: number }
   ): Promise<IWalletInfo | undefined> {
     if (typeof id === 'number') {
-      return DB.walletInfos.get(id)
+      return reconcileWalletInfo(await DB.walletInfos.get(id))
     } else {
-      return DB.walletInfos.where(id).first()
+      return reconcileWalletInfo(await DB.walletInfos.where(id).first())
     }
+  }
+
+  async getWalletsInfo(ids: number[]): Promise<IWalletInfo[]> {
+    const wallets = (await DB.walletInfos.where('id').anyOf(ids).toArray()).map(
+      (w) => reconcileWalletInfo(w)!
+    )
+    assert(wallets.length === ids.length)
+    return wallets
   }
 
   async listWallets(): Promise<IWallet[]> {
@@ -288,20 +299,22 @@ class WalletService extends WalletServicePartial {
     } else {
       address = signingWallet.address
     }
-    const existing = await DB.walletInfos
-      .where({
-        masterId: wallet.id,
-        index,
-        networkKind,
-        chainId
-      })
-      .first()
+    const existing = reconcileWalletInfo(
+      await DB.walletInfos
+        .where({
+          masterId: wallet.id,
+          index: mayUndefinedToNumber(index),
+          networkKind,
+          chainId
+        })
+        .first()
+    )
     if (existing) {
       return
     }
     await DB.walletInfos.add({
       masterId: wallet.id!,
-      index,
+      index: mayUndefinedToNumber(index),
       networkKind,
       chainId,
       address,
@@ -362,14 +375,16 @@ export function useSubWalletsInfo(
   networkKind: NetworkKind,
   chainId: number | string
 ) {
-  return useLiveQuery(() => {
-    return DB.walletInfos
-      .where('[masterId+networkKind+chainId+index]')
-      .between(
-        [id, networkKind, chainId, Dexie.minKey],
-        [id, networkKind, chainId, Dexie.maxKey]
-      )
-      .toArray()
+  return useLiveQuery(async () => {
+    return (
+      await DB.walletInfos
+        .where('[masterId+networkKind+chainId+index]')
+        .between(
+          [id, networkKind, chainId, Dexie.minKey],
+          [id, networkKind, chainId, Dexie.maxKey]
+        )
+        .toArray()
+    ).map((w) => reconcileWalletInfo(w)!)
   }, [id, networkKind, chainId])
 }
 
@@ -379,7 +394,7 @@ export function useSubWalletInfo(
   chainId?: number | string,
   index?: number
 ) {
-  return useLiveQuery(() => {
+  return useLiveQuery(async () => {
     if (
       id === undefined ||
       networkKind === undefined ||
@@ -388,10 +403,12 @@ export function useSubWalletInfo(
     ) {
       return undefined
     }
-    return DB.walletInfos
-      .where('[masterId+networkKind+chainId+index]')
-      .equals([id, networkKind, chainId, index])
-      .first()
+    return reconcileWalletInfo(
+      await DB.walletInfos
+        .where('[masterId+networkKind+chainId+index]')
+        .equals([id, networkKind, chainId, mayUndefinedToNumber(index)])
+        .first()
+    )
   }, [id, networkKind, chainId, index])
 }
 
@@ -522,20 +539,22 @@ export async function ensureSubWalletsInfo(
   // console.log(`get derived wallets: ${(Date.now() - tick) / 1000}s`)
   tick = Date.now()
 
-  const walletInfos = await DB.walletInfos
-    .where('[masterId+networkKind+chainId+index]')
-    .between(
-      [wallet.id, networkKind, chainId, subWallets[0].index],
-      [
-        wallet.id,
-        networkKind,
-        chainId,
-        subWallets[subWallets.length - 1].index
-      ],
-      true,
-      true
-    )
-    .toArray()
+  const walletInfos = (
+    await DB.walletInfos
+      .where('[masterId+networkKind+chainId+index]')
+      .between(
+        [wallet.id, networkKind, chainId, subWallets[0].index],
+        [
+          wallet.id,
+          networkKind,
+          chainId,
+          subWallets[subWallets.length - 1].index
+        ],
+        true,
+        true
+      )
+      .toArray()
+  ).map((w) => reconcileWalletInfo(w)!)
   // console.log(`get wallets info: ${(Date.now() - tick) / 1000}s`)
   tick = Date.now()
   if (walletInfos.length === subWallets.length) {

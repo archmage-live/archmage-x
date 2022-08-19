@@ -15,9 +15,20 @@ namespace browser {
   }
 }
 
+export interface Context {
+  fromInternal?: boolean
+  fromUrl?: string
+  window?: {
+    x: number
+    y: number
+    width: number
+    height: number
+  }
+}
+
 export interface Request {
   id: number
-  fromInternal?: boolean
+  ctx: Context
   service: string
   method: string
   args: any[]
@@ -95,6 +106,22 @@ export class RpcClient {
     if (!this.connected) {
       throw new Error(`rpc not connected`)
     }
+
+    const {
+      screenX: x,
+      screenY: y,
+      outerWidth: width,
+      outerHeight: height
+    } = globalThis
+
+    msg.ctx = {
+      window: {
+        x,
+        y,
+        width,
+        height
+      }
+    } as Context
 
     let resolve
     const promise = new Promise((r: (value: Response) => void) => {

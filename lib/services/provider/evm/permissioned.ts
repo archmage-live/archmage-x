@@ -14,12 +14,15 @@ import {
 } from '~lib/active'
 import { NetworkKind } from '~lib/network'
 import { EvmChainInfo, EvmExplorer, NativeCurrency } from '~lib/network/evm'
+import { Context } from '~lib/rpc'
 import { INetwork, IWalletInfo } from '~lib/schema'
 import { CONNECTED_SITE_SERVICE } from '~lib/services/connectedSiteService'
 import {
   CONSENT_SERVICE,
   ConsentRequest,
-  ConsentType
+  ConsentType,
+  Permission,
+  RequestPermissionPayload
 } from '~lib/services/consentService'
 import { NETWORK_SERVICE } from '~lib/services/network'
 import { WALLET_SERVICE } from '~lib/services/walletService'
@@ -81,10 +84,16 @@ export class EvmPermissionedProvider {
       throw ethErrors.provider.disconnected()
     }
 
-    const client = new EvmPermissionedProvider(activeNetwork, fromUrl)
+    const provider = new EvmPermissionedProvider(activeNetwork, fromUrl)
 
+    await provider.getWallet()
+
+    return provider
+  }
+
+  private async getWallet() {
     const connections = await CONNECTED_SITE_SERVICE.getConnectedSitesBySite(
-      client.origin
+      this.origin
     )
 
     // has connected accounts
@@ -105,13 +114,11 @@ export class EvmPermissionedProvider {
         conn = connections[0]
       }
 
-      client.wallet = await WALLET_SERVICE.getWalletInfo({
+      this.wallet = await WALLET_SERVICE.getWalletInfo({
         masterId: conn.masterId,
         index: conn.index
       })
     }
-
-    return client
   }
 
   private async checkTransaction(
@@ -143,16 +150,16 @@ export class EvmPermissionedProvider {
     }
   }
 
-  async send(method: string, params: Array<any>): Promise<any> {
+  async send(ctx: Context, method: string, params: Array<any>): Promise<any> {
     switch (method) {
       case 'eth_accounts':
         return this.getAccounts()
       case 'eth_requestAccounts':
-        return this.requestAccounts()
+        return this.requestAccounts(ctx)
       case 'wallet_getPermissions':
         return this.getPermissions()
       case 'wallet_requestPermissions':
-        return this.requestPermissions(params)
+        return this.requestPermissions(ctx, params)
       case 'wallet_addEthereumChain':
         return this.addEthereumChain(params)
       case 'wallet_switchEthereumChain':
@@ -174,13 +181,13 @@ export class EvmPermissionedProvider {
       case 'eth_signTypedData_v4':
         return this.signTypedData(params)
       case 'eth_sendTransaction':
-        return this.sendTransaction(params)
+        return this.sendTransaction(ctx, params)
     }
 
     return this.provider.send(method, params)
   }
 
-  async sendTransaction([params]: Array<any>) {
+  async sendTransaction(ctx: Context, [params]: Array<any>) {
     if (!this.wallet) {
       throw ethErrors.provider.unauthorized()
     }
@@ -188,12 +195,13 @@ export class EvmPermissionedProvider {
     const voidSigner = new VoidSigner(this.wallet.address, this.provider)
     const txRequest = await voidSigner.populateTransaction(params[0])
 
-    return CONSENT_SERVICE.requestConsent({
-      networkId: this.network.id,
-      walletInfoId: this.wallet.id,
+    return CONSENT_SERVICE.requestConsent(ctx, {
+      networkId: this.network.id!,
+      walletInfoId: this.wallet.id!,
       type: ConsentType.TRANSACTION,
+      origin: this.origin,
       payload: txRequest
-    } as ConsentRequest)
+    })
   }
 
   async legacySignMessage([params]: Array<any>) {}
@@ -207,8 +215,8 @@ export class EvmPermissionedProvider {
   }
 
   // https://eips.ethereum.org/EIPS/eip-1102
-  async requestAccounts() {
-    await this.requestPermissions([{ eth_accounts: {} }])
+  async requestAccounts(ctx: Context) {
+    await this.requestPermissions(ctx, [{ eth_accounts: {} }])
     return [this.wallet!.address]
   }
 
@@ -232,13 +240,26 @@ export class EvmPermissionedProvider {
   }
 
   // https://eips.ethereum.org/EIPS/eip-2255
-  async requestPermissions([{ eth_accounts, ...restPermissions }]: Array<any>) {
+  async requestPermissions(
+    ctx: Context,
+    [{ eth_accounts, ...restPermissions }]: Array<any>
+  ) {
     if (!eth_accounts || Object.keys(restPermissions).length) {
       // now only support `eth_accounts`
       throw ethErrors.rpc.invalidParams()
     }
     if (!this.wallet) {
-      // TODO: request user consent
+      await CONSENT_SERVICE.requestConsent(ctx, {
+        networkId: this.network.id!,
+        walletInfoId: [],
+        type: ConsentType.REQUEST_PERMISSION,
+        origin: this.origin,
+        payload: {
+          permissions: [{ permission: Permission.ACCOUNT }]
+        } as RequestPermissionPayload
+      })
+
+      await this.getWallet()
     }
     return this.getPermissions()
   }
