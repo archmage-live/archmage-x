@@ -27,7 +27,7 @@ export const NetworkList = ({ onSelected }: { onSelected(): void }) => {
         overflowY="auto"
         borderRadius="xl"
         userSelect="none">
-        <Box h={networksVirtualizer.getTotalSize()} position="relative">
+        <Box h={networksVirtualizer.getTotalSize() + 'px'} position="relative">
           {networksVirtualizer.getVirtualItems().map((item) => {
             const net = networks[item.index]
             const info = getNetworkInfo(net)

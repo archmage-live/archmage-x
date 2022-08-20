@@ -53,7 +53,7 @@ export const SubWalletList = ({
   return (
     <Box py={2} px={4}>
       <Box ref={parentRef} maxH="336px" overflowY="auto" borderRadius="xl">
-        <Box h={walletsVirtualizer.getTotalSize()} position="relative">
+        <Box h={walletsVirtualizer.getTotalSize() + 'px'} position="relative">
           {walletsVirtualizer.getVirtualItems().map((item) => {
             const wallet = wallets[item.index]
             const info = infoMap.get(`${wallet.masterId}-${wallet.index}`)

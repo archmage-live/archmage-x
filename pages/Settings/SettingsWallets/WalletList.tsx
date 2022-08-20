@@ -147,7 +147,7 @@ export const WalletList = ({
           }}>
           {(provided: DroppableProvided) => (
             <div ref={provided.innerRef} {...provided.droppableProps}>
-              <Box h={walletsVirtualizer.getTotalSize()} position="relative">
+              <Box h={walletsVirtualizer.getTotalSize() + 'px'} position="relative">
                 {walletsVirtualizer.getVirtualItems().map((item) => {
                   const wallet = wallets[item.index]
                   return (

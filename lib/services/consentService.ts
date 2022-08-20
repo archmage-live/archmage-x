@@ -1,5 +1,6 @@
 import assert from 'assert'
 import { ethErrors } from 'eth-rpc-errors'
+import browser from 'webextension-polyfill'
 
 import { ENV } from '~lib/env'
 import { Context, SERVICE_WORKER_CLIENT, SERVICE_WORKER_SERVER } from '~lib/rpc'
@@ -64,6 +65,8 @@ class ConsentService implements IConsentService {
         .map((req) => req.id)
         .reduce((maxId, id) => Math.max(maxId, id))
       this.nextId = lastId + 1
+
+      this.setBadge()
     })
   }
 
@@ -91,6 +94,8 @@ class ConsentService implements IConsentService {
       }
     }
     await SESSION_STORE.set(StoreKey.CONSENT_REQUESTS, this.consentRequests)
+
+    await this.setBadge()
   }
 
   // be called by content script
@@ -116,8 +121,10 @@ class ConsentService implements IConsentService {
     })
     this.waits.set(req.id, [resolve as any, reject as any])
 
+    await this.setBadge()
+
     // open popup
-    createWindow(ctx, '/')
+    await createWindow(ctx, '/')
 
     return await promise
   }
@@ -134,6 +141,8 @@ class ConsentService implements IConsentService {
     // delete cache
     this.consentRequests.splice(index, 1)
     await SESSION_STORE.set(StoreKey.CONSENT_REQUESTS, this.consentRequests)
+
+    await this.setBadge()
 
     let resolve, reject
     const wait = this.waits.get(req.id)
@@ -195,6 +204,17 @@ class ConsentService implements IConsentService {
         case Permission.ACCOUNT:
           await CONNECTED_SITE_SERVICE.connectSite(wallets, origin)
       }
+    }
+  }
+
+  private async setBadge() {
+    if (!this.consentRequests.length) {
+      await browser.action.setBadgeText({ text: '' })
+    } else {
+      await browser.action.setBadgeText({
+        text: this.consentRequests.length + ''
+      })
+      await browser.action.setBadgeBackgroundColor({ color: '#037DD6' })
     }
   }
 }

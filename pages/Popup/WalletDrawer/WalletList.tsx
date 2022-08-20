@@ -2,20 +2,21 @@ import { Box } from '@chakra-ui/react'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { useEffect, useRef, useState } from 'react'
 
+import { ActiveWalletId } from '~lib/active'
 import { INetwork, IWallet } from '~lib/schema'
 import { WALLET_SERVICE, useWallets } from '~lib/services/walletService'
 
-import { ActiveWalletId } from '../select'
 import { WalletItem } from './WalletItem'
 
 interface WalletListProps {
   network?: INetwork
   selectedId?: number
-  onSelectedId: (selectedId: number) => void
+  onSelectedId?: (selectedId: number) => void
   selectedSubId?: number
-  onSelectedSubId: (selectedSubId: number) => void
-  activeId?: ActiveId
-  onClose: () => void
+  onSelectedSubId?: (selectedSubId: number) => void
+  activeId?: ActiveWalletId
+  onClose?: () => void
+  maxH?: number | string
 }
 
 export const WalletList = ({
@@ -25,7 +26,8 @@ export const WalletList = ({
   selectedSubId,
   onSelectedSubId,
   activeId,
-  onClose
+  onClose,
+  maxH
 }: WalletListProps) => {
   const ws = useWallets()
   useEffect(() => {
@@ -63,11 +65,11 @@ export const WalletList = ({
     <Box py="14px">
       <Box
         ref={parentRef}
-        maxH="336px"
+        maxH={maxH || "336px"}
         overflowY="auto"
         borderRadius="xl"
         userSelect="none">
-        <Box h={walletsVirtualizer.getTotalSize()} position="relative">
+        <Box h={walletsVirtualizer.getTotalSize() + 'px'} position="relative">
           {walletsVirtualizer.getVirtualItems().map((item) => {
             const wallet = wallets[item.index]
             return (
@@ -83,7 +85,7 @@ export const WalletList = ({
                   network={network}
                   wallet={wallet}
                   selected={wallet.id === selectedId}
-                  onSelected={() => onSelectedId(wallet.id!)}
+                  onSelected={() => onSelectedId?.(wallet.id!)}
                   selectedSubId={selectedSubId}
                   onSelectedSubId={onSelectedSubId}
                   activeId={activeId}

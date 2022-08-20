@@ -107,6 +107,7 @@ export class RpcClient {
       throw new Error(`rpc not connected`)
     }
 
+    // https://ryanve.com/lab/dimensions
     const {
       screenX: x,
       screenY: y,

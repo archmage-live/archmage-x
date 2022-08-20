@@ -1,11 +1,11 @@
 import assert from 'assert'
-import browser from 'webextension-polyfill'
 
 import { DB } from '~lib/db'
 import { ENV } from '~lib/env'
 import { SERVICE_WORKER_CLIENT, SERVICE_WORKER_SERVER } from '~lib/rpc'
 import { IWalletInfo, booleanToNumber } from '~lib/schema'
 import { IConnectedSite } from '~lib/schema/connectedSite'
+import { getTab } from '~lib/util'
 
 interface IConnectedSiteService {
   connectSite(
@@ -49,10 +49,7 @@ class ConnectedSiteService implements IConnectedSiteService {
     const origin = new URL(href).origin
 
     if (!iconUrl) {
-      const tabs = await browser.tabs.query({})
-      const tab = tabs.find(
-        (tab) => tab.url && new URL(tab.url).origin === origin
-      )
+      const tab = await getTab(origin)
       if (tab) {
         iconUrl = tab.favIconUrl
       }
@@ -101,7 +98,12 @@ class ConnectedSiteService implements IConnectedSiteService {
     const origin = new URL(href).origin
     return DB.connectedSites
       .where('[masterId+index+origin+connected]')
-      .equals([wallet.masterId, wallet.index, origin, booleanToNumber(connected)] as Array<any>)
+      .equals([
+        wallet.masterId,
+        wallet.index,
+        origin,
+        booleanToNumber(connected)
+      ] as Array<any>)
       .first()
   }
 
@@ -111,7 +113,11 @@ class ConnectedSiteService implements IConnectedSiteService {
   ): Promise<IConnectedSite[]> {
     return DB.connectedSites
       .where('[masterId+index+connected]')
-      .equals([wallet.masterId, wallet.index, booleanToNumber(connected)] as Array<any>)
+      .equals([
+        wallet.masterId,
+        wallet.index,
+        booleanToNumber(connected)
+      ] as Array<any>)
       .toArray()
   }
 
@@ -133,7 +139,11 @@ class ConnectedSiteService implements IConnectedSiteService {
   async disconnectSitesByWallet(wallet: IWalletInfo) {
     await DB.connectedSites
       .where('[masterId+index+connected]')
-      .equals([wallet.masterId, wallet.index, booleanToNumber(true)] as Array<any>)
+      .equals([
+        wallet.masterId,
+        wallet.index,
+        booleanToNumber(true)
+      ] as Array<any>)
       .modify({ connected: false })
   }
 

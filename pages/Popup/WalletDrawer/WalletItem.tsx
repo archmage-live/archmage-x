@@ -3,11 +3,11 @@ import { Box, Button, HStack, Text, useDisclosure } from '@chakra-ui/react'
 import { useCallback, useEffect, useRef } from 'react'
 import Blockies from 'react-blockies'
 
+import { ActiveWalletId } from '~lib/active'
 import { INetwork } from '~lib/schema/network'
 import { IWallet } from '~lib/schema/wallet'
 import { WalletType } from '~lib/wallet'
 
-import { ActiveWalletId } from '../select'
 import { SubWalletList } from './SubWalletList'
 
 interface WalletItemProps {
@@ -17,8 +17,8 @@ interface WalletItemProps {
   onSelected?: () => void
   selectedSubId?: number
   onSelectedSubId?: (selectedSubId: number) => void
-  activeId?: ActiveId
-  onClose: () => void
+  activeId?: ActiveWalletId
+  onClose?: () => void
   measureElement?: (element?: HTMLElement | null) => any
 }
 
@@ -59,7 +59,7 @@ export const WalletItem = ({
           if (wallet.type === WalletType.HD) {
             onToggle()
           } else {
-            onClose()
+            onClose?.()
           }
         }}>
         <HStack w="full" justify="space-between">
@@ -92,7 +92,7 @@ export const WalletItem = ({
           selectedId={selectedSubId}
           onSelectedId={(id) => {
             onSelectedSubId?.(id)
-            onClose()
+            onClose?.()
           }}
           activeId={activeId}
           measure={measure}

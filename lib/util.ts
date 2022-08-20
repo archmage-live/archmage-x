@@ -13,7 +13,7 @@ export function getRootHref() {
   )
 }
 
-export function createTab(to: string) {
+export async function createTab(to: string) {
   if (!to.startsWith('#/')) {
     if (to.startsWith('/')) {
       to = '#' + to
@@ -22,12 +22,12 @@ export function createTab(to: string) {
     }
   }
 
-  browser.tabs.create({
+  return browser.tabs.create({
     url: getRootHref() + to
   })
 }
 
-export function createWindow(ctx: Context, to: string) {
+export async function createWindow(ctx: Context, to: string) {
   if (!to.startsWith('#/')) {
     if (to.startsWith('/')) {
       to = '#' + to
@@ -46,14 +46,22 @@ export function createWindow(ctx: Context, to: string) {
     left = Math.max(ctx.window.x + ctx.window.width - width, 0)
     top = ctx.window.y
   }
-  console.log(ctx, left, top)
 
-  browser.windows.create({
-    url: `${origin}/${popupUrl}${to}`,
+  return browser.windows.create({
+    url: `${origin}/${popupUrl}${to}?popup=window`,
     type: 'popup',
     width,
     height,
     left,
     top
   })
+}
+
+export async function getTab(
+  origin: string
+): Promise<browser.Tabs.Tab | undefined> {
+  const tabs = await browser.tabs.query({})
+  return tabs.find(
+    (tab) => tab.url && new URL(tab.url).origin === new URL(origin).origin
+  )
 }
