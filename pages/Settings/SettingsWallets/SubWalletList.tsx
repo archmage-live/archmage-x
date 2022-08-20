@@ -15,7 +15,7 @@ import { IDerivedWallet, INetwork, IWalletInfo } from '~lib/schema'
 import {
   reorderSubWallets,
   useSubWallets,
-  useSubWalletsInfo
+  useWalletsInfo
 } from '~lib/services/walletService'
 
 import { SubWalletItem } from './SubWalletItem'
@@ -45,7 +45,7 @@ export const SubWalletList = ({
 
   useDebounce(measure, 50, [measure, wallets])
 
-  const infos = useSubWalletsInfo(masterId, network.kind, network.chainId)
+  const infos = useWalletsInfo(masterId, network.kind, network.chainId)
   const infoMap = useMemo(() => {
     const m = new Map<string, IWalletInfo>()
     infos?.forEach((info) => m.set(`${info.masterId}-${info.index}`, info))
@@ -145,7 +145,9 @@ export const SubWalletList = ({
             }}>
             {(provided: DroppableProvided) => (
               <div ref={provided.innerRef} {...provided.droppableProps}>
-                <Box h={walletsVirtualizer.getTotalSize() + 'px'} position="relative">
+                <Box
+                  h={walletsVirtualizer.getTotalSize() + 'px'}
+                  position="relative">
                   {walletsVirtualizer.getVirtualItems().map((item) => {
                     const wallet = wallets[item.index]
                     const info = infoMap.get(

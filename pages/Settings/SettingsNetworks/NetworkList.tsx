@@ -115,7 +115,9 @@ export const NetworkList = ({
           }}>
           {(provided: DroppableProvided) => (
             <div ref={provided.innerRef} {...provided.droppableProps}>
-              <Box h={networksVirtualizer.getTotalSize() + 'px'} position="relative">
+              <Box
+                h={networksVirtualizer.getTotalSize() + 'px'}
+                position="relative">
                 {networksVirtualizer.getVirtualItems().map((item) => {
                   const net = networks[item.index]
                   const info = getNetworkInfo(net)

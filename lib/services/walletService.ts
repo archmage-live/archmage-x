@@ -70,13 +70,21 @@ export interface IWalletService {
 
   getWallet(id: number): Promise<IWallet | undefined>
 
+  getSubWallet(
+    id: number | { masterId: number; index: number }
+  ): Promise<IDerivedWallet | undefined>
+
   getWalletInfo(
     id: number | { masterId: number; index?: number }
   ): Promise<IWalletInfo | undefined>
 
-  getWalletsInfo(ids: number[]): Promise<IWalletInfo[]>
+  getWalletsInfo(
+    ids: (number | { masterId: number; index?: number })[]
+  ): Promise<IWalletInfo[]>
 
-  listWallets(): Promise<IWallet[]>
+  getSubWallets(id: number): Promise<IDerivedWallet[]>
+
+  getWallets(): Promise<IWallet[]>
 
   deriveSubWallets(id: number, num: number): Promise<void>
 
@@ -221,25 +229,68 @@ class WalletService extends WalletServicePartial {
     return DB.wallets.get(id)
   }
 
+  async getSubWallet(
+    id: number | { masterId: number; index: number }
+  ): Promise<IDerivedWallet | undefined> {
+    if (typeof id === 'number') {
+      return DB.derivedWallets.get(id)
+    } else {
+      return DB.derivedWallets.where(id).first()
+    }
+  }
+
   async getWalletInfo(
     id: number | { masterId: number; index?: number }
   ): Promise<IWalletInfo | undefined> {
     if (typeof id === 'number') {
       return reconcileWalletInfo(await DB.walletInfos.get(id))
     } else {
-      return reconcileWalletInfo(await DB.walletInfos.where(id).first())
+      return reconcileWalletInfo(
+        await DB.walletInfos
+          .where('[masterId+index]')
+          .equals([id.masterId, mayUndefinedToNumber(id.index)])
+          .first()
+      )
     }
   }
 
-  async getWalletsInfo(ids: number[]): Promise<IWalletInfo[]> {
-    const wallets = (await DB.walletInfos.where('id').anyOf(ids).toArray()).map(
-      (w) => reconcileWalletInfo(w)!
-    )
+  async getWalletsInfo(
+    ids: (number | { masterId: number; index?: number })[]
+  ): Promise<IWalletInfo[]> {
+    if (!ids.length) {
+      return []
+    }
+    let wallets
+    if (typeof ids[0] === 'number') {
+      wallets = (
+        await DB.walletInfos
+          .where('id')
+          .anyOf(ids as number[])
+          .toArray()
+      ).map((w) => reconcileWalletInfo(w)!)
+    } else {
+      const condition = (ids as { masterId: number; index?: number }[]).map(
+        ({ masterId, index }) => [masterId, mayUndefinedToNumber(index)]
+      )
+      wallets = (
+        await DB.walletInfos
+          .where('[masterId+index]')
+          .anyOf(condition)
+          .toArray()
+      ).map((w) => reconcileWalletInfo(w)!)
+    }
     assert(wallets.length === ids.length)
     return wallets
   }
 
-  async listWallets(): Promise<IWallet[]> {
+  async getSubWallets(id: number): Promise<IDerivedWallet[]> {
+    return DB.derivedWallets
+      .where('[masterId+sortId]')
+      .between([id, Dexie.minKey], [id, Dexie.maxKey])
+      .toArray()
+  }
+
+  async getWallets(): Promise<IWallet[]> {
     return DB.wallets.toArray()
   }
 
@@ -370,12 +421,19 @@ export function useSubWallets(walletId: number, nextSortId = 0, limit = 96) {
   }, [walletId])
 }
 
-export function useSubWalletsInfo(
-  id: number,
-  networkKind: NetworkKind,
-  chainId: number | string
+export function useWalletsInfo(
+  id?: number,
+  networkKind?: NetworkKind,
+  chainId?: number | string
 ) {
   return useLiveQuery(async () => {
+    if (
+      id === undefined ||
+      networkKind === undefined ||
+      chainId === undefined
+    ) {
+      return undefined
+    }
     return (
       await DB.walletInfos
         .where('[masterId+networkKind+chainId+index]')
@@ -388,7 +446,7 @@ export function useSubWalletsInfo(
   }, [id, networkKind, chainId])
 }
 
-export function useSubWalletInfo(
+export function useWalletInfo(
   id?: number,
   networkKind?: NetworkKind,
   chainId?: number | string,
@@ -398,8 +456,7 @@ export function useSubWalletInfo(
     if (
       id === undefined ||
       networkKind === undefined ||
-      chainId === undefined ||
-      index === undefined
+      chainId === undefined
     ) {
       return undefined
     }

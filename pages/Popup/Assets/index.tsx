@@ -15,7 +15,7 @@ import { FiCheckCircle, FiCopy } from 'react-icons/fi'
 import { MdMoreVert } from 'react-icons/md'
 
 import { useBalance } from '~lib/services/provider'
-import { useSubWalletInfo } from '~lib/services/walletService'
+import { useWalletInfo } from '~lib/services/walletService'
 import { shortenAddress } from '~lib/utils'
 
 import { useActiveWallet, useSelectedNetwork } from '../select'
@@ -24,7 +24,7 @@ export default function Assets() {
   const { wallet, subWallet } = useActiveWallet()
   const { selectedNetwork: network } = useSelectedNetwork()
 
-  const info = useSubWalletInfo(
+  const info = useWalletInfo(
     wallet?.id,
     network?.kind,
     network?.chainId,

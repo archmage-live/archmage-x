@@ -1,5 +1,5 @@
 import { CheckIcon } from '@chakra-ui/icons'
-import { Box, Button, HStack, Text } from '@chakra-ui/react'
+import { Box, Button, Checkbox, HStack, Text } from '@chakra-ui/react'
 import Blockies from 'react-blockies'
 
 import { IDerivedWallet, IWalletInfo } from '~lib/schema'
@@ -10,13 +10,17 @@ export const SubWalletItem = ({
   info,
   selected,
   onSelected,
-  active
+  active,
+  isChecked,
+  onChecked
 }: {
   wallet: IDerivedWallet
   info?: IWalletInfo
   selected?: boolean
   onSelected?: () => void
   active?: boolean
+  isChecked?: boolean
+  onChecked?: (checked: boolean) => void
 }) => {
   return (
     <Button
@@ -27,8 +31,14 @@ export const SubWalletItem = ({
       h={16}
       px={4}
       justifyContent="start"
-      onClick={onSelected}>
+      onClick={() => {
+        onSelected?.()
+        onChecked?.(!isChecked)
+      }}>
       <HStack w="full" justify="space-between">
+        {onChecked !== undefined && (
+          <Checkbox isChecked={isChecked} pointerEvents="none" />
+        )}
         <HStack w="calc(100% - 29.75px)" justify="space-between">
           <Box
             borderRadius="50%"

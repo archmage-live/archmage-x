@@ -16,6 +16,7 @@ interface WalletListProps {
   onSelectedSubId?: (selectedSubId: number) => void
   activeId?: ActiveWalletId
   onClose?: () => void
+  onChecked?: (ids: { masterId: number; index?: number }[]) => void
   maxH?: number | string
 }
 
@@ -27,6 +28,7 @@ export const WalletList = ({
   onSelectedSubId,
   activeId,
   onClose,
+  onChecked,
   maxH
 }: WalletListProps) => {
   const ws = useWallets()
@@ -61,11 +63,18 @@ export const WalletList = ({
     getItemKey: (index) => wallets[index].id!
   })
 
+  const [checked, setChecked] = useState<
+    { masterId: number; index?: number }[][]
+  >([])
+  useEffect(() => {
+    setChecked(new Array(wallets.length).fill([]))
+  }, [wallets])
+
   return (
     <Box py="14px">
       <Box
         ref={parentRef}
-        maxH={maxH || "336px"}
+        maxH={maxH || '336px'}
         overflowY="auto"
         borderRadius="xl"
         userSelect="none">
@@ -90,6 +99,17 @@ export const WalletList = ({
                   onSelectedSubId={onSelectedSubId}
                   activeId={activeId}
                   onClose={onClose}
+                  checked={checked[item.index]}
+                  onChecked={
+                    onChecked
+                      ? (ids) => {
+                          const checkedArray = checked.slice()
+                          checkedArray[item.index] = ids
+                          setChecked(checkedArray)
+                          onChecked(checkedArray.flat())
+                        }
+                      : undefined
+                  }
                   measureElement={item.measureElement}
                 />
               </Box>

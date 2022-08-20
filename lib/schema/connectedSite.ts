@@ -9,4 +9,4 @@ export interface IConnectedSite {
 }
 
 export const connectedSiteSchemaV1 =
-  '++id, &[masterId+index+origin], [masterId+index+connected], [origin+connected]'
+  '++id, &[masterId+index+origin+connected], [masterId+index+connected], [origin+connected]'
