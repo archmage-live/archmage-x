@@ -97,7 +97,14 @@ export class RpcClientInjected extends AbstractRpcClient {
 
     const response = await promise
     if (response.error) {
-      throw new Error(response.error)
+      let err = response.error
+      if (err.toString().includes('Extension context invalidated')) {
+        window.location.reload()
+      }
+      try {
+        err = JSON.parse(err)
+      } catch {}
+      throw err
     }
     return response.result
   }

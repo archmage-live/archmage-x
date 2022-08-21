@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import browser from 'webextension-polyfill'
 
 import { Context } from '~lib/rpc'
@@ -57,11 +58,33 @@ export async function createWindow(ctx: Context, to: string) {
   })
 }
 
-export async function getTab(
-  origin: string
-): Promise<browser.Tabs.Tab | undefined> {
-  const tabs = await browser.tabs.query({})
-  return tabs.find(
-    (tab) => tab.url && new URL(tab.url).origin === new URL(origin).origin
-  )
+export async function getTab({
+  origin,
+  active,
+  currentWindow
+}: {
+  origin?: string
+  active?: boolean
+  currentWindow?: boolean
+}): Promise<browser.Tabs.Tab | undefined> {
+  if (origin) {
+    const tabs = await browser.tabs.query({})
+    return tabs.find(
+      (tab) => tab.url && new URL(tab.url).origin === new URL(origin).origin
+    )
+  }
+  const tabs = await browser.tabs.query({ active, currentWindow })
+  return tabs[0]
+}
+
+export async function getCurrentTab() {
+  return getTab({ active: true, currentWindow: true })
+}
+
+export function useCurrentTab() {
+  const [tab, setTab] = useState<browser.Tabs.Tab | undefined>()
+  useEffect(() => {
+    getCurrentTab().then(setTab)
+  }, [])
+  return tab
 }

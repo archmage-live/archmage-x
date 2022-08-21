@@ -14,8 +14,13 @@ import {
 import { FiCheckCircle, FiCopy } from 'react-icons/fi'
 import { MdMoreVert } from 'react-icons/md'
 
+import {
+  useConnectedSitesBySite,
+  useConnectedSitesByWallet
+} from '~lib/services/connectedSiteService'
 import { useBalance } from '~lib/services/provider'
 import { useWalletInfo } from '~lib/services/walletService'
+import { useCurrentTab } from '~lib/util'
 import { shortenAddress } from '~lib/utils'
 
 import { useActiveWallet, useSelectedNetwork } from '../select'
@@ -31,7 +36,16 @@ export default function Assets() {
     subWallet?.index
   )
 
-  const connected = true
+  const tab = useCurrentTab()
+  const origin = tab?.url && new URL(tab.url).origin
+
+  const conns = useConnectedSitesBySite()
+  const connected =
+    info &&
+    conns &&
+    conns.find(
+      (conn) => conn.masterId === info.masterId && conn.index === info.index
+    )
 
   const { hasCopied, onCopy } = useClipboard('')
 
@@ -40,15 +54,38 @@ export default function Assets() {
   return (
     <Stack w="full" pt={8} spacing={8}>
       <HStack justify="space-between" minH={16}>
-        <Center
-          w="4"
-          h="4"
-          mx={2}
-          borderRadius="50%"
-          bg={connected ? 'red.500' : 'gray.500'}
-        />
+        <Tooltip
+          label={
+            origin && !origin.startsWith('chrome')
+              ? (connected ? 'Connected to ' : 'Not connected to ') + origin
+              : ''
+          }
+          placement="top-start">
+          <IconButton
+            variant="ghost"
+            aria-label="Show accounts connected to this site"
+            icon={
+              connected ? (
+                <Center
+                  w="4"
+                  h="4"
+                  borderRadius="50%"
+                  bg={'green.500'}
+                />
+              ) : (
+                <Center
+                  w="4"
+                  h="4"
+                  borderRadius="50%"
+                  borderWidth="2px"
+                  borderColor="red.500"
+                />
+              )
+            }
+          />
+        </Tooltip>
 
-        <Tooltip label={!hasCopied ? 'Copy Address' : 'Copied'}>
+        <Tooltip label={!hasCopied ? 'Copy Address' : 'Copied'} placement="top">
           <Button
             variant="ghost"
             size="lg"

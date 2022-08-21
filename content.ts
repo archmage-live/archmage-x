@@ -43,10 +43,10 @@ const listener = (event: MessageEvent) => {
         result
       } as Response)
     })
-    .catch((e) => {
+    .catch((error) => {
       window.postMessage({
         id,
-        error: e.toString()
+        error
       } as Response)
     })
 }

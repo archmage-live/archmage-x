@@ -134,7 +134,7 @@ export class RpcClient {
 
     const response = await promise
     if (response.error) {
-      throw new Error(response.error)
+      throw response.error
     }
     return response.result
   }

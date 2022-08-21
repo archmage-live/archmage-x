@@ -23,7 +23,7 @@ export const RequestPermission = ({ request }: { request: ConsentRequest }) => {
 
   useEffect(() => {
     const effect = async () => {
-      const tab = await getTab(request.origin)
+      const tab = await getTab({ origin: request.origin })
       if (tab?.favIconUrl) {
         setIconUrl(tab.favIconUrl)
       }
@@ -146,6 +146,7 @@ export const RequestPermission = ({ request }: { request: ConsentRequest }) => {
             size="lg"
             w={36}
             colorScheme="purple"
+            disabled={!checked.length}
             onClick={async () => {
               const wallets = await WALLET_SERVICE.getWalletsInfo(checked)
               request.walletInfoId = wallets.map((w) => w.id!)

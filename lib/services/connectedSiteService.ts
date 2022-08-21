@@ -1,11 +1,12 @@
 import assert from 'assert'
+import { useLiveQuery } from 'dexie-react-hooks'
 
 import { DB } from '~lib/db'
 import { ENV } from '~lib/env'
 import { SERVICE_WORKER_CLIENT, SERVICE_WORKER_SERVER } from '~lib/rpc'
 import { IWalletInfo, booleanToNumber } from '~lib/schema'
 import { IConnectedSite } from '~lib/schema/connectedSite'
-import { getTab } from '~lib/util'
+import { getCurrentTab, getTab } from '~lib/util'
 
 interface IConnectedSiteService {
   connectSite(
@@ -49,7 +50,7 @@ class ConnectedSiteService implements IConnectedSiteService {
     const origin = new URL(href).origin
 
     if (!iconUrl) {
-      const tab = await getTab(origin)
+      const tab = await getTab({ origin })
       if (tab) {
         iconUrl = tab.favIconUrl
       }
@@ -168,3 +169,21 @@ function createConnectedSiteService() {
 }
 
 export const CONNECTED_SITE_SERVICE = createConnectedSiteService()
+
+export function useConnectedSitesBySite(href?: string) {
+  return useLiveQuery(async () => {
+    if (!href) {
+      href = (await getCurrentTab())?.url
+    }
+    if (!href) {
+      return undefined
+    }
+    return CONNECTED_SITE_SERVICE.getConnectedSitesBySite(href)
+  }, [href])
+}
+
+export function useConnectedSitesByWallet(wallet: IWalletInfo) {
+  return useLiveQuery(async () => {
+    return CONNECTED_SITE_SERVICE.getConnectedSitesByWallet(wallet)
+  }, [wallet])
+}
