@@ -4,13 +4,14 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 
 import { AlertText } from '~components/AlertText'
 import { usePassword } from '~lib/password'
-import { WALLET_SERVICE } from '~lib/services/walletService'
+import { WALLET_SERVICE, useSubWalletsCount } from '~lib/services/walletService'
 import { createTab } from '~lib/util'
 
 export default function Unlock() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const { exists: passwordExists, isUnlocked } = usePassword()
+  const walletCount = useSubWalletsCount()
 
   const [locked, setLocked] = useState(false)
   const [password, setPassword] = useState('')
@@ -20,22 +21,19 @@ export default function Unlock() {
     setAlert('')
   }, [password])
 
-  const redirect = useCallback(
-    (to?: string, inTab?: boolean) => {
-      to = to || searchParams.get('redirect') || '/consent'
-      if (!inTab) {
-        navigate(to, { replace: true })
-      } else {
-        createTab(to)
-      }
-    },
-    [navigate, searchParams]
-  )
+  const redirect = useCallback(() => {
+    if (passwordExists === false || walletCount === 0) {
+      createTab('/tab/add-wallet')
+      window.close()
+    } else if (passwordExists && walletCount) {
+      const to = searchParams.get('redirect') || '/consent'
+      navigate(to, { replace: true })
+    }
+  }, [navigate, passwordExists, searchParams, walletCount])
 
   useEffect(() => {
     if (passwordExists === false) {
-      redirect('/tab/add-wallet', true)
-      window.close()
+      redirect()
     }
   }, [passwordExists, redirect])
 
@@ -53,12 +51,10 @@ export default function Unlock() {
       WALLET_SERVICE.unlock(password).then((ok) => {
         if (!ok) {
           setAlert('Wrong password')
-        } else {
-          redirect()
         }
       })
     },
-    [password, redirect]
+    [password]
   )
 
   return (

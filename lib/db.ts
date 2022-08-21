@@ -7,6 +7,7 @@ import {
   uniqueNamesGenerator
 } from 'unique-names-generator'
 
+import { IChainAccount, chainAccountSchemaV1 } from '~lib/schema/chainAccount'
 import {
   IConnectedSite,
   connectedSiteSchemaV1
@@ -18,14 +19,13 @@ import { INetwork, networkSchemaV1 } from '~lib/schema/network'
 import { IQueryCache, queryCacheSchemaV1 } from '~lib/schema/queryCache'
 import type { IWallet } from '~lib/schema/wallet'
 import { walletSchemaV1 } from '~lib/schema/wallet'
-import { IWalletInfo, walletInfoSchemaV1 } from '~lib/schema/walletInfo'
 
 export class Database extends Dexie {
   wallets!: Dexie.Table<IWallet, number>
   networks!: Dexie.Table<INetwork, number>
   hdPaths!: Dexie.Table<IHdPath, number>
   derivedWallets!: Dexie.Table<IDerivedWallet, number>
-  walletInfos!: Dexie.Table<IWalletInfo, number>
+  chainAccounts!: Dexie.Table<IChainAccount, number>
   connectedSites!: Dexie.Table<IConnectedSite, number>
   queryCache!: Dexie.Table<IQueryCache, number>
 
@@ -36,7 +36,7 @@ export class Database extends Dexie {
       networks: networkSchemaV1,
       hdPaths: hdPathSchemaV1,
       derivedWallets: derivedWalletSchemaV1,
-      walletInfos: walletInfoSchemaV1,
+      chainAccounts: chainAccountSchemaV1,
       connectedSites: connectedSiteSchemaV1,
       queryCache: queryCacheSchemaV1
     })
@@ -69,19 +69,24 @@ export async function getNextField<
 
 export async function generateName<T>(
   table: Dexie.Table<T>,
+  namePrefix = '',
   key = 'name'
 ): Promise<string> {
   const cfg: Config = {
-    dictionaries: [adjectives, colors, animals],
-    separator: '-'
+    dictionaries: [animals]
   }
-  const name = uniqueNamesGenerator(cfg)
+  let name
+  for (let i = 0; i < 3; i++) {
+    name = uniqueNamesGenerator(cfg)
+    name = namePrefix + name[0].toUpperCase() + name.slice(1)
 
-  if (!(await table.get({ [key]: name }))) {
-    return name
+    if (!(await table.get({ [key]: name }))) {
+      return name
+    }
   }
+
   for (let num = 2; ; num++) {
-    const nameNum = `${name}-${num}`
+    const nameNum = `${name} ${num}`
     if (!(await table.get({ [key]: nameNum }))) {
       return nameNum
     }

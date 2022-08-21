@@ -11,11 +11,11 @@ import {
 } from 'react-beautiful-dnd'
 import { useDebounce } from 'react-use'
 
-import { IDerivedWallet, INetwork, IWalletInfo } from '~lib/schema'
+import { IChainAccount, IDerivedWallet, INetwork } from '~lib/schema'
 import {
   reorderSubWallets,
-  useSubWallets,
-  useWalletsInfo
+  useChainAccounts,
+  useSubWallets
 } from '~lib/services/walletService'
 
 import { SubWalletItem } from './SubWalletItem'
@@ -24,10 +24,8 @@ interface SubWalletListProps {
   network: INetwork
   masterId: number
   selectedId?: number
-
-  onSelectedId(selectedId: number): void
-
-  measure(): void
+  onSelectedId: (selectedId: number) => void
+  measure: () => void
 }
 
 export const SubWalletList = ({
@@ -37,20 +35,26 @@ export const SubWalletList = ({
   onSelectedId,
   measure
 }: SubWalletListProps) => {
-  const sw = useSubWallets(masterId)
+  const queriedSubWallets = useSubWallets(masterId)
   const [wallets, setWallets] = useState<IDerivedWallet[]>([])
   useEffect(() => {
-    if (sw) setWallets(sw)
-  }, [sw])
+    if (queriedSubWallets) setWallets(queriedSubWallets)
+  }, [queriedSubWallets])
 
   useDebounce(measure, 50, [measure, wallets])
 
-  const infos = useWalletsInfo(masterId, network.kind, network.chainId)
-  const infoMap = useMemo(() => {
-    const m = new Map<string, IWalletInfo>()
-    infos?.forEach((info) => m.set(`${info.masterId}-${info.index}`, info))
-    return m
-  }, [infos])
+  const queriedAccounts = useChainAccounts(
+    masterId,
+    network.kind,
+    network.chainId
+  )
+  const accounts = useMemo(() => {
+    const accounts = new Map<string, IChainAccount>()
+    queriedAccounts?.forEach((info) =>
+      accounts.set(`${info.masterId}-${info.index}`, info)
+    )
+    return accounts
+  }, [queriedAccounts])
 
   const parentRef = useRef(null)
   const walletsVirtualizer = useVirtualizer({
@@ -121,7 +125,7 @@ export const SubWalletList = ({
             mode="virtual"
             renderClone={(provided, snapshot, rubric) => {
               const wallet = wallets[rubric.source.index]
-              const info = infoMap.get(`${wallet.masterId}-${wallet.index}`)
+              const info = accounts.get(`${wallet.masterId}-${wallet.index}`)
               return (
                 <Box
                   ref={provided.innerRef}
@@ -129,7 +133,7 @@ export const SubWalletList = ({
                   {...provided.draggableProps}>
                   <SubWalletItem
                     wallet={wallet}
-                    info={info}
+                    account={info}
                     bg={hoverBg}
                     borderColor={
                       wallet.id === selectedId ? 'purple.500' : undefined
@@ -150,7 +154,7 @@ export const SubWalletList = ({
                   position="relative">
                   {walletsVirtualizer.getVirtualItems().map((item) => {
                     const wallet = wallets[item.index]
-                    const info = infoMap.get(
+                    const info = accounts.get(
                       `${wallet.masterId}-${wallet.index}`
                     )
                     return (
@@ -173,7 +177,7 @@ export const SubWalletList = ({
                               h="full">
                               <SubWalletItem
                                 wallet={wallet}
-                                info={info}
+                                account={info}
                                 bg={
                                   wallet.id === selectedId ? hoverBg : undefined
                                 }

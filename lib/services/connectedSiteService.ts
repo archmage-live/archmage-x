@@ -4,26 +4,26 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { DB } from '~lib/db'
 import { ENV } from '~lib/env'
 import { SERVICE_WORKER_CLIENT, SERVICE_WORKER_SERVER } from '~lib/rpc'
-import { IWalletInfo, booleanToNumber } from '~lib/schema'
+import { IChainAccount, booleanToNumber } from '~lib/schema'
 import { IConnectedSite } from '~lib/schema/connectedSite'
 import { getCurrentTab, getTab } from '~lib/util'
 
 interface IConnectedSiteService {
   connectSite(
-    wallet: IWalletInfo[],
+    accounts: IChainAccount[],
     href: string,
     iconUrl?: string,
     connected?: boolean
   ): Promise<IConnectedSite[]>
 
   getConnectedSite(
-    wallet: IWalletInfo,
+    account: IChainAccount,
     href: string,
     connected?: boolean
   ): Promise<IConnectedSite | undefined>
 
-  getConnectedSitesByWallet(
-    wallet: IWalletInfo,
+  getConnectedSitesByAccount(
+    account: IChainAccount,
     connected?: boolean
   ): Promise<IConnectedSite[]>
 
@@ -34,18 +34,18 @@ interface IConnectedSiteService {
 
   disconnectSite(id: number): Promise<void>
 
-  disconnectSitesByWallet(wallet: IWalletInfo): Promise<void>
+  disconnectSitesByWallet(account: IChainAccount): Promise<void>
 
   disconnectSitesBySite(href: string): Promise<void>
 }
 
 class ConnectedSiteService implements IConnectedSiteService {
   async connectSite(
-    wallets: IWalletInfo[],
+    accounts: IChainAccount[],
     href: string,
     iconUrl?: string
   ): Promise<IConnectedSite[]> {
-    assert(wallets.length)
+    assert(accounts.length)
 
     const origin = new URL(href).origin
 
@@ -57,8 +57,8 @@ class ConnectedSiteService implements IConnectedSiteService {
     }
 
     const conns: IConnectedSite[] = []
-    for (const wallet of wallets) {
-      const existing = await this.getConnectedSite(wallet, href, false)
+    for (const account of accounts) {
+      const existing = await this.getConnectedSite(account, href, false)
       if (existing) {
         existing.iconUrl = iconUrl || existing.iconUrl
         existing.connected = booleanToNumber(true)
@@ -66,8 +66,8 @@ class ConnectedSiteService implements IConnectedSiteService {
         conns.push(existing)
       } else {
         const add = {
-          masterId: wallet.masterId,
-          index: wallet.index,
+          masterId: account.masterId,
+          index: account.index,
           origin,
           iconUrl,
           connected: booleanToNumber(true),
@@ -92,7 +92,7 @@ class ConnectedSiteService implements IConnectedSiteService {
   }
 
   async getConnectedSite(
-    wallet: IWalletInfo,
+    account: IChainAccount,
     href: string,
     connected = true
   ): Promise<IConnectedSite | undefined> {
@@ -100,23 +100,23 @@ class ConnectedSiteService implements IConnectedSiteService {
     return DB.connectedSites
       .where('[masterId+index+origin+connected]')
       .equals([
-        wallet.masterId,
-        wallet.index,
+        account.masterId,
+        account.index,
         origin,
         booleanToNumber(connected)
       ] as Array<any>)
       .first()
   }
 
-  async getConnectedSitesByWallet(
-    wallet: IWalletInfo,
+  async getConnectedSitesByAccount(
+    account: IChainAccount,
     connected = true
   ): Promise<IConnectedSite[]> {
     return DB.connectedSites
       .where('[masterId+index+connected]')
       .equals([
-        wallet.masterId,
-        wallet.index,
+        account.masterId,
+        account.index,
         booleanToNumber(connected)
       ] as Array<any>)
       .toArray()
@@ -137,12 +137,12 @@ class ConnectedSiteService implements IConnectedSiteService {
     await DB.connectedSites.update(id, { connected: false })
   }
 
-  async disconnectSitesByWallet(wallet: IWalletInfo) {
+  async disconnectSitesByWallet(account: IChainAccount) {
     await DB.connectedSites
       .where('[masterId+index+connected]')
       .equals([
-        wallet.masterId,
-        wallet.index,
+        account.masterId,
+        account.index,
         booleanToNumber(true)
       ] as Array<any>)
       .modify({ connected: false })
@@ -182,8 +182,8 @@ export function useConnectedSitesBySite(href?: string) {
   }, [href])
 }
 
-export function useConnectedSitesByWallet(wallet: IWalletInfo) {
+export function useConnectedSitesByWallet(account: IChainAccount) {
   return useLiveQuery(async () => {
-    return CONNECTED_SITE_SERVICE.getConnectedSitesByWallet(wallet)
-  }, [wallet])
+    return CONNECTED_SITE_SERVICE.getConnectedSitesByAccount(account)
+  }, [account])
 }

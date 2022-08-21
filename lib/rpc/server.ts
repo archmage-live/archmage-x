@@ -153,6 +153,8 @@ export class RpcServer {
         })
       })
       .catch((err) => {
+        console.log(err)
+
         port.postMessage({
           id,
           error: err.toString()

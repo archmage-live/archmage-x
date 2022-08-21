@@ -4,7 +4,7 @@ import browser from 'webextension-polyfill'
 
 import { ENV } from '~lib/env'
 import { Context, SERVICE_WORKER_CLIENT, SERVICE_WORKER_SERVER } from '~lib/rpc'
-import { IWalletInfo } from '~lib/schema'
+import { IChainAccount } from '~lib/schema'
 import { CONNECTED_SITE_SERVICE } from '~lib/services/connectedSiteService'
 import { NETWORK_SERVICE } from '~lib/services/network'
 import { getProvider } from '~lib/services/provider'
@@ -31,7 +31,7 @@ export enum ConsentType {
 export type ConsentRequest = {
   id: number
   networkId: number
-  walletInfoId: number | number[]
+  accountId: number | number[]
   type: ConsentType
   origin: string
   payload: any
@@ -160,28 +160,28 @@ class ConsentService implements IConsentService {
       const network = await NETWORK_SERVICE.getNetwork(req.networkId)
       assert(network)
       const provider = getProvider(network)
-      const wallets = await WALLET_SERVICE.getWalletsInfo(
-        Array.isArray(req.walletInfoId) ? req.walletInfoId : [req.walletInfoId]
+      const accounts = await WALLET_SERVICE.getChainAccounts(
+        Array.isArray(req.accountId) ? req.accountId : [req.accountId]
       )
-      assert(wallets)
+      assert(accounts)
 
       let response
       switch (req.type) {
         case ConsentType.REQUEST_PERMISSION:
           response = await this.requestPermission(
-            wallets,
+            accounts,
             req.origin,
             req.payload
           )
           break
         case ConsentType.TRANSACTION:
-          response = await provider.signTransaction(wallets[0], req.payload)
+          response = await provider.signTransaction(accounts[0], req.payload)
           break
         case ConsentType.SIGN_MSG:
-          response = await provider.signMessage(wallets[0], req.payload)
+          response = await provider.signMessage(accounts[0], req.payload)
           break
         case ConsentType.SIGN_TYPED_DATA:
-          response = await provider.signTypedData(wallets[0], req.payload)
+          response = await provider.signTypedData(accounts[0], req.payload)
           break
         case ConsentType.WATCH_ASSET:
           // TODO
@@ -195,14 +195,14 @@ class ConsentService implements IConsentService {
   }
 
   private async requestPermission(
-    wallets: IWalletInfo[],
+    accounts: IChainAccount[],
     origin: string,
     payload: RequestPermissionPayload
   ): Promise<any> {
     for (const { permission } of payload.permissions) {
       switch (permission) {
         case Permission.ACCOUNT:
-          await CONNECTED_SITE_SERVICE.connectSite(wallets, origin)
+          await CONNECTED_SITE_SERVICE.connectSite(accounts, origin)
       }
     }
   }

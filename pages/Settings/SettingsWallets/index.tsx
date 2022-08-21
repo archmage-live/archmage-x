@@ -111,16 +111,18 @@ export const SettingsWallets = () => {
             </Button>
           </HStack>
 
-          {selectedSubWallet
-            ? network &&
-              selectedWallet && (
+          {selectedWallet &&
+            (selectedSubWallet ? (
+              network && (
                 <SubWalletEdit
                   network={network}
                   master={selectedWallet}
                   wallet={selectedSubWallet}
                 />
               )
-            : selectedWallet && <WalletEdit wallet={selectedWallet} />}
+            ) : (
+              <WalletEdit wallet={selectedWallet} />
+            ))}
         </Stack>
       </SimpleGrid>
     </Stack>

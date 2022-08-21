@@ -1,7 +1,9 @@
+import { Index } from './derivedWallet'
+
 export interface IConnectedSite {
   id?: number
   masterId: number // master wallet id
-  index: number | undefined // derived wallet index; undefined for imported single wallet
+  index: Index // derived wallet index
   origin: string // URL.origin
   iconUrl?: string
   connected: 0 | 1 // boolean is not indexable

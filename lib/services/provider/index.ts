@@ -4,7 +4,7 @@ import { useMemo } from 'react'
 
 import { NetworkKind } from '~lib/network'
 import { QueryService } from '~lib/query'
-import { INetwork, IWalletInfo } from '~lib/schema'
+import { IChainAccount, INetwork } from '~lib/schema'
 import { getNetworkInfo } from '~lib/services/network'
 
 import { EvmProviderAdaptor } from './evm'
@@ -22,7 +22,7 @@ export function getProvider(network: INetwork): ProviderAdaptor {
 
 export function useBalance(
   network?: INetwork,
-  wallet?: IWalletInfo
+  wallet?: IChainAccount
 ): Balance | undefined {
   const { data: balance } = useQuery(
     [QueryService.PROVIDER, network, wallet],

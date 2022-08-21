@@ -1,21 +1,21 @@
 import assert from 'assert'
 
 import {
+  IChainAccount,
   IDerivedWallet,
   INetwork,
   IWallet,
-  IWalletInfo,
-  mayUndefinedToNumber,
-  reconcileWalletInfo
+  PSEUDO_INDEX
 } from '~lib/schema'
 import { WALLET_SERVICE } from '~lib/services/walletService'
 import { LOCAL_STORE, StoreKey } from '~lib/store'
+import { WalletType } from '~lib/wallet'
 
 import { DB } from './db'
 
 export interface ActiveWalletId {
   masterId: number
-  derivedId: number | undefined
+  derivedId: number
 }
 
 export async function getActiveNetwork(): Promise<INetwork | undefined> {
@@ -33,9 +33,14 @@ export async function setActiveNetwork(networkId: number) {
 }
 
 export async function getActiveWallet(): Promise<
-  | { wallet: IWallet; subWallet?: IDerivedWallet; walletInfo: IWalletInfo }
+  | { wallet: IWallet; subWallet?: IDerivedWallet; walletInfo: IChainAccount }
   | undefined
 > {
+  const network = await getActiveNetwork()
+  if (!network) {
+    return undefined
+  }
+
   const activeId = await LOCAL_STORE.get<ActiveWalletId | undefined>(
     StoreKey.SELECTED_WALLET
   )
@@ -51,9 +56,15 @@ export async function getActiveWallet(): Promise<
       ? await DB.derivedWallets.get(activeId.derivedId)
       : undefined
 
-  const walletInfo = await WALLET_SERVICE.getWalletInfo({
+  if (wallet.type === WalletType.HD) {
+    assert(subWallet)
+  }
+
+  const walletInfo = await WALLET_SERVICE.getChainAccount({
     masterId: wallet.id!,
-    index: subWallet?.index
+    index: subWallet?.index || PSEUDO_INDEX,
+    networkKind: network.kind,
+    chainId: network.chainId
   })
   assert(walletInfo)
 

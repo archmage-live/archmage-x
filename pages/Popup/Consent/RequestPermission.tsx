@@ -34,29 +34,42 @@ export const RequestPermission = ({ request }: { request: ConsentRequest }) => {
 
   const { selectedNetwork } = useSelectedNetwork()
 
-  const [checked, setChecked] = useState<
-    { masterId: number; index?: number }[]
-  >([])
-  useEffect(() => {
-    // console.log(checked)
-  }, [checked])
+  const [checked, setChecked] = useState<Map<number, number[]>>()
+  const [flatChecked, setFlatChecked] = useState<number[]>()
 
   const [info, setInfo] = useState<any>()
   useEffect(() => {
     const effect = async () => {
-      if (checked.length !== 1) {
+      const flatChecked = Array.from(checked?.values() || []).flat()
+      setFlatChecked((checked) =>
+        checked?.length === flatChecked.length &&
+        checked?.every((v, i) => v === flatChecked[i])
+          ? checked
+          : flatChecked
+      )
+
+      if (flatChecked.length !== 1) {
         return
       }
-      const one = checked[0]
-      const wallet = await WALLET_SERVICE.getSubWallet({
-        masterId: one.masterId,
-        index: one.index!
+
+      const account = await WALLET_SERVICE.getChainAccount(flatChecked[0])
+      if (!account) {
+        return
+      }
+      const wallet = await WALLET_SERVICE.getWallet(account.masterId)
+      const subWallet = await WALLET_SERVICE.getSubWallet({
+        masterId: account.masterId,
+        index: account.index
       })
-      const info = await WALLET_SERVICE.getWalletInfo({
-        masterId: one.masterId,
-        index: one.index
+
+      setInfo({
+        name:
+          wallet &&
+          (subWallet?.name
+            ? `${wallet.name} / ${subWallet.name}`
+            : wallet.name),
+        address: account?.address
       })
-      setInfo({ name: wallet?.name, address: info?.address })
     }
 
     effect()
@@ -102,6 +115,7 @@ export const RequestPermission = ({ request }: { request: ConsentRequest }) => {
               <WalletList
                 network={selectedNetwork}
                 maxH="224px"
+                checked={checked}
                 onChecked={setChecked}
               />
             </Stack>
@@ -110,8 +124,8 @@ export const RequestPermission = ({ request }: { request: ConsentRequest }) => {
           </Stack>
 
           <Stack align="center">
-            {checked.length &&
-              (checked.length === 1 ? (
+            {flatChecked?.length &&
+              (flatChecked.length === 1 ? (
                 <>
                   <Text fontSize="xl" noOfLines={1}>
                     Connect to&nbsp;
@@ -124,7 +138,9 @@ export const RequestPermission = ({ request }: { request: ConsentRequest }) => {
               ) : (
                 <Text fontSize="xl">
                   Connect to&nbsp;
-                  <chakra.span fontStyle="italic">{checked.length}</chakra.span>
+                  <chakra.span fontStyle="italic">
+                    {flatChecked.length}
+                  </chakra.span>
                   &nbsp;accounts
                 </Text>
               ))}
@@ -146,10 +162,13 @@ export const RequestPermission = ({ request }: { request: ConsentRequest }) => {
             size="lg"
             w={36}
             colorScheme="purple"
-            disabled={!checked.length}
+            disabled={!flatChecked?.length}
             onClick={async () => {
-              const wallets = await WALLET_SERVICE.getWalletsInfo(checked)
-              request.walletInfoId = wallets.map((w) => w.id!)
+              if (!selectedNetwork) {
+                return
+              }
+
+              request.accountId = flatChecked!
               await CONSENT_SERVICE.processRequest(request, true)
               window.close()
             }}>

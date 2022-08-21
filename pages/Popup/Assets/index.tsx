@@ -19,7 +19,7 @@ import {
   useConnectedSitesByWallet
 } from '~lib/services/connectedSiteService'
 import { useBalance } from '~lib/services/provider'
-import { useWalletInfo } from '~lib/services/walletService'
+import { useChainAccount } from '~lib/services/walletService'
 import { useCurrentTab } from '~lib/util'
 import { shortenAddress } from '~lib/utils'
 
@@ -29,7 +29,7 @@ export default function Assets() {
   const { wallet, subWallet } = useActiveWallet()
   const { selectedNetwork: network } = useSelectedNetwork()
 
-  const info = useWalletInfo(
+  const account = useChainAccount(
     wallet?.id,
     network?.kind,
     network?.chainId,
@@ -41,15 +41,16 @@ export default function Assets() {
 
   const conns = useConnectedSitesBySite()
   const connected =
-    info &&
+    account &&
     conns &&
     conns.find(
-      (conn) => conn.masterId === info.masterId && conn.index === info.index
+      (conn) =>
+        conn.masterId === account.masterId && conn.index === account.index
     )
 
   const { hasCopied, onCopy } = useClipboard('')
 
-  const balance = useBalance(network, info)
+  const balance = useBalance(network, account)
 
   return (
     <Stack w="full" pt={8} spacing={8}>
@@ -66,12 +67,7 @@ export default function Assets() {
             aria-label="Show accounts connected to this site"
             icon={
               connected ? (
-                <Center
-                  w="4"
-                  h="4"
-                  borderRadius="50%"
-                  bg={'green.500'}
-                />
+                <Center w="4" h="4" borderRadius="50%" bg={'green.500'} />
               ) : (
                 <Center
                   w="4"
@@ -90,12 +86,29 @@ export default function Assets() {
             variant="ghost"
             size="lg"
             h={16}
+            maxW={64}
+            px={2}
             colorScheme="purple"
             onClick={!hasCopied ? onCopy : undefined}>
             <Stack>
-              <Text fontSize="lg">{subWallet?.name}</Text>
-              <HStack color="gray.500" ps={5}>
-                <Text fontSize="md">{shortenAddress(info?.address, 6)}</Text>
+              <HStack justify="center" fontSize="lg" spacing={1}>
+                <Text
+                  noOfLines={1}
+                  display="block"
+                  maxW={subWallet?.name ? '98px' : '196px'}>
+                  {wallet?.name}
+                </Text>
+                {subWallet?.name && (
+                  <>
+                    <Text>/</Text>
+                    <Text noOfLines={1} display="block" maxW="98px">
+                      {subWallet.name}
+                    </Text>
+                  </>
+                )}
+              </HStack>
+              <HStack justify="center" color="gray.500" ps={5}>
+                <Text fontSize="md">{shortenAddress(account?.address, 6)}</Text>
                 <Icon w={3} h={3} as={!hasCopied ? FiCopy : FiCheckCircle} />
               </HStack>
             </Stack>

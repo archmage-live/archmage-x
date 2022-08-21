@@ -4,12 +4,12 @@ import { DraggableProvidedDragHandleProps } from 'react-beautiful-dnd'
 import Blockies from 'react-blockies'
 import { MdDragIndicator } from 'react-icons/md'
 
-import { IDerivedWallet, IWalletInfo } from '~lib/schema'
+import { IChainAccount, IDerivedWallet } from '~lib/schema'
 import { shortenAddress } from '~lib/utils'
 
 export const SubWalletItem = ({
   wallet,
-  info,
+  account,
   bg,
   hoverBg,
   borderColor,
@@ -18,7 +18,7 @@ export const SubWalletItem = ({
   dragHandleProps = {} as DraggableProvidedDragHandleProps
 }: {
   wallet: IDerivedWallet
-  info?: IWalletInfo
+  account?: IChainAccount
   bg?: string
   hoverBg?: string
   borderColor?: string
@@ -60,7 +60,7 @@ export const SubWalletItem = ({
         data-group>
         <HStack spacing={4}>
           <Box borderRadius="50%" overflow="hidden">
-            <Blockies seed={info?.address + ''} size={10} scale={3} />
+            <Blockies seed={account?.address + ''} size={10} scale={3} />
           </Box>
           <Text fontSize="lg" noOfLines={1} w="160px">
             {wallet.name}
@@ -72,7 +72,7 @@ export const SubWalletItem = ({
           visibility={infoVisibility || 'hidden'}
           _groupHover={{ visibility: infoVisibility || 'visible' }}>
           <Stack fontSize="sm" color="gray.500">
-            <Text noOfLines={1}>{shortenAddress(info?.address, 6)}</Text>
+            <Text noOfLines={1}>{shortenAddress(account?.address, 6)}</Text>
             <Text>Index: {wallet.index}</Text>
           </Stack>
           <Box {...dragHandleProps} p={2}>

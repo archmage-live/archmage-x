@@ -16,7 +16,7 @@ import { HdPathInput } from '~components/HdPathInput'
 import { SaveInput } from '~components/SaveInput'
 import { DB } from '~lib/db'
 import { IDerivedWallet, INetwork, IWallet } from '~lib/schema'
-import { useHdPaths, useWalletInfo } from '~lib/services/walletService'
+import { useChainAccount, useHdPaths } from '~lib/services/walletService'
 
 interface SubWalletEditProps {
   network: INetwork
@@ -29,7 +29,7 @@ export const SubWalletEdit = ({
   master,
   wallet
 }: SubWalletEditProps) => {
-  const info = useWalletInfo(
+  const info = useChainAccount(
     master.id!,
     network.kind,
     network.chainId,

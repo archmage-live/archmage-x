@@ -1,10 +1,11 @@
 import { Box } from '@chakra-ui/react'
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 
 import { ActiveWalletId } from '~lib/active'
-import { INetwork, IWallet } from '~lib/schema'
+import { INetwork, PSEUDO_INDEX } from '~lib/schema'
 import { WALLET_SERVICE, useWallets } from '~lib/services/walletService'
+import { WalletType } from '~lib/wallet'
 
 import { WalletItem } from './WalletItem'
 
@@ -16,7 +17,8 @@ interface WalletListProps {
   onSelectedSubId?: (selectedSubId: number) => void
   activeId?: ActiveWalletId
   onClose?: () => void
-  onChecked?: (ids: { masterId: number; index?: number }[]) => void
+  checked?: Map<number, number[]>
+  onChecked?: (ids: Map<number, number[]>) => void
   maxH?: number | string
 }
 
@@ -28,47 +30,32 @@ export const WalletList = ({
   onSelectedSubId,
   activeId,
   onClose,
+  checked,
   onChecked,
   maxH
 }: WalletListProps) => {
-  const ws = useWallets()
-  useEffect(() => {
-    const effect = async () => {
-      if (!network) {
-        return
-      }
-      if (ws) {
-        for (const w of ws) {
-          await WALLET_SERVICE.ensureSubWalletsInfo(
-            w,
-            network.kind,
-            network.chainId
-          )
-        }
-      }
-    }
-    effect()
-  }, [network, ws])
-
-  const [wallets, setWallets] = useState<IWallet[]>([])
-  useEffect(() => {
-    if (ws) setWallets(ws)
-  }, [ws])
+  const wallets = useWallets()
 
   const parentRef = useRef(null)
   const walletsVirtualizer = useVirtualizer({
-    count: wallets.length,
+    count: wallets?.length || 0,
     getScrollElement: () => parentRef.current,
     estimateSize: () => 56,
-    getItemKey: (index) => wallets[index].id!
+    getItemKey: (index) => wallets?.[index].id!
   })
 
-  const [checked, setChecked] = useState<
-    { masterId: number; index?: number }[][]
-  >([])
   useEffect(() => {
-    setChecked(new Array(wallets.length).fill([]))
-  }, [wallets])
+    if (!wallets || !onChecked) {
+      return
+    }
+    if (
+      checked?.size === wallets.length &&
+      wallets.every((w) => checked.has(w.id!))
+    ) {
+      return
+    }
+    onChecked?.(new Map(wallets.map((w) => [w.id!, [] as number[]])))
+  }, [checked, onChecked, wallets])
 
   return (
     <Box py="14px">
@@ -80,7 +67,8 @@ export const WalletList = ({
         userSelect="none">
         <Box h={walletsVirtualizer.getTotalSize() + 'px'} position="relative">
           {walletsVirtualizer.getVirtualItems().map((item) => {
-            const wallet = wallets[item.index]
+            const wallet = wallets?.[item.index]!
+
             return (
               <Box
                 key={wallet.id}
@@ -94,19 +82,28 @@ export const WalletList = ({
                   network={network}
                   wallet={wallet}
                   selected={wallet.id === selectedId}
-                  onSelected={() => onSelectedId?.(wallet.id!)}
+                  onSelected={async () => {
+                    onSelectedId?.(wallet.id!)
+                    if (wallet.type !== WalletType.HD) {
+                      const subWallet = await WALLET_SERVICE.getSubWallet({
+                        masterId: wallet.id!,
+                        index: PSEUDO_INDEX
+                      })
+                      onSelectedSubId?.(subWallet?.id!)
+                    }
+                  }}
                   selectedSubId={selectedSubId}
                   onSelectedSubId={onSelectedSubId}
                   activeId={activeId}
                   onClose={onClose}
-                  checked={checked[item.index]}
+                  checked={checked?.get(wallet.id!)}
                   onChecked={
                     onChecked
                       ? (ids) => {
-                          const checkedArray = checked.slice()
-                          checkedArray[item.index] = ids
-                          setChecked(checkedArray)
-                          onChecked(checkedArray.flat())
+                          const map = new Map(checked)
+                          map.set(wallet.id!, ids)
+                          console.log(map)
+                          onChecked(map)
                         }
                       : undefined
                   }

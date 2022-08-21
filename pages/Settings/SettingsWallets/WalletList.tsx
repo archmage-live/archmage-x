@@ -11,11 +11,7 @@ import {
 } from 'react-beautiful-dnd'
 
 import { INetwork, IWallet } from '~lib/schema'
-import {
-  WALLET_SERVICE,
-  reorderWallets,
-  useWallets
-} from '~lib/services/walletService'
+import { reorderWallets, useWallets } from '~lib/services/walletService'
 
 import { WalletItem } from './WalletItem'
 
@@ -37,29 +33,11 @@ export const WalletList = ({
   onSelectedId,
   onSelectedSubId
 }: WalletListProps) => {
-  const ws = useWallets()
-  useEffect(() => {
-    const effect = async () => {
-      if (!network) {
-        return
-      }
-      if (ws) {
-        for (const w of ws) {
-          await WALLET_SERVICE.ensureSubWalletsInfo(
-            w,
-            network.kind,
-            network.chainId
-          )
-        }
-      }
-    }
-    effect()
-  }, [network, ws])
-
+  const queriedWallets = useWallets()
   const [wallets, setWallets] = useState<IWallet[]>([])
   useEffect(() => {
-    if (ws) setWallets(ws)
-  }, [ws])
+    if (queriedWallets) setWallets(queriedWallets)
+  }, [queriedWallets])
 
   const parentRef = useRef(null)
   const walletsVirtualizer = useVirtualizer({

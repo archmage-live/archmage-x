@@ -1,16 +1,21 @@
 export interface IDerivedWallet {
   id?: number
   masterId: number // master wallet id
-  sortId: number
-  index: number
-  name: string
+  sortId: number // always 0 if pseudo index
+  index: Index
+  name: string // empty if pseudo index
 }
 
 // for specific masterId, unique sortId/index/name
 export const derivedWalletSchemaV1 =
   '++id, [masterId+sortId], &[masterId+index], &[masterId+name]'
 
-const namePrefix = 'Wallet '
+export const PSEUDO_INDEX = -1 // pseudo index for imported single wallet
+export type Index = number | typeof PSEUDO_INDEX
+
+export type DerivedIndex = { masterId: number; index: Index }
+
+const namePrefix = 'Account '
 
 export function getDefaultDerivedName(index: number) {
   return namePrefix + (index + 1)

@@ -15,11 +15,10 @@ import {
 import { NetworkKind } from '~lib/network'
 import { EvmChainInfo, EvmExplorer, NativeCurrency } from '~lib/network/evm'
 import { Context } from '~lib/rpc'
-import { INetwork, IWalletInfo } from '~lib/schema'
+import { IChainAccount, INetwork } from '~lib/schema'
 import { CONNECTED_SITE_SERVICE } from '~lib/services/connectedSiteService'
 import {
   CONSENT_SERVICE,
-  ConsentRequest,
   ConsentType,
   Permission,
   RequestPermissionPayload
@@ -69,7 +68,7 @@ export class EvmPermissionedProvider {
   network: INetwork
   provider: EvmProvider
   origin: string
-  wallet?: IWalletInfo
+  wallet?: IChainAccount
 
   private constructor(network: INetwork, fromUrl: string) {
     this.network = network
@@ -114,9 +113,11 @@ export class EvmPermissionedProvider {
         conn = connections[0]
       }
 
-      this.wallet = await WALLET_SERVICE.getWalletInfo({
+      this.wallet = await WALLET_SERVICE.getChainAccount({
         masterId: conn.masterId,
-        index: conn.index
+        index: conn.index,
+        networkKind: this.network.kind,
+        chainId: this.network.chainId
       })
     }
   }
@@ -197,7 +198,7 @@ export class EvmPermissionedProvider {
 
     return CONSENT_SERVICE.requestConsent(ctx, {
       networkId: this.network.id!,
-      walletInfoId: this.wallet.id!,
+      accountId: this.wallet.id!,
       type: ConsentType.TRANSACTION,
       origin: this.origin,
       payload: txRequest
@@ -251,7 +252,7 @@ export class EvmPermissionedProvider {
     if (!this.wallet) {
       await CONSENT_SERVICE.requestConsent(ctx, {
         networkId: this.network.id!,
-        walletInfoId: [],
+        accountId: [],
         type: ConsentType.REQUEST_PERMISSION,
         origin: this.origin,
         payload: {

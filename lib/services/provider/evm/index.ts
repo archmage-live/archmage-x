@@ -11,7 +11,7 @@ import { version } from '@ethersproject/providers/lib/_version'
 import { ConnectionInfo } from '@ethersproject/web'
 
 import { EvmChainInfo } from '~lib/network/evm'
-import { INetwork, IWalletInfo } from '~lib/schema'
+import { IChainAccount, INetwork } from '~lib/schema'
 import { ProviderAdaptor } from '~lib/services/provider/types'
 import { getSigningWallet } from '~lib/wallet'
 
@@ -118,7 +118,7 @@ export class EvmProviderAdaptor implements ProviderAdaptor {
     return
   }
 
-  async signTransaction(wallet: IWalletInfo, transaction: any): Promise<any> {
+  async signTransaction(wallet: IChainAccount, transaction: any): Promise<any> {
     const signer = await getSigningWallet(wallet)
     return signer.signTransaction(transaction)
   }
@@ -127,12 +127,12 @@ export class EvmProviderAdaptor implements ProviderAdaptor {
     return this.provider.sendTransaction(signedTransaction)
   }
 
-  async signMessage(wallet: IWalletInfo, message: any): Promise<any> {
+  async signMessage(wallet: IChainAccount, message: any): Promise<any> {
     const signer = await getSigningWallet(wallet)
     return signer.signMessage(message)
   }
 
-  async signTypedData(wallet: IWalletInfo, typedData: any): Promise<any> {
+  async signTypedData(wallet: IChainAccount, typedData: any): Promise<any> {
     const signer = await getSigningWallet(wallet)
     return signer.signTypedData(typedData)
   }

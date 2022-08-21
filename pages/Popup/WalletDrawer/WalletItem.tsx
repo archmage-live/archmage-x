@@ -9,16 +9,18 @@ import {
 } from '@chakra-ui/react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Blockies from 'react-blockies'
+import { useDebounce } from 'react-use'
 
 import { ActiveWalletId } from '~lib/active'
-import { IDerivedWallet, IWalletInfo } from '~lib/schema'
+import { IChainAccount, IDerivedWallet, PSEUDO_INDEX } from '~lib/schema'
 import { INetwork } from '~lib/schema/network'
 import { IWallet } from '~lib/schema/wallet'
 import {
   WALLET_SERVICE,
-  useWalletInfo,
-  useWalletsInfo
+  useChainAccount,
+  useChainAccounts
 } from '~lib/services/walletService'
+import { shortenAddress } from '~lib/utils'
 import { WalletType } from '~lib/wallet'
 
 import { SubWalletList } from './SubWalletList'
@@ -32,8 +34,8 @@ interface WalletItemProps {
   onSelectedSubId?: (selectedSubId: number) => void
   activeId?: ActiveWalletId
   onClose?: () => void
-  checked?: { masterId: number; index?: number }[]
-  onChecked?: (ids: { masterId: number; index?: number }[]) => void
+  checked?: number[]
+  onChecked?: (ids: number[]) => void
   measureElement?: (element?: HTMLElement | null) => any
 }
 
@@ -57,11 +59,20 @@ export const WalletItem = ({
     measureElement?.(elRef.current)
   }, [measureElement])
 
-  useEffect(() => {
-    measure()
-  }, [isOpen, measure])
+  useDebounce(
+    () => {
+      measure()
+    },
+    50,
+    [isOpen, measure]
+  )
 
-  const info = useWalletInfo(wallet.id, network?.kind, network?.chainId)
+  const account = useChainAccount(
+    wallet.id,
+    network?.kind,
+    network?.chainId,
+    wallet.type !== WalletType.HD ? PSEUDO_INDEX : undefined
+  )
 
   const [subWallets, setSubWallets] = useState<IDerivedWallet[]>([])
   useEffect(() => {
@@ -74,46 +85,73 @@ export const WalletItem = ({
     effect()
   }, [wallet, onChecked, isOpen])
 
-  const queriedSubInfos = useWalletsInfo(
+  const queriedAccounts = useChainAccounts(
     wallet.id,
     network?.kind,
     network?.chainId
   )
-  const subInfos = useMemo(() => {
-    const m = new Map<string, IWalletInfo>()
-    queriedSubInfos?.forEach((info) =>
+  const accounts = useMemo(() => {
+    const m = new Map<string, IChainAccount>()
+    queriedAccounts?.forEach((info) =>
       m.set(`${info.masterId}-${info.index}`, info)
     )
     return subWallets.map((wallet) =>
       m.get(`${wallet.masterId}-${wallet.index}`)
     )
-  }, [queriedSubInfos, subWallets])
+  }, [queriedAccounts, subWallets])
 
   const [isChecked, setIsChecked] = useState<boolean>()
   const [isIndeterminate, setIsIndeterminate] = useState<boolean>()
+
   useEffect(() => {
-    if (!onChecked) {
+    if (
+      !onChecked ||
+      !checked?.length ||
+      accounts.findIndex((account) => !account) > -1
+    ) {
       return
     }
-    if (isChecked) {
-      const set = new Set(
-        checked?.map((item) => `${item.masterId}-${item.index}`)
-      )
-      const array = subWallets.map((w) => ({
-        masterId: w.masterId,
-        index: w.index
-      }))
-      if (
-        set.size === array.length &&
-        array.every((item) => set.has(`${item.masterId}-${item.index}`))
-      ) {
+
+    if (wallet.type !== WalletType.HD) {
+      setIsChecked(checked[0] === account?.id)
+      return
+    }
+
+    const set = new Set(checked)
+    const array = accounts.map((a) => a!.id!)
+    const all = set.size === array.length && array.every((id) => set.has(id))
+    setIsChecked(all)
+    setIsIndeterminate(!all)
+  }, [checked, onChecked, wallet, accounts, account])
+
+  const onCheckedChange = useCallback(
+    (isChecked: boolean) => {
+      if (!onChecked || accounts.findIndex((account) => !account) > -1) {
         return
       }
-      onChecked(array)
-    } else if (isChecked === false && checked?.length) {
-      onChecked([])
-    }
-  }, [isChecked, checked, onChecked, subWallets])
+
+      setIsChecked(isChecked)
+      setIsIndeterminate(false)
+
+      if (wallet.type !== WalletType.HD) {
+        if (account) {
+          onChecked(isChecked ? [account.id!] : [])
+        }
+        return
+      }
+
+      const set = new Set(checked)
+      const array = accounts.map((a) => a!.id!)
+      const all = set.size === array.length && array.every((id) => set.has(id))
+      const none = !checked?.length
+      if (isChecked || !all) {
+        onChecked(array)
+      } else if (!isChecked && !none) {
+        onChecked([])
+      }
+    },
+    [checked, onChecked, wallet, accounts, account]
+  )
 
   return (
     <Box ref={elRef}>
@@ -131,6 +169,7 @@ export const WalletItem = ({
             onToggle()
           } else {
             onClose?.()
+            onCheckedChange(!isChecked)
           }
         }}>
         <HStack w="full" justify="space-between">
@@ -138,9 +177,9 @@ export const WalletItem = ({
             <Checkbox
               isIndeterminate={isIndeterminate}
               isChecked={isChecked}
+              pointerEvents={wallet.type !== WalletType.HD ? 'none' : undefined}
               onChange={(e) => {
-                setIsChecked(e.target.checked)
-                setIsIndeterminate(false)
+                onCheckedChange(e.target.checked)
               }}
             />
           )}
@@ -151,12 +190,20 @@ export const WalletItem = ({
               overflow="hidden"
               transform="scale(0.8)"
               m="-3px">
-              <Blockies seed={wallet.hash} size={10} scale={3} />
+              <Blockies
+                seed={account?.address || wallet.hash}
+                size={10}
+                scale={3}
+              />
             </Box>
 
             <HStack w="calc(100% - 31px)" justify="space-between">
               <Text fontSize="lg" noOfLines={1} display="block">
                 {wallet.name}
+              </Text>
+
+              <Text fontSize="sm" color="gray.500">
+                {shortenAddress(account?.address, 4)}
               </Text>
             </HStack>
           </HStack>
@@ -169,10 +216,8 @@ export const WalletItem = ({
 
       {isOpen && network && wallet.type === WalletType.HD && (
         <SubWalletList
-          network={network}
-          masterId={wallet.id!}
           wallets={subWallets}
-          infos={subInfos}
+          accounts={accounts}
           selectedId={selectedSubId}
           onSelectedId={(id) => {
             onSelectedSubId?.(id)

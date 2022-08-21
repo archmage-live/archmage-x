@@ -8,25 +8,43 @@ import {
   Text,
   useColorModeValue
 } from '@chakra-ui/react'
+import { useCallback, useEffect, useState } from 'react'
 import { IoMdSettings } from 'react-icons/io'
 import { useNavigate } from 'react-router-dom'
 
+import { ActiveWalletId } from '~lib/active'
 import { WALLET_SERVICE } from '~lib/services/walletService'
 import { createTab } from '~lib/util'
 import { WalletList } from '~pages/Popup/WalletDrawer/WalletList'
-import { useSelectedNetwork, useSelectedWallet } from '~pages/Popup/select'
+import { useActiveWallet, useSelectedNetwork } from '~pages/Popup/select'
 
 export const WalletDrawer = ({ onClose }: { onClose(): void }) => {
   const navigate = useNavigate()
 
   const { selectedNetwork } = useSelectedNetwork()
-  const {
-    selectedId,
-    selectedSubId,
-    setSelectedId,
-    setSelectedSubId,
-    activeId
-  } = useSelectedWallet()
+  const { activeId, setActiveId } = useActiveWallet()
+
+  const [selectedId, setSelectedId] = useState<number>()
+  const [selectedSubId, setSelectedSubId] = useState<number>()
+
+  useEffect(() => {
+    if (activeId) {
+      setSelectedId(activeId.masterId)
+      setSelectedSubId(activeId.derivedId)
+    }
+  }, [activeId])
+
+  const setSubId = useCallback(
+    async (id: number) => {
+      setSelectedSubId(id)
+      const subWallet = await WALLET_SERVICE.getSubWallet(id)
+      await setActiveId({
+        masterId: subWallet?.masterId,
+        derivedId: id
+      } as ActiveWalletId)
+    },
+    [selectedId, setActiveId]
+  )
 
   const lock = async () => {
     await WALLET_SERVICE.lock()
@@ -47,7 +65,7 @@ export const WalletDrawer = ({ onClose }: { onClose(): void }) => {
               selectedId={selectedId}
               onSelectedId={setSelectedId}
               selectedSubId={selectedSubId}
-              onSelectedSubId={setSelectedSubId}
+              onSelectedSubId={setSubId}
               activeId={activeId}
               onClose={onClose}
             />

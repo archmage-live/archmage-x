@@ -3,7 +3,7 @@ import assert from 'assert'
 import { DB } from '~lib/db'
 import { NetworkKind } from '~lib/network'
 import { CosmChainInfo } from '~lib/network/cosm'
-import { IWalletInfo } from '~lib/schema'
+import { IChainAccount } from '~lib/schema'
 import { IWallet } from '~lib/schema/wallet'
 import { NETWORK_SERVICE } from '~lib/services/network'
 import { WALLET_SERVICE } from '~lib/services/walletService'
@@ -61,7 +61,7 @@ export async function getMasterSigningWallet(
 }
 
 export async function getSigningWallet(
-  wallet: IWalletInfo
+  wallet: IChainAccount
 ): Promise<SigningWallet> {
   const master = await WALLET_SERVICE.getWallet(wallet.masterId)
   assert(master)
