@@ -1,11 +1,13 @@
 import { CheckIcon } from '@chakra-ui/icons'
-import { Box, Button, Checkbox, HStack, Text } from '@chakra-ui/react'
+import { Box, Button, Checkbox, HStack, Stack, Text } from '@chakra-ui/react'
 import Blockies from 'react-blockies'
 
-import { IChainAccount, IDerivedWallet } from '~lib/schema'
+import { IChainAccount, IDerivedWallet, INetwork } from '~lib/schema'
+import { useBalance } from '~lib/services/provider'
 import { shortenAddress } from '~lib/utils'
 
 export const SubWalletItem = ({
+  network,
   wallet,
   account,
   selected,
@@ -14,6 +16,7 @@ export const SubWalletItem = ({
   isChecked,
   onChecked
 }: {
+  network: INetwork
   wallet: IDerivedWallet
   account?: IChainAccount
   selected?: boolean
@@ -22,6 +25,8 @@ export const SubWalletItem = ({
   isChecked?: boolean
   onChecked?: (checked: boolean) => void
 }) => {
+  const balance = useBalance(network, account)
+
   return (
     <Button
       key={wallet.id}
@@ -35,35 +40,46 @@ export const SubWalletItem = ({
         onSelected?.()
         onChecked?.(!isChecked)
       }}>
-      <HStack w="full" justify="space-between">
-        {onChecked !== undefined && (
-          <Checkbox isChecked={isChecked} pointerEvents="none" />
-        )}
-        <HStack w="calc(100% - 29.75px)" justify="space-between">
-          <Box
-            borderRadius="50%"
-            overflow="hidden"
-            transform="scale(0.8)"
-            m="-3px">
-            <Blockies seed={account?.address + ''} size={10} scale={3} />
-          </Box>
+      <Box w="full">
+        <HStack w="full" justify="space-between">
+          {onChecked !== undefined && (
+            <Checkbox mb="-12px" isChecked={isChecked} pointerEvents="none" />
+          )}
+          <HStack w="calc(100% - 29.75px)" justify="space-between">
+            <Box
+              borderRadius="50%"
+              overflow="hidden"
+              transform="scale(0.8)"
+              m="-3px"
+              mb="-16px">
+              <Blockies seed={account?.address + ''} size={10} scale={3} />
+            </Box>
 
-          <HStack
-            w="calc(100% - 31px)"
-            justify="space-between"
-            align="baseline">
-            <Text fontSize="lg" noOfLines={1} display="block">
-              {wallet.name}
-            </Text>
+            <HStack
+              w="calc(100% - 31px)"
+              justify="space-between"
+              align="baseline">
+              <Text fontSize="lg" noOfLines={1} display="block">
+                {wallet.name}
+              </Text>
 
-            <Text fontSize="sm" color="gray.500">
-              {shortenAddress(account?.address, 4)}
-            </Text>
+              <Text fontFamily="monospace" fontSize="sm" color="gray.500">
+                {shortenAddress(account?.address, 3)}
+              </Text>
+            </HStack>
           </HStack>
+
+          {active && <CheckIcon fontSize="lg" color="green.500" />}
         </HStack>
 
-        {active && <CheckIcon fontSize="lg" color="green.500" />}
-      </HStack>
+        <Text
+          ps={onChecked !== undefined ? '62px' : '32px'}
+          fontSize="xs"
+          color="gray.500"
+          textAlign="start">
+          {balance?.amount} {balance?.symbol}
+        </Text>
+      </Box>
     </Button>
   )
 }

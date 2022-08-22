@@ -5,25 +5,13 @@ import Blockies from 'react-blockies'
 import { MdDragIndicator } from 'react-icons/md'
 import { useDebounce } from 'react-use'
 
+import { Badge } from '~components/Badge'
 import { dayjs } from '~lib/dayjs'
 import { INetwork } from '~lib/schema/network'
 import { IWallet } from '~lib/schema/wallet'
-import { WalletType } from '~lib/wallet'
+import { WalletType, getWalletTypeIdentifier } from '~lib/wallet'
 
 import { SubWalletList } from './SubWalletList'
-
-function getWalletType(type: WalletType) {
-  switch (type) {
-    case WalletType.HD:
-      return 'Hierarchical Deterministic (HD) Wallet'
-    case WalletType.MNEMONIC_PRIVATE_KEY:
-    // pass through
-    case WalletType.PRIVATE_KEY:
-      return 'Simple Wallet'
-    case WalletType.LEDGER:
-      return 'Ledger Wallet'
-  }
-}
 
 interface WalletItemProps {
   network?: INetwork
@@ -107,9 +95,14 @@ export const WalletItem = ({
           <Box borderRadius="50%" overflow="hidden">
             <Blockies seed={wallet.hash} size={10} scale={3} />
           </Box>
-          <Text fontSize="lg" noOfLines={1} w="160px">
-            {wallet.name}
-          </Text>
+          <HStack w="160px">
+            <Text fontSize="lg" noOfLines={1}>
+              {wallet.name}
+            </Text>
+            <Text>
+              <Badge>{getWalletTypeIdentifier(wallet.type)}</Badge>
+            </Text>
+          </HStack>
         </HStack>
 
         <HStack
@@ -117,7 +110,6 @@ export const WalletItem = ({
           visibility={infoVisibility || 'hidden'}
           _groupHover={{ visibility: infoVisibility || 'visible' }}>
           <Stack fontSize="sm" color="gray.500">
-            <Text noOfLines={1}>{getWalletType(wallet.type)}</Text>
             <Text>Created At: {dayjs(wallet.createdAt).fromNow()}</Text>
           </Stack>
           <Box {...dragHandleProps} p={2}>

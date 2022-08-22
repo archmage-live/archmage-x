@@ -52,6 +52,9 @@ export const theme: Record<string, any> = extendTheme(
         },
         sizes: {
           ...baseTheme.components.Drawer.sizes,
+          xs: {
+            dialog: { maxW: '21rem' }
+          },
           '2xs': {
             dialog: { maxW: '2xs' }
           },

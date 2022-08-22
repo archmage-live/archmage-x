@@ -5,6 +5,19 @@ export enum WalletType {
   LEDGER = 'ledger'
 }
 
+export function getWalletTypeIdentifier(type: WalletType) {
+  switch (type) {
+    case WalletType.HD:
+      return 'HD'
+    case WalletType.MNEMONIC_PRIVATE_KEY:
+    // pass through
+    case WalletType.PRIVATE_KEY:
+      return 'SI'
+    case WalletType.LEDGER:
+      return 'LG'
+  }
+}
+
 export interface WalletOpts {
   id: number // wallet id in db
   type: WalletType

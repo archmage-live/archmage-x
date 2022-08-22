@@ -2,6 +2,7 @@ import { CheckIcon } from '@chakra-ui/icons'
 import {
   Box,
   Button,
+  Center,
   Checkbox,
   HStack,
   Text,
@@ -10,17 +11,19 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Blockies from 'react-blockies'
 
+import { Badge } from '~components/Badge'
 import { ActiveWalletId } from '~lib/active'
 import { IChainAccount, IDerivedWallet, PSEUDO_INDEX } from '~lib/schema'
 import { INetwork } from '~lib/schema/network'
 import { IWallet } from '~lib/schema/wallet'
+import { useBalance } from '~lib/services/provider'
 import {
   WALLET_SERVICE,
   useChainAccount,
   useChainAccounts
 } from '~lib/services/walletService'
 import { shortenAddress } from '~lib/utils'
-import { WalletType } from '~lib/wallet'
+import { WalletType, getWalletTypeIdentifier } from '~lib/wallet'
 
 import { SubWalletList } from './SubWalletList'
 
@@ -68,6 +71,8 @@ export const WalletItem = ({
     network?.chainId,
     wallet.type !== WalletType.HD ? PSEUDO_INDEX : undefined
   )
+
+  const balance = useBalance(network, account)
 
   const [subWallets, setSubWallets] = useState<IDerivedWallet[]>([])
   useEffect(() => {
@@ -167,50 +172,72 @@ export const WalletItem = ({
             onCheckedChange(!isChecked)
           }
         }}>
-        <HStack w="full" justify="space-between">
-          {onChecked !== undefined && (
-            <Checkbox
-              isIndeterminate={isIndeterminate}
-              isChecked={isChecked}
-              pointerEvents={wallet.type !== WalletType.HD ? 'none' : undefined}
-              onChange={(e) => {
-                onCheckedChange(e.target.checked)
-              }}
-            />
-          )}
-
-          <HStack w="calc(100% - 29.75px)" justify="space-between">
-            <Box
-              borderRadius="50%"
-              overflow="hidden"
-              transform="scale(0.8)"
-              m="-3px">
-              <Blockies
-                seed={account?.address || wallet.hash}
-                size={10}
-                scale={3}
+        <Box w="full">
+          <HStack w="full" justify="space-between">
+            {onChecked !== undefined && (
+              <Checkbox
+                mb="-12px"
+                isIndeterminate={isIndeterminate}
+                isChecked={isChecked}
+                pointerEvents={
+                  wallet.type !== WalletType.HD ? 'none' : undefined
+                }
+                onChange={(e) => {
+                  onCheckedChange(e.target.checked)
+                }}
               />
-            </Box>
+            )}
 
-            <HStack w="calc(100% - 31px)" justify="space-between">
-              <Text fontSize="lg" noOfLines={1} display="block">
-                {wallet.name}
-              </Text>
+            <HStack w="calc(100% - 29.75px)" justify="space-between">
+              <Box
+                borderRadius="50%"
+                overflow="hidden"
+                transform="scale(0.8)"
+                m="-3px"
+                mb="-16px">
+                <Blockies
+                  seed={account?.address || wallet.hash}
+                  size={10}
+                  scale={3}
+                />
+              </Box>
 
-              <Text fontSize="sm" color="gray.500">
-                {shortenAddress(account?.address, 4)}
-              </Text>
+              <HStack w="calc(100% - 31px)" justify="space-between">
+                <Text fontSize="lg" noOfLines={1} display="block">
+                  {wallet.name}
+                </Text>
+
+                <Text fontFamily="monospace" fontSize="sm" color="gray.500">
+                  {shortenAddress(account?.address, 3)}
+                </Text>
+              </HStack>
             </HStack>
+
+            {activeId?.masterId === wallet.id && (
+              <CheckIcon fontSize="lg" color="green.500" />
+            )}
           </HStack>
 
-          {activeId?.masterId === wallet.id && (
-            <CheckIcon fontSize="lg" color="green.500" />
-          )}
-        </HStack>
+          <HStack
+            ps={onChecked !== undefined ? '62px' : '32px'}
+            pt="10px"
+            h="14px">
+            {balance && (
+              <Text fontSize="xs" color="gray.500" textAlign="start">
+                {balance.amount} {balance.symbol}
+              </Text>
+            )}
+            <Text textAlign="start">
+              <Badge>{getWalletTypeIdentifier(wallet.type)}</Badge>
+            </Text>
+          </HStack>
+        </Box>
+        {/*</HStack>*/}
       </Button>
 
       {isOpen && network && wallet.type === WalletType.HD && (
         <SubWalletList
+          network={network}
           wallets={subWallets}
           accounts={accounts}
           selectedId={selectedSubId}

@@ -88,3 +88,8 @@ export function useCurrentTab() {
   }, [])
   return tab
 }
+
+export function useCurrentOrigin(): URL | undefined {
+  const tab = useCurrentTab()
+  return tab?.url ? new URL(tab.url) : undefined
+}

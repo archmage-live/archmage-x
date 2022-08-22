@@ -108,7 +108,7 @@ export default function Assets() {
                 )}
               </HStack>
               <HStack justify="center" color="gray.500" ps={5}>
-                <Text fontSize="md">{shortenAddress(account?.address, 6)}</Text>
+                <Text fontSize="md">{shortenAddress(account?.address, 4)}</Text>
                 <Icon w={3} h={3} as={!hasCopied ? FiCopy : FiCheckCircle} />
               </HStack>
             </Stack>
