@@ -9,7 +9,6 @@ import {
 } from '@chakra-ui/react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Blockies from 'react-blockies'
-import { useDebounce } from 'react-use'
 
 import { ActiveWalletId } from '~lib/active'
 import { IChainAccount, IDerivedWallet, PSEUDO_INDEX } from '~lib/schema'
@@ -59,13 +58,9 @@ export const WalletItem = ({
     measureElement?.(elRef.current)
   }, [measureElement])
 
-  useDebounce(
-    () => {
-      measure()
-    },
-    50,
-    [isOpen, measure]
-  )
+  useEffect(() => {
+    measure()
+  }, [isOpen, measure])
 
   const account = useChainAccount(
     wallet.id,

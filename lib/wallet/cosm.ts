@@ -1,4 +1,3 @@
-// TODO: import() is not allowed in service workers.
 import { stringToPath } from '@cosmjs/crypto'
 import {
   DirectSecp256k1HdWallet,

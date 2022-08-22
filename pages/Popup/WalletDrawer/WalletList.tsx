@@ -19,7 +19,9 @@ interface WalletListProps {
   onClose?: () => void
   checked?: Map<number, number[]>
   onChecked?: (ids: Map<number, number[]>) => void
-  maxH?: number | string
+  maxH?: number
+  px?: number | string
+  py?: number | string
 }
 
 export const WalletList = ({
@@ -32,7 +34,9 @@ export const WalletList = ({
   onClose,
   checked,
   onChecked,
-  maxH
+  maxH = 336,
+  px,
+  py = '14px'
 }: WalletListProps) => {
   const wallets = useWallets()
 
@@ -58,10 +62,11 @@ export const WalletList = ({
   }, [checked, onChecked, wallets])
 
   return (
-    <Box py="14px">
+    <Box py={py}>
       <Box
         ref={parentRef}
-        maxH={maxH || '336px'}
+        maxH={maxH + 'px'}
+        px={px}
         overflowY="auto"
         borderRadius="xl"
         userSelect="none">
@@ -107,7 +112,10 @@ export const WalletList = ({
                         }
                       : undefined
                   }
-                  measureElement={item.measureElement}
+                  measureElement={(el: unknown) => {
+                    item.measureElement(el)
+                    ;(walletsVirtualizer as any).calculateRange()
+                  }}
                 />
               </Box>
             )

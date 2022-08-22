@@ -106,19 +106,15 @@ export const RequestPermission = ({ request }: { request: ConsentRequest }) => {
 
         <Stack flex={1} align="center" spacing={8}>
           <Stack w="full" align="center">
-            <Stack
-              w="full"
-              borderWidth="1px"
-              borderRadius="8px"
-              px={4}
-              spacing="4">
+            <Box w="full" borderWidth="1px" borderRadius="8px">
               <WalletList
                 network={selectedNetwork}
-                maxH="224px"
+                maxH={224}
+                px={4}
                 checked={checked}
                 onChecked={setChecked}
               />
-            </Stack>
+            </Box>
 
             <Text fontSize="md">Only connect with sites you trust.</Text>
           </Stack>
