@@ -73,6 +73,8 @@ export const WalletItem = ({
     }
   }, [infoVisible])
 
+  const typeIdentifier = getWalletTypeIdentifier(wallet.type)
+
   return (
     <Box py={1} ref={elRef}>
       <HStack
@@ -99,9 +101,11 @@ export const WalletItem = ({
             <Text fontSize="lg" noOfLines={1}>
               {wallet.name}
             </Text>
-            <Text>
-              <Badge>{getWalletTypeIdentifier(wallet.type)}</Badge>
-            </Text>
+            {typeIdentifier && (
+              <Text>
+                <Badge>{typeIdentifier}</Badge>
+              </Text>
+            )}
           </HStack>
         </HStack>
 

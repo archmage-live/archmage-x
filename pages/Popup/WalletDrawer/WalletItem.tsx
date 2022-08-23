@@ -153,6 +153,8 @@ export const WalletItem = ({
     [checked, onChecked, wallet, accounts, account]
   )
 
+  const typeIdentifier = getWalletTypeIdentifier(wallet.type)
+
   return (
     <Box ref={elRef}>
       <Button
@@ -227,9 +229,11 @@ export const WalletItem = ({
                 {balance.amount} {balance.symbol}
               </Text>
             )}
-            <Text textAlign="start">
-              <Badge>{getWalletTypeIdentifier(wallet.type)}</Badge>
-            </Text>
+            {typeIdentifier && (
+              <Text textAlign="start">
+                <Badge>{typeIdentifier}</Badge>
+              </Text>
+            )}
           </HStack>
         </Box>
         {/*</HStack>*/}

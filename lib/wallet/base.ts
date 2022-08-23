@@ -12,7 +12,7 @@ export function getWalletTypeIdentifier(type: WalletType) {
     case WalletType.MNEMONIC_PRIVATE_KEY:
     // pass through
     case WalletType.PRIVATE_KEY:
-      return 'SI'
+      return '' // empty for simple wallet
     case WalletType.LEDGER:
       return 'LG'
   }

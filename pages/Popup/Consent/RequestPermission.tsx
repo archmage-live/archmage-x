@@ -12,7 +12,7 @@ import { useEffect, useState } from 'react'
 import { FaGlobeAmericas } from 'react-icons/fa'
 
 import { CONSENT_SERVICE, ConsentRequest } from '~lib/services/consentService'
-import { WALLET_SERVICE } from '~lib/services/walletService'
+import { WALLET_SERVICE, useWallets } from '~lib/services/walletService'
 import { getTab } from '~lib/util'
 import { shortenAddress } from '~lib/utils'
 import { WalletList } from '~pages/Popup/WalletDrawer/WalletList'
@@ -33,6 +33,8 @@ export const RequestPermission = ({ request }: { request: ConsentRequest }) => {
   }, [request])
 
   const { selectedNetwork } = useSelectedNetwork()
+
+  const wallets = useWallets()
 
   const [checked, setChecked] = useState<Map<number, number[]>>()
   const [flatChecked, setFlatChecked] = useState<number[]>()
@@ -75,6 +77,10 @@ export const RequestPermission = ({ request }: { request: ConsentRequest }) => {
     effect()
   }, [checked])
 
+  if (!wallets) {
+    return <></>
+  }
+
   return (
     <Box w="full" h="full" overflowY="auto">
       <Stack w="full" minH="full" p={8} spacing={8}>
@@ -109,7 +115,8 @@ export const RequestPermission = ({ request }: { request: ConsentRequest }) => {
             <Box w="full" borderWidth="1px" borderRadius="8px">
               <WalletList
                 network={selectedNetwork}
-                maxH={224}
+                wallets={wallets}
+                renderItems={4}
                 px={4}
                 checked={checked}
                 onChecked={setChecked}

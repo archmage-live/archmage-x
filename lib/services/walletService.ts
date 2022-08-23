@@ -673,7 +673,6 @@ async function ensureChainAccount(
   networkKind: NetworkKind,
   chainId: number | string
 ): Promise<IChainAccount> {
-  console.log(wallet.id, index)
   assert(
     index !== PSEUDO_INDEX
       ? wallet.type === WalletType.HD

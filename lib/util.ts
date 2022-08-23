@@ -40,8 +40,8 @@ export async function createWindow(ctx: Context, to: string) {
   const origin = new URL(globalThis.location.href).origin
   const popupUrl = browser.runtime.getManifest().action?.default_popup
 
-  const width = 376
-  const height = 639 + 60
+  const width = 360 + 16 + 20
+  const height = 600 + 39 + 60
   let left, top
   if (ctx.window) {
     left = Math.max(ctx.window.x + ctx.window.width - width, 0)

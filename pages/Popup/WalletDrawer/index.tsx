@@ -13,13 +13,15 @@ import { IoMdSettings } from 'react-icons/io'
 import { useNavigate } from 'react-router-dom'
 
 import { ActiveWalletId } from '~lib/active'
-import { WALLET_SERVICE } from '~lib/services/walletService'
+import { WALLET_SERVICE, useWallets } from '~lib/services/walletService'
 import { createTab } from '~lib/util'
 import { WalletList } from '~pages/Popup/WalletDrawer/WalletList'
 import { useActiveWallet, useSelectedNetwork } from '~pages/Popup/select'
 
 export const WalletDrawer = ({ onClose }: { onClose(): void }) => {
   const navigate = useNavigate()
+
+  const wallets = useWallets()
 
   const { selectedNetwork } = useSelectedNetwork()
   const { activeId, setActiveId } = useActiveWallet()
@@ -53,6 +55,10 @@ export const WalletDrawer = ({ onClose }: { onClose(): void }) => {
 
   const btnColorScheme = useColorModeValue('purple', undefined)
 
+  if (!wallets) {
+    return <></>
+  }
+
   return (
     <Stack pt={1} pb={4} mt={12} h="calc(100% - 42px)">
       <Divider />
@@ -62,6 +68,7 @@ export const WalletDrawer = ({ onClose }: { onClose(): void }) => {
           <Stack spacing="4">
             <WalletList
               network={selectedNetwork}
+              wallets={wallets}
               selectedId={selectedId}
               onSelectedId={setSelectedId}
               selectedSubId={selectedSubId}

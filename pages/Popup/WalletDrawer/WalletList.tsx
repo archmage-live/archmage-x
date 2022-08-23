@@ -3,14 +3,15 @@ import { useVirtualizer } from '@tanstack/react-virtual'
 import { useEffect, useRef } from 'react'
 
 import { ActiveWalletId } from '~lib/active'
-import { INetwork, PSEUDO_INDEX } from '~lib/schema'
-import { WALLET_SERVICE, useWallets } from '~lib/services/walletService'
+import { INetwork, IWallet, PSEUDO_INDEX } from '~lib/schema'
+import { WALLET_SERVICE } from '~lib/services/walletService'
 import { WalletType } from '~lib/wallet'
 
 import { WalletItem } from './WalletItem'
 
 interface WalletListProps {
   network?: INetwork
+  wallets: IWallet[]
   selectedId?: number
   onSelectedId?: (selectedId: number) => void
   selectedSubId?: number
@@ -19,13 +20,14 @@ interface WalletListProps {
   onClose?: () => void
   checked?: Map<number, number[]>
   onChecked?: (ids: Map<number, number[]>) => void
-  maxH?: number
+  renderItems?: number
   px?: number | string
   py?: number | string
 }
 
 export const WalletList = ({
   network,
+  wallets,
   selectedId,
   onSelectedId,
   selectedSubId,
@@ -34,22 +36,23 @@ export const WalletList = ({
   onClose,
   checked,
   onChecked,
-  maxH = 336,
+  renderItems = 6,
   px,
   py = '14px'
 }: WalletListProps) => {
-  const wallets = useWallets()
+  const itemSize = 56
 
   const parentRef = useRef(null)
   const walletsVirtualizer = useVirtualizer({
-    count: wallets?.length || 0,
+    count: wallets.length || 0,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 56,
-    getItemKey: (index) => wallets?.[index].id!
+    estimateSize: () => itemSize,
+    getItemKey: (index) => wallets[index].id!,
+    overscan: Math.max(Math.min(wallets.length || 0, 50) * 7 - renderItems, 0)
   })
 
   useEffect(() => {
-    if (!wallets || !onChecked) {
+    if (!onChecked) {
       return
     }
     if (
@@ -65,14 +68,14 @@ export const WalletList = ({
     <Box py={py}>
       <Box
         ref={parentRef}
-        maxH={maxH + 'px'}
+        maxH={renderItems * itemSize + 'px'}
         px={px}
         overflowY="auto"
         borderRadius="xl"
         userSelect="none">
         <Box h={walletsVirtualizer.getTotalSize() + 'px'} position="relative">
           {walletsVirtualizer.getVirtualItems().map((item) => {
-            const wallet = wallets?.[item.index]!
+            const wallet = wallets[item.index]!
 
             return (
               <Box
@@ -82,7 +85,7 @@ export const WalletList = ({
                 left={0}
                 transform={`translateY(${item.start}px)`}
                 w="full"
-                minH="56px">
+                minH={itemSize + 'px'}>
                 <WalletItem
                   network={network}
                   wallet={wallet}

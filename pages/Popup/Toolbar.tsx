@@ -1,11 +1,13 @@
 import {
   Box,
   Button,
+  Center,
   Drawer,
   DrawerCloseButton,
   DrawerContent,
   DrawerOverlay,
   Flex,
+  IconButton,
   Image,
   Text,
   useColorModeValue,
@@ -13,17 +15,29 @@ import {
 } from '@chakra-ui/react'
 import icon from 'data-base64:~assets/icon512.png'
 import { useCallback } from 'react'
+import Blockies from 'react-blockies'
 
 import { ToggleButton } from '~components/ToggleButton'
 import { getNetworkInfo } from '~lib/services/network'
+import { useChainAccount } from '~lib/services/walletService'
 
 import { NetworkDrawer } from './NetworkDrawer'
 import { WalletDrawer } from './WalletDrawer'
-import { useSelectedNetwork } from './select'
+import { useActiveWallet, useSelectedNetwork } from './select'
 
 export const Toolbar = () => {
-  const { selectedNetwork } = useSelectedNetwork()
-  const networkInfo = selectedNetwork && getNetworkInfo(selectedNetwork)
+  const { selectedNetwork: network } = useSelectedNetwork()
+  const networkInfo = network && getNetworkInfo(network)
+
+  const { wallet, subWallet } = useActiveWallet()
+  const account = useChainAccount(
+    wallet?.id,
+    network?.kind,
+    network?.chainId,
+    subWallet?.index
+  )
+
+  const blockieBg = useColorModeValue('purple.50', 'gray.800')
 
   const {
     isOpen: isNetworkOpen,
@@ -50,7 +64,26 @@ export const Toolbar = () => {
             {networkInfo?.name}
           </Text>
         </Button>
-        <ToggleButton isOpen={isWalletOpen} onClick={onWalletToggle} />
+        <Center w="40px" h="40px">
+          {account && (
+            <Box
+              cursor="pointer"
+              onClick={onWalletToggle}
+              borderRadius="full"
+              borderWidth="2px"
+              borderColor="purple.500">
+              <Box
+                borderRadius="full"
+                borderWidth="2px"
+                borderColor={blockieBg}>
+                <Box borderRadius="full" overflow="hidden">
+                  <Blockies seed={account.address} size={10} scale={3} />
+                </Box>
+              </Box>
+            </Box>
+          )}
+        </Center>
+        {/*<ToggleButton isOpen={isWalletOpen} onClick={onWalletToggle} />*/}
 
         <Drawer
           isOpen={isNetworkOpen || isWalletOpen}
