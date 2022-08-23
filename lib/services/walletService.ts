@@ -20,6 +20,7 @@ import { SERVICE_WORKER_CLIENT, SERVICE_WORKER_SERVER } from '~lib/rpc'
 import {
   ChainAccountIndex,
   DerivedIndex,
+  IHdPath,
   Index,
   PSEUDO_INDEX,
   generateDefaultWalletName
@@ -224,7 +225,7 @@ class WalletService extends WalletServicePartial {
             sortId: 0,
             index: PSEUDO_INDEX,
             name: ''
-          })
+          } as IDerivedWallet)
         }
 
         await this.createHdPaths(wallet.id)
@@ -392,7 +393,7 @@ class WalletService extends WalletServicePartial {
         masterId: id,
         networkKind,
         path: getDefaultPathPrefix(networkKind)
-      })
+      } as IHdPath)
     }
   }
 }

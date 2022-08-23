@@ -197,8 +197,8 @@ export class EvmPermissionedProvider {
     const txRequest = await voidSigner.populateTransaction(params[0])
 
     return CONSENT_SERVICE.requestConsent(ctx, {
-      networkId: this.network.id!,
-      accountId: this.wallet.id!,
+      networkId: this.network.id,
+      accountId: this.wallet.id,
       type: ConsentType.TRANSACTION,
       origin: this.origin,
       payload: txRequest

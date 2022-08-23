@@ -18,7 +18,7 @@ export const SubWalletItem = ({
 }: {
   network: INetwork
   wallet: IDerivedWallet
-  account?: IChainAccount
+  account: IChainAccount
   selected?: boolean
   onSelected?: () => void
   active?: boolean
@@ -52,7 +52,7 @@ export const SubWalletItem = ({
               transform="scale(0.8)"
               m="-3px"
               mb="-16px">
-              <Blockies seed={account?.address + ''} size={10} scale={3} />
+              <Blockies seed={account.address + ''} size={10} scale={3} />
             </Box>
 
             <HStack
@@ -64,7 +64,7 @@ export const SubWalletItem = ({
               </Text>
 
               <Text fontFamily="monospace" fontSize="sm" color="gray.500">
-                {shortenAddress(account?.address, 3)}
+                {shortenAddress(account.address, 3)}
               </Text>
             </HStack>
           </HStack>

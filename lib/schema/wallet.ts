@@ -4,7 +4,7 @@ import { generateName } from '~lib/db'
 import { WalletType } from '~lib/wallet'
 
 export interface IWallet {
-  id?: number
+  id: number
   sortId: number
   type: WalletType
   name: string // unique

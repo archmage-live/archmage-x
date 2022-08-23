@@ -1,5 +1,5 @@
 export interface IDerivedWallet {
-  id?: number
+  id: number
   masterId: number // master wallet id
   sortId: number // always 0 if pseudo index
   index: Index

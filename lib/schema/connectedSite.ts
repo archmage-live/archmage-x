@@ -1,7 +1,7 @@
 import { Index } from './derivedWallet'
 
 export interface IConnectedSite {
-  id?: number
+  id: number
   masterId: number // master wallet id
   index: Index // derived wallet index
   origin: string // URL.origin

@@ -3,7 +3,7 @@ import { NetworkKind } from '~lib/network'
 import { Index } from './derivedWallet'
 
 export interface IChainAccount {
-  id?: number
+  id: number
   masterId: number // master wallet id
   index: Index // derived wallet index
   networkKind: NetworkKind

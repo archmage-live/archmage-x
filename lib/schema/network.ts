@@ -1,7 +1,7 @@
 import { NetworkKind, NetworkType } from '~lib/network'
 
 export interface INetwork {
-  id?: number
+  id: number
   sortId: number
   type: NetworkType
   kind: NetworkKind

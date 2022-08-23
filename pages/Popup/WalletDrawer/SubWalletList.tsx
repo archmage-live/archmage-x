@@ -62,6 +62,7 @@ export const SubWalletList = ({
           {walletsVirtualizer.getVirtualItems().map((item) => {
             const wallet: IDerivedWallet = wallets[item.index]
             const account = accounts[item.index]
+
             return (
               <Box
                 key={wallet.id}
@@ -72,37 +73,36 @@ export const SubWalletList = ({
                 transform={`translateY(${item.start}px)`}
                 w="full"
                 h="56px">
-                <SubWalletItem
-                  network={network}
-                  wallet={wallet}
-                  account={account}
-                  selected={wallet.id === selectedId}
-                  onSelected={() => onSelectedId(wallet.id!)}
-                  active={activeId?.derivedId === wallet.id}
-                  isChecked={!!account?.id && checkedSet.has(account.id)}
-                  onChecked={
-                    onChecked !== undefined
-                      ? (isChecked) => {
-                          const id = account?.id
-                          if (id === undefined) {
-                            return
-                          }
-                          let set
-                          if (isChecked && !checkedSet.has(id)) {
-                            set = new Set(checkedSet).add(id)
-                          } else if (!isChecked && checkedSet.has(id)) {
-                            set = new Set(checkedSet)
-                            set.delete(id)
-                          } else {
-                            return
-                          }
+                {account && (
+                  <SubWalletItem
+                    network={network}
+                    wallet={wallet}
+                    account={account}
+                    selected={wallet.id === selectedId}
+                    onSelected={() => onSelectedId(wallet.id!)}
+                    active={activeId?.derivedId === wallet.id}
+                    isChecked={!!account.id && checkedSet.has(account.id)}
+                    onChecked={
+                      onChecked !== undefined
+                        ? (isChecked) => {
+                            const id = account.id!
+                            let set
+                            if (isChecked && !checkedSet.has(id)) {
+                              set = new Set(checkedSet).add(id)
+                            } else if (!isChecked && checkedSet.has(id)) {
+                              set = new Set(checkedSet)
+                              set.delete(id)
+                            } else {
+                              return
+                            }
 
-                          setCheckedSet(set)
-                          onChecked(Array.from(set.values()))
-                        }
-                      : undefined
-                  }
-                />
+                            setCheckedSet(set)
+                            onChecked(Array.from(set.values()))
+                          }
+                        : undefined
+                    }
+                  />
+                )}
               </Box>
             )
           })}
