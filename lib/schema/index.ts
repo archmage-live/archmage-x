@@ -3,6 +3,9 @@ export * from './wallet'
 export * from './hdPath'
 export * from './derivedWallet'
 export * from './chainAccount'
+export * from './connectedSite'
+export * from './addressBook'
+export * from './fetchCache'
 export * from './queryCache'
 
 // https://dexie.org/docs/Indexable-Type

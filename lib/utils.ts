@@ -18,12 +18,24 @@ export function isPrivateKey(privateKey: string): boolean {
   }
 }
 
-// shorten the checksummed version of the input address to have 0x + 4 characters at start and end
-export function shortenAddress(address?: string, chars = 4): string {
+// shorten the checksummed version of the input address
+export function shortenAddress(
+  address?: string,
+  opts?: {
+    leadingChars?: number | string
+    prefixChars?: number
+    suffixChars?: number
+  }
+): string {
   if (!address) {
     return ''
   }
-  return `${address.substring(0, chars + 2)}...${address.substring(
-    address.length - chars
-  )}`
+
+  const { leadingChars = 3, prefixChars = 4, suffixChars = 2 } = opts || {}
+
+  return `${address.substring(
+    0,
+    (typeof leadingChars === 'number' ? leadingChars : leadingChars.length) +
+      prefixChars
+  )}...${address.substring(address.length - suffixChars)}`
 }

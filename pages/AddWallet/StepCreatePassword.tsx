@@ -14,7 +14,7 @@ import assert from 'assert'
 import { ReactNode, useEffect, useState } from 'react'
 import { useWizard } from 'react-use-wizard'
 
-import { AlertText } from '~components/AlertText'
+import { AlertBox } from '~components/AlertBox'
 import { WALLET_SERVICE } from '~lib/services/walletService'
 
 zxcvbnOptions.setOptions({
@@ -128,7 +128,7 @@ export const StepCreatePassword = () => {
         onChange={(event) => setConfirmPassword(event.target.value)}
       />
 
-      <AlertText>{alert}</AlertText>
+      <AlertBox>{alert}</AlertBox>
 
       <Button
         h="14"

@@ -135,7 +135,7 @@ export const RequestPermission = ({ request }: { request: ConsentRequest }) => {
                     <chakra.span fontStyle="italic">{info?.name}</chakra.span>
                   </Text>
                   <Text fontSize="lg" color="gray.500">
-                    {shortenAddress(info?.address, 4)}
+                    {shortenAddress(info?.address)}
                   </Text>
                 </>
               ) : (

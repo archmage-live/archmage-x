@@ -1,9 +1,9 @@
 import { Box, HStack, Icon, Stack, Text } from '@chakra-ui/react'
 import { useEffect, useState } from 'react'
 import { DraggableProvidedDragHandleProps } from 'react-beautiful-dnd'
-import Blockies from 'react-blockies'
 import { MdDragIndicator } from 'react-icons/md'
 
+import { AccountAvatar } from '~components/AccountAvatar'
 import { IChainAccount, IDerivedWallet } from '~lib/schema'
 import { shortenAddress } from '~lib/utils'
 
@@ -59,9 +59,7 @@ export const SubWalletItem = ({
         onClick={onClick}
         data-group>
         <HStack spacing={4}>
-          <Box borderRadius="50%" overflow="hidden">
-            <Blockies seed={account?.address + ''} size={10} scale={3} />
-          </Box>
+          <AccountAvatar text={account?.address || ''} />
           <Text fontSize="lg" noOfLines={1} w="160px">
             {wallet.name}
           </Text>
@@ -72,7 +70,12 @@ export const SubWalletItem = ({
           visibility={infoVisibility || 'hidden'}
           _groupHover={{ visibility: infoVisibility || 'visible' }}>
           <Stack fontSize="sm" color="gray.500">
-            <Text noOfLines={1}>{shortenAddress(account?.address, 6)}</Text>
+            <Text noOfLines={1}>
+              {shortenAddress(account?.address, {
+                prefixChars: 6,
+                suffixChars: 6
+              })}
+            </Text>
             <Text>Index: {wallet.index}</Text>
           </Stack>
           <Box {...dragHandleProps} p={2}>

@@ -17,7 +17,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useWizard } from 'react-use-wizard'
 
 import { SwitchBar } from '~/components/SwitchBar'
-import { AlertText } from '~components/AlertText'
+import { AlertBox } from '~components/AlertBox'
 import { HdPathInput } from '~components/HdPathInput'
 import { isMnemonic, isPrivateKey } from '~lib/utils'
 
@@ -210,7 +210,7 @@ export const StepImportWallet = () => {
 
           <NameInput value={name} onChange={setName} />
 
-          <AlertText>{alert}</AlertText>
+          <AlertBox>{alert}</AlertBox>
         </Stack>
       </Stack>
 

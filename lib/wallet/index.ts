@@ -65,17 +65,16 @@ export async function getSigningWallet(
 ): Promise<SigningWallet> {
   const master = await WALLET_SERVICE.getWallet(wallet.masterId)
   assert(master)
-  const hdPath = await DB.hdPaths
-    .where({ masterId: wallet.id, networkKind: wallet.networkKind })
-    .first()
-  assert(hdPath)
-
   let signingWallet = await getMasterSigningWallet(
     master,
     wallet.networkKind,
     wallet.chainId
   )
   if (master.type === WalletType.HD) {
+    const hdPath = await DB.hdPaths
+      .where({ masterId: wallet.id, networkKind: wallet.networkKind })
+      .first()
+    assert(hdPath)
     signingWallet = await signingWallet.derive(hdPath.path, wallet.index!)
   }
   assert(signingWallet.address === wallet.address)

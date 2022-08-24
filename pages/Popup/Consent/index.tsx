@@ -1,10 +1,10 @@
-import { useCallback, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import {
   CONSENT_SERVICE,
-  ConsentType,
-  useConsentRequests
+  ConsentRequest,
+  ConsentType
 } from '~lib/services/consentService'
 
 import { RequestPermission } from './RequestPermission'
@@ -15,18 +15,19 @@ import { WatchAsset } from './WatchAsset'
 
 export default function Consent() {
   const navigate = useNavigate()
-  const requests = useConsentRequests()
-
-  const check = useCallback(async () => {
-    const requests = await CONSENT_SERVICE.getRequests()
-    if (!requests.length) {
-      navigate('/home', { replace: true })
-    }
-  }, [navigate])
+  const [requests, setRequests] = useState<ConsentRequest[]>()
 
   useEffect(() => {
-    check()
-  }, [check])
+    const effect = async () => {
+      const requests = await CONSENT_SERVICE.getRequests()
+      if (!requests.length) {
+        navigate('/home', { replace: true })
+      } else {
+        setRequests(requests)
+      }
+    }
+    effect()
+  }, [navigate])
 
   if (!requests?.length) {
     return <></>

@@ -1,7 +1,7 @@
 import { CheckIcon } from '@chakra-ui/icons'
 import { Box, Button, Checkbox, HStack, Stack, Text } from '@chakra-ui/react'
-import Blockies from 'react-blockies'
 
+import { AccountAvatar } from '~components/AccountAvatar'
 import { IChainAccount, IDerivedWallet, INetwork } from '~lib/schema'
 import { useBalance } from '~lib/services/provider'
 import { shortenAddress } from '~lib/utils'
@@ -46,14 +46,12 @@ export const SubWalletItem = ({
             <Checkbox mb="-12px" isChecked={isChecked} pointerEvents="none" />
           )}
           <HStack w="calc(100% - 29.75px)" justify="space-between">
-            <Box
-              borderRadius="50%"
-              overflow="hidden"
-              transform="scale(0.8)"
+            <AccountAvatar
+              text={account.address}
+              scale={0.8}
               m="-3px"
-              mb="-16px">
-              <Blockies seed={account.address + ''} size={10} scale={3} />
-            </Box>
+              mb="-16px"
+            />
 
             <HStack
               w="calc(100% - 31px)"
@@ -64,7 +62,7 @@ export const SubWalletItem = ({
               </Text>
 
               <Text fontFamily="monospace" fontSize="sm" color="gray.500">
-                {shortenAddress(account.address, 3)}
+                {shortenAddress(account.address)}
               </Text>
             </HStack>
           </HStack>

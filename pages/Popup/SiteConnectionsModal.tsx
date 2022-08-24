@@ -10,7 +10,7 @@ import {
 } from '@chakra-ui/react'
 
 import { useConnectedSitesBySite } from '~lib/services/connectedSiteService'
-import { useCurrentOrigin } from '~lib/util'
+import { useCurrentSiteUrl } from '~lib/util'
 
 interface SiteConnectionsModalProps {
   isOpen: boolean
@@ -21,7 +21,7 @@ export const SiteConnectionsModal = ({
   isOpen,
   onClose
 }: SiteConnectionsModalProps) => {
-  const site = useCurrentOrigin()
+  const site = useCurrentSiteUrl()
   const conns = useConnectedSitesBySite(site?.toString())
 
   if (conns === undefined) {

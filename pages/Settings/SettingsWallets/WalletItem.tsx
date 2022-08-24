@@ -1,10 +1,10 @@
 import { Box, HStack, Icon, Stack, Text, useDisclosure } from '@chakra-ui/react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { DraggableProvidedDragHandleProps } from 'react-beautiful-dnd'
-import Blockies from 'react-blockies'
 import { MdDragIndicator } from 'react-icons/md'
 import { useDebounce } from 'react-use'
 
+import { AccountAvatar } from '~components/AccountAvatar'
 import { Badge } from '~components/Badge'
 import { dayjs } from '~lib/dayjs'
 import { INetwork } from '~lib/schema/network'
@@ -94,9 +94,7 @@ export const WalletItem = ({
         onDoubleClick={onToggle}
         data-group>
         <HStack spacing={4}>
-          <Box borderRadius="50%" overflow="hidden">
-            <Blockies seed={wallet.hash} size={10} scale={3} />
-          </Box>
+          <AccountAvatar text={wallet.hash} />
           <HStack w="160px">
             <Text fontSize="lg" noOfLines={1}>
               {wallet.name}

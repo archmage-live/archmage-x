@@ -11,7 +11,7 @@ import { shuffled } from '@ethersproject/random'
 import { useCallback, useEffect, useState } from 'react'
 import { useWizard } from 'react-use-wizard'
 
-import { AlertText } from '~components/AlertText'
+import { AlertBox } from '~components/AlertBox'
 
 import { NameInput } from './NameInput'
 import { useAddWallet, useMnemonic, useName } from './addWallet'
@@ -139,7 +139,7 @@ export const StepRememberMnemonic = () => {
 
       <NameInput value={name} onChange={setName} />
 
-      <AlertText>{alert}</AlertText>
+      <AlertBox>{alert}</AlertBox>
 
       <Button
         h="14"

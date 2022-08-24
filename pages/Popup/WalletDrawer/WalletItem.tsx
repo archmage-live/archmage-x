@@ -9,8 +9,8 @@ import {
   useDisclosure
 } from '@chakra-ui/react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import Blockies from 'react-blockies'
 
+import { AccountAvatar } from '~components/AccountAvatar'
 import { Badge } from '~components/Badge'
 import { ActiveWalletId } from '~lib/active'
 import { IChainAccount, IDerivedWallet, PSEUDO_INDEX } from '~lib/schema'
@@ -19,7 +19,7 @@ import { IWallet } from '~lib/schema/wallet'
 import { useBalance } from '~lib/services/provider'
 import {
   WALLET_SERVICE,
-  useChainAccount,
+  useChainAccountByIndex,
   useChainAccounts
 } from '~lib/services/walletService'
 import { shortenAddress } from '~lib/utils'
@@ -65,7 +65,7 @@ export const WalletItem = ({
     measure()
   }, [isOpen, measure])
 
-  const account = useChainAccount(
+  const account = useChainAccountByIndex(
     wallet.id,
     network?.kind,
     network?.chainId,
@@ -191,18 +191,12 @@ export const WalletItem = ({
             )}
 
             <HStack w="calc(100% - 29.75px)" justify="space-between">
-              <Box
-                borderRadius="50%"
-                overflow="hidden"
-                transform="scale(0.8)"
+              <AccountAvatar
+                text={account?.address || wallet.hash}
+                scale={0.8}
                 m="-3px"
-                mb="-16px">
-                <Blockies
-                  seed={account?.address || wallet.hash}
-                  size={10}
-                  scale={3}
-                />
-              </Box>
+                mb="-16px"
+              />
 
               <HStack w="calc(100% - 31px)" justify="space-between">
                 <Text fontSize="lg" noOfLines={1} display="block">
@@ -210,7 +204,7 @@ export const WalletItem = ({
                 </Text>
 
                 <Text fontFamily="monospace" fontSize="sm" color="gray.500">
-                  {shortenAddress(account?.address, 3)}
+                  {shortenAddress(account?.address)}
                 </Text>
               </HStack>
             </HStack>

@@ -5,13 +5,15 @@ export interface INetwork {
   sortId: number
   type: NetworkType
   kind: NetworkKind
-  chainId: number | string
+  chainId: ChainId
   info: any
   search: string
 }
 
 export const networkSchemaV1 =
   '++id, sortId, &[type+chainId], &[kind+chainId], search'
+
+export type ChainId = number | string
 
 export function createSearchString(...args: (string | undefined)[]) {
   let search: string[] = []

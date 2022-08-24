@@ -2,7 +2,7 @@ import { Button, HStack, Input, Stack, Text } from '@chakra-ui/react'
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 
-import { AlertText } from '~components/AlertText'
+import { AlertBox } from '~components/AlertBox'
 import { usePassword } from '~lib/password'
 import { WALLET_SERVICE, useSubWalletsCount } from '~lib/services/walletService'
 import { createTab } from '~lib/util'
@@ -86,7 +86,7 @@ export default function Unlock() {
               onChange={(event) => setPassword(event.target.value)}
             />
 
-            <AlertText>{alert}</AlertText>
+            <AlertBox>{alert}</AlertBox>
 
             <Button
               type="submit"

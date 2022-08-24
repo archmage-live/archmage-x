@@ -15,11 +15,11 @@ import {
 } from '@chakra-ui/react'
 import icon from 'data-base64:~assets/icon512.png'
 import { useCallback } from 'react'
-import Blockies from 'react-blockies'
 
+import { AccountAvatar } from '~components/AccountAvatar'
 import { ToggleButton } from '~components/ToggleButton'
 import { getNetworkInfo } from '~lib/services/network'
-import { useChainAccount } from '~lib/services/walletService'
+import { useChainAccountByIndex } from '~lib/services/walletService'
 
 import { NetworkDrawer } from './NetworkDrawer'
 import { WalletDrawer } from './WalletDrawer'
@@ -30,13 +30,14 @@ export const Toolbar = () => {
   const networkInfo = network && getNetworkInfo(network)
 
   const { wallet, subWallet } = useActiveWallet()
-  const account = useChainAccount(
+  const account = useChainAccountByIndex(
     wallet?.id,
     network?.kind,
     network?.chainId,
     subWallet?.index
   )
 
+  const bg = useColorModeValue('white', 'blackAlpha.400')
   const blockieBg = useColorModeValue('purple.50', 'gray.800')
 
   const {
@@ -56,14 +57,16 @@ export const Toolbar = () => {
   }, [onNetworkClose, onWalletClose])
 
   return (
-    <Box width="full" p="4" boxShadow={useColorModeValue('sm', 'sm')}>
+    <Box width="full" p="4" bg={bg} boxShadow={useColorModeValue('sm', 'sm')}>
       <Flex justify="space-between" align="center">
         <Image boxSize="24px" src={icon} alt="Logo" />
+
         <Button variant="outline" maxW={44} onClick={onNetworkToggle}>
           <Text noOfLines={1} display="block">
             {networkInfo?.name}
           </Text>
         </Button>
+
         <Center w="40px" h="40px">
           {account && (
             <Box
@@ -76,9 +79,7 @@ export const Toolbar = () => {
                 borderRadius="full"
                 borderWidth="2px"
                 borderColor={blockieBg}>
-                <Box borderRadius="full" overflow="hidden">
-                  <Blockies seed={account.address} size={10} scale={3} />
-                </Box>
+                <AccountAvatar text={account.address} />
               </Box>
             </Box>
           )}

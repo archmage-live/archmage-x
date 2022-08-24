@@ -114,136 +114,6 @@ class WalletServicePartial implements IWalletService {
   async existsSecret(wallet: IWallet) {
     return (await DB.wallets.where('hash').equals(wallet.hash).count()) > 0
   }
-}
-
-class WalletService extends WalletServicePartial {
-  async createPassword(password: string) {
-    await PASSWORD.create(password)
-    await setUnlockTime()
-  }
-
-  async checkPassword(password: string): Promise<boolean> {
-    return PASSWORD.check(password)
-  }
-
-  async existsPassword() {
-    return PASSWORD.exists()
-  }
-
-  async isUnlocked() {
-    return PASSWORD.isUnlocked()
-  }
-
-  async unlock(password: string) {
-    const unlocked = await PASSWORD.unlock(password)
-
-    if (unlocked) {
-      await setUnlockTime()
-      KEYSTORE.unlock()
-    }
-
-    return unlocked
-  }
-
-  async lock() {
-    await PASSWORD.lock()
-    await KEYSTORE.lock()
-  }
-
-  async getKeystore(id: number): Promise<KeystoreAccount | undefined> {
-    return KEYSTORE.get(id)
-  }
-
-  async newWallet({
-    isHD,
-    mnemonic,
-    path,
-    privateKey,
-    name
-  }: {
-    isHD: boolean
-    mnemonic?: string
-    path?: string
-    privateKey?: string
-    name?: string
-  }): Promise<{
-    wallet: IWallet
-    decrypted: _KeystoreAccount
-  }> {
-    let account
-    let type
-    if (isHD) {
-      assert(mnemonic && !path && !privateKey)
-      account = ethers.utils.HDNode.fromMnemonic(mnemonic)
-      type = WalletType.HD
-    } else if (!privateKey) {
-      assert(mnemonic && path)
-      account = ethers.Wallet.fromMnemonic(mnemonic, path)
-      type = WalletType.MNEMONIC_PRIVATE_KEY
-    } else {
-      assert(!mnemonic && !path)
-      account = new ethers.Wallet(privateKey)
-      type = WalletType.PRIVATE_KEY
-    }
-
-    const address = account.address
-
-    const decrypted: _KeystoreAccount = {
-      address,
-      privateKey: account.privateKey,
-      mnemonic: account.mnemonic,
-      _isKeystoreAccount: true
-    }
-
-    const wallet = {
-      sortId: await getNextField(DB.wallets),
-      type,
-      name: name || (await generateDefaultWalletName(DB.wallets)),
-      path,
-      hash: address, // use address as hash
-      createdAt: Date.now()
-    } as IWallet
-
-    return {
-      wallet,
-      decrypted
-    }
-  }
-
-  async createWallet(wallet: IWallet, decrypted: _KeystoreAccount) {
-    await DB.transaction(
-      'rw',
-      [DB.wallets, DB.derivedWallets, DB.hdPaths],
-      async () => {
-        wallet.id = await DB.wallets.add(wallet)
-
-        if (wallet.type === WalletType.HD) {
-          await this.deriveSubWallets(wallet.id, 1)
-        } else {
-          await DB.derivedWallets.add({
-            masterId: wallet.id,
-            sortId: 0,
-            index: PSEUDO_INDEX,
-            name: ''
-          } as IDerivedWallet)
-        }
-
-        await this.createHdPaths(wallet.id)
-      }
-    )
-
-    await KEYSTORE.set(wallet.id!, new KeystoreAccount(decrypted))
-    // time-consuming, so do not wait for it
-    KEYSTORE.persist(wallet)
-  }
-
-  async updateWallet() {
-    // TODO
-  }
-
-  async deleteWallet(id: number) {
-    await DB.wallets.delete(id)
-  }
 
   async getWallet(id: number): Promise<IWallet | undefined> {
     return DB.wallets.get(id)
@@ -386,6 +256,136 @@ class WalletService extends WalletServicePartial {
       unlock()
     }
   }
+}
+
+class WalletService extends WalletServicePartial {
+  async createPassword(password: string) {
+    await PASSWORD.create(password)
+    await setUnlockTime()
+  }
+
+  async checkPassword(password: string): Promise<boolean> {
+    return PASSWORD.check(password)
+  }
+
+  async existsPassword() {
+    return PASSWORD.exists()
+  }
+
+  async isUnlocked() {
+    return PASSWORD.isUnlocked()
+  }
+
+  async unlock(password: string) {
+    const unlocked = await PASSWORD.unlock(password)
+
+    if (unlocked) {
+      await setUnlockTime()
+      KEYSTORE.unlock()
+    }
+
+    return unlocked
+  }
+
+  async lock() {
+    await PASSWORD.lock()
+    await KEYSTORE.lock()
+  }
+
+  async getKeystore(id: number): Promise<KeystoreAccount | undefined> {
+    return KEYSTORE.get(id)
+  }
+
+  async newWallet({
+    isHD,
+    mnemonic,
+    path,
+    privateKey,
+    name
+  }: {
+    isHD: boolean
+    mnemonic?: string
+    path?: string
+    privateKey?: string
+    name?: string
+  }): Promise<{
+    wallet: IWallet
+    decrypted: _KeystoreAccount
+  }> {
+    let account
+    let type
+    if (isHD) {
+      assert(mnemonic && !path && !privateKey)
+      account = ethers.utils.HDNode.fromMnemonic(mnemonic)
+      type = WalletType.HD
+    } else if (!privateKey) {
+      assert(mnemonic && path)
+      account = ethers.Wallet.fromMnemonic(mnemonic, path)
+      type = WalletType.MNEMONIC_PRIVATE_KEY
+    } else {
+      assert(!mnemonic && !path)
+      account = new ethers.Wallet(privateKey)
+      type = WalletType.PRIVATE_KEY
+    }
+
+    const address = account.address
+
+    const decrypted: _KeystoreAccount = {
+      address,
+      privateKey: account.privateKey,
+      mnemonic: account.mnemonic,
+      _isKeystoreAccount: true
+    }
+
+    const wallet = {
+      sortId: await getNextField(DB.wallets),
+      type,
+      name: name || (await generateDefaultWalletName(DB.wallets)),
+      path,
+      hash: address, // use address as hash
+      createdAt: Date.now()
+    } as IWallet
+
+    return {
+      wallet,
+      decrypted
+    }
+  }
+
+  async createWallet(wallet: IWallet, decrypted: _KeystoreAccount) {
+    await DB.transaction(
+      'rw',
+      [DB.wallets, DB.derivedWallets, DB.hdPaths],
+      async () => {
+        wallet.id = await DB.wallets.add(wallet)
+
+        if (wallet.type === WalletType.HD) {
+          await this.deriveSubWallets(wallet.id, 1)
+        } else {
+          await DB.derivedWallets.add({
+            masterId: wallet.id,
+            sortId: 0,
+            index: PSEUDO_INDEX,
+            name: ''
+          } as IDerivedWallet)
+        }
+
+        await this.createHdPaths(wallet.id)
+      }
+    )
+
+    await KEYSTORE.set(wallet.id!, new KeystoreAccount(decrypted))
+    // time-consuming, so do not wait for it
+    KEYSTORE.persist(wallet)
+  }
+
+  async updateWallet() {
+    // TODO
+  }
+
+  async deleteWallet(id: number) {
+    await DB.wallets.delete(id)
+  }
 
   private async createHdPaths(id: number) {
     for (const networkKind of Object.values(NetworkKind) as NetworkKind[]) {
@@ -467,15 +467,24 @@ export function useChainAccounts(
   }, [id, networkKind, chainId])
 }
 
-export function useChainAccount(
-  id?: number,
+export function useChainAccount(id?: number) {
+  return useLiveQuery(async () => {
+    if (id === undefined) {
+      return undefined
+    }
+    return WALLET_SERVICE.getChainAccount(id)
+  }, [id])
+}
+
+export function useChainAccountByIndex(
+  masterId?: number,
   networkKind?: NetworkKind,
   chainId?: number | string,
   index?: Index
 ) {
   return useLiveQuery(async () => {
     if (
-      id === undefined ||
+      masterId === undefined ||
       networkKind === undefined ||
       chainId === undefined ||
       index === undefined
@@ -483,12 +492,12 @@ export function useChainAccount(
       return undefined
     }
     return WALLET_SERVICE.getChainAccount({
-      masterId: id,
+      masterId,
       networkKind,
       chainId,
       index
     })
-  }, [id, networkKind, chainId, index])
+  }, [masterId, networkKind, chainId, index])
 }
 
 export function useWallet(id?: number) {
@@ -505,8 +514,17 @@ export function useSubWallet(id?: number) {
     if (id === undefined) {
       return undefined
     }
-    return DB.derivedWallets.get(id)
+    return WALLET_SERVICE.getSubWallet(id)
   }, [id])
+}
+
+export function useSubWalletByIndex(masterId?: number, index?: Index) {
+  return useLiveQuery(() => {
+    if (masterId === undefined || index === undefined) {
+      return undefined
+    }
+    return WALLET_SERVICE.getSubWallet({ masterId, index })
+  }, [masterId, index])
 }
 
 export function useHdPaths(

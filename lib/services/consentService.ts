@@ -20,6 +20,11 @@ export type RequestPermissionPayload = {
   permissions: { permission: Permission; data?: any }[]
 }
 
+export type TransactionPayload = {
+  txParams: any
+  populatedParams: any
+}
+
 export enum ConsentType {
   REQUEST_PERMISSION = 'requestPermission',
   TRANSACTION = 'transaction',
@@ -175,7 +180,12 @@ class ConsentService implements IConsentService {
           )
           break
         case ConsentType.TRANSACTION:
-          response = await provider.signTransaction(accounts[0], req.payload)
+          const payload = req.payload as TransactionPayload
+          const signedTx = await provider.signTransaction(
+            accounts[0],
+            payload.txParams
+          )
+          response = await provider.sendTransaction(signedTx)
           break
         case ConsentType.SIGN_MSG:
           response = await provider.signMessage(accounts[0], req.payload)

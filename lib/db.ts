@@ -1,24 +1,26 @@
 import Dexie from 'dexie'
-import {
-  Config,
-  adjectives,
-  animals,
-  colors,
-  uniqueNamesGenerator
-} from 'unique-names-generator'
+import { Config, animals, uniqueNamesGenerator } from 'unique-names-generator'
 
-import { IChainAccount, chainAccountSchemaV1 } from '~lib/schema/chainAccount'
 import {
+  IAddressBook,
+  IChainAccount,
   IConnectedSite,
-  connectedSiteSchemaV1
-} from '~lib/schema/connectedSite'
-import type { IDerivedWallet } from '~lib/schema/derivedWallet'
-import { derivedWalletSchemaV1 } from '~lib/schema/derivedWallet'
-import { IHdPath, hdPathSchemaV1 } from '~lib/schema/hdPath'
-import { INetwork, networkSchemaV1 } from '~lib/schema/network'
-import { IQueryCache, queryCacheSchemaV1 } from '~lib/schema/queryCache'
-import type { IWallet } from '~lib/schema/wallet'
-import { walletSchemaV1 } from '~lib/schema/wallet'
+  IDerivedWallet,
+  IFetchCache,
+  IHdPath,
+  INetwork,
+  IQueryCache,
+  IWallet,
+  addressBookSchemaV1,
+  chainAccountSchemaV1,
+  connectedSiteSchemaV1,
+  derivedWalletSchemaV1,
+  fetchCacheSchemaV1,
+  hdPathSchemaV1,
+  networkSchemaV1,
+  queryCacheSchemaV1,
+  walletSchemaV1
+} from '~lib/schema'
 
 export class Database extends Dexie {
   wallets!: Dexie.Table<IWallet, number>
@@ -27,6 +29,8 @@ export class Database extends Dexie {
   derivedWallets!: Dexie.Table<IDerivedWallet, number>
   chainAccounts!: Dexie.Table<IChainAccount, number>
   connectedSites!: Dexie.Table<IConnectedSite, number>
+  addressBook!: Dexie.Table<IAddressBook, number>
+  fetchCache!: Dexie.Table<IFetchCache, number>
   queryCache!: Dexie.Table<IQueryCache, number>
 
   constructor() {
@@ -38,6 +42,8 @@ export class Database extends Dexie {
       derivedWallets: derivedWalletSchemaV1,
       chainAccounts: chainAccountSchemaV1,
       connectedSites: connectedSiteSchemaV1,
+      addressBook: addressBookSchemaV1,
+      fetchCache: fetchCacheSchemaV1,
       queryCache: queryCacheSchemaV1
     })
   }

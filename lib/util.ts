@@ -89,7 +89,13 @@ export function useCurrentTab() {
   return tab
 }
 
-export function useCurrentOrigin(): URL | undefined {
+export function useCurrentSiteUrl(): URL | undefined {
+  const [url, setUrl] = useState<URL | undefined>()
+
   const tab = useCurrentTab()
-  return tab?.url ? new URL(tab.url) : undefined
+  useEffect(() => {
+    setUrl(tab?.url ? new URL(tab.url) : undefined)
+  }, [tab])
+
+  return url
 }

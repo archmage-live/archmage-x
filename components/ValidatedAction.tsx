@@ -11,7 +11,7 @@ import React, { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Wizard, useWizard } from 'react-use-wizard'
 
-import { AlertText } from '~components/AlertText'
+import { AlertBox } from '~components/AlertBox'
 import { usePassword } from '~lib/password'
 import { WALLET_SERVICE } from '~lib/services/walletService'
 import { createTab } from '~lib/util'
@@ -106,7 +106,7 @@ const ValidatePassword = ({ onClose }: { onClose(): void }) => {
             onChange={(event) => setPassword(event.target.value)}
           />
 
-          <AlertText>{alert}</AlertText>
+          <AlertBox>{alert}</AlertBox>
 
           <HStack>
             <Button
