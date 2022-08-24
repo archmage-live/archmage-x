@@ -91,7 +91,7 @@ export const WalletDrawer = ({ onClose }: { onClose(): void }) => {
             }}>
             <HStack spacing="3">
               <AddIcon />
-              <Text fontSize="lg">Add Wallet</Text>
+              <Text fontSize="lg">Create/Import Wallet</Text>
             </HStack>
           </Button>
           <Button

@@ -13,6 +13,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AccountAvatar } from '~components/AccountAvatar'
 import { Badge } from '~components/Badge'
 import { ActiveWalletId } from '~lib/active'
+import { formatNumber } from '~lib/formatNumber'
 import { IChainAccount, IDerivedWallet, PSEUDO_INDEX } from '~lib/schema'
 import { INetwork } from '~lib/schema/network'
 import { IWallet } from '~lib/schema/wallet'
@@ -220,7 +221,7 @@ export const WalletItem = ({
             h="14px">
             {balance && (
               <Text fontSize="xs" color="gray.500" textAlign="start">
-                {balance.amount} {balance.symbol}
+                {formatNumber(balance.amount)} {balance.symbol}
               </Text>
             )}
             {typeIdentifier && (

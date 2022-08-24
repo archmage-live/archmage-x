@@ -2,6 +2,7 @@ import { CheckIcon } from '@chakra-ui/icons'
 import { Box, Button, Checkbox, HStack, Stack, Text } from '@chakra-ui/react'
 
 import { AccountAvatar } from '~components/AccountAvatar'
+import { formatNumber } from '~lib/formatNumber'
 import { IChainAccount, IDerivedWallet, INetwork } from '~lib/schema'
 import { useBalance } from '~lib/services/provider'
 import { shortenAddress } from '~lib/utils'
@@ -75,7 +76,7 @@ export const SubWalletItem = ({
           fontSize="xs"
           color="gray.500"
           textAlign="start">
-          {balance?.amount} {balance?.symbol}
+          {formatNumber(balance?.amount)} {balance?.symbol}
         </Text>
       </Box>
     </Button>

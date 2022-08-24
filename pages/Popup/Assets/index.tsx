@@ -19,6 +19,7 @@ import { FaGlobeAmericas } from 'react-icons/fa'
 import { FiCheckCircle, FiCopy } from 'react-icons/fi'
 import { MdMoreVert } from 'react-icons/md'
 
+import { formatNumber } from '~lib/formatNumber'
 import {
   useConnectedSitesBySite,
   useConnectedSitesByWallet
@@ -163,7 +164,7 @@ export default function Assets() {
 
             <Stack spacing={0} align="center">
               <Text fontSize="4xl" fontWeight="medium">
-                {balance?.amount} {balance?.symbol}
+                {formatNumber(balance?.amount)} {balance?.symbol}
               </Text>
               {price && (
                 <>
