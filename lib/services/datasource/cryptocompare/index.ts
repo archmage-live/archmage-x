@@ -160,8 +160,9 @@ class CryptoCompare {
 
 export const CRYPTO_COMPARE_SERVICE = new CryptoCompare()
 
-export function usePrice(currency?: string):
+export function useCryptoCompare(currency?: string):
   | {
+      imageUrl: string | undefined
       price: number | undefined
       displayPrice: string | undefined
       change24Hour: number | undefined
@@ -187,7 +188,13 @@ export function usePrice(currency?: string):
     return undefined
   }
 
+  let imageUrl = result[0].DISPLAY?.IMAGEURL
+  if (imageUrl) {
+    imageUrl = 'https://www.cryptocompare.com' + imageUrl
+  }
+
   return {
+    imageUrl,
     price: result[0].RAW?.PRICE,
     displayPrice: result[0].DISPLAY?.PRICE,
     change24Hour: result[0].RAW?.CHANGE24HOUR,

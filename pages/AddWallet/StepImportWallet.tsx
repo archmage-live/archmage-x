@@ -11,7 +11,8 @@ import {
   Stack,
   Text,
   Textarea,
-  chakra
+  chakra,
+  useColorModeValue
 } from '@chakra-ui/react'
 import { useCallback, useEffect, useState } from 'react'
 import { useWizard } from 'react-use-wizard'
@@ -241,7 +242,7 @@ const WordInput = ({
   onChange: (value: string, index: number) => void
 }) => {
   return (
-    <InputGroup bg="blackAlpha.400">
+    <InputGroup bg={useColorModeValue('gray.50', 'blackAlpha.400')}>
       <InputLeftElement pointerEvents="none">
         <chakra.span color="gray.500" userSelect="none">
           {index + 1}

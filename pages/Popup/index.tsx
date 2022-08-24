@@ -1,4 +1,4 @@
-import { Container, Flex } from '@chakra-ui/react'
+import { Container, Flex, useColorModeValue } from '@chakra-ui/react'
 import { atom, useAtom } from 'jotai'
 import { useState } from 'react'
 import { Route, Routes, useLocation } from 'react-router-dom'
@@ -44,6 +44,7 @@ export default function Popup() {
       minH={minH}
       w="100vw"
       h="100vh"
+      bg={useColorModeValue('white', 'gray.800')}
       justify="space-between">
       <Routes>
         <Route

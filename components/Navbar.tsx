@@ -36,11 +36,11 @@ export const Navbar = ({ value, onChange }: NavbarProps) => {
       py="4"
       px="4"
       justify="space-around"
-      bg={useColorModeValue('white', 'gray.900')}
+      bg={useColorModeValue('gray.50', 'gray.900')}
       boxShadow={useColorModeValue('lg', 'lg-dark')}>
       <Btn target="Assets" icon={<RiMoneyDollarCircleFill />} />
       <Btn target="NFTs" icon={<IoGrid />} />
-      <Btn target="Swap" icon={<IoMdSwap />} />
+      {/*<Btn target="Swap" icon={<IoMdSwap />} />*/}
       <Btn target="Transactions" icon={<IoFlashSharp />} />
       <Btn target="Settings" icon={<IoMdSettings />} />
     </HStack>

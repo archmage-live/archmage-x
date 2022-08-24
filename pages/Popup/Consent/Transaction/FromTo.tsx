@@ -23,8 +23,7 @@ export const FromTo = ({
         <AccountAvatar text={from} scale={0.8} />
         <Text fontSize="md">{shortenAddress(from)}</Text>
         {subWallet !== undefined && subWallet.id !== subWalletId && (
-          <Tooltip
-            label="Is this the correct account? It's different from the currently selected account in your wallet">
+          <Tooltip label="Is this the correct account? It's different from the currently selected account in your wallet">
             <InfoOutlineIcon color="orange.500" />
           </Tooltip>
         )}

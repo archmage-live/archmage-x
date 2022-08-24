@@ -18,6 +18,7 @@ import {
   Text,
   chakra,
   useClipboard,
+  useColorModeValue,
   useDisclosure
 } from '@chakra-ui/react'
 import { useEffect, useState } from 'react'
@@ -129,7 +130,7 @@ const WordBox = ({ index, word }: { index: number; word: string }) => {
       borderRadius="8px"
       border="1px solid"
       borderColor="gray.700"
-      bg="blackAlpha.400">
+      bg={useColorModeValue('gray.50', 'blackAlpha.400')}>
       <chakra.span color="gray.500" userSelect="none">
         {index + 1}.&nbsp;
       </chakra.span>

@@ -37,7 +37,7 @@ export const Toolbar = () => {
     subWallet?.index
   )
 
-  const bg = useColorModeValue('white', 'blackAlpha.400')
+  const bg = useColorModeValue('gray.50', 'blackAlpha.400')
   const blockieBg = useColorModeValue('purple.50', 'gray.800')
 
   const {
@@ -59,7 +59,9 @@ export const Toolbar = () => {
   return (
     <Box width="full" p="4" bg={bg} boxShadow={useColorModeValue('sm', 'sm')}>
       <Flex justify="space-between" align="center">
-        <Image boxSize="24px" src={icon} alt="Logo" />
+        <Box w="40px">
+          <Image boxSize="24px" src={icon} alt="Logo" />
+        </Box>
 
         <Button variant="outline" maxW={44} onClick={onNetworkToggle}>
           <Text noOfLines={1} display="block">

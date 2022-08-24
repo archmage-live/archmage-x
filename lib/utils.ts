@@ -31,7 +31,7 @@ export function shortenAddress(
     return ''
   }
 
-  const { leadingChars = 3, prefixChars = 4, suffixChars = 2 } = opts || {}
+  const { leadingChars = 2, prefixChars = 3, suffixChars = 4 } = opts || {}
 
   return `${address.substring(
     0,
