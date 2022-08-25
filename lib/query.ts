@@ -30,7 +30,9 @@ export function createQueryCachePersister(
 
 export enum QueryService {
   PROVIDER = 'provider',
-  CRYPTO_COMPARE = 'cryptoCompare'
+  CRYPTO_COMPARE = 'cryptoCompare',
+  FOUR_BYTE = 'fourByte',
+  CHAIN_LIST = 'chainList'
 }
 
 const QUERY_SERVICES = new Map<string, any>()

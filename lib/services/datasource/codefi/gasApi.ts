@@ -20,7 +20,7 @@ class CodeFiGasApi {
   async supportedNetworks() {
     const networks = await fetchJsonWithCache(
       'https://tx-insights.metaswap.codefi.network/networks',
-      1000 * 3600 * 24 * 7
+      1000 * 3600 * 24 * 7 // 7 days
     )
     return networks as SupportedNetwork[]
   }

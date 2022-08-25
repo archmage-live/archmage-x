@@ -34,6 +34,7 @@
     "@ethersproject/random": "^5.6.1",
     "@ethersproject/sha2": "^5.6.1",
     "@ethersproject/signing-key": "^5.6.2",
+    "@ethersproject/strings": "^5.7.0",
     "@ethersproject/transactions": "^5.6.2",
     "@ethersproject/web": "^5.6.1",
     "@ethersproject/wordlists": "^5.6.1",

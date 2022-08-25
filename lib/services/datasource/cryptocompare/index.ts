@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import { useMemo } from 'react'
 
 import { fetchJsonWithCache } from '~lib/fetch'
 import { QueryService } from '~lib/query'
@@ -180,26 +181,28 @@ export function useCryptoCompare(currency?: string):
       CRYPTO_COMPARE_SERVICE.multiFullPrices([currency], quoteCurrency)
   )
 
-  if (!currency) {
-    return undefined
-  }
+  return useMemo(() => {
+    if (!currency) {
+      return undefined
+    }
 
-  if (!result) {
-    return undefined
-  }
+    if (!result) {
+      return undefined
+    }
 
-  let imageUrl = result[0].DISPLAY?.IMAGEURL
-  if (imageUrl) {
-    imageUrl = 'https://www.cryptocompare.com' + imageUrl
-  }
+    let imageUrl = result[0].DISPLAY?.IMAGEURL
+    if (imageUrl) {
+      imageUrl = 'https://www.cryptocompare.com' + imageUrl
+    }
 
-  return {
-    imageUrl,
-    price: result[0].RAW?.PRICE,
-    displayPrice: result[0].DISPLAY?.PRICE,
-    change24Hour: result[0].RAW?.CHANGE24HOUR,
-    changePercent24Hour: result[0].RAW?.CHANGEPCT24HOUR,
-    displayChange24Hour: result[0].DISPLAY?.CHANGE24HOUR,
-    displayChangePercent24Hour: result[0].DISPLAY?.CHANGEPCT24HOUR
-  }
+    return {
+      imageUrl,
+      price: result[0].RAW?.PRICE,
+      displayPrice: result[0].DISPLAY?.PRICE,
+      change24Hour: result[0].RAW?.CHANGE24HOUR,
+      changePercent24Hour: result[0].RAW?.CHANGEPCT24HOUR,
+      displayChange24Hour: result[0].DISPLAY?.CHANGE24HOUR,
+      displayChangePercent24Hour: result[0].DISPLAY?.CHANGEPCT24HOUR
+    }
+  }, [currency, result])
 }
