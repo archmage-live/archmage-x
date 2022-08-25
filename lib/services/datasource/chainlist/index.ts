@@ -27,13 +27,21 @@ class ChainListApi {
     }
   }
 
-  async getEvmChainLogoUrl(chainId: number): Promise<string | undefined> {
-    const chainNames = await this.getDefillamaEvmChainNames()
+  _getEvmChainLogoUrl(
+    chainId: number,
+    chainNames: Map<number, string>
+  ): string {
+    const unknownLogoUrl = `https://github.com/DefiLlama/chainlist/raw/main/public/unknown-logo.png`
     const chainName = chainNames.get(chainId)
     if (!chainName) {
-      return undefined
+      return unknownLogoUrl
     }
     return `https://defillama.com/chain-icons/rsz_${chainName}.jpg`
+  }
+
+  async getEvmChainLogoUrl(chainId: number): Promise<string | undefined> {
+    const chainNames = await this.getDefillamaEvmChainNames()
+    return this._getEvmChainLogoUrl(chainId, chainNames)
   }
 }
 
@@ -44,14 +52,11 @@ export function useEvmChainLogoUrl(chainId?: ChainId): string | undefined {
     [QueryService.CHAIN_LIST, 'getDefillamaEvmChainNames'],
     async () => CHAINLIST_API.getDefillamaEvmChainNames()
   )
+
   return useMemo(() => {
     if (typeof chainId !== 'number' || !chainNames) {
       return undefined
     }
-    const chainName = chainNames.get(chainId)
-    if (!chainName) {
-      return undefined
-    }
-    return `https://defillama.com/chain-icons/rsz_${chainName}.jpg`
+    return CHAINLIST_API._getEvmChainLogoUrl(chainId, chainNames)
   }, [chainId, chainNames])
 }

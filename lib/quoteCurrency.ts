@@ -31,6 +31,19 @@ export const QUOTE_CURRENCY_LABEL: Record<SupportedQuoteCurrency, string> = {
   RUB: 'Russian Ruble'
 }
 
+export const QUOTE_CURRENCY_SYMBOL: Record<SupportedQuoteCurrency, string> = {
+  BTC: 'Ƀ',
+  ETH: 'Ξ',
+  USD: '$',
+  EUR: '€',
+  JPY: 'JPY ¥',
+  CNY: '¥',
+  HKD: 'HKD',
+  SGD: 'SGD',
+  KRW: '₩',
+  RUB: '₽'
+}
+
 const quoteCurrencyKey = 'quoteCurrency'
 const quoteCurrencyAtom = atomWithStorage<SupportedQuoteCurrency>(
   quoteCurrencyKey,
@@ -41,6 +54,7 @@ export function useQuoteCurrency() {
   const [quoteCurrency, setQuoteCurrency] = useAtom(quoteCurrencyAtom)
   return {
     quoteCurrency,
+    quoteCurrencySymbol: QUOTE_CURRENCY_SYMBOL[quoteCurrency],
     setQuoteCurrency
   }
 }

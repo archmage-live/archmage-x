@@ -76,16 +76,13 @@ export const allowedTransactionKeys: Array<string> = [
 ]
 
 export class EvmPermissionedProvider {
-  network: INetwork
-  provider: EvmProvider
-  origin: string
   wallet?: IChainAccount
 
-  private constructor(network: INetwork, fromUrl: string) {
-    this.network = network
-    this.provider = new EvmProvider(network)
-    this.origin = new URL(fromUrl).origin
-  }
+  private constructor(
+    public network: INetwork,
+    public provider: EvmProvider,
+    public origin: string
+  ) {}
 
   static async from(fromUrl: string): Promise<EvmPermissionedProvider> {
     const activeNetwork = await getActiveNetwork()
@@ -94,11 +91,16 @@ export class EvmPermissionedProvider {
       throw ethErrors.provider.disconnected()
     }
 
-    const provider = new EvmPermissionedProvider(activeNetwork, fromUrl)
+    const provider = await EvmProvider.from(activeNetwork)
+    const permissionedProvider = new EvmPermissionedProvider(
+      activeNetwork,
+      provider,
+      new URL(fromUrl).origin
+    )
 
-    await provider.getWallet()
+    await permissionedProvider.getWallet()
 
-    return provider
+    return permissionedProvider
   }
 
   private async getWallet() {
@@ -527,8 +529,11 @@ export class EvmPermissionedProvider {
 
     if (
       chainId !==
-      (await new EvmProvider({ chainId, info } as INetwork).getNetwork())
-        .chainId
+      (
+        await (
+          await EvmProvider.from({ chainId, info } as INetwork)
+        ).getNetwork()
+      ).chainId
     ) {
       throw ethErrors.rpc.invalidParams('Mismatched chainId')
     }

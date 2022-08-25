@@ -14,6 +14,7 @@ import {
   useClipboard,
   useColorModeValue
 } from '@chakra-ui/react'
+import Decimal from 'decimal.js'
 import { BiQuestionMark } from 'react-icons/bi'
 import { FaGlobeAmericas } from 'react-icons/fa'
 import { FiCheckCircle, FiCopy } from 'react-icons/fi'
@@ -24,7 +25,7 @@ import {
   useConnectedSitesBySite,
   useConnectedSitesByWallet
 } from '~lib/services/connectedSiteService'
-import { useCryptoCompare } from '~lib/services/datasource/cryptocompare'
+import { useCryptoComparePrice } from '~lib/services/datasource/cryptocompare'
 import { useBalance } from '~lib/services/provider'
 import { useChainAccountByIndex } from '~lib/services/walletService'
 import { useCurrentTab } from '~lib/util'
@@ -58,7 +59,7 @@ export default function Assets() {
   const { hasCopied, onCopy } = useClipboard(account?.address ?? '')
 
   const balance = useBalance(network, account)
-  const price = useCryptoCompare(balance?.symbol)
+  const price = useCryptoComparePrice(balance?.symbol)
 
   const btnColorScheme = useColorModeValue('purple', undefined)
 
@@ -169,14 +170,18 @@ export default function Assets() {
               {price && (
                 <>
                   <Text fontSize="xl" fontWeight="medium" color="gray.500">
-                    {price.displayPrice}
+                    {price.currencySymbol}&nbsp;
+                    {formatNumber(
+                      new Decimal(price.price || 0).mul(balance?.amount || 0)
+                    )}
                   </Text>
                   {price.change24Hour !== undefined && (
                     <HStack
                       spacing={3}
                       fontWeight="medium"
-                      fontSize="lg"
+                      fontSize="md"
                       color={price.change24Hour >= 0 ? 'green.500' : 'red.500'}>
+                      <Text color="gray.500">{price.displayPrice}</Text>
                       <Text>
                         {price.change24Hour >= 0 && '+'}
                         {price.displayChange24Hour}

@@ -164,7 +164,7 @@ class ConsentService implements IConsentService {
     try {
       const network = await NETWORK_SERVICE.getNetwork(req.networkId)
       assert(network)
-      const provider = getProvider(network)
+      const provider = await getProvider(network)
       const accounts = await WALLET_SERVICE.getChainAccounts(
         Array.isArray(req.accountId) ? req.accountId : [req.accountId]
       )

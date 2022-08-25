@@ -69,7 +69,7 @@ function getJsonResult(result: {
   return result.result
 }
 
-class EtherScanApi extends EtherscanProvider {
+class CachedEtherscanProvider extends EtherscanProvider {
   async fetch(
     module: string,
     params: Record<string, any>,
@@ -113,7 +113,34 @@ class EtherScanApi extends EtherscanProvider {
   async getBlockCountdown() {
   }
 
-  async getTransactions() {}
+  async getTransactions(addressOrName: string, offset?: number, limit?: number) {
+    const params = {
+      action: "txlist",
+      address: (await this.resolveName(addressOrName)),
+      startblock: 0,
+      endblock: 99999999,
+      sort: "desc",
+      page: offset !== undefined ? offset + 1 : undefined,
+      offset: limit !== undefined ? limit : undefined
+    };
+
+    const result = await this.fetch("account", params);
+
+    return result.map((tx: any) => {
+      ["contractAddress", "to"].forEach(function(key) {
+        if (tx[key] == "") { delete tx[key]; }
+      });
+      if (tx.creates == null && tx.contractAddress != null) {
+        tx.creates = tx.contractAddress;
+      }
+      const item = this.formatter.transactionResponse(tx);
+      if (tx.timeStamp) { item.timestamp = parseInt(tx.timeStamp); }
+      return item;
+    });
+  }
+}
+
+class EtherScanApi {
 }
 
 export const ETHERSCAN_API = new EtherScanApi()

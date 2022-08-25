@@ -82,6 +82,31 @@ class UrlJsonRpcProvider extends BaseUrlJsonRpcProvider {
 }
 
 export class EvmProvider extends UrlJsonRpcProvider {
+  private static providers = new Map<number, EvmProvider>()
+
+  static async from(network: INetwork): Promise<EvmProvider> {
+    const info = network.info as EvmChainInfo
+    const cached = await EvmProvider.providers.get(+network.chainId)
+    if (cached) {
+      const net = (await cached.getNetwork()) as Network & {
+        rpcUrls: string[]
+      }
+      if (
+        net.name === info.name &&
+        net.ensAddress === info.ens?.registry &&
+        net.rpcUrls.length === info.rpc.length &&
+        net.rpcUrls.every((url, i) => url === info.rpc[i])
+      ) {
+        // all the same, so return cached
+        return cached
+      }
+    }
+
+    const provider = new EvmProvider(network)
+    EvmProvider.providers.set(+network.chainId, provider)
+    return provider
+  }
+
   constructor(network: INetwork) {
     const info = network.info as EvmChainInfo
     super({
@@ -99,13 +124,20 @@ export class EvmProvider extends UrlJsonRpcProvider {
     }
     return { url: rpcUrls[0], allowGzip: true } as ConnectionInfo
   }
+
+  async getBlockInterval(): Promise<number> {
+    const thisBlock = await this.getBlock('latest')
+    const lastBlock = await this.getBlock(thisBlock.number - 1)
+    return thisBlock.timestamp - lastBlock.timestamp // seconds
+  }
 }
 
 export class EvmProviderAdaptor implements ProviderAdaptor {
-  provider: EvmProvider
+  private constructor(public provider: EvmProvider) {}
 
-  constructor(network: INetwork) {
-    this.provider = new EvmProvider(network)
+  static async from(network: INetwork): Promise<EvmProviderAdaptor> {
+    const provider = await EvmProvider.from(network)
+    return new EvmProviderAdaptor(provider)
   }
 
   async getBalance(address: string): Promise<string> {

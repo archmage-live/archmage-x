@@ -19,6 +19,7 @@ import { PASSWORD } from '~lib/password'
 import { SERVICE_WORKER_CLIENT, SERVICE_WORKER_SERVER } from '~lib/rpc'
 import {
   ChainAccountIndex,
+  ChainId,
   DerivedIndex,
   IHdPath,
   Index,
@@ -96,8 +97,15 @@ export interface IWalletService {
   ensureChainAccounts(
     wallet: IWallet | number,
     networkKind: NetworkKind,
-    chainId: number | string
+    chainId: ChainId
   ): Promise<void>
+
+  ensureChainAccount(
+    wallet: IWallet,
+    index: Index,
+    networkKind: NetworkKind,
+    chainId: ChainId
+  ): Promise<IChainAccount>
 }
 
 // @ts-ignore
@@ -137,7 +145,7 @@ class WalletServicePartial implements IWalletService {
     } else {
       const wallet = await this.getWallet(id.masterId)
       assert(wallet)
-      return this.ensureChainAccount(
+      return this._ensureChainAccount(
         wallet,
         id.index,
         id.networkKind,
@@ -208,53 +216,24 @@ class WalletServicePartial implements IWalletService {
     await DB.derivedWallets.bulkAdd(subWallets)
   }
 
-  private _ensureLocks = new Map<number, Promise<unknown>>()
-
-  private async _ensureLock(id: number): Promise<Function> {
-    let promise = this._ensureLocks.get(id)
-    if (promise) {
-      await promise
-    }
-
-    let resolve: Function
-    promise = new Promise((r) => {
-      resolve = r
-    })
-    this._ensureLocks.set(id, promise)
-    return () => {
-      this._ensureLocks.delete(id)
-      resolve()
-    }
-  }
-
-  async ensureChainAccounts(
-    wallet: IWallet | number,
-    networkKind: NetworkKind,
-    chainId: number | string
-  ) {
-    const unlock = await this._ensureLock(
-      typeof wallet === 'number' ? wallet : wallet.id!
-    )
-    try {
-      // time-consuming
-      await ensureChainAccounts(wallet, networkKind, chainId)
-    } finally {
-      unlock()
-    }
-  }
-
-  async ensureChainAccount(
+  private async _ensureChainAccount(
     wallet: IWallet,
     index: Index,
     networkKind: NetworkKind,
-    chainId: number | string
+    chainId: ChainId
   ): Promise<IChainAccount> {
-    const unlock = await this._ensureLock(wallet.id!)
-    try {
-      return await ensureChainAccount(wallet, index, networkKind, chainId)
-    } finally {
-      unlock()
+    // fast path
+    const account = await getChainAccount(wallet, index, networkKind, chainId)
+    if (account) {
+      return account
     }
+    // slow path
+    return WALLET_SERVICE.ensureChainAccount(
+      wallet,
+      index,
+      networkKind,
+      chainId
+    )
   }
 }
 
@@ -385,6 +364,55 @@ class WalletService extends WalletServicePartial {
 
   async deleteWallet(id: number) {
     await DB.wallets.delete(id)
+  }
+
+  private _ensureLocks = new Map<number, Promise<unknown>>()
+
+  private async _ensureLock(id: number): Promise<Function> {
+    let promise = this._ensureLocks.get(id)
+    if (promise) {
+      await promise
+    }
+
+    let resolve: Function
+    promise = new Promise((r) => {
+      resolve = r
+    })
+    this._ensureLocks.set(id, promise)
+    return () => {
+      this._ensureLocks.delete(id)
+      resolve()
+    }
+  }
+
+  async ensureChainAccounts(
+    wallet: IWallet | number,
+    networkKind: NetworkKind,
+    chainId: ChainId
+  ) {
+    const unlock = await this._ensureLock(
+      typeof wallet === 'number' ? wallet : wallet.id!
+    )
+    try {
+      // time-consuming
+      await ensureChainAccounts(wallet, networkKind, chainId)
+    } finally {
+      unlock()
+    }
+  }
+
+  async ensureChainAccount(
+    wallet: IWallet,
+    index: Index,
+    networkKind: NetworkKind,
+    chainId: ChainId
+  ): Promise<IChainAccount> {
+    const unlock = await this._ensureLock(wallet.id!)
+    try {
+      return await ensureChainAccount(wallet, index, networkKind, chainId)
+    } finally {
+      unlock()
+    }
   }
 
   private async createHdPaths(id: number) {
@@ -686,19 +714,19 @@ async function ensureChainAccounts(
   )
 }
 
-async function ensureChainAccount(
+async function getChainAccount(
   wallet: IWallet,
   index: Index,
   networkKind: NetworkKind,
   chainId: number | string
-): Promise<IChainAccount> {
+): Promise<IChainAccount | undefined> {
   assert(
     index !== PSEUDO_INDEX
       ? wallet.type === WalletType.HD
       : wallet.type !== WalletType.HD
   )
 
-  const existing = await DB.chainAccounts
+  return DB.chainAccounts
     .where({
       masterId: wallet.id,
       index: index,
@@ -706,6 +734,15 @@ async function ensureChainAccount(
       chainId
     })
     .first()
+}
+
+async function ensureChainAccount(
+  wallet: IWallet,
+  index: Index,
+  networkKind: NetworkKind,
+  chainId: number | string
+): Promise<IChainAccount> {
+  const existing = await getChainAccount(wallet, index, networkKind, chainId)
   if (existing) {
     return existing
   }

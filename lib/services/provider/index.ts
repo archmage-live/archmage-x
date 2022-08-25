@@ -10,10 +10,10 @@ import { getNetworkInfo } from '~lib/services/network'
 import { EvmProviderAdaptor } from './evm'
 import { Balance, ProviderAdaptor } from './types'
 
-export function getProvider(network: INetwork): ProviderAdaptor {
+export async function getProvider(network: INetwork): Promise<ProviderAdaptor> {
   switch (network.kind) {
     case NetworkKind.EVM:
-      return new EvmProviderAdaptor(network)
+      return await EvmProviderAdaptor.from(network)
     case NetworkKind.COSM:
     case NetworkKind.SOL:
   }
@@ -27,7 +27,9 @@ export function useBalance(
   const { data: balance } = useQuery(
     [QueryService.PROVIDER, network, wallet],
     async () =>
-      network && wallet && getProvider(network).getBalance(wallet.address)
+      network &&
+      wallet &&
+      (await getProvider(network)).getBalance(wallet.address)
   )
 
   return useMemo(() => {
