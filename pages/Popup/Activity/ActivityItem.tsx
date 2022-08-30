@@ -1,16 +1,8 @@
-import {
-  Box,
-  Button,
-  Center,
-  HStack,
-  Icon,
-  Stack,
-  Text
-} from '@chakra-ui/react'
+import { Button, Center, HStack, Icon, Stack, Text } from '@chakra-ui/react'
 import Decimal from 'decimal.js'
 import { GrDeploy } from 'react-icons/gr'
 import { IoIosSend } from 'react-icons/io'
-import { MdCallReceived, MdSwapHoriz } from 'react-icons/md'
+import { MdAutoFixHigh, MdCallReceived } from 'react-icons/md'
 
 import { dayjs } from '~lib/dayjs'
 import { formatNumber } from '~lib/formatNumber'
@@ -41,7 +33,7 @@ export const ActivityItem = ({
       icon = MdCallReceived
       break
     case TransactionType.CallContract:
-      icon = MdSwapHoriz
+      icon = MdAutoFixHigh
       break
     case TransactionType.DeployContract:
       icon = GrDeploy
