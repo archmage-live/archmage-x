@@ -122,7 +122,8 @@
     "permissions": [
       "tabs",
       "scripting",
-      "alarms"
+      "alarms",
+      "notifications"
     ]
   },
   "peerDependencies": {

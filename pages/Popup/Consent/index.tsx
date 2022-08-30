@@ -21,7 +21,7 @@ export default function Consent() {
     const effect = async () => {
       const requests = await CONSENT_SERVICE.getRequests()
       if (!requests.length) {
-        navigate('/home', { replace: true })
+        navigate('/Assets', { replace: true })
       } else {
         setRequests(requests)
       }

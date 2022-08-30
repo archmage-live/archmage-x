@@ -1,7 +1,15 @@
+import { TransactionResponse } from '@ethersproject/abstract-provider'
+import { Logger } from '@ethersproject/logger'
+import { Network } from '@ethersproject/networks'
 import { EtherscanProvider } from '@ethersproject/providers'
+import { version } from '@ethersproject/providers/lib/_version'
 import { ConnectionInfo } from '@ethersproject/web'
 
 import { fetchJson, fetchJsonWithCache } from '~lib/fetch'
+import { EvmChainInfo } from '~lib/network/evm'
+import { INetwork } from '~lib/schema'
+
+const logger = new Logger(version)
 
 function getResult(result: {
   status?: number
@@ -69,7 +77,56 @@ function getJsonResult(result: {
   return result.result
 }
 
+export interface EtherscanTxResponse {
+  txreceipt_status: string
+  methodId: string
+  functionName: string
+}
+
 class CachedEtherscanProvider extends EtherscanProvider {
+  private static chainBaseUrls: Map<number, string> = new Map([
+    [1, 'https://api.etherscan.io'],
+    [3, 'https://api-ropsten.etherscan.io'],
+    [4, 'https://api-rinkeby.etherscan.io'],
+    [5, 'https://api-goerli.etherscan.io'],
+    [11155111, 'https://api-sepolia.etherscan.io'],
+    [10, 'https://api-optimistic.etherscan.io'],
+    [42161, 'https://api.arbiscan.io'],
+    [43114, 'https://api.snowtrace.io'],
+    [56, 'https://api.bscscan.com'],
+    [137, 'https://api.polygonscan.com/'],
+    [250, 'https://api.ftmscan.com/'],
+    [1284, 'https://api-moonbeam.moonscan.io'],
+    [1285, 'https://api-moonriver.moonscan.io'],
+    [25, 'https://api.cronoscan.com'],
+    [1313161554, 'https://api.aurorascan.dev'],
+    [42220, 'https://api.celoscan.io'],
+    [100, 'https://api.gnosisscan.io'],
+    [288, 'https://api.bobascan.com']
+  ])
+
+  constructor(network: INetwork) {
+    const info = network.info as EvmChainInfo
+    super({
+      name: info.name,
+      chainId: +network.chainId,
+      ensAddress: info.ens?.registry
+    } as Network)
+  }
+
+  getBaseUrl(): string {
+    const chainId = this.network.chainId
+    const baseUrl = CachedEtherscanProvider.chainBaseUrls.get(chainId)
+    if (baseUrl) {
+      return baseUrl
+    }
+    return logger.throwArgumentError(
+      'unsupported network',
+      'network',
+      this.network.name
+    )
+  }
+
   async fetch(
     module: string,
     params: Record<string, any>,
@@ -110,37 +167,51 @@ class CachedEtherscanProvider extends EtherscanProvider {
     }
   }
 
-  async getBlockCountdown() {
-  }
+  async getBlockCountdown() {}
 
-  async getTransactions(addressOrName: string, offset?: number, limit?: number) {
+  async getTransactions(
+    addressOrName: string,
+    startblock?: number
+  ): Promise<Array<[TransactionResponse, EtherscanTxResponse]>> {
     const params = {
-      action: "txlist",
-      address: (await this.resolveName(addressOrName)),
-      startblock: 0,
+      action: 'txlist',
+      address: await this.resolveName(addressOrName),
+      startblock,
       endblock: 99999999,
-      sort: "desc",
-      page: offset !== undefined ? offset + 1 : undefined,
-      offset: limit !== undefined ? limit : undefined
-    };
+      sort: 'desc'
+    }
 
-    const result = await this.fetch("account", params);
+    const result = await this.fetch('account', params)
 
     return result.map((tx: any) => {
-      ["contractAddress", "to"].forEach(function(key) {
-        if (tx[key] == "") { delete tx[key]; }
-      });
+      ;['contractAddress', 'to'].forEach(function (key) {
+        if (tx[key] == '') {
+          delete tx[key]
+        }
+      })
       if (tx.creates == null && tx.contractAddress != null) {
-        tx.creates = tx.contractAddress;
+        tx.creates = tx.contractAddress
       }
-      const item = this.formatter.transactionResponse(tx);
-      if (tx.timeStamp) { item.timestamp = parseInt(tx.timeStamp); }
-      return item;
-    });
+      const item = this.formatter.transactionResponse(tx)
+      if (tx.timeStamp) {
+        item.timestamp = parseInt(tx.timeStamp)
+      }
+      return [item, tx]
+    })
   }
 }
 
 class EtherScanApi {
+  getProvider(network: INetwork): CachedEtherscanProvider | undefined {
+    try {
+      return new CachedEtherscanProvider(network)
+    } catch (e: any) {
+      if (e.toString().includes('unsupported network')) {
+        return undefined
+      }
+      throw e
+    }
+  }
 }
 
 export const ETHERSCAN_API = new EtherScanApi()

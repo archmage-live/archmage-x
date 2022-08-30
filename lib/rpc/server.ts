@@ -153,12 +153,16 @@ export class RpcServer {
         })
       })
       .catch((err) => {
-        console.log(err)
-
         port.postMessage({
           id,
           error: err.toString()
         })
+
+        if (process.env.NODE_ENV === 'development') {
+          throw err
+        } else {
+          console.log(err)
+        }
       })
   }
 }

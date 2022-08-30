@@ -16,15 +16,11 @@ import {
 } from '@chakra-ui/react'
 import Decimal from 'decimal.js'
 import { BiQuestionMark } from 'react-icons/bi'
-import { FaGlobeAmericas } from 'react-icons/fa'
 import { FiCheckCircle, FiCopy } from 'react-icons/fi'
 import { MdMoreVert } from 'react-icons/md'
 
 import { formatNumber } from '~lib/formatNumber'
-import {
-  useConnectedSitesBySite,
-  useConnectedSitesByWallet
-} from '~lib/services/connectedSiteService'
+import { useConnectedSitesBySite } from '~lib/services/connectedSiteService'
 import { useCryptoComparePrice } from '~lib/services/datasource/cryptocompare'
 import { useBalance } from '~lib/services/provider'
 import { useChainAccountByIndex } from '~lib/services/walletService'

@@ -11,9 +11,8 @@ export interface ITransaction {
   chainId: ChainId
   address: string
   nonce: number
-  timestamp: number
   info: any
 }
 
 export const transactionSchemaV1 =
-  '++id, &[masterId+index+networkKind+chainId+address+nonce], [masterId+index+networkKind+chainId+address+timestamp]'
+  '++id, &[masterId+index+networkKind+chainId+address+nonce]'

@@ -1,11 +1,14 @@
 import { Container, Flex, useColorModeValue } from '@chakra-ui/react'
 import { atom, useAtom } from 'jotai'
 import { useState } from 'react'
-import { Route, Routes, useLocation } from 'react-router-dom'
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 
 import { NavTarget, Navbar } from '~components/Navbar'
+import ActivityPage from '~pages/Popup/Activity'
 import AssetsPage from '~pages/Popup/Assets'
 import ConsentPage from '~pages/Popup/Consent'
+import NFTsPage from '~pages/Popup/NFTs'
+import SettingsPage from '~pages/Popup/Settings'
 import UnlockPage from '~pages/Unlock'
 
 import { Toolbar } from './Toolbar'
@@ -45,7 +48,8 @@ export default function Popup() {
       w="100vw"
       h="100vh"
       bg={useColorModeValue('white', 'gray.800')}
-      justify="space-between">
+      justify="space-between"
+      position="relative">
       <Routes>
         <Route
           path="/"
@@ -64,7 +68,11 @@ export default function Popup() {
 
               <Container flex="1">
                 <Routes>
-                  <Route path="/home" element={<AssetsPage />} />
+                  <Route path="*" element={<Navigate to="Assets" replace />} />
+                  <Route path="/Assets" element={<AssetsPage />} />
+                  <Route path="/NFTs" element={<NFTsPage />} />
+                  <Route path="/Activity" element={<ActivityPage />} />
+                  <Route path="/Settings" element={<SettingsPage />} />
                 </Routes>
               </Container>
 
