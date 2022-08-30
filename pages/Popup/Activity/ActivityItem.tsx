@@ -21,17 +21,19 @@ import { shortenAddress } from '~lib/utils'
 
 export const ActivityItem = ({
   network,
-  tx
+  tx,
+  onClick
 }: {
   network: INetwork
   tx: ITransaction
+  onClick: () => void
 }) => {
-  const net = getNetworkInfo(network)
+  const netInfo = getNetworkInfo(network)
 
-  const info = getTransactionInfo(tx)
+  const txInfo = getTransactionInfo(tx)
 
   let icon
-  switch (info.type) {
+  switch (txInfo.type) {
     case TransactionType.Send:
       icon = IoIosSend
       break
@@ -46,10 +48,18 @@ export const ActivityItem = ({
       break
   }
 
-  const amount = new Decimal(info.amount).div(new Decimal(10).pow(net.decimals))
+  const amount = new Decimal(txInfo.amount).div(
+    new Decimal(10).pow(netInfo.decimals)
+  )
 
   return (
-    <Button size="lg" w="full" h="63px" px={4} justifyContent="start">
+    <Button
+      size="lg"
+      w="full"
+      h="63px"
+      px={4}
+      justifyContent="start"
+      onClick={onClick}>
       <HStack w="full" justify="space-between" fontWeight="normal">
         <Center
           w={8}
@@ -62,10 +72,12 @@ export const ActivityItem = ({
 
         <HStack w="calc(100% - 42px)" justify="space-between" align="start">
           <Stack align="start">
-            <Text fontWeight="medium">{info.name}</Text>
+            <Text fontWeight="medium">{txInfo.name}</Text>
             <HStack fontSize="sm" color="gray.500">
-              <Text>{dayjs(info.timestamp).fromNow()}</Text>
-              <Text>{info.origin || (info.to && shortenAddress(info.to))}</Text>
+              <Text>{dayjs(txInfo.timestamp).fromNow()}</Text>
+              <Text>
+                {txInfo.origin || (txInfo.to && shortenAddress(txInfo.to))}
+              </Text>
             </HStack>
           </Stack>
 
@@ -75,7 +87,7 @@ export const ActivityItem = ({
               &nbsp;
               {formatNumber(amount.toString())}
               &nbsp;
-              {net.currencySymbol}
+              {netInfo.currencySymbol}
             </Text>
           </Stack>
         </HStack>

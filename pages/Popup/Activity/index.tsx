@@ -1,12 +1,14 @@
-import { Box, Stack, Text } from '@chakra-ui/react'
+import { Box, Text, useDisclosure } from '@chakra-ui/react'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { useEffect, useRef, useState } from 'react'
 
+import { ITransaction } from '~lib/schema'
 import {
   useEvmTransactionCount,
   useEvmTransactions
 } from '~lib/services/transaction/evm'
 import { useChainAccountByIndex } from '~lib/services/walletService'
+import { ActivityDetailModal } from '~pages/Popup/Activity/ActivityDetail'
 import { ActivityItem } from '~pages/Popup/Activity/ActivityItem'
 
 import { useActiveWallet, useSelectedNetwork } from '../select'
@@ -40,8 +42,11 @@ export default function Activity() {
     estimateSize: () => 77
   })
 
+  const { isOpen, onClose, onOpen } = useDisclosure()
+  const [tx, setTx] = useState<ITransaction>()
+
   return (
-    <Stack>
+    <Box>
       <Box
         ref={parentRef}
         maxH={8 * 77 + 'px'}
@@ -75,12 +80,28 @@ export default function Activity() {
                 minH={77 + 'px'}
                 py={2}
                 ref={item.measureElement}>
-                <ActivityItem network={network!} tx={tx} />
+                <ActivityItem
+                  network={network!}
+                  tx={tx}
+                  onClick={() => {
+                    setTx(tx)
+                    onOpen()
+                  }}
+                />
               </Box>
             )
           })}
         </Box>
       </Box>
-    </Stack>
+
+      {network && tx && (
+        <ActivityDetailModal
+          network={network}
+          tx={tx}
+          isOpen={isOpen}
+          onClose={onClose}
+        />
+      )}
+    </Box>
   )
 }

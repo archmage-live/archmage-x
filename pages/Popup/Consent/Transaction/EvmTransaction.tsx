@@ -41,7 +41,7 @@ import {
 } from '~lib/services/provider/evm/permissioned'
 import { shortenAddress } from '~lib/utils'
 
-import { FromTo } from './FromTo'
+import { FromToWithCheck } from './FromTo'
 
 export const EvmTransaction = ({
   origin,
@@ -203,7 +203,7 @@ export const EvmTransaction = ({
         <Divider />
 
         <Box px={6}>
-          <FromTo
+          <FromToWithCheck
             subWallet={subWallet}
             from={txParams.from!}
             to={txParams.to || ''}
