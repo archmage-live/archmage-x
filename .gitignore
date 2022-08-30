@@ -42,3 +42,6 @@ keys.json
 
 # JetBrains
 .idea
+
+# VSCode
+.vscode

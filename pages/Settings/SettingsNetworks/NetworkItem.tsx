@@ -1,9 +1,10 @@
-import { Box, HStack, Icon, Stack, Text } from '@chakra-ui/react'
+import { Box, HStack, Icon, Image, Stack, Text } from '@chakra-ui/react'
 import Avvvatars from 'avvvatars-react'
 import { useEffect, useState } from 'react'
 import { DraggableProvidedDragHandleProps } from 'react-beautiful-dnd'
 import { MdDragIndicator } from 'react-icons/md'
 
+import { useEvmChainLogoUrl } from '~lib/services/datasource/chainlist'
 import { NetworkInfo } from '~lib/services/network'
 
 export const NetworkItem = ({
@@ -36,6 +37,8 @@ export const NetworkItem = ({
     }
   }, [infoVisible])
 
+  const networkLogoUrl = useEvmChainLogoUrl(info.chainId)
+
   return (
     <Box py={1}>
       <HStack
@@ -52,10 +55,21 @@ export const NetworkItem = ({
         onClick={onClick}
         data-group>
         <HStack spacing={4}>
-          <Avvvatars
-            value={info.name}
-            displayValue={info.name ? info.name[0] : undefined}
-          />
+          {networkLogoUrl ? (
+            <Image
+              borderRadius="full"
+              boxSize="32px"
+              fit="cover"
+              src={networkLogoUrl}
+              fallback={<></>}
+              alt="Currency Logo"
+            />
+          ) : (
+            <Avvvatars
+              value={info.name}
+              displayValue={info.name ? info.name[0] : undefined}
+            />
+          )}
           <Text fontSize="lg" noOfLines={1}>
             {info.name}
           </Text>

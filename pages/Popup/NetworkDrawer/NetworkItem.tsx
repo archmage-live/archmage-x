@@ -1,8 +1,9 @@
 import { CheckIcon } from '@chakra-ui/icons'
-import { Button, HStack, Text } from '@chakra-ui/react'
+import { Button, HStack, Image, Text } from '@chakra-ui/react'
 import Avvvatars from 'avvvatars-react'
 
 import { INetwork } from '~lib/schema/network'
+import { useEvmChainLogoUrl } from '~lib/services/datasource/chainlist'
 import { NetworkInfo } from '~lib/services/network'
 
 interface NetworkItemProps {
@@ -18,6 +19,8 @@ export const NetworkItem = ({
   selected,
   onSelected
 }: NetworkItemProps) => {
+  const networkLogoUrl = useEvmChainLogoUrl(network.chainId)
+
   return (
     <Button
       key={network.id}
@@ -29,10 +32,21 @@ export const NetworkItem = ({
       justifyContent="start"
       onClick={onSelected}
       leftIcon={
-        <Avvvatars
-          value={info.name}
-          displayValue={info.name ? info.name[0] : undefined}
-        />
+        networkLogoUrl ? (
+          <Image
+            borderRadius="full"
+            boxSize="32px"
+            fit="cover"
+            src={networkLogoUrl}
+            fallback={<></>}
+            alt="Currency Logo"
+          />
+        ) : (
+          <Avvvatars
+            value={info.name}
+            displayValue={info.name ? info.name[0] : undefined}
+          />
+        )
       }>
       <HStack w="calc(100% - 39px)" justify="space-between">
         <Text fontSize="lg" noOfLines={1} display="block">
