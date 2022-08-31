@@ -22,10 +22,10 @@ class IpfsGatewayApi {
   async pickBestGateways(): Promise<string[]> {
     // TODO: validate and pick
     return [
-      'https://ipfs.io/ipfs/:hash',
-      'https://dweb.link/ipfs/:hash',
       'https://cloudflare-ipfs.com/ipfs/:hash',
-      'https://nftstorage.link/ipfs/:hash'
+      'https://nftstorage.link/ipfs/:hash',
+      'https://ipfs.io/ipfs/:hash',
+      'https://dweb.link/ipfs/:hash'
     ]
   }
 

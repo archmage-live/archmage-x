@@ -4,6 +4,7 @@
 import { toUtf8String } from '@ethersproject/strings'
 import { TokenList, schema } from '@uniswap/token-lists'
 import Ajv from 'ajv'
+import addFormats from 'ajv-formats'
 import fs from 'fs'
 
 import { fetchDataWithCache, fetchJsonWithCache } from '~lib/fetch'
@@ -35,6 +36,7 @@ class TokenListsApi {
     const tokenLists = await this._getTokenLists()
 
     const ajv = new Ajv()
+    addFormats(ajv)
 
     const result = new Map<string, TokenList>()
     for (const [name, url] of tokenLists) {
@@ -60,7 +62,12 @@ class TokenListsApi {
       const valid = validate(tokenList)
       if (!valid) {
         console.error(
-          `validate token list from ${name}(${url}): ${validate.errors}`
+          `validate token list from ${name}(${url}): ${validate.errors?.map(
+            (error) => {
+              delete error.data
+              return error
+            }
+          )}`
         )
         continue
       }

@@ -64,6 +64,7 @@ specifiers:
   '@zxcvbn-ts/language-common': ^2.0.1
   '@zxcvbn-ts/language-en': ^2.0.1
   ajv: ^8.11.0
+  ajv-formats: ^2.1.1
   aptos: ^1.2.0
   assert: ^2.0.0
   avvvatars-react: ^0.4.2
@@ -151,6 +152,7 @@ dependencies:
   '@zxcvbn-ts/language-common': 2.0.1
   '@zxcvbn-ts/language-en': 2.0.1
   ajv: 8.11.0
+  ajv-formats: 2.1.1
   aptos: 1.2.0
   assert: 2.0.0
   avvvatars-react: 0.4.2_vt6aeitzauirmcdhimiad2yjxy
@@ -4686,6 +4688,15 @@ packages:
 
   /aes-js/3.0.0:
     resolution: {integrity: sha512-H7wUZRn8WpTq9jocdxQ2c8x2sKo9ZVmzfRE13GiNJXfp7NcKYEdvl3vspKjXox6RIG2VtaRe4JFvxG4rqp2Zuw==}
+    dev: false
+
+  /ajv-formats/2.1.1:
+    resolution: {integrity: sha512-Wx0Kx52hxE7C18hkMEggYlEifqWZtYaRgouJor+WMdPnQyEK13vgEWyVNup7SoeeoLMsr4kf5h6dOW11I15MUA==}
+    peerDependenciesMeta:
+      ajv:
+        optional: true
+    dependencies:
+      ajv: 8.11.0
     dev: false
 
   /ajv/6.12.6:
