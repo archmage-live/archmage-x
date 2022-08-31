@@ -22,6 +22,7 @@ import { useEffect, useMemo, useState } from 'react'
 import browser from 'webextension-polyfill'
 
 import { useTransparentize } from '~hooks/useColor'
+import { dayjs } from '~lib/dayjs'
 import { formatNumber } from '~lib/formatNumber'
 import { EvmChainInfo } from '~lib/network/evm'
 import { INetwork, ITransaction } from '~lib/schema'
@@ -171,6 +172,14 @@ export const EvmActivityDetail = ({
       </HStack>
 
       <HStack justify="space-between">
+        <Text>Timestamp</Text>
+        <Stack align="end" fontSize="sm">
+          <Text>{dayjs(txInfo.timestamp).fromNow()}</Text>
+          <Text>{dayjs(txInfo.timestamp).toString()}</Text>
+        </Stack>
+      </HStack>
+
+      <HStack justify="space-between">
         <Text>From</Text>
         <Text>To</Text>
       </HStack>
@@ -179,72 +188,74 @@ export const EvmActivityDetail = ({
 
       <Divider />
 
-      <HStack justify="space-between">
-        <Text>Nonce</Text>
-        <Text>{info.tx.nonce}</Text>
-      </HStack>
-
-      <HStack justify="space-between">
-        <Text>Amount</Text>
-        <Text fontWeight="medium">
-          {formatNumber(amount.toString(), undefined, 9)}
-          &nbsp;
-          {netInfo.currencySymbol}
-        </Text>
-      </HStack>
-
-      <HStack justify="space-between">
-        <Text>Gas Limit (Units)</Text>
-        <Text>{info.tx.gasLimit.toNumber()}</Text>
-      </HStack>
-
-      {receipt && (
+      <Stack spacing={2}>
         <HStack justify="space-between">
-          <Text>Gas Used (Units)</Text>
-          <Text>{receipt.gasUsed.toNumber()}</Text>
+          <Text>Nonce</Text>
+          <Text>{info.tx.nonce}</Text>
         </HStack>
-      )}
 
-      {receipt && (
         <HStack justify="space-between">
-          <Text>Gas Price (Gwei)</Text>
-          <Text>
-            {ethers.utils.formatUnits(receipt.effectiveGasPrice, 'gwei')}
+          <Text>Amount</Text>
+          <Text fontWeight="medium">
+            {formatNumber(amount.toString(), undefined, 9)}
+            &nbsp;
+            {netInfo.currencySymbol}
           </Text>
         </HStack>
-      )}
 
-      {receipt && baseFeePerGas && (
         <HStack justify="space-between">
-          <Text>Base Fee (Gwei)</Text>
-          <Text>{ethers.utils.formatUnits(baseFeePerGas, 'gwei')}</Text>
+          <Text>Gas Limit (Units)</Text>
+          <Text>{info.tx.gasLimit.toNumber()}</Text>
         </HStack>
-      )}
 
-      {receipt && baseFeePerGas && (
+        {receipt && (
+          <HStack justify="space-between">
+            <Text>Gas Used (Units)</Text>
+            <Text>{receipt.gasUsed.toNumber()}</Text>
+          </HStack>
+        )}
+
+        {receipt && (
+          <HStack justify="space-between">
+            <Text>Gas Price (Gwei)</Text>
+            <Text>
+              {ethers.utils.formatUnits(receipt.effectiveGasPrice, 'gwei')}
+            </Text>
+          </HStack>
+        )}
+
+        {receipt && baseFeePerGas && (
+          <HStack justify="space-between">
+            <Text>Base Fee (Gwei)</Text>
+            <Text>{ethers.utils.formatUnits(baseFeePerGas, 'gwei')}</Text>
+          </HStack>
+        )}
+
+        {receipt && baseFeePerGas && (
+          <HStack justify="space-between">
+            <Text>Priority Fee (Gwei)</Text>
+            <Text>{ethers.utils.formatUnits(priorityFeePerGas, 'gwei')}</Text>
+          </HStack>
+        )}
+
         <HStack justify="space-between">
-          <Text>Priority Fee (Gwei)</Text>
-          <Text>{ethers.utils.formatUnits(priorityFeePerGas, 'gwei')}</Text>
+          <Text>Gas Fee</Text>
+          <Text>
+            {formatNumber(fee.toString(), undefined, 9)}
+            &nbsp;
+            {netInfo.currencySymbol}
+          </Text>
         </HStack>
-      )}
 
-      <HStack justify="space-between">
-        <Text>Gas Fee</Text>
-        <Text>
-          {formatNumber(fee.toString(), undefined, 9)}
-          &nbsp;
-          {netInfo.currencySymbol}
-        </Text>
-      </HStack>
-
-      <HStack justify="space-between">
-        <Text>Total</Text>
-        <Text fontWeight="medium">
-          {formatNumber(total.toString(), undefined, 9)}
-          &nbsp;
-          {netInfo.currencySymbol}
-        </Text>
-      </HStack>
+        <HStack justify="space-between">
+          <Text>Total</Text>
+          <Text fontWeight="medium">
+            {formatNumber(total.toString(), undefined, 9)}
+            &nbsp;
+            {netInfo.currencySymbol}
+          </Text>
+        </HStack>
+      </Stack>
     </Stack>
   )
 }

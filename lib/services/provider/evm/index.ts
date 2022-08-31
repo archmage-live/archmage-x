@@ -9,9 +9,12 @@ import {
 } from '@ethersproject/providers'
 import { version } from '@ethersproject/providers/lib/_version'
 import { ConnectionInfo } from '@ethersproject/web'
+import assert from 'assert'
 
+import { NetworkKind } from '~lib/network'
 import { EvmChainInfo } from '~lib/network/evm'
 import { IChainAccount, INetwork } from '~lib/schema'
+import { NETWORK_SERVICE } from '~lib/services/network'
 import { ProviderAdaptor } from '~lib/services/provider/types'
 import { getSigningWallet } from '~lib/wallet'
 
@@ -84,7 +87,18 @@ class UrlJsonRpcProvider extends BaseUrlJsonRpcProvider {
 export class EvmProvider extends UrlJsonRpcProvider {
   private static providers = new Map<number, EvmProvider>()
 
-  static async from(network: INetwork): Promise<EvmProvider> {
+  static async from(
+    network: INetwork | number | 'Ethereum Mainnet'
+  ): Promise<EvmProvider> {
+    if (typeof network !== 'object') {
+      const net = await NETWORK_SERVICE.getNetwork({
+        kind: NetworkKind.EVM,
+        chainId: network === 'Ethereum Mainnet' ? 1 : network
+      })
+      assert(net)
+      network = net
+    }
+
     const info = network.info as EvmChainInfo
     const cached = await EvmProvider.providers.get(+network.chainId)
     if (cached) {

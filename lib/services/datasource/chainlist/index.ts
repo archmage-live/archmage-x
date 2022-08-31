@@ -1,5 +1,6 @@
 import { toUtf8String } from '@ethersproject/strings'
 import { useQuery } from '@tanstack/react-query'
+import * as fs from 'fs'
 import { useMemo } from 'react'
 
 import { fetchDataWithCache } from '~lib/fetch'
@@ -8,10 +9,16 @@ import { ChainId } from '~lib/schema'
 
 class ChainListApi {
   async getDefillamaEvmChainNames(): Promise<Map<number, string>> {
-    const data = await fetchDataWithCache(
-      'https://github.com/DefiLlama/chainlist/raw/main/constants/chainIds.js',
-      1000 * 3600 * 24 * 7
-    )
+    let data
+    try {
+      data = await fetchDataWithCache(
+        'https://github.com/DefiLlama/chainlist/raw/main/constants/chainIds.js',
+        1000 * 3600 * 24 * 7
+      )
+    } catch {
+      data = fs.readFileSync(__dirname + '/chainIds.js')
+    }
+
     try {
       let str = toUtf8String(data)
       str = str.slice(str.indexOf('{') - 1, str.indexOf('}'))

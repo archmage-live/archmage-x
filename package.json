@@ -48,9 +48,11 @@
     "@tanstack/react-query": "^4.0.10",
     "@tanstack/react-query-persist-client": "^4.0.10",
     "@tanstack/react-virtual": "3.0.0-beta.18",
+    "@uniswap/token-lists": "1.0.0-beta.30",
     "@zxcvbn-ts/core": "^2.0.3",
     "@zxcvbn-ts/language-common": "^2.0.1",
     "@zxcvbn-ts/language-en": "^2.0.1",
+    "ajv": "^8.11.0",
     "aptos": "^1.2.0",
     "assert": "^2.0.0",
     "avvvatars-react": "^0.4.2",
@@ -124,6 +126,14 @@
       "scripting",
       "alarms",
       "notifications"
+    ],
+    "web_accessible_resources": [
+      {
+        "resources": [],
+        "matches": [
+          "<all_urls>"
+        ]
+      }
     ]
   },
   "peerDependencies": {

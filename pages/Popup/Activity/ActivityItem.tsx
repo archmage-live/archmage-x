@@ -1,4 +1,12 @@
-import { Button, Center, HStack, Icon, Stack, Text } from '@chakra-ui/react'
+import {
+  Button,
+  Center,
+  HStack,
+  Icon,
+  Stack,
+  Text,
+  Tooltip
+} from '@chakra-ui/react'
 import Decimal from 'decimal.js'
 import { GrDeploy } from 'react-icons/gr'
 import { IoIosSend } from 'react-icons/io'
@@ -66,7 +74,9 @@ export const ActivityItem = ({
           <Stack align="start">
             <Text fontWeight="medium">{txInfo.name}</Text>
             <HStack fontSize="sm" color="gray.500">
-              <Text>{dayjs(txInfo.timestamp).fromNow()}</Text>
+              <Tooltip label={dayjs(txInfo.timestamp).toString()}>
+                <Text>{dayjs(txInfo.timestamp).fromNow()}</Text>
+              </Tooltip>
               <Text>
                 {txInfo.origin || (txInfo.to && shortenAddress(txInfo.to))}
               </Text>
