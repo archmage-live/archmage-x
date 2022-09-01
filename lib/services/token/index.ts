@@ -1,10 +1,23 @@
 import { DB } from '~lib/db'
+import { ENV } from '~lib/env'
 import { NetworkKind } from '~lib/network'
 import { IChainAccount, IToken, TokenVisibility } from '~lib/schema'
+
+import { EvmTokenService } from './evm'
 
 interface ITokenService {}
 
 class TokenService {
+  constructor() {
+    if (ENV.inServiceWorker) {
+      this.init()
+    }
+  }
+
+  private async init() {
+    await EvmTokenService.init()
+  }
+
   async getTokenLists(networkKind: NetworkKind) {
     return DB.tokenLists.where('networkKind').equals(networkKind).toArray()
   }
@@ -56,3 +69,5 @@ class TokenService {
     })
   }
 }
+
+const TOKEN_SERVICE = new TokenService()

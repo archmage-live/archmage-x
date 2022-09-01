@@ -9,4 +9,4 @@ export interface ITokenList {
   tokens: any[]
 }
 
-export const tokenListSchemaV1 = '++id, &[networkKind,url]'
+export const tokenListSchemaV1 = '++id, &[networkKind+url]'

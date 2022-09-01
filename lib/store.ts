@@ -15,6 +15,7 @@ export enum StoreKey {
   KEYSTORE_PREFIX = 'keystore',
   SELECTED_NETWORK = 'selectedNetwork',
   SELECTED_WALLET = 'selectedWallet',
+  TOKEN_LISTS = 'tokenLists',
   CONSENT_REQUESTS = 'consentRequests'
 }
 
