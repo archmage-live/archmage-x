@@ -13,6 +13,7 @@ import { IoMdSettings } from 'react-icons/io'
 import { useNavigate } from 'react-router-dom'
 
 import { ActiveWalletId } from '~lib/active'
+import { PASSWORD_SERVICE } from '~lib/services/passwordService'
 import { WALLET_SERVICE, useWallets } from '~lib/services/walletService'
 import { createTab } from '~lib/util'
 import { WalletList } from '~pages/Popup/WalletDrawer/WalletList'
@@ -49,7 +50,7 @@ export const WalletDrawer = ({ onClose }: { onClose(): void }) => {
   )
 
   const lock = async () => {
-    await WALLET_SERVICE.lock()
+    await PASSWORD_SERVICE.lock()
     navigate('/', { replace: true })
   }
 

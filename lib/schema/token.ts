@@ -1,6 +1,6 @@
 import { NetworkKind } from '~lib/network'
-import { Index } from '~lib/schema/subWallet'
 import { ChainId } from '~lib/schema/network'
+import { Index } from '~lib/schema/subWallet'
 
 export interface IToken {
   id: number

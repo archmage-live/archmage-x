@@ -6,8 +6,8 @@ import Ajv from 'ajv'
 import addFormats from 'ajv-formats'
 
 import { fetchDataWithCache, fetchJsonWithCache } from '~lib/fetch'
-import { DEFAULT_EVM_TOKEN_LIST_URLS } from '~lib/services/datasource/ tokenlists/defaultTokenLists'
 import { IPFS_GATEWAY_API } from '~lib/services/datasource/ipfsGateway'
+import { DEFAULT_EVM_TOKEN_LIST_URLS } from '~lib/services/datasource/tokenlists/defaultTokenLists'
 import { EvmProvider } from '~lib/services/provider/evm'
 
 class TokenListsApi {

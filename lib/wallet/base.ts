@@ -28,6 +28,7 @@ export function hasWalletKeystore(type: WalletType) {
     case WalletType.HD:
     // pass through
     case WalletType.PRIVATE_KEY:
+    // pass through
     case WalletType.PRIVATE_KEY_GROUP:
       return true
     default:

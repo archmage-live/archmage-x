@@ -15,7 +15,7 @@ import { useEffect, useState } from 'react'
 import { HdPathInput } from '~components/HdPathInput'
 import { SaveInput } from '~components/SaveInput'
 import { DB } from '~lib/db'
-import { ISubWallet, INetwork, IWallet } from '~lib/schema'
+import { INetwork, ISubWallet, IWallet } from '~lib/schema'
 import { useChainAccountByIndex, useHdPaths } from '~lib/services/walletService'
 
 interface SubWalletEditProps {

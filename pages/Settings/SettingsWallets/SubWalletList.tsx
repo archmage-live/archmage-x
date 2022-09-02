@@ -11,7 +11,7 @@ import {
 } from 'react-beautiful-dnd'
 import { useDebounce } from 'react-use'
 
-import { IChainAccount, ISubWallet, INetwork } from '~lib/schema'
+import { IChainAccount, INetwork, ISubWallet } from '~lib/schema'
 import {
   reorderSubWallets,
   useChainAccounts,

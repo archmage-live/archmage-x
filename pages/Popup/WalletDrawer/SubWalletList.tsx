@@ -3,7 +3,7 @@ import { useVirtualizer } from '@tanstack/react-virtual'
 import { useEffect, useRef, useState } from 'react'
 
 import { ActiveWalletId } from '~lib/active'
-import { ISubWallet, INetwork } from '~lib/schema'
+import { INetwork, ISubWallet } from '~lib/schema'
 import { IChainAccount } from '~lib/schema/chainAccount'
 
 import { SubWalletItem } from './SubWalletItem'

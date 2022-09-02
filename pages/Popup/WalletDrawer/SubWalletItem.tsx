@@ -3,7 +3,7 @@ import { Box, Button, Checkbox, HStack, Stack, Text } from '@chakra-ui/react'
 
 import { AccountAvatar } from '~components/AccountAvatar'
 import { formatNumber } from '~lib/formatNumber'
-import { IChainAccount, ISubWallet, INetwork } from '~lib/schema'
+import { IChainAccount, INetwork, ISubWallet } from '~lib/schema'
 import { useBalance } from '~lib/services/provider'
 import { shortenAddress } from '~lib/utils'
 

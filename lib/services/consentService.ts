@@ -11,6 +11,7 @@ import { getProvider } from '~lib/services/provider'
 import { WALLET_SERVICE } from '~lib/services/walletService'
 import { SESSION_STORE, StoreKey, useSessionStorage } from '~lib/store'
 import { createWindow } from '~lib/util'
+import { hasWalletKeystore } from '~lib/wallet'
 
 export enum Permission {
   ACCOUNT = 'account'
@@ -108,6 +109,25 @@ class ConsentService implements IConsentService {
     ctx: Context,
     request: Omit<ConsentRequest, 'id'>
   ): Promise<any> {
+    // check wallet keystore ability for signing request
+    switch (request.type) {
+      case ConsentType.TRANSACTION:
+      // pass through
+      case ConsentType.SIGN_MSG:
+      // pass through
+      case ConsentType.SIGN_TYPED_DATA: {
+        assert(!Array.isArray(request.accountId))
+        const account = await WALLET_SERVICE.getChainAccount(request.accountId)
+        assert(account)
+        const wallet = await WALLET_SERVICE.getWallet(account.masterId)
+        assert(wallet)
+        if (!hasWalletKeystore(wallet.type)) {
+          throw ethErrors.provider.userRejectedRequest()
+        }
+        break
+      }
+    }
+
     await this.initPromise
 
     const req = {

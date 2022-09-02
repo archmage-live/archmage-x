@@ -117,8 +117,8 @@ export class EvmPermissionedProvider {
         // prefer current active wallet
         conn = connections.find(
           (conn) =>
-            conn.masterId === activeWallet.walletInfo.masterId &&
-            conn.index === activeWallet.walletInfo.index
+            conn.masterId === activeWallet.chainAccount.masterId &&
+            conn.index === activeWallet.chainAccount.index
         )
       }
       if (!conn) {

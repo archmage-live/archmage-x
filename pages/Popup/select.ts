@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 
 import { ActiveWalletId } from '~lib/active'
 import { DB } from '~lib/db'
-import { ISubWallet, INetwork, IWallet } from '~lib/schema'
+import { INetwork, ISubWallet, IWallet } from '~lib/schema'
 import {
   WALLET_SERVICE,
   useSubWallet,

@@ -4,29 +4,31 @@ import { Config, animals, uniqueNamesGenerator } from 'unique-names-generator'
 import {
   IAddressBook,
   IChainAccount,
+  IChainAccountAux,
   IConnectedSite,
-  ISubWallet,
   IFetchCache,
   IHdPath,
   INetwork,
   IQueryCache,
+  ISubWallet,
   IToken,
   ITokenList,
   ITransaction,
   IWallet,
   addressBookSchemaV1,
+  chainAccountAuxSchemaV1,
   chainAccountSchemaV1,
   connectedSiteSchemaV1,
-  subWalletSchemaV1,
   fetchCacheSchemaV1,
   hdPathSchemaV1,
   networkSchemaV1,
   queryCacheSchemaV1,
+  subWalletSchemaV1,
   tokenListSchemaV1,
   tokenSchemaV1,
   transactionSchemaV1,
-  walletSchemaV1, chainAccountAuxSchemaV1, IChainAccountAux
-} from "~lib/schema";
+  walletSchemaV1
+} from '~lib/schema'
 
 export class Database extends Dexie {
   wallets!: Dexie.Table<IWallet, number>

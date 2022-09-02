@@ -15,7 +15,7 @@ import { ReactNode, useEffect, useState } from 'react'
 import { useWizard } from 'react-use-wizard'
 
 import { AlertBox } from '~components/AlertBox'
-import { WALLET_SERVICE } from '~lib/services/walletService'
+import { PASSWORD_SERVICE } from '~lib/services/passwordService'
 
 zxcvbnOptions.setOptions({
   translations: zxcvbnEn.translations,
@@ -79,8 +79,8 @@ export const StepCreatePassword = () => {
       setAlert("Passwords don't match")
       return
     }
-    await WALLET_SERVICE.createPassword(password)
-    assert(await WALLET_SERVICE.checkPassword(password))
+    await PASSWORD_SERVICE.createPassword(password)
+    assert(await PASSWORD_SERVICE.checkPassword(password))
     nextStep()
   }
 

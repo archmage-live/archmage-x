@@ -13,7 +13,7 @@ import { Wizard, useWizard } from 'react-use-wizard'
 
 import { AlertBox } from '~components/AlertBox'
 import { usePassword } from '~lib/password'
-import { WALLET_SERVICE } from '~lib/services/walletService'
+import { PASSWORD_SERVICE } from '~lib/services/passwordService'
 import { createTab } from '~lib/util'
 
 interface PasswordActionProps extends BoxProps {
@@ -69,7 +69,7 @@ const ValidatePassword = ({ onClose }: { onClose(): void }) => {
   const onCheck = useCallback(
     (event: any) => {
       event.preventDefault()
-      WALLET_SERVICE.checkPassword(password).then((ok) => {
+      PASSWORD_SERVICE.checkPassword(password).then((ok) => {
         if (!ok) {
           setAlert('Wrong password')
         } else {

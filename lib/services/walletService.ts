@@ -10,12 +10,10 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { ethers } from 'ethers'
 import PQueue from 'p-queue'
 
-import { setUnlockTime } from '~hooks/useLockTime'
 import { DB, getNextField } from '~lib/db'
 import { ENV } from '~lib/env'
 import { KEYSTORE } from '~lib/keystore'
 import { NetworkKind } from '~lib/network'
-import { PASSWORD } from '~lib/password'
 import { SERVICE_WORKER_CLIENT, SERVICE_WORKER_SERVER } from '~lib/rpc'
 import {
   ChainAccountIndex,
@@ -31,9 +29,12 @@ import { IChainAccount } from '~lib/schema/chainAccount'
 import { ISubWallet, getDefaultSubName } from '~lib/schema/subWallet'
 import { IWallet } from '~lib/schema/wallet'
 import {
+  SigningWallet,
   WalletType,
   getDefaultPathPrefix,
-  getMasterSigningWallet
+  getMasterSigningWallet,
+  hasWalletKeystore,
+  isWalletGroup
 } from '~lib/wallet'
 
 export type NewWalletOpts = {
@@ -59,18 +60,6 @@ function checkAddresses(
 }
 
 export interface IWalletService {
-  createPassword(password: string): Promise<void>
-
-  checkPassword(password: string): Promise<boolean>
-
-  existsPassword(): Promise<boolean>
-
-  isUnlocked(): Promise<boolean>
-
-  unlock(password: string): Promise<boolean>
-
-  lock(): Promise<void>
-
   getKeystore(id: number): Promise<KeystoreAccount | undefined>
 
   generateMnemonic(opts?: { locale?: string }): Promise<string>
@@ -119,7 +108,7 @@ export interface IWalletService {
     index: Index,
     networkKind: NetworkKind,
     chainId: ChainId
-  ): Promise<IChainAccount>
+  ): Promise<IChainAccount | undefined>
 }
 
 // @ts-ignore
@@ -225,7 +214,7 @@ class WalletServicePartial implements IWalletService {
         name: getDefaultSubName(nextIndex + n)
       } as ISubWallet
     })
-    const ids = await DB.subWallets.bulkAdd(subWallets, {allKeys: true})
+    const ids = await DB.subWallets.bulkAdd(subWallets, { allKeys: true })
     assert(ids.length === subWallets.length)
     return subWallets.map((w, i) => {
       w.id = ids[i]
@@ -256,7 +245,7 @@ class WalletServicePartial implements IWalletService {
     index: Index,
     networkKind: NetworkKind,
     chainId: ChainId
-  ): Promise<IChainAccount> {
+  ): Promise<IChainAccount | undefined> {
     // fast path
     const account = await getChainAccount(wallet, index, networkKind, chainId)
     if (account) {
@@ -273,39 +262,6 @@ class WalletServicePartial implements IWalletService {
 }
 
 class WalletService extends WalletServicePartial {
-  async createPassword(password: string) {
-    await PASSWORD.create(password)
-    await setUnlockTime()
-  }
-
-  async checkPassword(password: string): Promise<boolean> {
-    return PASSWORD.check(password)
-  }
-
-  async existsPassword() {
-    return PASSWORD.exists()
-  }
-
-  async isUnlocked() {
-    return PASSWORD.isUnlocked()
-  }
-
-  async unlock(password: string) {
-    const unlocked = await PASSWORD.unlock(password)
-
-    if (unlocked) {
-      await setUnlockTime()
-      KEYSTORE.unlock()
-    }
-
-    return unlocked
-  }
-
-  async lock() {
-    await PASSWORD.lock()
-    await KEYSTORE.lock()
-  }
-
   async getKeystore(id: number): Promise<KeystoreAccount | undefined> {
     return KEYSTORE.get(id)
   }
@@ -422,14 +378,27 @@ class WalletService extends WalletServicePartial {
               index: PSEUDO_INDEX,
               name: ''
             } as ISubWallet)
-            await this.createChainAccountsAux(wallet.id, [PSEUDO_INDEX], networkKind, addresses)
+            await this.createChainAccountsAux(
+              wallet.id,
+              [PSEUDO_INDEX],
+              networkKind,
+              addresses
+            )
             break
           }
           case WalletType.WATCH_GROUP: {
             assert(networkKind)
             assert(addresses && addresses.length >= 1)
-            const subWallets = await this.deriveSubWallets(wallet.id, addresses.length)
-            await this.createChainAccountsAux(wallet.id, subWallets.map(w => w.index), networkKind, addresses)
+            const subWallets = await this.deriveSubWallets(
+              wallet.id,
+              addresses.length
+            )
+            await this.createChainAccountsAux(
+              wallet.id,
+              subWallets.map((w) => w.index),
+              networkKind,
+              addresses
+            )
             break
           }
           default:
@@ -481,6 +450,9 @@ class WalletService extends WalletServicePartial {
       typeof wallet === 'number' ? wallet : wallet.id
     )
     try {
+      if (typeof wallet === 'number') {
+        wallet = (await DB.wallets.get(wallet))!
+      }
       // time-consuming
       await ensureChainAccounts(wallet, networkKind, chainId)
     } finally {
@@ -493,7 +465,7 @@ class WalletService extends WalletServicePartial {
     index: Index,
     networkKind: NetworkKind,
     chainId: ChainId
-  ): Promise<IChainAccount> {
+  ): Promise<IChainAccount | undefined> {
     const unlock = await this._ensureLock(wallet.id)
     try {
       return await ensureChainAccount(wallet, index, networkKind, chainId)
@@ -716,18 +688,15 @@ export async function reorderSubWallets(
 }
 
 async function ensureChainAccounts(
-  wallet: IWallet | number,
+  wallet: IWallet,
   networkKind: NetworkKind,
   chainId: number | string
 ) {
-  if (typeof wallet === 'number') {
-    wallet = (await DB.wallets.get(wallet))!
-  }
-
-  if (wallet.type !== WalletType.HD) {
+  if (!isWalletGroup(wallet.type)) {
     await ensureChainAccount(wallet, PSEUDO_INDEX, networkKind, chainId)
     return
   }
+
   const masterId = wallet.id
 
   const subWalletsNum = await DB.subWallets
@@ -738,6 +707,17 @@ async function ensureChainAccounts(
     return
   }
 
+  let accountsAuxNum: number | undefined
+  if (!hasWalletKeystore(wallet.type)) {
+    accountsAuxNum = await DB.chainAccountsAux
+      .where('[masterId+networkKind]')
+      .equals([masterId, networkKind])
+      .count()
+    if (!accountsAuxNum) {
+      return
+    }
+  }
+
   const chainAccountsNum = await DB.chainAccounts
     .where('[masterId+networkKind+chainId]')
     .equals([masterId, networkKind, chainId])
@@ -746,25 +726,47 @@ async function ensureChainAccounts(
     return
   }
   assert(chainAccountsNum < subWalletsNum)
+  if (!hasWalletKeystore(wallet.type)) {
+    assert(accountsAuxNum !== undefined)
+    if (chainAccountsNum === accountsAuxNum) {
+      return
+    }
+    assert(chainAccountsNum < accountsAuxNum)
+  }
 
-  const subWallets = await DB.subWallets
-    .where('masterId')
-    .equals(masterId)
-    .toArray()
+  let subWallets: ISubWallet[]
+  let accountsAuxMap: Map<number, IChainAccountAux>
+  if (hasWalletKeystore(wallet.type)) {
+    subWallets = await DB.subWallets
+      .where('masterId')
+      .equals(masterId)
+      .toArray()
+  } else {
+    const accountsAux = await DB.chainAccountsAux
+      .where('[masterId+networkKind]')
+      .equals([masterId, networkKind])
+      .toArray()
+    accountsAuxMap = new Map(accountsAux.map((aux) => [aux.index, aux]))
+    subWallets = await DB.subWallets
+      .where('[masterId+index]')
+      .anyOf(accountsAux.map((aux) => [aux.masterId, aux.index]))
+      .toArray()
+    assert(subWallets.length === accountsAux.length)
+  }
 
   const chainAccounts = await DB.chainAccounts
     .where('[masterId+networkKind+chainId]')
     .equals([masterId, networkKind, chainId])
     .toArray()
 
-  const signingWallet = await getMasterSigningWallet(
-    wallet,
-    networkKind,
-    chainId
-  )
+  let signingWallet: SigningWallet | undefined
+  let hdPath: IHdPath | undefined
+  if (wallet.type === WalletType.HD) {
+    signingWallet = await getMasterSigningWallet(wallet, networkKind, chainId)
 
-  const hdPath = await DB.hdPaths.where({ masterId, networkKind }).first()
-  assert(hdPath)
+    hdPath = await DB.hdPaths.where({ masterId, networkKind }).first()
+    assert(hdPath)
+  }
 
   const existing = new Set()
   for (const info of chainAccounts) {
@@ -778,17 +780,32 @@ async function ensureChainAccounts(
     if (existing.has(subWallet.index)) {
       continue
     }
-    const _ = queue.add(async () => {
-      const subSigningWallet = await signingWallet.derive(
-        hdPath.path,
-        subWallet.index
-      )
+    queue.add(async () => {
+      let address
+      switch (wallet.type) {
+        case WalletType.HD: {
+          assert(signingWallet && hdPath)
+          const subSigningWallet = await signingWallet.derive(
+            hdPath.path,
+            subWallet.index
+          )
+          address = subSigningWallet.address
+          break
+        }
+        case WalletType.WATCH_GROUP: {
+          assert(accountsAuxMap)
+          const aux = accountsAuxMap.get(subWallet.index)
+          assert(aux)
+          address = aux.address
+          break
+        }
+      }
       bulkAdd.push({
         masterId,
         index: subWallet.index,
         networkKind,
         chainId,
-        address: subSigningWallet.address
+        address
       } as IChainAccount)
     })
   }
@@ -828,31 +845,63 @@ async function ensureChainAccount(
   index: Index,
   networkKind: NetworkKind,
   chainId: number | string
-): Promise<IChainAccount> {
+): Promise<IChainAccount | undefined> {
   const existing = await getChainAccount(wallet, index, networkKind, chainId)
   if (existing) {
     return existing
   }
 
-  const signingWallet = await getMasterSigningWallet(
-    wallet,
-    networkKind,
-    chainId
-  )
   let address
-  if (wallet.type === WalletType.HD) {
-    const hdPath = await DB.hdPaths
-      .where({ masterId: wallet.id, networkKind })
-      .first()
-    assert(hdPath)
-    const subSigningWallet = await signingWallet.derive(hdPath.path, index)
-    address = subSigningWallet.address
-  } else {
-    address = signingWallet.address
+  switch (wallet.type) {
+    case WalletType.HD: {
+      const signingWallet = await getMasterSigningWallet(
+        wallet,
+        networkKind,
+        chainId
+      )
+      const hdPath = await DB.hdPaths
+        .where({ masterId: wallet.id, networkKind })
+        .first()
+      assert(hdPath)
+      const subSigningWallet = await signingWallet.derive(hdPath.path, index)
+      address = subSigningWallet.address
+      break
+    }
+    case WalletType.PRIVATE_KEY: {
+      const signingWallet = await getMasterSigningWallet(
+        wallet,
+        networkKind,
+        chainId
+      )
+      address = signingWallet.address
+      break
+    }
+    case WalletType.WATCH: {
+      const aux = await DB.chainAccountsAux
+        .where('[masterId+index+networkKind]')
+        .equals([wallet.id, index, networkKind])
+        .first()
+      if (!aux) {
+        return
+      }
+      address = aux.address
+      break
+    }
+    case WalletType.WATCH_GROUP: {
+      const aux = await DB.chainAccountsAux
+        .where('[masterId+index+networkKind]')
+        .equals([wallet.id, index, networkKind])
+        .first()
+      if (!aux) {
+        return
+      }
+      address = aux.address
+      break
+    }
   }
 
   const account = {
-    masterId: wallet.id!,
+    masterId: wallet.id,
     index,
     networkKind,
     chainId,

@@ -28,7 +28,7 @@ import HashLoader from 'react-spinners/HashLoader'
 
 import { AlertBox } from '~components/AlertBox'
 import { useColor } from '~hooks/useColor'
-import { IChainAccount, ISubWallet, INetwork, IWallet } from '~lib/schema'
+import { IChainAccount, INetwork, ISubWallet, IWallet } from '~lib/schema'
 import {
   CONSENT_SERVICE,
   ConsentRequest,

@@ -1,8 +1,7 @@
-import { Stack } from "@chakra-ui/react";
+import { Stack } from '@chakra-ui/react'
 
 export const TokenList = () => {
-  return <Stack>
-  </Stack>
+  return <Stack></Stack>
 }
 
 const TokenItem = () => {

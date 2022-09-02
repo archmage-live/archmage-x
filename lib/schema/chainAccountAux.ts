@@ -2,6 +2,7 @@ import { NetworkKind } from '~lib/network'
 
 import { Index } from './subWallet'
 
+// Only for non-signing wallets
 export interface IChainAccountAux {
   id: number
   masterId: number // master wallet id

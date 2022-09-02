@@ -181,11 +181,9 @@ export const WalletEdit = ({ wallet }: WalletEditProps) => {
             }}
             onChange={(value: string) => {
               setDeriveNum(+value)
-              WALLET_SERVICE.deriveSubWallets(wallet.id, +value).finally(
-                () => {
-                  setDeriveNum(0)
-                }
-              )
+              WALLET_SERVICE.deriveSubWallets(wallet.id, +value).finally(() => {
+                setDeriveNum(0)
+              })
             }}
           />
         </FormControl>

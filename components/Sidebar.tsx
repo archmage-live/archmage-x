@@ -4,7 +4,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { useNavigate } from 'react-router-dom'
 
 import { DB } from '~lib/db'
-import { WALLET_SERVICE } from '~lib/services/walletService'
+import { PASSWORD_SERVICE } from '~lib/services/passwordService'
 import { createTab } from '~lib/util'
 
 interface SidebarProps {
@@ -27,7 +27,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
   }
 
   const lock = async () => {
-    await WALLET_SERVICE.lock()
+    await PASSWORD_SERVICE.lock()
     navigate('/', { replace: true })
   }
 

@@ -9,7 +9,7 @@ import { ENV } from '~lib/env'
 import { PASSWORD } from '~lib/password'
 import { IWallet } from '~lib/schema/wallet'
 import { SESSION_STORE, StoreKey } from '~lib/store'
-import { hasWalletKeystore } from "~lib/wallet";
+import { hasWalletKeystore } from '~lib/wallet'
 
 function keystoreKey(id: number): string {
   return `${StoreKey.KEYSTORE_PREFIX}_${id}`

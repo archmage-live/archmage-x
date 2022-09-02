@@ -4,7 +4,8 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 
 import { AlertBox } from '~components/AlertBox'
 import { usePassword } from '~lib/password'
-import { WALLET_SERVICE, useSubWalletsCount } from '~lib/services/walletService'
+import { PASSWORD_SERVICE } from '~lib/services/passwordService'
+import { useSubWalletsCount } from '~lib/services/walletService'
 import { createTab } from '~lib/util'
 
 export default function Unlock() {
@@ -48,7 +49,7 @@ export default function Unlock() {
   const unlock = useCallback(
     (event: any) => {
       event.preventDefault()
-      WALLET_SERVICE.unlock(password).then((ok) => {
+      PASSWORD_SERVICE.unlock(password).then((ok) => {
         if (!ok) {
           setAlert('Wrong password')
         }

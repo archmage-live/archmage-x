@@ -1,7 +1,7 @@
 import { NetworkKind } from '~lib/network'
 
-import { Index } from './subWallet'
 import { ChainId } from './network'
+import { Index } from './subWallet'
 
 export interface ITransaction {
   id: number
