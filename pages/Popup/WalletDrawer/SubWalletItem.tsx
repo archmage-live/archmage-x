@@ -3,7 +3,7 @@ import { Box, Button, Checkbox, HStack, Stack, Text } from '@chakra-ui/react'
 
 import { AccountAvatar } from '~components/AccountAvatar'
 import { formatNumber } from '~lib/formatNumber'
-import { IChainAccount, IDerivedWallet, INetwork } from '~lib/schema'
+import { IChainAccount, ISubWallet, INetwork } from '~lib/schema'
 import { useBalance } from '~lib/services/provider'
 import { shortenAddress } from '~lib/utils'
 
@@ -18,7 +18,7 @@ export const SubWalletItem = ({
   onChecked
 }: {
   network: INetwork
-  wallet: IDerivedWallet
+  wallet: ISubWallet
   account: IChainAccount
   selected?: boolean
   onSelected?: () => void

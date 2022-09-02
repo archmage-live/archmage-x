@@ -1,14 +1,18 @@
+import assert from 'assert'
 import { atom, useAtom } from 'jotai'
 import { useCallback } from 'react'
 
-import { WALLET_SERVICE } from '~lib/services/walletService'
+import { NewWalletOpts, WALLET_SERVICE } from '~lib/services/walletService'
+import { WalletType } from '~lib/wallet'
 
 export enum AddWalletKind {
   NEW_HD,
   IMPORT_HD,
   IMPORT_MNEMONIC_PRIVATE_KEY,
   IMPORT_PRIVATE_KEY,
-  CONNECT_LEDGER
+  IMPORT_WATCH_ADDRESS,
+  IMPORT_WATCH_ADDRESS_GROUP,
+  CONNECT_HARDWARE
 }
 
 const addWalletKindAtom = atom<AddWalletKind>(AddWalletKind.NEW_HD)
@@ -70,26 +74,34 @@ export function useAddWallet() {
       return { error: 'Invalid secret recovery phrase' }
     }
 
-    const isHD =
-      addWalletKind === AddWalletKind.NEW_HD ||
-      addWalletKind === AddWalletKind.IMPORT_HD
+    const opts = { name } as NewWalletOpts
+    switch (addWalletKind) {
+      case AddWalletKind.NEW_HD:
+      // pass through
+      case AddWalletKind.IMPORT_HD:
+        opts.type = WalletType.HD
+        opts.mnemonic = mnemonic.join(' ')
+        break
+      case AddWalletKind.IMPORT_MNEMONIC_PRIVATE_KEY:
+        opts.type = WalletType.PRIVATE_KEY
+        opts.mnemonic = mnemonic.join(' ')
+        opts.path = hdPath
+        break
+      case AddWalletKind.IMPORT_PRIVATE_KEY:
+        opts.type = WalletType.PRIVATE_KEY
+        opts.privateKey = privateKey
+        break
+      case AddWalletKind.IMPORT_WATCH_ADDRESS:
+        opts.type = WalletType.WATCH
+        break
+      case AddWalletKind.IMPORT_WATCH_ADDRESS_GROUP:
+        opts.type = WalletType.WATCH_GROUP
+        break
+      default:
+        throw new Error('unknown wallet type')
+    }
 
-    const { wallet, decrypted } = await WALLET_SERVICE.newWallet({
-      isHD,
-      mnemonic:
-        isHD || addWalletKind === AddWalletKind.IMPORT_MNEMONIC_PRIVATE_KEY
-          ? mnemonic.join(' ')
-          : undefined,
-      path:
-        addWalletKind === AddWalletKind.IMPORT_MNEMONIC_PRIVATE_KEY
-          ? hdPath
-          : undefined,
-      privateKey:
-        addWalletKind === AddWalletKind.IMPORT_PRIVATE_KEY
-          ? privateKey
-          : undefined,
-      name
-    })
+    const { wallet, decrypted } = await WALLET_SERVICE.newWallet(opts)
 
     if (await WALLET_SERVICE.existsSecret(wallet)) {
       return { error: 'There exists wallet with the same secret' }

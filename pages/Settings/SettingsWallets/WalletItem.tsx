@@ -123,7 +123,7 @@ export const WalletItem = ({
       {isOpen && network && wallet.type === WalletType.HD && (
         <SubWalletList
           network={network}
-          masterId={wallet.id!}
+          masterId={wallet.id}
           selectedId={selectedSubId}
           onSelectedId={(id) => onSelectedSubId?.(id)}
           measure={measure}

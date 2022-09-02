@@ -26,16 +26,17 @@ export class SuiWallet {
     if (type === WalletType.HD) {
       assert(!path && mnemonic)
       wallet = HDNode.fromMnemonic(mnemonic.phrase)
-    } else if (type === WalletType.MNEMONIC_PRIVATE_KEY) {
-      assert(mnemonic)
-      if (!path) {
-        path = SuiWallet.defaultPath
+    } else if (type === WalletType.PRIVATE_KEY) {
+      if (mnemonic) {
+        if (!path) {
+          path = SuiWallet.defaultPath
+        }
+        const node = HDNode.fromMnemonic(mnemonic.phrase).derivePath(path)
+        wallet = Ed25519Keypair.fromSecretKey(arrayify(node.secretKey!))
+      } else {
+        assert(!path)
+        wallet = Ed25519Keypair.fromSeed(arrayify(ks.privateKey))
       }
-      const node = HDNode.fromMnemonic(mnemonic.phrase).derivePath(path)
-      wallet = Ed25519Keypair.fromSecretKey(arrayify(node.secretKey!))
-    } else {
-      assert(!path)
-      wallet = Ed25519Keypair.fromSeed(arrayify(ks.privateKey))
     }
 
     return { wallet } as SuiWallet

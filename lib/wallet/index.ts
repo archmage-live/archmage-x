@@ -37,9 +37,8 @@ export async function getMasterSigningWallet(
   networkKind: NetworkKind,
   chainId: number | string
 ): Promise<SigningWallet> {
-  assert(wallet.id !== undefined)
   const opts: WalletOpts = {
-    id: wallet.id!,
+    id: wallet.id,
     type: wallet.type,
     path: wallet.path
   }

@@ -3,14 +3,14 @@ import { useVirtualizer } from '@tanstack/react-virtual'
 import { useEffect, useRef, useState } from 'react'
 
 import { ActiveWalletId } from '~lib/active'
-import { IDerivedWallet, INetwork } from '~lib/schema'
+import { ISubWallet, INetwork } from '~lib/schema'
 import { IChainAccount } from '~lib/schema/chainAccount'
 
 import { SubWalletItem } from './SubWalletItem'
 
 interface SubWalletListProps {
   network: INetwork
-  wallets: IDerivedWallet[]
+  wallets: ISubWallet[]
   accounts: (IChainAccount | undefined)[]
   selectedId?: number
   onSelectedId: (selectedId: number) => void
@@ -60,7 +60,7 @@ export const SubWalletList = ({
         borderWidth="1px">
         <Box h={walletsVirtualizer.getTotalSize() + 'px'} position="relative">
           {walletsVirtualizer.getVirtualItems().map((item) => {
-            const wallet: IDerivedWallet = wallets[item.index]
+            const wallet: ISubWallet = wallets[item.index]
             const account = accounts[item.index]
 
             return (

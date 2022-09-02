@@ -1,6 +1,6 @@
 import assert from 'assert'
 
-import { IChainAccount, IDerivedWallet, INetwork, IWallet } from '~lib/schema'
+import { IChainAccount, ISubWallet, INetwork, IWallet } from '~lib/schema'
 import { WALLET_SERVICE } from '~lib/services/walletService'
 import { LOCAL_STORE, StoreKey } from '~lib/store'
 
@@ -26,7 +26,7 @@ export async function setActiveNetwork(networkId: number) {
 }
 
 export async function getActiveWallet(): Promise<
-  | { wallet: IWallet; subWallet?: IDerivedWallet; walletInfo: IChainAccount }
+  | { wallet: IWallet; subWallet?: ISubWallet; walletInfo: IChainAccount }
   | undefined
 > {
   const network = await getActiveNetwork()
@@ -44,7 +44,7 @@ export async function getActiveWallet(): Promise<
   const wallet = await DB.wallets.get(activeId.masterId)
   assert(wallet)
 
-  const subWallet = await DB.derivedWallets.get(activeId.derivedId)
+  const subWallet = await DB.subWallets.get(activeId.derivedId)
   assert(subWallet)
 
   const walletInfo = await WALLET_SERVICE.getChainAccount({

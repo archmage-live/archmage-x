@@ -4,7 +4,7 @@ import { DraggableProvidedDragHandleProps } from 'react-beautiful-dnd'
 import { MdDragIndicator } from 'react-icons/md'
 
 import { AccountAvatar } from '~components/AccountAvatar'
-import { IChainAccount, IDerivedWallet } from '~lib/schema'
+import { IChainAccount, ISubWallet } from '~lib/schema'
 import { shortenAddress } from '~lib/utils'
 
 export const SubWalletItem = ({
@@ -17,7 +17,7 @@ export const SubWalletItem = ({
   onClick,
   dragHandleProps = {} as DraggableProvidedDragHandleProps
 }: {
-  wallet: IDerivedWallet
+  wallet: ISubWallet
   account?: IChainAccount
   bg?: string
   hoverBg?: string

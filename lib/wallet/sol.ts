@@ -25,17 +25,19 @@ export class SolWallet implements SigningWallet {
     if (type === WalletType.HD) {
       assert(!path && mnemonic)
       wallet = HDNode.fromMnemonic(mnemonic.phrase)
-    } else if (type === WalletType.MNEMONIC_PRIVATE_KEY) {
-      assert(mnemonic)
-      if (!path) {
-        path = SolWallet.defaultPath
+    } else if (type === WalletType.PRIVATE_KEY) {
+      if (mnemonic) {
+        if (!path) {
+          path = SolWallet.defaultPath
+        }
+        const node = HDNode.fromMnemonic(mnemonic.phrase).derivePath(path)
+        wallet = Keypair.fromSeed(arrayify(node.privateKey))
+      } else {
+        assert(!path)
+        wallet = Keypair.fromSeed(arrayify(ks.privateKey))
       }
-      const node = HDNode.fromMnemonic(mnemonic.phrase).derivePath(path)
-      wallet = Keypair.fromSeed(arrayify(node.privateKey))
-    } else {
-      assert(!path)
-      wallet = Keypair.fromSeed(arrayify(ks.privateKey))
     }
+    assert(wallet)
 
     return new SolWallet(wallet)
   }

@@ -9,6 +9,7 @@ import { ENV } from '~lib/env'
 import { PASSWORD } from '~lib/password'
 import { IWallet } from '~lib/schema/wallet'
 import { SESSION_STORE, StoreKey } from '~lib/store'
+import { hasWalletKeystore } from "~lib/wallet";
 
 function keystoreKey(id: number): string {
   return `${StoreKey.KEYSTORE_PREFIX}_${id}`
@@ -91,11 +92,15 @@ export class Keystore {
         for (let j = i; j < i + concurrent && j < wallets.length; j++) {
           const wallet = wallets[j]
 
+          if (!hasWalletKeystore(wallet.type)) {
+            continue
+          }
+
           if (!wallet.keystore) {
             promises.push(this.persist(wallet))
           }
 
-          promises.push(this.fetch(wallet.id!))
+          promises.push(this.fetch(wallet.id))
         }
 
         await Promise.all(promises)
@@ -126,14 +131,17 @@ export class Keystore {
   }
 
   async persist(wallet: IWallet) {
+    if (!hasWalletKeystore(wallet.type)) {
+      return
+    }
     if (wallet.keystore) {
       // has persisted
       return
     }
-    const account = await this.accounts.get(wallet.id!)
+    const account = await this.accounts.get(wallet.id)
     const password = await PASSWORD.get()
     if (!account) {
-      await DB.wallets.delete(wallet.id!)
+      await DB.wallets.delete(wallet.id)
       console.log(
         `keystore for wallet ${wallet.id} cannot be recovered anymore, so delete it`
       )
@@ -150,7 +158,7 @@ export class Keystore {
         // N: 1 << 14 // fast
       }
     })
-    await DB.wallets.update(wallet.id!, { keystore: wallet.keystore })
+    await DB.wallets.update(wallet.id, { keystore: wallet.keystore })
     console.log(`keystore for wallet ${wallet.id} is persistent`)
   }
 

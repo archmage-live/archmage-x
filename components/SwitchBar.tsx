@@ -1,7 +1,7 @@
 import { Button, HStack, useColorModeValue } from '@chakra-ui/react'
 
 interface SwitchBarProps {
-  targets: string[]
+  targets: readonly string[]
   value: string
 
   onChange(value: string): void

@@ -28,7 +28,7 @@ import HashLoader from 'react-spinners/HashLoader'
 
 import { AlertBox } from '~components/AlertBox'
 import { useColor } from '~hooks/useColor'
-import { IChainAccount, IDerivedWallet, INetwork, IWallet } from '~lib/schema'
+import { IChainAccount, ISubWallet, INetwork, IWallet } from '~lib/schema'
 import {
   CONSENT_SERVICE,
   ConsentRequest,
@@ -57,7 +57,7 @@ export const EvmTransaction = ({
   network: INetwork
   networkInfo: NetworkInfo
   wallet: IWallet
-  subWallet: IDerivedWallet
+  subWallet: ISubWallet
   account: IChainAccount
 }) => {
   const payload = request.payload as TransactionPayload

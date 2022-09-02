@@ -22,16 +22,18 @@ export class EvmWallet implements SigningWallet {
     if (type === WalletType.HD) {
       assert(!path && mnemonic)
       wallet = ethers.utils.HDNode.fromMnemonic(mnemonic.phrase)
-    } else if (type === WalletType.MNEMONIC_PRIVATE_KEY) {
-      assert(mnemonic)
-      if (!path) {
-        path = EvmWallet.defaultPath
+    } else if (type === WalletType.PRIVATE_KEY) {
+      if (mnemonic) {
+        if (!path) {
+          path = EvmWallet.defaultPath
+        }
+        wallet = ethers.Wallet.fromMnemonic(mnemonic.phrase, path)
+      } else {
+        assert(!path)
+        wallet = new ethers.Wallet(ks.privateKey)
       }
-      wallet = ethers.Wallet.fromMnemonic(mnemonic.phrase, path)
-    } else {
-      assert(!path)
-      wallet = new ethers.Wallet(ks.privateKey)
     }
+    assert(wallet)
 
     return new EvmWallet(wallet)
   }

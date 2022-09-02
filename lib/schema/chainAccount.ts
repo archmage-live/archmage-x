@@ -1,6 +1,6 @@
 import { NetworkKind } from '~lib/network'
 
-import { Index } from './derivedWallet'
+import { Index } from './subWallet'
 import { ChainId } from './network'
 
 export interface IChainAccount {

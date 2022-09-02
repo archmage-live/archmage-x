@@ -47,7 +47,7 @@ export const WalletList = ({
     count: wallets.length || 0,
     getScrollElement: () => parentRef.current,
     estimateSize: () => itemSize,
-    getItemKey: (index) => wallets[index].id!,
+    getItemKey: (index) => wallets[index].id,
     overscan: Math.max(Math.min(wallets.length || 0, 50) * 7 - renderItems, 0)
   })
 
@@ -57,11 +57,11 @@ export const WalletList = ({
     }
     if (
       checked?.size === wallets.length &&
-      wallets.every((w) => checked.has(w.id!))
+      wallets.every((w) => checked.has(w.id))
     ) {
       return
     }
-    onChecked?.(new Map(wallets.map((w) => [w.id!, [] as number[]])))
+    onChecked?.(new Map(wallets.map((w) => [w.id, [] as number[]])))
   }, [checked, onChecked, wallets])
 
   return (
@@ -91,10 +91,10 @@ export const WalletList = ({
                   wallet={wallet}
                   selected={wallet.id === selectedId}
                   onSelected={async () => {
-                    onSelectedId?.(wallet.id!)
+                    onSelectedId?.(wallet.id)
                     if (wallet.type !== WalletType.HD) {
                       const subWallet = await WALLET_SERVICE.getSubWallet({
-                        masterId: wallet.id!,
+                        masterId: wallet.id,
                         index: PSEUDO_INDEX
                       })
                       onSelectedSubId?.(subWallet?.id!)
@@ -104,12 +104,12 @@ export const WalletList = ({
                   onSelectedSubId={onSelectedSubId}
                   activeId={activeId}
                   onClose={onClose}
-                  checked={checked?.get(wallet.id!)}
+                  checked={checked?.get(wallet.id)}
                   onChecked={
                     onChecked
                       ? (ids) => {
                           const map = new Map(checked)
-                          map.set(wallet.id!, ids)
+                          map.set(wallet.id, ids)
                           console.log(map)
                           onChecked(map)
                         }

@@ -14,7 +14,7 @@ import { AccountAvatar } from '~components/AccountAvatar'
 import { Badge } from '~components/Badge'
 import { ActiveWalletId } from '~lib/active'
 import { formatNumber } from '~lib/formatNumber'
-import { IChainAccount, IDerivedWallet, PSEUDO_INDEX } from '~lib/schema'
+import { IChainAccount, ISubWallet, PSEUDO_INDEX } from '~lib/schema'
 import { INetwork } from '~lib/schema/network'
 import { IWallet } from '~lib/schema/wallet'
 import { useBalance } from '~lib/services/provider'
@@ -75,11 +75,11 @@ export const WalletItem = ({
 
   const balance = useBalance(network, account)
 
-  const [subWallets, setSubWallets] = useState<IDerivedWallet[]>([])
+  const [subWallets, setSubWallets] = useState<ISubWallet[]>([])
   useEffect(() => {
     const effect = async () => {
       if (onChecked || isOpen) {
-        const subWallets = await WALLET_SERVICE.getSubWallets(wallet.id!)
+        const subWallets = await WALLET_SERVICE.getSubWallets(wallet.id)
         setSubWallets(subWallets)
       }
     }

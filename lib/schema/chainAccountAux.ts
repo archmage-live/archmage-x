@@ -1,18 +1,14 @@
 import { NetworkKind } from '~lib/network'
 
 import { Index } from './subWallet'
-import { ChainId } from './network'
 
-export interface ITransaction {
+export interface IChainAccountAux {
   id: number
   masterId: number // master wallet id
   index: Index // derived wallet index
   networkKind: NetworkKind
-  chainId: ChainId
   address: string
-  nonce: number
-  info: any
 }
 
-export const transactionSchemaV1 =
-  '++id, &[masterId+index+networkKind+chainId+address+nonce]'
+export const chainAccountAuxSchemaV1 =
+  '++id, &[masterId+index+networkKind], &[masterId+networkKind+index], address'

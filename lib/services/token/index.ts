@@ -1,3 +1,5 @@
+import { useLiveQuery } from 'dexie-react-hooks'
+
 import { DB } from '~lib/db'
 import { ENV } from '~lib/env'
 import { NetworkKind } from '~lib/network'
@@ -70,4 +72,13 @@ class TokenService {
   }
 }
 
-const TOKEN_SERVICE = new TokenService()
+export const TOKEN_SERVICE = new TokenService()
+
+export function useTokenLists(networkKind?: NetworkKind) {
+  return useLiveQuery(() => {
+    if (networkKind === undefined) {
+      return
+    }
+    return TOKEN_SERVICE.getTokenLists(networkKind)
+  }, [networkKind])
+}

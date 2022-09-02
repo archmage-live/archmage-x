@@ -11,7 +11,7 @@ import {
 } from 'react-beautiful-dnd'
 import { useDebounce } from 'react-use'
 
-import { IChainAccount, IDerivedWallet, INetwork } from '~lib/schema'
+import { IChainAccount, ISubWallet, INetwork } from '~lib/schema'
 import {
   reorderSubWallets,
   useChainAccounts,
@@ -36,7 +36,7 @@ export const SubWalletList = ({
   measure
 }: SubWalletListProps) => {
   const queriedSubWallets = useSubWallets(masterId)
-  const [wallets, setWallets] = useState<IDerivedWallet[]>([])
+  const [wallets, setWallets] = useState<ISubWallet[]>([])
   useEffect(() => {
     if (queriedSubWallets) setWallets(queriedSubWallets)
   }, [queriedSubWallets])

@@ -20,23 +20,43 @@ import { SERVICE_WORKER_CLIENT, SERVICE_WORKER_SERVER } from '~lib/rpc'
 import {
   ChainAccountIndex,
   ChainId,
-  DerivedIndex,
+  IChainAccountAux,
   IHdPath,
   Index,
   PSEUDO_INDEX,
+  SubIndex,
   generateDefaultWalletName
 } from '~lib/schema'
 import { IChainAccount } from '~lib/schema/chainAccount'
-import {
-  IDerivedWallet,
-  getDefaultDerivedName
-} from '~lib/schema/derivedWallet'
+import { ISubWallet, getDefaultSubName } from '~lib/schema/subWallet'
 import { IWallet } from '~lib/schema/wallet'
 import {
   WalletType,
   getDefaultPathPrefix,
   getMasterSigningWallet
 } from '~lib/wallet'
+
+export type NewWalletOpts = {
+  name?: string
+  type: WalletType
+  mnemonic?: string
+  path?: string
+  privateKey?: string
+  networkKind?: NetworkKind
+  addresses?: string[]
+}
+
+function checkAddresses(
+  networkKind: NetworkKind,
+  addresses: string[]
+): string[] {
+  switch (networkKind) {
+    case NetworkKind.EVM:
+      return addresses.map((addr) => ethers.utils.getAddress(addr))
+    default:
+      throw new Error('unknown address type')
+  }
+}
 
 export interface IWalletService {
   createPassword(password: string): Promise<void>
@@ -55,22 +75,16 @@ export interface IWalletService {
 
   generateMnemonic(opts?: { locale?: string }): Promise<string>
 
-  newWallet(opts: {
-    isHD: boolean
-    mnemonic?: string
-    path?: string
-    privateKey?: string
-    name?: string
-  }): Promise<{
+  newWallet(opts: NewWalletOpts): Promise<{
     wallet: IWallet
-    decrypted: _KeystoreAccount
+    decrypted?: _KeystoreAccount
   }>
 
   existsName(name: string): Promise<boolean>
 
   existsSecret(wallet: IWallet): Promise<boolean>
 
-  createWallet(wallet: IWallet, decrypted: _KeystoreAccount): Promise<void>
+  createWallet(wallet: IWallet, decrypted?: _KeystoreAccount): Promise<void>
 
   updateWallet(): Promise<void>
 
@@ -78,7 +92,7 @@ export interface IWalletService {
 
   getWallet(id: number): Promise<IWallet | undefined>
 
-  getSubWallet(id: number | DerivedIndex): Promise<IDerivedWallet | undefined>
+  getSubWallet(id: number | SubIndex): Promise<ISubWallet | undefined>
 
   getChainAccount(
     id: number | ChainAccountIndex
@@ -88,11 +102,11 @@ export interface IWalletService {
     ids: (number | ChainAccountIndex)[]
   ): Promise<IChainAccount[]>
 
-  getSubWallets(id: number): Promise<IDerivedWallet[]>
+  getSubWallets(id: number): Promise<ISubWallet[]>
 
   getWallets(): Promise<IWallet[]>
 
-  deriveSubWallets(id: number, num: number): Promise<void>
+  deriveSubWallets(id: number, num: number): Promise<ISubWallet[]>
 
   ensureChainAccounts(
     wallet: IWallet | number,
@@ -127,13 +141,11 @@ class WalletServicePartial implements IWalletService {
     return DB.wallets.get(id)
   }
 
-  async getSubWallet(
-    id: number | DerivedIndex
-  ): Promise<IDerivedWallet | undefined> {
+  async getSubWallet(id: number | SubIndex): Promise<ISubWallet | undefined> {
     if (typeof id === 'number') {
-      return DB.derivedWallets.get(id)
+      return DB.subWallets.get(id)
     } else {
-      return DB.derivedWallets.where(id).first()
+      return DB.subWallets.where(id).first()
     }
   }
 
@@ -185,8 +197,8 @@ class WalletServicePartial implements IWalletService {
     return wallets
   }
 
-  async getSubWallets(id: number): Promise<IDerivedWallet[]> {
-    return DB.derivedWallets
+  async getSubWallets(id: number): Promise<ISubWallet[]> {
+    return DB.subWallets
       .where('[masterId+sortId]')
       .between([id, Dexie.minKey], [id, Dexie.maxKey])
       .toArray()
@@ -197,11 +209,11 @@ class WalletServicePartial implements IWalletService {
   }
 
   async deriveSubWallets(id: number, num: number) {
-    const nextSortId = await getNextField(DB.derivedWallets, 'sortId', {
+    const nextSortId = await getNextField(DB.subWallets, 'sortId', {
       key: 'masterId',
       value: id
     })
-    const nextIndex = await getNextField(DB.derivedWallets, 'index', {
+    const nextIndex = await getNextField(DB.subWallets, 'index', {
       key: 'masterId',
       value: id
     })
@@ -210,10 +222,33 @@ class WalletServicePartial implements IWalletService {
         masterId: id,
         sortId: nextSortId + n,
         index: nextIndex + n,
-        name: getDefaultDerivedName(nextIndex + n)
-      } as IDerivedWallet
+        name: getDefaultSubName(nextIndex + n)
+      } as ISubWallet
     })
-    await DB.derivedWallets.bulkAdd(subWallets)
+    const ids = await DB.subWallets.bulkAdd(subWallets, {allKeys: true})
+    assert(ids.length === subWallets.length)
+    return subWallets.map((w, i) => {
+      w.id = ids[i]
+      return w
+    })
+  }
+
+  async createChainAccountsAux(
+    id: number,
+    indices: number[],
+    networkKind: NetworkKind,
+    addresses: string[]
+  ) {
+    assert(indices.length === addresses.length)
+    const accountsAux = indices.map((index, i) => {
+      return {
+        masterId: id,
+        index,
+        networkKind,
+        address: addresses[i]
+      } as IChainAccountAux
+    })
+    await DB.chainAccountsAux.bulkAdd(accountsAux)
   }
 
   private async _ensureChainAccount(
@@ -276,54 +311,73 @@ class WalletService extends WalletServicePartial {
   }
 
   async newWallet({
-    isHD,
+    name,
+    type,
     mnemonic,
     path,
     privateKey,
-    name
-  }: {
-    isHD: boolean
-    mnemonic?: string
-    path?: string
-    privateKey?: string
-    name?: string
-  }): Promise<{
+    networkKind,
+    addresses
+  }: NewWalletOpts): Promise<{
     wallet: IWallet
-    decrypted: _KeystoreAccount
+    decrypted?: _KeystoreAccount
   }> {
-    let account
-    let type
-    if (isHD) {
-      assert(mnemonic && !path && !privateKey)
-      account = ethers.utils.HDNode.fromMnemonic(mnemonic)
-      type = WalletType.HD
-    } else if (!privateKey) {
-      assert(mnemonic && path)
-      account = ethers.Wallet.fromMnemonic(mnemonic, path)
-      type = WalletType.MNEMONIC_PRIVATE_KEY
-    } else {
-      assert(!mnemonic && !path)
-      account = new ethers.Wallet(privateKey)
-      type = WalletType.PRIVATE_KEY
-    }
+    name = name || (await generateDefaultWalletName(DB.wallets))
 
-    const address = account.address
-
-    const decrypted: _KeystoreAccount = {
-      address,
-      privateKey: account.privateKey,
-      mnemonic: account.mnemonic,
-      _isKeystoreAccount: true
+    let account, hash
+    switch (type) {
+      case WalletType.HD: {
+        assert(mnemonic && !path && !privateKey)
+        account = ethers.utils.HDNode.fromMnemonic(mnemonic)
+        hash = account.address
+        break
+      }
+      case WalletType.PRIVATE_KEY: {
+        if (!privateKey) {
+          assert(mnemonic && path)
+          account = ethers.Wallet.fromMnemonic(mnemonic, path)
+        } else {
+          assert(!mnemonic && !path)
+          account = new ethers.Wallet(privateKey)
+        }
+        hash = account.address
+        break
+      }
+      case WalletType.WATCH: {
+        assert(networkKind)
+        assert(addresses && addresses.length === 1)
+        hash = checkAddresses(networkKind, addresses)[0]
+        break
+      }
+      case WalletType.WATCH_GROUP: {
+        assert(networkKind)
+        assert(addresses && addresses.length >= 1)
+        hash = ethers.utils.getAddress(
+          ethers.utils.hexDataSlice(ethers.utils.keccak256(name), 12)
+        )
+        break
+      }
+      default:
+        throw new Error('unknown wallet type')
     }
 
     const wallet = {
       sortId: await getNextField(DB.wallets),
       type,
-      name: name || (await generateDefaultWalletName(DB.wallets)),
+      name,
       path,
-      hash: address, // use address as hash
+      hash, // use address or other unique string as hash
       createdAt: Date.now()
     } as IWallet
+
+    const decrypted: _KeystoreAccount | undefined = account
+      ? {
+          address: account.address,
+          privateKey: account.privateKey,
+          mnemonic: account.mnemonic,
+          _isKeystoreAccount: true
+        }
+      : undefined
 
     return {
       wallet,
@@ -331,31 +385,64 @@ class WalletService extends WalletServicePartial {
     }
   }
 
-  async createWallet(wallet: IWallet, decrypted: _KeystoreAccount) {
+  async createWallet(
+    wallet: IWallet,
+    decrypted?: _KeystoreAccount,
+    networkKind?: NetworkKind,
+    addresses?: string[]
+  ) {
     await DB.transaction(
       'rw',
-      [DB.wallets, DB.derivedWallets, DB.hdPaths],
+      [DB.wallets, DB.subWallets, DB.hdPaths, DB.chainAccountsAux],
       async () => {
         wallet.id = await DB.wallets.add(wallet)
 
-        if (wallet.type === WalletType.HD) {
-          await this.deriveSubWallets(wallet.id, 1)
-        } else {
-          await DB.derivedWallets.add({
-            masterId: wallet.id,
-            sortId: 0,
-            index: PSEUDO_INDEX,
-            name: ''
-          } as IDerivedWallet)
+        switch (wallet.type) {
+          case WalletType.HD: {
+            await this.createHdPaths(wallet.id)
+            // derive one sub wallet
+            await this.deriveSubWallets(wallet.id, 1)
+            break
+          }
+          case WalletType.PRIVATE_KEY: {
+            await DB.subWallets.add({
+              masterId: wallet.id,
+              sortId: 0,
+              index: PSEUDO_INDEX,
+              name: ''
+            } as ISubWallet)
+            break
+          }
+          case WalletType.WATCH: {
+            assert(networkKind)
+            assert(addresses && addresses.length === 1)
+            await DB.subWallets.add({
+              masterId: wallet.id,
+              sortId: 0,
+              index: PSEUDO_INDEX,
+              name: ''
+            } as ISubWallet)
+            await this.createChainAccountsAux(wallet.id, [PSEUDO_INDEX], networkKind, addresses)
+            break
+          }
+          case WalletType.WATCH_GROUP: {
+            assert(networkKind)
+            assert(addresses && addresses.length >= 1)
+            const subWallets = await this.deriveSubWallets(wallet.id, addresses.length)
+            await this.createChainAccountsAux(wallet.id, subWallets.map(w => w.index), networkKind, addresses)
+            break
+          }
+          default:
+            throw new Error('unknown wallet type')
         }
-
-        await this.createHdPaths(wallet.id)
       }
     )
 
-    await KEYSTORE.set(wallet.id!, new KeystoreAccount(decrypted))
-    // time-consuming, so do not wait for it
-    KEYSTORE.persist(wallet)
+    if (decrypted) {
+      await KEYSTORE.set(wallet.id!, new KeystoreAccount(decrypted))
+      // time-consuming, so do not wait for it
+      KEYSTORE.persist(wallet)
+    }
   }
 
   async updateWallet() {
@@ -391,7 +478,7 @@ class WalletService extends WalletServicePartial {
     chainId: ChainId
   ) {
     const unlock = await this._ensureLock(
-      typeof wallet === 'number' ? wallet : wallet.id!
+      typeof wallet === 'number' ? wallet : wallet.id
     )
     try {
       // time-consuming
@@ -407,7 +494,7 @@ class WalletService extends WalletServicePartial {
     networkKind: NetworkKind,
     chainId: ChainId
   ): Promise<IChainAccount> {
-    const unlock = await this._ensureLock(wallet.id!)
+    const unlock = await this._ensureLock(wallet.id)
     try {
       return await ensureChainAccount(wallet, index, networkKind, chainId)
     } finally {
@@ -453,7 +540,7 @@ export function useWallets() {
 export function useSubWallets(walletId: number, nextSortId = 0, limit = 96) {
   return useLiveQuery(() => {
     return (
-      DB.derivedWallets
+      DB.subWallets
         .where('[masterId+sortId]')
         // .between([walletId, nextSortId], [walletId, Dexie.maxKey])
         .between([walletId, Dexie.minKey], [walletId, Dexie.maxKey])
@@ -465,7 +552,7 @@ export function useSubWallets(walletId: number, nextSortId = 0, limit = 96) {
 
 export function useSubWalletsCount() {
   return useLiveQuery(() => {
-    return DB.derivedWallets.count()
+    return DB.subWallets.count()
   }, [])
 }
 
@@ -609,8 +696,8 @@ export async function reorderSubWallets(
     ? [startSortId, endSortId]
     : [endSortId, startSortId]
 
-  await DB.transaction('rw', [DB.derivedWallets], async () => {
-    const items = await DB.derivedWallets
+  await DB.transaction('rw', [DB.subWallets], async () => {
+    const items = await DB.subWallets
       .where('[masterId+sortId]')
       .between([masterId, lower], [masterId, upper], true, true)
       .sortBy('sortId')
@@ -623,7 +710,7 @@ export async function reorderSubWallets(
       if (sortId > upper) sortId = lower
       else if (sortId < lower) sortId = upper
 
-      await DB.derivedWallets.update(items[i], { sortId })
+      await DB.subWallets.update(items[i], { sortId })
     }
   })
 }
@@ -641,9 +728,9 @@ async function ensureChainAccounts(
     await ensureChainAccount(wallet, PSEUDO_INDEX, networkKind, chainId)
     return
   }
-  const masterId = wallet.id as number
+  const masterId = wallet.id
 
-  const subWalletsNum = await DB.derivedWallets
+  const subWalletsNum = await DB.subWallets
     .where('masterId')
     .equals(masterId)
     .count()
@@ -660,7 +747,7 @@ async function ensureChainAccounts(
   }
   assert(chainAccountsNum < subWalletsNum)
 
-  const subWallets = await DB.derivedWallets
+  const subWallets = await DB.subWallets
     .where('masterId')
     .equals(masterId)
     .toArray()

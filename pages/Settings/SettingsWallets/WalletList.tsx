@@ -44,7 +44,7 @@ export const WalletList = ({
     count: wallets.length,
     getScrollElement: () => parentRef.current,
     estimateSize: () => 64,
-    getItemKey: (index) => wallets[index].id!
+    getItemKey: (index) => wallets[index].id
   })
 
   const hoverBg = useColorModeValue('purple.100', 'gray.800')
@@ -163,7 +163,7 @@ export const WalletList = ({
                                   ? dragIndex === item.index
                                   : undefined
                               }
-                              onClick={() => onSelectedId(wallet.id!)}
+                              onClick={() => onSelectedId(wallet.id)}
                               dragHandleProps={provided.dragHandleProps}
                               measureElement={item.measureElement}
                               selectedSubId={selectedSubId}

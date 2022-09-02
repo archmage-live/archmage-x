@@ -5,7 +5,7 @@ import {
   IAddressBook,
   IChainAccount,
   IConnectedSite,
-  IDerivedWallet,
+  ISubWallet,
   IFetchCache,
   IHdPath,
   INetwork,
@@ -17,7 +17,7 @@ import {
   addressBookSchemaV1,
   chainAccountSchemaV1,
   connectedSiteSchemaV1,
-  derivedWalletSchemaV1,
+  subWalletSchemaV1,
   fetchCacheSchemaV1,
   hdPathSchemaV1,
   networkSchemaV1,
@@ -25,15 +25,16 @@ import {
   tokenListSchemaV1,
   tokenSchemaV1,
   transactionSchemaV1,
-  walletSchemaV1
-} from '~lib/schema'
+  walletSchemaV1, chainAccountAuxSchemaV1, IChainAccountAux
+} from "~lib/schema";
 
 export class Database extends Dexie {
   wallets!: Dexie.Table<IWallet, number>
   networks!: Dexie.Table<INetwork, number>
   hdPaths!: Dexie.Table<IHdPath, number>
-  derivedWallets!: Dexie.Table<IDerivedWallet, number>
+  subWallets!: Dexie.Table<ISubWallet, number>
   chainAccounts!: Dexie.Table<IChainAccount, number>
+  chainAccountsAux!: Dexie.Table<IChainAccountAux, number>
   transactions!: Dexie.Table<ITransaction, number>
   tokenLists!: Dexie.Table<ITokenList, number>
   tokens!: Dexie.Table<IToken, number>
@@ -48,8 +49,9 @@ export class Database extends Dexie {
       wallets: walletSchemaV1,
       networks: networkSchemaV1,
       hdPaths: hdPathSchemaV1,
-      derivedWallets: derivedWalletSchemaV1,
+      subWallets: subWalletSchemaV1,
       chainAccounts: chainAccountSchemaV1,
+      chainAccountsAux: chainAccountAuxSchemaV1,
       transactions: transactionSchemaV1,
       tokenLists: tokenListSchemaV1,
       tokens: tokenSchemaV1,

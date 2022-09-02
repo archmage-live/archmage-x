@@ -1,4 +1,4 @@
-import { Index } from './derivedWallet'
+import { Index } from './subWallet'
 
 export interface IConnectedSite {
   id: number

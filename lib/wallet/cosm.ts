@@ -38,26 +38,27 @@ export class CosmWallet implements SigningWallet {
       assert(!path && mnemonic)
       wallet.mnemonic = mnemonic.phrase
       wallet.prefix = prefix
-    } else if (type === WalletType.MNEMONIC_PRIVATE_KEY) {
-      assert(mnemonic)
-      if (!path) {
-        path = CosmWallet.defaultPath
-      }
-      wallet.wallet = await DirectSecp256k1HdWallet.fromMnemonic(
-        mnemonic.phrase,
-        {
-          hdPaths: [stringToPath(path)],
-          prefix
+    } else if (type === WalletType.PRIVATE_KEY) {
+      if (mnemonic) {
+        if (!path) {
+          path = CosmWallet.defaultPath
         }
-      )
-      wallet.address = (await wallet.wallet.getAccounts())[0].address
-    } else {
-      assert(!path)
-      wallet.wallet = await DirectSecp256k1Wallet.fromKey(
-        ethers.utils.arrayify(ks.privateKey),
-        prefix
-      )
-      wallet.address = (await wallet.wallet.getAccounts())[0].address
+        wallet.wallet = await DirectSecp256k1HdWallet.fromMnemonic(
+          mnemonic.phrase,
+          {
+            hdPaths: [stringToPath(path)],
+            prefix
+          }
+        )
+        wallet.address = (await wallet.wallet.getAccounts())[0].address
+      } else {
+        assert(!path)
+        wallet.wallet = await DirectSecp256k1Wallet.fromKey(
+          ethers.utils.arrayify(ks.privateKey),
+          prefix
+        )
+        wallet.address = (await wallet.wallet.getAccounts())[0].address
+      }
     }
     return wallet
   }

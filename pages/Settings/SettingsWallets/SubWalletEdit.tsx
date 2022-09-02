@@ -15,13 +15,13 @@ import { useEffect, useState } from 'react'
 import { HdPathInput } from '~components/HdPathInput'
 import { SaveInput } from '~components/SaveInput'
 import { DB } from '~lib/db'
-import { IDerivedWallet, INetwork, IWallet } from '~lib/schema'
+import { ISubWallet, INetwork, IWallet } from '~lib/schema'
 import { useChainAccountByIndex, useHdPaths } from '~lib/services/walletService'
 
 interface SubWalletEditProps {
   network: INetwork
   master: IWallet
-  wallet: IDerivedWallet
+  wallet: ISubWallet
 }
 
 export const SubWalletEdit = ({
@@ -68,13 +68,13 @@ export const SubWalletEdit = ({
           value={wallet.name}
           validate={(value: string) => value.trim().slice(0, 64) || false}
           asyncValidate={async (value: string) => {
-            return !(await DB.derivedWallets
+            return !(await DB.subWallets
               .where('[masterId+name]')
-              .equals([master.id!, value])
+              .equals([master.id, value])
               .first())
           }}
           onChange={(value: string) => {
-            DB.derivedWallets.update(wallet, { name: value })
+            DB.subWallets.update(wallet, { name: value })
           }}
           onInvalid={setIsNameExists}
         />

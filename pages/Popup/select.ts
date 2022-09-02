@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 
 import { ActiveWalletId } from '~lib/active'
 import { DB } from '~lib/db'
-import { IDerivedWallet, INetwork, IWallet } from '~lib/schema'
+import { ISubWallet, INetwork, IWallet } from '~lib/schema'
 import {
   WALLET_SERVICE,
   useSubWallet,
@@ -57,7 +57,7 @@ export function useActiveWallet() {
       if (!firstWallet) {
         return
       }
-      const firstSubWallet = await DB.derivedWallets
+      const firstSubWallet = await DB.subWallets
         .where('[masterId+sortId]')
         .between([firstWallet.id, Dexie.minKey], [firstWallet.id, Dexie.maxKey])
         .first()
@@ -65,14 +65,14 @@ export function useActiveWallet() {
         return
       }
       return {
-        masterId: firstWallet.id!,
-        derivedId: firstSubWallet.id!
+        masterId: firstWallet.id,
+        derivedId: firstSubWallet.id
       }
     }
   )
 
   const [wallet, setWallet] = useState<IWallet | undefined>()
-  const [subWallet, setSubWallet] = useState<IDerivedWallet | undefined>()
+  const [subWallet, setSubWallet] = useState<ISubWallet | undefined>()
   useEffect(() => {
     const effect = async () => {
       if (!activeId) {

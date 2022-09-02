@@ -32,7 +32,7 @@ interface WalletEditProps {
 
 export const WalletEdit = ({ wallet }: WalletEditProps) => {
   const hdPaths = useHdPaths(wallet.id)
-  const subWallets = useSubWallets(wallet.id!)
+  const subWallets = useSubWallets(wallet.id)
 
   const [isNameExists, setIsNameExists] = useState(false)
 
@@ -181,7 +181,7 @@ export const WalletEdit = ({ wallet }: WalletEditProps) => {
             }}
             onChange={(value: string) => {
               setDeriveNum(+value)
-              WALLET_SERVICE.deriveSubWallets(wallet.id!, +value).finally(
+              WALLET_SERVICE.deriveSubWallets(wallet.id, +value).finally(
                 () => {
                   setDeriveNum(0)
                 }
@@ -199,7 +199,7 @@ export const WalletEdit = ({ wallet }: WalletEditProps) => {
       </HStack>
 
       <ExportMnemonicModal
-        walletId={wallet.id!}
+        walletId={wallet.id}
         isOpen={isExportOpen}
         onClose={onExportClose}
       />

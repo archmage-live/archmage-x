@@ -22,16 +22,17 @@ export class AptosWallet {
     if (type === WalletType.HD) {
       assert(!path && mnemonic)
       wallet = HDNode.fromMnemonic(mnemonic.phrase)
-    } else if (type === WalletType.MNEMONIC_PRIVATE_KEY) {
-      assert(mnemonic)
-      if (!path) {
-        path = AptosWallet.defaultPath
+    } else if (type === WalletType.PRIVATE_KEY) {
+      if (mnemonic) {
+        if (!path) {
+          path = AptosWallet.defaultPath
+        }
+        const node = HDNode.fromMnemonic(mnemonic.phrase).derivePath(path)
+        wallet = new AptosAccount(arrayify(node.privateKey))
+      } else {
+        assert(!path)
+        wallet = new AptosAccount(arrayify(ks.privateKey))
       }
-      const node = HDNode.fromMnemonic(mnemonic.phrase).derivePath(path)
-      wallet = new AptosAccount(arrayify(node.privateKey))
-    } else {
-      assert(!path)
-      wallet = new AptosAccount(arrayify(ks.privateKey))
     }
 
     return { wallet } as AptosWallet
