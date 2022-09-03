@@ -66,4 +66,12 @@ export class EvmWallet implements SigningWallet {
   signTypedData({ domain, types, value }: any): Promise<string> {
     return this.signingWallet._signTypedData(domain, types, value)
   }
+
+  static checkAddress(address: string): string | false {
+    try {
+      return ethers.utils.getAddress(address)
+    } catch {
+      return false
+    }
+  }
 }

@@ -31,6 +31,7 @@ import { IWallet } from '~lib/schema/wallet'
 import {
   SigningWallet,
   WalletType,
+  checkAddressMayThrow,
   getDefaultPathPrefix,
   getMasterSigningWallet,
   hasWalletKeystore,
@@ -47,16 +48,18 @@ export type NewWalletOpts = {
   addresses?: string[]
 }
 
+export type CreateWalletOpts = {
+  wallet: IWallet
+  decrypted?: _KeystoreAccount
+  networkKind?: NetworkKind
+  addresses?: string[]
+}
+
 function checkAddresses(
   networkKind: NetworkKind,
   addresses: string[]
 ): string[] {
-  switch (networkKind) {
-    case NetworkKind.EVM:
-      return addresses.map((addr) => ethers.utils.getAddress(addr))
-    default:
-      throw new Error('unknown address type')
-  }
+  return addresses.map((addr) => checkAddressMayThrow(networkKind, addr))
 }
 
 export interface IWalletService {
@@ -73,7 +76,7 @@ export interface IWalletService {
 
   existsSecret(wallet: IWallet): Promise<boolean>
 
-  createWallet(wallet: IWallet, decrypted?: _KeystoreAccount): Promise<void>
+  createWallet(opts: CreateWalletOpts): Promise<void>
 
   updateWallet(): Promise<void>
 
@@ -308,6 +311,7 @@ class WalletService extends WalletServicePartial {
       case WalletType.WATCH_GROUP: {
         assert(networkKind)
         assert(addresses && addresses.length >= 1)
+        checkAddresses(networkKind, addresses)
         hash = ethers.utils.getAddress(
           ethers.utils.hexDataSlice(ethers.utils.keccak256(name), 12)
         )
@@ -341,12 +345,12 @@ class WalletService extends WalletServicePartial {
     }
   }
 
-  async createWallet(
-    wallet: IWallet,
-    decrypted?: _KeystoreAccount,
-    networkKind?: NetworkKind,
-    addresses?: string[]
-  ) {
+  async createWallet({
+    wallet,
+    decrypted,
+    networkKind,
+    addresses
+  }: CreateWalletOpts) {
     await DB.transaction(
       'rw',
       [DB.wallets, DB.subWallets, DB.hdPaths, DB.chainAccountsAux],
@@ -372,6 +376,7 @@ class WalletService extends WalletServicePartial {
           case WalletType.WATCH: {
             assert(networkKind)
             assert(addresses && addresses.length === 1)
+            addresses = checkAddresses(networkKind, addresses)
             await DB.subWallets.add({
               masterId: wallet.id,
               sortId: 0,
@@ -389,6 +394,7 @@ class WalletService extends WalletServicePartial {
           case WalletType.WATCH_GROUP: {
             assert(networkKind)
             assert(addresses && addresses.length >= 1)
+            addresses = checkAddresses(networkKind, addresses)
             const subWallets = await this.deriveSubWallets(
               wallet.id,
               addresses.length

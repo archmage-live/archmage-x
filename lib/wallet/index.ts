@@ -32,6 +32,27 @@ export function getDefaultPathPrefix(networkKind: NetworkKind): string {
   }
 }
 
+export function checkAddress(
+  networkKind: NetworkKind,
+  address: string
+): string | false {
+  switch (networkKind) {
+    case NetworkKind.EVM:
+      return EvmWallet.checkAddress(address)
+    default:
+      return false
+  }
+}
+
+export function checkAddressMayThrow(
+  networkKind: NetworkKind,
+  address: string
+): string {
+  const addr = checkAddress(networkKind, address)
+  if (addr === false) throw new Error('invalid address')
+  return addr
+}
+
 export async function getMasterSigningWallet(
   wallet: IWallet,
   networkKind: NetworkKind,

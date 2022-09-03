@@ -1,7 +1,7 @@
-import assert from 'assert'
 import { atom, useAtom } from 'jotai'
 import { useCallback } from 'react'
 
+import { NetworkKind } from '~lib/network'
 import { NewWalletOpts, WALLET_SERVICE } from '~lib/services/walletService'
 import { WalletType } from '~lib/wallet'
 
@@ -16,14 +16,20 @@ export enum AddWalletKind {
 }
 
 const addWalletKindAtom = atom<AddWalletKind>(AddWalletKind.NEW_HD)
+const nameAtom = atom('')
 const mnemonicAtom = atom<string[]>([])
 const hdPathAtom = atom('')
 const privateKeyAtom = atom('')
-const nameAtom = atom('')
+const networkKindAtom = atom<NetworkKind>(NetworkKind.EVM)
+const addressesAtom = atom<string[]>([])
 const createdAtom = atom(false)
 
 export function useAddWalletKind() {
   return useAtom(addWalletKindAtom)
+}
+
+export function useName() {
+  return useAtom(nameAtom)
 }
 
 export function useMnemonic() {
@@ -38,8 +44,12 @@ export function usePrivateKey() {
   return useAtom(privateKeyAtom)
 }
 
-export function useName() {
-  return useAtom(nameAtom)
+export function useNetworkKind() {
+  return useAtom(networkKindAtom)
+}
+
+export function useAddresses() {
+  return useAtom(addressesAtom)
 }
 
 export function useCreated() {
@@ -51,14 +61,19 @@ export function useClear() {
   const [, setHdPath] = useHdPath()
   const [, setPrivateKey] = usePrivateKey()
   const [, setName] = useName()
+  const [, setNetworkKind] = useNetworkKind()
+  const [, setAddresses] = useAddresses()
   const [, setCreated] = useCreated()
   return useCallback(() => {
     setMnemonic([])
     setHdPath('')
     setPrivateKey('')
     setName('')
+    setNetworkKind(NetworkKind.EVM)
+    setAddresses([])
     setCreated(false)
-  }, [setCreated, setHdPath, setMnemonic, setName, setPrivateKey])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 }
 
 export function useAddWallet() {
@@ -67,11 +82,13 @@ export function useAddWallet() {
   const [hdPath] = useHdPath()
   const [privateKey] = usePrivateKey()
   const [name] = useName()
+  const [networkKind] = useNetworkKind()
+  const [addresses] = useAddresses()
   const [, setCreated] = useCreated()
 
   return useCallback(async (): Promise<{ error?: string }> => {
     if (name && (await WALLET_SERVICE.existsName(name))) {
-      return { error: 'Invalid secret recovery phrase' }
+      return { error: 'Existing name' }
     }
 
     const opts = { name } as NewWalletOpts
@@ -93,24 +110,43 @@ export function useAddWallet() {
         break
       case AddWalletKind.IMPORT_WATCH_ADDRESS:
         opts.type = WalletType.WATCH
+        opts.networkKind = networkKind
+        opts.addresses = addresses
         break
       case AddWalletKind.IMPORT_WATCH_ADDRESS_GROUP:
         opts.type = WalletType.WATCH_GROUP
+        opts.networkKind = networkKind
+        opts.addresses = addresses
         break
       default:
         throw new Error('unknown wallet type')
     }
 
+    console.log(opts)
     const { wallet, decrypted } = await WALLET_SERVICE.newWallet(opts)
 
     if (await WALLET_SERVICE.existsSecret(wallet)) {
       return { error: 'There exists wallet with the same secret' }
     }
 
-    WALLET_SERVICE.createWallet(wallet, decrypted).finally(() => {
+    WALLET_SERVICE.createWallet({
+      wallet,
+      decrypted,
+      networkKind,
+      addresses
+    }).finally(() => {
       setCreated(true)
     })
 
     return {}
-  }, [addWalletKind, hdPath, mnemonic, name, privateKey, setCreated])
+  }, [
+    addWalletKind,
+    addresses,
+    hdPath,
+    mnemonic,
+    name,
+    networkKind,
+    privateKey,
+    setCreated
+  ])
 }

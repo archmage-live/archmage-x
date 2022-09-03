@@ -41,7 +41,9 @@ export default function AddWallet() {
             <StepGenerateMnemonic />
           ) : addWalletKind === AddWalletKind.IMPORT_HD ||
             addWalletKind === AddWalletKind.IMPORT_MNEMONIC_PRIVATE_KEY ||
-            addWalletKind === AddWalletKind.IMPORT_PRIVATE_KEY ? (
+            addWalletKind === AddWalletKind.IMPORT_PRIVATE_KEY ||
+            addWalletKind === AddWalletKind.IMPORT_WATCH_ADDRESS ||
+            addWalletKind === AddWalletKind.IMPORT_WATCH_ADDRESS_GROUP ? (
             <StepImportWallet />
           ) : (
             <StepConnectHardwareWallet />
