@@ -145,10 +145,9 @@ interface IEvmTransactionService {
   ): Promise<void>
 }
 
-export class EvmTransactionService implements IEvmTransactionService {
-  private waits: Map<string, Promise<ITransaction>> = new Map()
-
-  private normalizeTransaction(
+// @ts-ignore
+class EvmTransactionServicePartial implements IEvmTransactionService {
+  protected normalizeTransaction(
     transaction: ITransaction,
     tx: TransactionResponse,
     receipt?: TransactionReceipt
@@ -165,7 +164,7 @@ export class EvmTransactionService implements IEvmTransactionService {
     return transaction
   }
 
-  private newTransaction({
+  protected newTransaction({
     account,
     tx,
     etherscanTx,
@@ -200,6 +199,80 @@ export class EvmTransactionService implements IEvmTransactionService {
 
     return transaction
   }
+
+  async getTransaction(
+    idOrTx: number | ITransaction,
+    provider: EvmProvider
+  ): Promise<ITransaction | undefined> {
+    let transaction =
+      typeof idOrTx === 'number' ? await DB.transactions.get(idOrTx) : idOrTx
+    if (!transaction) {
+      return undefined
+    }
+    const info = transaction.info as EvmTransactionInfo
+
+    // fetch latest tx and receipt
+    const tx = await provider.getTransaction(info.tx.hash)
+    const receipt = await provider.getTransactionReceipt(info.tx.hash)
+    transaction = this.normalizeTransaction(transaction, tx, receipt)
+
+    return transaction
+  }
+
+  async getTransactionCount(account: IChainAccount): Promise<number> {
+    if (!account.address) {
+      return 0
+    }
+    return DB.transactions
+      .where('[masterId+index+networkKind+chainId+address]')
+      .equals([
+        account.masterId,
+        account.index,
+        account.networkKind,
+        account.chainId,
+        account.address
+      ])
+      .count()
+  }
+
+  async getTransactions(
+    account: IChainAccount,
+    lastNonce?: number,
+    limit: number = 100
+  ): Promise<ITransaction[]> {
+    if (!account.address) {
+      return []
+    }
+    return DB.transactions
+      .where('[masterId+index+networkKind+chainId+address+nonce]')
+      .between(
+        [
+          account.masterId,
+          account.index,
+          account.networkKind,
+          account.chainId,
+          account.address,
+          0
+        ],
+        [
+          account.masterId,
+          account.index,
+          account.networkKind,
+          account.chainId,
+          account.address,
+          lastNonce !== undefined && lastNonce !== null
+            ? lastNonce
+            : Dexie.maxKey
+        ]
+      )
+      .reverse()
+      .limit(limit)
+      .toArray()
+  }
+}
+
+export class EvmTransactionService extends EvmTransactionServicePartial {
+  private waits: Map<string, Promise<ITransaction>> = new Map()
 
   async addTransaction(
     account: IChainAccount,
@@ -276,64 +349,6 @@ export class EvmTransactionService implements IEvmTransactionService {
     return transaction
   }
 
-  async getTransaction(
-    idOrTx: number | ITransaction,
-    provider: EvmProvider
-  ): Promise<ITransaction | undefined> {
-    let transaction =
-      typeof idOrTx === 'number' ? await DB.transactions.get(idOrTx) : idOrTx
-    if (!transaction) {
-      return undefined
-    }
-    const info = transaction.info as EvmTransactionInfo
-
-    // fetch latest tx and receipt
-    const tx = await provider.getTransaction(info.tx.hash)
-    const receipt = await provider.getTransactionReceipt(info.tx.hash)
-    transaction = this.normalizeTransaction(transaction, tx, receipt)
-
-    return transaction
-  }
-
-  async getTransactionCount(account: IChainAccount): Promise<number> {
-    if (!account.address) {
-      return 0
-    }
-    return DB.transactions
-      .where('[masterId+index+networkKind+chainId+address]')
-      .equals([
-        account.masterId,
-        account.index,
-        account.networkKind,
-        account.chainId,
-        account.address
-      ])
-      .count()
-  }
-
-  async getTransactions(
-    account: IChainAccount,
-    lastNonce?: number,
-    limit: number = 100
-  ): Promise<ITransaction[]> {
-    if (!account.address) {
-      return []
-    }
-    return DB.transactions
-      .where('[masterId+index+networkKind+chainId+address+nonce]')
-      .below([
-        account.masterId,
-        account.index,
-        account.networkKind,
-        account.chainId,
-        account.address,
-        lastNonce !== undefined && lastNonce !== null ? lastNonce : Dexie.maxKey
-      ])
-      .reverse()
-      .limit(limit)
-      .toArray()
-  }
-
   private async _findCursorForFetchTransactions(
     account: IChainAccount
   ): Promise<ITransaction | undefined> {
@@ -383,9 +398,13 @@ export class EvmTransactionService implements IEvmTransactionService {
       ? (lastCursorTx.info as EvmTransactionInfo).tx.blockNumber! + 1
       : 0
 
-    const transactions = await etherscanProvider.getTransactions(
+    let transactions = await etherscanProvider.getTransactions(
       account.address,
       startBlock
+    )
+    // bypass received tx
+    transactions = transactions.filter(
+      (tx) => ethers.utils.getAddress(tx[0].from) === account.address
     )
     if (!transactions.length) {
       return
@@ -423,11 +442,6 @@ export class EvmTransactionService implements IEvmTransactionService {
     const bulkAdd: ITransaction[] = []
     const bulkUpdate: [ITransaction, TransactionResponse][] = []
     for (const [tx, etherscanTx] of transactions) {
-      if (tx.from !== account.address) {
-        // bypass received tx
-        continue
-      }
-
       const existing = existingMap.get(tx.nonce)
       if (!existing) {
         bulkAdd.push(this.newTransaction({ account, tx, etherscanTx }))
@@ -505,7 +519,11 @@ function createEvmTransactionService(): IEvmTransactionService {
     service = new EvmTransactionService()
     SERVICE_WORKER_SERVER.registerService(serviceName, service)
   } else {
-    service = SERVICE_WORKER_CLIENT.service<IEvmTransactionService>(serviceName)
+    service = SERVICE_WORKER_CLIENT.service<IEvmTransactionService>(
+      serviceName,
+      // @ts-ignore
+      new EvmTransactionServicePartial()
+    )
   }
   return service
 }
