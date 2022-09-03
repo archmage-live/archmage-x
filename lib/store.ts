@@ -13,8 +13,8 @@ export enum StoreKey {
   LAST_UNLOCK_TIME = 'lastUnlockTime',
   AUTO_LOCK_TIME = 'autoLockTime',
   KEYSTORE_PREFIX = 'keystore',
-  SELECTED_NETWORK = 'selectedNetwork',
-  SELECTED_WALLET = 'selectedWallet',
+  ACTIVE_NETWORK = 'activeNetwork',
+  ACTIVE_WALLET = 'activeWallet',
   TOKEN_LISTS = 'tokenLists',
   CONSENT_REQUESTS = 'consentRequests'
 }
@@ -35,7 +35,7 @@ export function useLocalStorage<T = any>(
   key: StoreKey,
   onInit?: T | ((v?: T) => T | Promise<T>)
 ) {
-  const [renderValue, ...rest] = useStorage(
+  const [renderValue, ...rest] = useStorage<T>(
     {
       key,
       area: StoreArea.LOCAL
@@ -43,7 +43,7 @@ export function useLocalStorage<T = any>(
     onInit as any
   )
   const value = useMemo(
-    () => (renderValue?.then ? undefined : renderValue),
+    () => ((renderValue as any)?.then ? undefined : renderValue),
     [renderValue]
   )
   return [value, ...rest] as const
@@ -53,7 +53,7 @@ export function useSessionStorage<T = any>(
   key: StoreKey,
   onInit?: T | ((v?: T) => T | Promise<T>)
 ) {
-  const [renderValue, ...rest] = useStorage(
+  const [renderValue, ...rest] = useStorage<T>(
     {
       key,
       area: StoreArea.SESSION
@@ -61,7 +61,7 @@ export function useSessionStorage<T = any>(
     onInit as any
   )
   const value = useMemo(
-    () => (renderValue?.then ? undefined : renderValue),
+    () => ((renderValue as any)?.then ? undefined : renderValue),
     [renderValue]
   )
   return [value, ...rest] as const

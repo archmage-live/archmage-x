@@ -19,26 +19,18 @@ import { BiQuestionMark } from 'react-icons/bi'
 import { FiCheckCircle, FiCopy } from 'react-icons/fi'
 import { MdMoreVert } from 'react-icons/md'
 
+import { useActive } from '~lib/active'
 import { formatNumber } from '~lib/formatNumber'
 import { useConnectedSitesBySite } from '~lib/services/connectedSiteService'
 import { useCryptoComparePrice } from '~lib/services/datasource/cryptocompare'
+import { getNetworkInfo } from '~lib/services/network'
 import { useBalance } from '~lib/services/provider'
-import { useChainAccountByIndex } from '~lib/services/walletService'
 import { useCurrentTab } from '~lib/util'
 import { shortenAddress } from '~lib/utils'
 
-import { useActiveWallet, useSelectedNetwork } from '../select'
-
 export default function Assets() {
-  const { wallet, subWallet } = useActiveWallet()
-  const { selectedNetwork: network } = useSelectedNetwork()
-
-  const account = useChainAccountByIndex(
-    wallet?.id,
-    network?.kind,
-    network?.chainId,
-    subWallet?.index
-  )
+  const { network, account, wallet, subWallet } = useActive()
+  const networkInfo = network && getNetworkInfo(network)
 
   const tab = useCurrentTab()
   const origin = tab?.url && new URL(tab.url).origin
@@ -91,7 +83,23 @@ export default function Assets() {
             </Tooltip>
 
             <Tooltip
-              label={!hasCopied ? 'Copy Address' : 'Copied'}
+              label={
+                !hasCopied ? (
+                  <>
+                    <Text>
+                      {wallet?.name}
+                      {subWallet?.name && ` / ${subWallet.name}`}
+                    </Text>
+                    <Text>
+                      {account?.address
+                        ? account.address
+                        : `Not Available for network ${networkInfo?.name}`}
+                    </Text>
+                  </>
+                ) : (
+                  'Copied Address'
+                )
+              }
               placement="top">
               <Button
                 variant="ghost"

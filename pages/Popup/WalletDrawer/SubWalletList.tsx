@@ -80,7 +80,7 @@ export const SubWalletList = ({
                     account={account}
                     selected={wallet.id === selectedId}
                     onSelected={() => onSelectedId(wallet.id!)}
-                    active={activeId?.derivedId === wallet.id}
+                    active={activeId?.subId === wallet.id}
                     isChecked={!!account.id && checkedSet.has(account.id)}
                     onChecked={
                       onChecked !== undefined

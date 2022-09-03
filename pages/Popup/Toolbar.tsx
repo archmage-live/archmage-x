@@ -8,8 +8,6 @@ import {
   DrawerOverlay,
   Flex,
   HStack,
-  Icon,
-  IconButton,
   Image,
   Text,
   useColorModeValue,
@@ -17,30 +15,20 @@ import {
 } from '@chakra-ui/react'
 import icon from 'data-base64:~assets/icon512.png'
 import { useCallback } from 'react'
-import { BiQuestionMark } from 'react-icons/bi'
 
 import { AccountAvatar } from '~components/AccountAvatar'
 import { ToggleButton } from '~components/ToggleButton'
+import { useActive } from '~lib/active'
 import { useEvmChainLogoUrl } from '~lib/services/datasource/chainlist'
 import { getNetworkInfo } from '~lib/services/network'
-import { useChainAccountByIndex } from '~lib/services/walletService'
 
 import { NetworkDrawer } from './NetworkDrawer'
 import { WalletDrawer } from './WalletDrawer'
-import { useActiveWallet, useSelectedNetwork } from './select'
 
 export const Toolbar = () => {
-  const { selectedNetwork: network } = useSelectedNetwork()
+  const { network, account } = useActive()
+
   const networkInfo = network && getNetworkInfo(network)
-
-  const { wallet, subWallet } = useActiveWallet()
-  const account = useChainAccountByIndex(
-    wallet?.id,
-    network?.kind,
-    network?.chainId,
-    subWallet?.index
-  )
-
   const networkLogoUrl = useEvmChainLogoUrl(network?.chainId)
 
   const bg = useColorModeValue('gray.50', 'blackAlpha.400')
@@ -86,21 +74,16 @@ export const Toolbar = () => {
         </Button>
 
         <Center w="40px" h="40px">
-          {account && (
-            <Box
-              cursor="pointer"
-              onClick={onWalletToggle}
-              borderRadius="full"
-              borderWidth="2px"
-              borderColor="purple.500">
-              <Box
-                borderRadius="full"
-                borderWidth="2px"
-                borderColor={blockieBg}>
-                <AccountAvatar text={account.address} />
-              </Box>
+          <Box
+            cursor="pointer"
+            onClick={onWalletToggle}
+            borderRadius="full"
+            borderWidth="2px"
+            borderColor="purple.500">
+            <Box borderRadius="full" borderWidth="2px" borderColor={blockieBg}>
+              <AccountAvatar text={account?.address || ''} />
             </Box>
-          )}
+          </Box>
         </Center>
         {/*<ToggleButton isOpen={isWalletOpen} onClick={onWalletToggle} />*/}
 

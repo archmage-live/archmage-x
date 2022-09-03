@@ -40,6 +40,9 @@ class TokenService {
   }
 
   async getTokenCount(account: IChainAccount): Promise<number> {
+    if (!account.address) {
+      return 0
+    }
     return DB.tokens
       .where('[masterId+index+networkKind+chainId+address]')
       .equals([
@@ -53,6 +56,9 @@ class TokenService {
   }
 
   async getTokens(account: IChainAccount): Promise<IToken[]> {
+    if (!account.address) {
+      return []
+    }
     return DB.tokens
       .where('[masterId+index+networkKind+chainId+address]')
       .below([

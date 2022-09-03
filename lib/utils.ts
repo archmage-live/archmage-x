@@ -28,7 +28,7 @@ export function shortenAddress(
   }
 ): string {
   if (!address) {
-    return ''
+    return 'Not Available'
   }
 
   const { leadingChars = 2, prefixChars = 3, suffixChars = 4 } = opts || {}

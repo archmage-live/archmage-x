@@ -24,7 +24,7 @@ import {
   useChainAccounts
 } from '~lib/services/walletService'
 import { shortenAddress } from '~lib/utils'
-import { WalletType, getWalletTypeIdentifier } from '~lib/wallet'
+import { WalletType, getWalletTypeIdentifier, isWalletGroup } from '~lib/wallet'
 
 import { SubWalletList } from './SubWalletList'
 
@@ -70,7 +70,7 @@ export const WalletItem = ({
     wallet.id,
     network?.kind,
     network?.chainId,
-    wallet.type !== WalletType.HD ? PSEUDO_INDEX : undefined
+    !isWalletGroup(wallet.type) ? PSEUDO_INDEX : undefined
   )
 
   const balance = useBalance(network, account)
@@ -113,7 +113,7 @@ export const WalletItem = ({
       return
     }
 
-    if (wallet.type !== WalletType.HD) {
+    if (!isWalletGroup(wallet.type)) {
       setIsChecked(checked[0] === account?.id)
       return
     }
@@ -134,7 +134,7 @@ export const WalletItem = ({
       setIsChecked(isChecked)
       setIsIndeterminate(false)
 
-      if (wallet.type !== WalletType.HD) {
+      if (!isWalletGroup(wallet.type)) {
         if (account) {
           onChecked(isChecked ? [account.id!] : [])
         }
@@ -168,7 +168,7 @@ export const WalletItem = ({
         justifyContent="start"
         onClick={() => {
           onSelected?.()
-          if (wallet.type === WalletType.HD) {
+          if (isWalletGroup(wallet.type)) {
             onToggle()
           } else {
             onClose?.()
@@ -182,9 +182,7 @@ export const WalletItem = ({
                 mb="-12px"
                 isIndeterminate={isIndeterminate}
                 isChecked={isChecked}
-                pointerEvents={
-                  wallet.type !== WalletType.HD ? 'none' : undefined
-                }
+                pointerEvents={!isWalletGroup(wallet.type) ? 'none' : undefined}
                 onChange={(e) => {
                   onCheckedChange(e.target.checked)
                 }}
@@ -193,7 +191,7 @@ export const WalletItem = ({
 
             <HStack w="calc(100% - 29.75px)" justify="space-between">
               <AccountAvatar
-                text={account?.address || wallet.hash}
+                text={account ? account.address : wallet.hash}
                 scale={0.8}
                 m="-3px"
                 mb="-16px"
@@ -205,7 +203,7 @@ export const WalletItem = ({
                 </Text>
 
                 <Text fontFamily="monospace" fontSize="sm" color="gray.500">
-                  {shortenAddress(account?.address)}
+                  {account ? shortenAddress(account.address) : ''}
                 </Text>
               </HStack>
             </HStack>
@@ -234,7 +232,7 @@ export const WalletItem = ({
         {/*</HStack>*/}
       </Button>
 
-      {isOpen && network && wallet.type === WalletType.HD && (
+      {isOpen && network && isWalletGroup(wallet.type) && (
         <SubWalletList
           network={network}
           wallets={subWallets}

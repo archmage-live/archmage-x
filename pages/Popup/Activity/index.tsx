@@ -2,27 +2,18 @@ import { Box, Text, useDisclosure } from '@chakra-ui/react'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { useEffect, useRef, useState } from 'react'
 
+import { useActive } from '~lib/active'
 import { ITransaction } from '~lib/schema'
 import {
   useEvmTransactionCount,
   useEvmTransactions
 } from '~lib/services/transaction/evm'
-import { useChainAccountByIndex } from '~lib/services/walletService'
 
-import { useActiveWallet, useSelectedNetwork } from '../select'
 import { ActivityDetailModal } from './ActivityDetail'
 import { ActivityItem } from './ActivityItem'
 
 export default function Activity() {
-  const { selectedNetwork: network } = useSelectedNetwork()
-  const { wallet, subWallet } = useActiveWallet()
-
-  const account = useChainAccountByIndex(
-    wallet?.id,
-    network?.kind,
-    network?.chainId,
-    subWallet?.index
-  )
+  const { network, account } = useActive()
 
   const [count, setCount] = useState(0)
 

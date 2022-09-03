@@ -71,8 +71,10 @@ export const ActivityItem = ({
         </Center>
 
         <HStack w="calc(100% - 42px)" justify="space-between" align="start">
-          <Stack align="start">
-            <Text fontWeight="medium">{txInfo.name}</Text>
+          <Stack align="start" maxW="65%">
+            <Text fontWeight="medium" noOfLines={1} display="block" maxW="full">
+              {txInfo.name}
+            </Text>
             <HStack fontSize="sm" color="gray.500">
               <Tooltip label={dayjs(txInfo.timestamp).toString()}>
                 <Text>{dayjs(txInfo.timestamp).fromNow()}</Text>

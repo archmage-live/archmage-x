@@ -5,7 +5,7 @@ import { useEffect, useRef } from 'react'
 import { ActiveWalletId } from '~lib/active'
 import { INetwork, IWallet, PSEUDO_INDEX } from '~lib/schema'
 import { WALLET_SERVICE } from '~lib/services/walletService'
-import { WalletType } from '~lib/wallet'
+import { WalletType, isWalletGroup } from '~lib/wallet'
 
 import { WalletItem } from './WalletItem'
 
@@ -92,7 +92,7 @@ export const WalletList = ({
                   selected={wallet.id === selectedId}
                   onSelected={async () => {
                     onSelectedId?.(wallet.id)
-                    if (wallet.type !== WalletType.HD) {
+                    if (!isWalletGroup(wallet.type)) {
                       const subWallet = await WALLET_SERVICE.getSubWallet({
                         masterId: wallet.id,
                         index: PSEUDO_INDEX

@@ -3,9 +3,9 @@ import { Box, Center, HStack, Text, Tooltip } from '@chakra-ui/react'
 import { ReactNode } from 'react'
 
 import { AccountAvatar } from '~components/AccountAvatar'
+import { useActiveWallet } from '~lib/active'
 import { ISubWallet } from '~lib/schema'
 import { shortenAddress } from '~lib/utils'
-import { useActiveWallet } from '~pages/Popup/select'
 
 export const FromTo = ({
   from,

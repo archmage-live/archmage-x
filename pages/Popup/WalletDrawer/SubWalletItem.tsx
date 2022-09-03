@@ -48,7 +48,7 @@ export const SubWalletItem = ({
           )}
           <HStack w="calc(100% - 29.75px)" justify="space-between">
             <AccountAvatar
-              text={account.address}
+              text={account.address || ''}
               scale={0.8}
               m="-3px"
               mb="-16px"

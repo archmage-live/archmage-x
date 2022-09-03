@@ -29,7 +29,7 @@ export const SubWalletEdit = ({
   master,
   wallet
 }: SubWalletEditProps) => {
-  const info = useChainAccountByIndex(
+  const account = useChainAccountByIndex(
     master.id,
     network.kind,
     network.chainId,
@@ -87,7 +87,7 @@ export const SubWalletEdit = ({
         </Text>
 
         <Text fontSize="lg" fontWeight="medium" color="gray.500">
-          {info?.address}
+          {account?.address}
         </Text>
       </Stack>
 

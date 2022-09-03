@@ -76,7 +76,7 @@ export const allowedTransactionKeys: Array<string> = [
 ]
 
 export class EvmPermissionedProvider {
-  wallet?: IChainAccount
+  account?: IChainAccount
 
   private constructor(
     public network: INetwork,
@@ -126,7 +126,7 @@ export class EvmPermissionedProvider {
         conn = connections[0]
       }
 
-      this.wallet = await WALLET_SERVICE.getChainAccount({
+      this.account = await WALLET_SERVICE.getChainAccount({
         masterId: conn.masterId,
         index: conn.index,
         networkKind: this.network.kind,
@@ -393,11 +393,11 @@ export class EvmPermissionedProvider {
   }
 
   async sendTransaction(ctx: Context, [params]: Array<any>) {
-    if (!this.wallet) {
+    if (!this.account?.address) {
       throw ethErrors.provider.unauthorized()
     }
 
-    const voidSigner = new VoidSigner(this.wallet.address, this.provider)
+    const voidSigner = new VoidSigner(this.account.address, this.provider)
 
     const [txParams, populatedParams] = await this.populateTransaction(
       voidSigner,
@@ -406,7 +406,7 @@ export class EvmPermissionedProvider {
 
     return CONSENT_SERVICE.requestConsent(ctx, {
       networkId: this.network.id,
-      accountId: this.wallet.id,
+      accountId: this.account.id,
       type: ConsentType.TRANSACTION,
       origin: this.origin,
       payload: {
@@ -423,18 +423,18 @@ export class EvmPermissionedProvider {
   async signTypedData([params]: Array<any>) {}
 
   async getAccounts() {
-    return this.wallet ? [this.wallet.address] : []
+    return this.account?.address ? [this.account.address] : []
   }
 
   // https://eips.ethereum.org/EIPS/eip-1102
   async requestAccounts(ctx: Context) {
     await this.requestPermissions(ctx, [{ eth_accounts: {} }])
-    return [this.wallet!.address]
+    return this.getAccounts()
   }
 
   // https://eips.ethereum.org/EIPS/eip-2255
   async getPermissions() {
-    if (!this.wallet) {
+    if (!this.account?.address) {
       return []
     }
     return [
@@ -444,7 +444,7 @@ export class EvmPermissionedProvider {
         caveats: [
           {
             type: 'filterResponse',
-            value: [this.wallet.address]
+            value: [this.account.address]
           }
         ]
       }
@@ -460,7 +460,7 @@ export class EvmPermissionedProvider {
       // now only support `eth_accounts`
       throw ethErrors.rpc.invalidParams()
     }
-    if (!this.wallet) {
+    if (!this.account) {
       await CONSENT_SERVICE.requestConsent(ctx, {
         networkId: this.network.id!,
         accountId: [],

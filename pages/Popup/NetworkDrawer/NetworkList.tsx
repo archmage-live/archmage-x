@@ -2,14 +2,14 @@ import { Box } from '@chakra-ui/react'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { useRef } from 'react'
 
+import { useActiveNetwork } from '~lib/active'
 import { getNetworkInfo, useNetworks } from '~lib/services/network'
 import { NetworkItem } from '~pages/Popup/NetworkDrawer/NetworkItem'
-import { useSelectedNetwork } from '~pages/Popup/select'
 
 export const NetworkList = ({ onSelected }: { onSelected(): void }) => {
   const networks = useNetworks() || []
 
-  const { selectedNetworkId, setSelectedNetworkId } = useSelectedNetwork()
+  const { networkId, setNetworkId } = useActiveNetwork()
 
   const parentRef = useRef(null)
   const networksVirtualizer = useVirtualizer({
@@ -44,9 +44,9 @@ export const NetworkList = ({ onSelected }: { onSelected(): void }) => {
                 <NetworkItem
                   network={net}
                   info={info}
-                  selected={selectedNetworkId === net.id}
+                  selected={networkId === net.id}
                   onSelected={() => {
-                    setSelectedNetworkId(net.id!).finally(onSelected)
+                    setNetworkId(net.id!).finally(onSelected)
                   }}
                 />
               </Box>

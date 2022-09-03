@@ -28,7 +28,7 @@ export function useBalance(
     [QueryService.PROVIDER, network, wallet],
     async () =>
       network &&
-      wallet &&
+      wallet?.address &&
       (await getProvider(network)).getBalance(wallet.address)
   )
 

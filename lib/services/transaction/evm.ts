@@ -180,7 +180,7 @@ export class EvmTransactionService implements IEvmTransactionService {
     request?: TransactionRequest
     origin?: string
   }) {
-    assert(account.address, ethers.utils.getAddress(tx.from))
+    assert(account.address === ethers.utils.getAddress(tx.from))
 
     let transaction = {
       masterId: account.masterId,
@@ -208,6 +208,8 @@ export class EvmTransactionService implements IEvmTransactionService {
     replace = false,
     origin?: string
   ): Promise<ITransaction> {
+    assert(account.address)
+
     const transaction = this.newTransaction({ account, tx, request, origin })
 
     await DB.transaction('rw', [DB.transactions], async () => {
@@ -294,6 +296,9 @@ export class EvmTransactionService implements IEvmTransactionService {
   }
 
   async getTransactionCount(account: IChainAccount): Promise<number> {
+    if (!account.address) {
+      return 0
+    }
     return DB.transactions
       .where('[masterId+index+networkKind+chainId+address]')
       .equals([
@@ -311,6 +316,9 @@ export class EvmTransactionService implements IEvmTransactionService {
     lastNonce?: number,
     limit: number = 100
   ): Promise<ITransaction[]> {
+    if (!account.address) {
+      return []
+    }
     return DB.transactions
       .where('[masterId+index+networkKind+chainId+address+nonce]')
       .below([
@@ -351,6 +359,10 @@ export class EvmTransactionService implements IEvmTransactionService {
   }
 
   async fetchTransactions(account: IChainAccount) {
+    if (!account.address) {
+      return
+    }
+
     const network = await NETWORK_SERVICE.getNetwork({
       kind: account.networkKind,
       chainId: account.chainId

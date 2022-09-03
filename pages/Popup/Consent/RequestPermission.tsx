@@ -11,12 +11,12 @@ import {
 import { useEffect, useState } from 'react'
 import { FaGlobeAmericas } from 'react-icons/fa'
 
+import { useActiveNetwork } from '~lib/active'
 import { CONSENT_SERVICE, ConsentRequest } from '~lib/services/consentService'
 import { WALLET_SERVICE, useWallets } from '~lib/services/walletService'
 import { getTab } from '~lib/util'
 import { shortenAddress } from '~lib/utils'
 import { WalletList } from '~pages/Popup/WalletDrawer/WalletList'
-import { useSelectedNetwork } from '~pages/Popup/select'
 
 export const RequestPermission = ({ request }: { request: ConsentRequest }) => {
   const [iconUrl, setIconUrl] = useState<string>()
@@ -32,7 +32,7 @@ export const RequestPermission = ({ request }: { request: ConsentRequest }) => {
     effect()
   }, [request])
 
-  const { selectedNetwork } = useSelectedNetwork()
+  const { network } = useActiveNetwork()
 
   const wallets = useWallets()
 
@@ -114,7 +114,7 @@ export const RequestPermission = ({ request }: { request: ConsentRequest }) => {
           <Stack w="full" align="center">
             <Box w="full" borderWidth="1px" borderRadius="8px">
               <WalletList
-                network={selectedNetwork}
+                network={network}
                 wallets={wallets}
                 renderItems={4}
                 px={4}
@@ -167,7 +167,7 @@ export const RequestPermission = ({ request }: { request: ConsentRequest }) => {
             colorScheme="purple"
             disabled={!flatChecked?.length}
             onClick={async () => {
-              if (!selectedNetwork) {
+              if (!network) {
                 return
               }
 

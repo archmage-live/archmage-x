@@ -313,7 +313,10 @@ class WalletService extends WalletServicePartial {
         assert(addresses && addresses.length >= 1)
         checkAddresses(networkKind, addresses)
         hash = ethers.utils.getAddress(
-          ethers.utils.hexDataSlice(ethers.utils.keccak256(name), 12)
+          ethers.utils.hexDataSlice(
+            ethers.utils.keccak256(ethers.utils.randomBytes(32)),
+            12
+          )
         )
         break
       }
@@ -713,17 +716,6 @@ async function ensureChainAccounts(
     return
   }
 
-  let accountsAuxNum: number | undefined
-  if (!hasWalletKeystore(wallet.type)) {
-    accountsAuxNum = await DB.chainAccountsAux
-      .where('[masterId+networkKind]')
-      .equals([masterId, networkKind])
-      .count()
-    if (!accountsAuxNum) {
-      return
-    }
-  }
-
   const chainAccountsNum = await DB.chainAccounts
     .where('[masterId+networkKind+chainId]')
     .equals([masterId, networkKind, chainId])
@@ -732,32 +724,19 @@ async function ensureChainAccounts(
     return
   }
   assert(chainAccountsNum < subWalletsNum)
-  if (!hasWalletKeystore(wallet.type)) {
-    assert(accountsAuxNum !== undefined)
-    if (chainAccountsNum === accountsAuxNum) {
-      return
-    }
-    assert(chainAccountsNum < accountsAuxNum)
-  }
 
-  let subWallets: ISubWallet[]
+  const subWallets = await DB.subWallets
+    .where('masterId')
+    .equals(masterId)
+    .toArray()
+
   let accountsAuxMap: Map<number, IChainAccountAux>
-  if (hasWalletKeystore(wallet.type)) {
-    subWallets = await DB.subWallets
-      .where('masterId')
-      .equals(masterId)
-      .toArray()
-  } else {
+  if (!hasWalletKeystore(wallet.type)) {
     const accountsAux = await DB.chainAccountsAux
       .where('[masterId+networkKind]')
       .equals([masterId, networkKind])
       .toArray()
     accountsAuxMap = new Map(accountsAux.map((aux) => [aux.index, aux]))
-    subWallets = await DB.subWallets
-      .where('[masterId+index]')
-      .anyOf(accountsAux.map((aux) => [aux.masterId, aux.index]))
-      .toArray()
-    assert(subWallets.length === accountsAux.length)
   }
 
   const chainAccounts = await DB.chainAccounts
@@ -801,8 +780,7 @@ async function ensureChainAccounts(
         case WalletType.WATCH_GROUP: {
           assert(accountsAuxMap)
           const aux = accountsAuxMap.get(subWallet.index)
-          assert(aux)
-          address = aux.address
+          address = aux?.address
           break
         }
       }
@@ -832,8 +810,8 @@ async function getChainAccount(
 ): Promise<IChainAccount | undefined> {
   assert(
     index !== PSEUDO_INDEX
-      ? wallet.type === WalletType.HD
-      : wallet.type !== WalletType.HD
+      ? isWalletGroup(wallet.type)
+      : !isWalletGroup(wallet.type)
   )
 
   return DB.chainAccounts
@@ -887,10 +865,7 @@ async function ensureChainAccount(
         .where('[masterId+index+networkKind]')
         .equals([wallet.id, index, networkKind])
         .first()
-      if (!aux) {
-        return
-      }
-      address = aux.address
+      address = aux?.address
       break
     }
     case WalletType.WATCH_GROUP: {
@@ -898,10 +873,7 @@ async function ensureChainAccount(
         .where('[masterId+index+networkKind]')
         .equals([wallet.id, index, networkKind])
         .first()
-      if (!aux) {
-        return
-      }
-      address = aux.address
+      address = aux?.address
       break
     }
   }

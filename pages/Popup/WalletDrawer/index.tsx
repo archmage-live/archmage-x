@@ -8,45 +8,46 @@ import {
   Text,
   useColorModeValue
 } from '@chakra-ui/react'
+import assert from 'assert'
 import { useCallback, useEffect, useState } from 'react'
 import { IoMdSettings } from 'react-icons/io'
 import { useNavigate } from 'react-router-dom'
 
-import { ActiveWalletId } from '~lib/active'
+import { ActiveWalletId, useActiveNetwork, useActiveWallet } from '~lib/active'
 import { PASSWORD_SERVICE } from '~lib/services/passwordService'
 import { WALLET_SERVICE, useWallets } from '~lib/services/walletService'
 import { createTab } from '~lib/util'
 import { WalletList } from '~pages/Popup/WalletDrawer/WalletList'
-import { useActiveWallet, useSelectedNetwork } from '~pages/Popup/select'
 
 export const WalletDrawer = ({ onClose }: { onClose(): void }) => {
   const navigate = useNavigate()
 
   const wallets = useWallets()
 
-  const { selectedNetwork } = useSelectedNetwork()
-  const { activeId, setActiveId } = useActiveWallet()
+  const { network } = useActiveNetwork()
+  const { walletId, setWalletId } = useActiveWallet()
 
   const [selectedId, setSelectedId] = useState<number>()
   const [selectedSubId, setSelectedSubId] = useState<number>()
 
   useEffect(() => {
-    if (activeId) {
-      setSelectedId(activeId.masterId)
-      setSelectedSubId(activeId.derivedId)
+    if (walletId) {
+      setSelectedId(walletId.masterId)
+      setSelectedSubId(walletId.subId)
     }
-  }, [activeId])
+  }, [walletId])
 
   const setSubId = useCallback(
     async (id: number) => {
       setSelectedSubId(id)
       const subWallet = await WALLET_SERVICE.getSubWallet(id)
-      await setActiveId({
-        masterId: subWallet?.masterId,
-        derivedId: id
+      assert(subWallet)
+      await setWalletId({
+        masterId: subWallet.masterId,
+        subId: id
       } as ActiveWalletId)
     },
-    [selectedId, setActiveId]
+    [selectedId, setWalletId]
   )
 
   const lock = async () => {
@@ -68,13 +69,13 @@ export const WalletDrawer = ({ onClose }: { onClose(): void }) => {
         <Stack>
           <Stack spacing="4">
             <WalletList
-              network={selectedNetwork}
+              network={network}
               wallets={wallets}
               selectedId={selectedId}
               onSelectedId={setSelectedId}
               selectedSubId={selectedSubId}
               onSelectedSubId={setSubId}
-              activeId={activeId}
+              activeId={walletId}
               onClose={onClose}
             />
           </Stack>

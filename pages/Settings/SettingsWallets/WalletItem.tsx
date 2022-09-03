@@ -9,7 +9,7 @@ import { Badge } from '~components/Badge'
 import { dayjs } from '~lib/dayjs'
 import { INetwork } from '~lib/schema/network'
 import { IWallet } from '~lib/schema/wallet'
-import { WalletType, getWalletTypeIdentifier } from '~lib/wallet'
+import { WalletType, getWalletTypeIdentifier, isWalletGroup } from '~lib/wallet'
 
 import { SubWalletList } from './SubWalletList'
 
@@ -120,7 +120,7 @@ export const WalletItem = ({
         </HStack>
       </HStack>
 
-      {isOpen && network && wallet.type === WalletType.HD && (
+      {isOpen && network && isWalletGroup(wallet.type) && (
         <SubWalletList
           network={network}
           masterId={wallet.id}
