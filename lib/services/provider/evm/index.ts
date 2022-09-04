@@ -14,6 +14,7 @@ import assert from 'assert'
 import { NetworkKind } from '~lib/network'
 import { EvmChainInfo } from '~lib/network/evm'
 import { IChainAccount, INetwork } from '~lib/schema'
+import { IPFS_GATEWAY_API } from '~lib/services/datasource/ipfsGateway'
 import { NETWORK_SERVICE } from '~lib/services/network'
 import { ProviderAdaptor } from '~lib/services/provider/types'
 import { getSigningWallet } from '~lib/wallet'
@@ -137,6 +138,32 @@ export class EvmProvider extends UrlJsonRpcProvider {
       throw new Error('empty evm rpc urls')
     }
     return { url: rpcUrls[0], allowGzip: true } as ConnectionInfo
+  }
+
+  async resolveUrl(url: string): Promise<string | undefined> {
+    if (url.startsWith('https://') || url.startsWith('http://')) {
+      return url
+    } else {
+      let ipfsHash
+      if (!url.startsWith('ipfs://') && url.endsWith('.eth')) {
+        const resolver = await this.getResolver(url)
+        if (!resolver) {
+          return undefined
+        }
+        ipfsHash = await resolver.getContentHash()
+        if (!ipfsHash) {
+          return undefined
+        }
+      } else {
+        ipfsHash = url
+      }
+
+      if (ipfsHash.startsWith('ipfs://')) {
+        ipfsHash = ipfsHash.slice('ipfs://'.length)
+      }
+
+      return IPFS_GATEWAY_API.buildUrl(ipfsHash)
+    }
   }
 
   async getBlockInterval(): Promise<number> {

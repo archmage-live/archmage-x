@@ -15,7 +15,7 @@ import { NETWORK_SERVICE } from '~lib/services/network'
 import { EvmProvider } from '~lib/services/provider/evm'
 import { LOCAL_STORE, StoreKey } from '~lib/store'
 
-import { TokenBrief } from '.'
+import { TokenBrief, TokenListBrief } from '.'
 import { BaseTokenService } from './base'
 
 type EvmTokenInfo = {
@@ -35,6 +35,19 @@ export function getEvmTokenBrief(token: IToken): TokenBrief {
         .toString(),
       amountParticle: balance
     }
+  }
+}
+
+export function getEvmTokenListBrief(token: ITokenList): TokenListBrief {
+  const info = token.info as Omit<TokenList, 'tokens'>
+  const { major, minor, patch } = info.version
+  return {
+    name: info.name,
+    desc: `v${major}.${minor}.${patch}`,
+    url: `https://tokenlists.org/token-list?url=${token.url}`,
+    iconUrl: info.logoURI,
+    tokenCount: token.tokens.length,
+    enabled: token.enabled
   }
 }
 

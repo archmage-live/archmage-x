@@ -7,7 +7,11 @@ import { SERVICE_WORKER_CLIENT, SERVICE_WORKER_SERVER } from '~lib/rpc'
 import { IChainAccount, IToken, ITokenList } from '~lib/schema'
 import { BaseTokenService } from '~lib/services/token/base'
 
-import { EVM_TOKEN_SERVICE, getEvmTokenBrief } from './evm'
+import {
+  EVM_TOKEN_SERVICE,
+  getEvmTokenBrief,
+  getEvmTokenListBrief
+} from './evm'
 
 export interface Balance {
   symbol: string
@@ -21,10 +25,28 @@ export interface TokenBrief {
   iconUrl?: string
 }
 
+export interface TokenListBrief {
+  name: string
+  desc: string
+  url: string
+  iconUrl?: string
+  tokenCount: number
+  enabled: boolean
+}
+
 export function getTokenBrief(token: IToken): TokenBrief {
   switch (token.networkKind) {
     case NetworkKind.EVM:
       return getEvmTokenBrief(token)
+    default:
+      throw new Error('unknown token')
+  }
+}
+
+export function getTokenListBrief(tokenList: ITokenList): TokenListBrief {
+  switch (tokenList.networkKind) {
+    case NetworkKind.EVM:
+      return getEvmTokenListBrief(tokenList)
     default:
       throw new Error('unknown token')
   }

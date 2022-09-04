@@ -23,7 +23,7 @@ export const TokenList = () => {
   const navigate = useNavigate()
 
   return (
-    <Stack align="center">
+    <Stack align="center" spacing={4}>
       {tokens?.map((token) => {
         return (
           <TokenItem
@@ -40,7 +40,10 @@ export const TokenList = () => {
         w={56}
         size="md"
         leftIcon={<Icon color="gray.500" as={MdOutlineFormatListBulleted} />}
-        variant="ghost">
+        variant="ghost"
+        onClick={() => {
+          navigate('/ManageTokens')
+        }}>
         <Text color="gray.500">Manage Token Lists</Text>
       </Button>
     </Stack>

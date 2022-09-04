@@ -20,6 +20,7 @@ export const SwitchBar = ({ targets, value, onChange }: SwitchBarProps) => {
       {targets.map((target) => {
         return (
           <Button
+            flex={1}
             key={target}
             variant="ghost"
             borderRadius="3xl"

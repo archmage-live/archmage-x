@@ -29,6 +29,11 @@ class IpfsGatewayApi {
     ]
   }
 
+  async buildUrl(hash: string) {
+    const gateways = await this.pickBestGateways()
+    return gateways[0].replace(':hash', hash)
+  }
+
   async fetch(hash: string, json = false): Promise<any | undefined> {
     const gateways = await this.pickBestGateways()
     for (const url of gateways) {
