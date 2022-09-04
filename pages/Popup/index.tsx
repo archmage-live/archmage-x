@@ -1,4 +1,4 @@
-import { Container, Flex, useColorModeValue } from '@chakra-ui/react'
+import { Box, Container, useColorModeValue } from '@chakra-ui/react'
 import { atom, useAtom } from 'jotai'
 import { useState } from 'react'
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
@@ -42,14 +42,12 @@ export default function Popup() {
   }
 
   return (
-    <Flex
-      direction="column"
+    <Box
       minW={minW}
       minH={minH}
       w="100vw"
       h="100vh"
       bg={useColorModeValue('white', 'gray.800')}
-      justify="space-between"
       position="relative">
       <Routes>
         <Route
@@ -67,7 +65,7 @@ export default function Popup() {
             <>
               <Toolbar />
 
-              <Container flex="1">
+              <Container maxH="469px" overflowY="auto">
                 <Routes>
                   <Route path="*" element={<Navigate to="Assets" replace />} />
                   <Route path="/Assets" element={<AssetsPage />} />
@@ -83,6 +81,6 @@ export default function Popup() {
           }
         />
       </Routes>
-    </Flex>
+    </Box>
   )
 }

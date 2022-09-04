@@ -1,14 +1,14 @@
 // https://tokenlists.org
 // https://github.com/Uniswap/token-lists
 // https://github.com/Uniswap/tokenlists-org
-import { TokenList, schema } from '@uniswap/token-lists'
-import Ajv from 'ajv'
-import addFormats from 'ajv-formats'
+import { TokenList } from '@uniswap/token-lists'
 
-import { fetchDataWithCache, fetchJsonWithCache } from '~lib/fetch'
+import { fetchJsonWithCache } from '~lib/fetch'
 import { IPFS_GATEWAY_API } from '~lib/services/datasource/ipfsGateway'
 import { DEFAULT_EVM_TOKEN_LIST_URLS } from '~lib/services/datasource/tokenlists/defaultTokenLists'
 import { EvmProvider } from '~lib/services/provider/evm'
+
+import validate from './validate'
 
 class TokenListsApi {
   async getTokenList(url: string): Promise<TokenList | undefined> {
@@ -41,17 +41,15 @@ class TokenListsApi {
 
     // validate schema
     {
-      const ajv = new Ajv({ allErrors: true, verbose: true })
-      addFormats(ajv)
-
-      const validate = ajv.compile(schema)
       const valid = validate(tokenList)
       if (!valid) {
         console.error(
-          `validate token list from ${url}: ${validate.errors?.map((error) => {
-            delete error.data
-            return error
-          })}`
+          `validate token list from ${url}: ${(validate as any).errors?.map(
+            (error: any) => {
+              delete error.data
+              return error
+            }
+          )}`
         )
         return undefined
       }

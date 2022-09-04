@@ -13,9 +13,3 @@ export interface ProviderAdaptor {
 
   signTypedData(account: IChainAccount, typedData: any): Promise<any>
 }
-
-export interface Balance {
-  symbol: string
-  amount: string // number
-  amountParticle: string // number
-}

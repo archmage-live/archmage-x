@@ -1,84 +1,123 @@
 import { useLiveQuery } from 'dexie-react-hooks'
+import { useEffect } from 'react'
 
-import { DB } from '~lib/db'
 import { ENV } from '~lib/env'
 import { NetworkKind } from '~lib/network'
-import { IChainAccount, IToken, TokenVisibility } from '~lib/schema'
+import { SERVICE_WORKER_CLIENT, SERVICE_WORKER_SERVER } from '~lib/rpc'
+import { IChainAccount, IToken, ITokenList } from '~lib/schema'
+import { BaseTokenService } from '~lib/services/token/base'
 
-import { EvmTokenService } from './evm'
+import { EVM_TOKEN_SERVICE, getEvmTokenBrief } from './evm'
 
-interface ITokenService {}
+export interface Balance {
+  symbol: string
+  amount: string // number
+  amountParticle: string // number
+}
 
-class TokenService {
+export interface TokenBrief {
+  name: string
+  balance: Balance
+  iconUrl?: string
+}
+
+export function getTokenBrief(token: IToken): TokenBrief {
+  switch (token.networkKind) {
+    case NetworkKind.EVM:
+      return getEvmTokenBrief(token)
+    default:
+      throw new Error('unknown token')
+  }
+}
+
+interface ITokenService {
+  getTokenLists(networkKind: NetworkKind): Promise<ITokenList[]>
+
+  getTokenList(
+    networkKind: NetworkKind,
+    url: string
+  ): Promise<ITokenList | undefined>
+
+  enableTokenList(id: number, enabled: boolean): Promise<void>
+
+  deleteTokenList(id: number): Promise<void>
+
+  getTokenCount(account: IChainAccount): Promise<number>
+
+  getTokens(account: IChainAccount): Promise<IToken[]>
+
+  getToken(id: number): Promise<IToken | undefined>
+
+  setTokenVisibility(id: number, visible: boolean): Promise<void>
+
+  fetchTokens(account: IChainAccount): Promise<void>
+}
+
+// @ts-ignore
+class TokenServicePartial extends BaseTokenService implements ITokenService {}
+
+class TokenService extends TokenServicePartial {
+  private waits: Map<string, Promise<void>> = new Map()
+
   constructor() {
+    super()
+
     if (ENV.inServiceWorker) {
       this.init()
     }
   }
 
   private async init() {
-    await EvmTokenService.init()
+    await EVM_TOKEN_SERVICE.init()
   }
 
-  async getTokenLists(networkKind: NetworkKind) {
-    return DB.tokenLists.where('networkKind').equals(networkKind).toArray()
-  }
-
-  async getTokenList(networkKind: NetworkKind, url: string) {
-    return DB.tokenLists
-      .where('[networkKind+url]')
-      .equals([networkKind, url])
-      .first()
-  }
-
-  async enableTokenList(id: number, enabled: boolean) {
-    await DB.tokenLists.update(id, { enabled })
-  }
-
-  async deleteTokenList(id: number) {
-    await DB.tokenLists.delete(id)
-  }
-
-  async getTokenCount(account: IChainAccount): Promise<number> {
+  async fetchTokens(account: IChainAccount) {
     if (!account.address) {
-      return 0
+      return
     }
-    return DB.tokens
-      .where('[masterId+index+networkKind+chainId+address]')
-      .equals([
-        account.masterId,
-        account.index,
-        account.networkKind,
-        account.chainId,
-        account.address
-      ])
-      .count()
-  }
 
-  async getTokens(account: IChainAccount): Promise<IToken[]> {
-    if (!account.address) {
-      return []
+    const waitKey = `${account.networkKind}-${account.chainId}-${account.address}`
+    const wait = this.waits.get(waitKey)
+    if (wait) {
+      return wait
     }
-    return DB.tokens
-      .where('[masterId+index+networkKind+chainId+address]')
-      .below([
-        account.masterId,
-        account.index,
-        account.networkKind,
-        account.chainId,
-        account.address
-      ])
-      .toArray()
-  }
 
-  async setTokenVisibility(id: number, visible: boolean) {
-    await DB.tokens.update(id, {
-      visible: visible ? TokenVisibility.SHOW : TokenVisibility.HIDE
-    })
+    let resolve: any
+    this.waits.set(
+      waitKey,
+      new Promise((r) => {
+        resolve = r
+      })
+    )
+
+    switch (account.networkKind) {
+      case NetworkKind.EVM:
+        await EVM_TOKEN_SERVICE.fetchTokens(account)
+        break
+    }
+
+    this.waits.delete(waitKey)
+    resolve()
   }
 }
 
-export const TOKEN_SERVICE = new TokenService()
+function createTokenService() {
+  const serviceName = 'tokenService'
+  let service
+  if (ENV.inServiceWorker) {
+    service = new TokenService()
+    SERVICE_WORKER_SERVER.registerService(serviceName, service)
+  } else {
+    service = SERVICE_WORKER_CLIENT.service<ITokenService>(
+      serviceName,
+      // @ts-ignore
+      new TokenServicePartial()
+    )
+  }
+  return service
+}
+
+export const TOKEN_SERVICE = createTokenService()
 
 export function useTokenLists(networkKind?: NetworkKind) {
   return useLiveQuery(() => {
@@ -87,4 +126,23 @@ export function useTokenLists(networkKind?: NetworkKind) {
     }
     return TOKEN_SERVICE.getTokenLists(networkKind)
   }, [networkKind])
+}
+
+export function useTokens(account?: IChainAccount): IToken[] | undefined {
+  useEffect(() => {
+    if (!account) return
+    TOKEN_SERVICE.fetchTokens(account)
+  }, [account])
+
+  return useLiveQuery(async () => {
+    if (!account) return
+    return TOKEN_SERVICE.getTokens(account)
+  }, [account])
+}
+
+export function useToken(id?: number) {
+  return useLiveQuery(async () => {
+    if (id === undefined) return
+    return TOKEN_SERVICE.getToken(id)
+  })
 }

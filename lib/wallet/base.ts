@@ -43,9 +43,9 @@ export function getWalletTypeIdentifier(type: WalletType) {
     case WalletType.PRIVATE_KEY:
       return '' // empty for simple wallet
     case WalletType.WATCH:
-      return 'WH'
+      return 'Watch'
     case WalletType.WATCH_GROUP:
-      return 'WG'
+      return 'Watch Group'
     case WalletType.HW:
       return 'HW'
     case WalletType.HW_GROUP:

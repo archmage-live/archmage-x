@@ -58,7 +58,7 @@ export const Toolbar = () => {
         </Box>
 
         <Button variant="outline" maxW={64} onClick={onNetworkToggle}>
-          <HStack spacing={1}>
+          <HStack>
             <Image
               borderRadius="full"
               boxSize="20px"

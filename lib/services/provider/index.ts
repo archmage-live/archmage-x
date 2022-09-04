@@ -6,9 +6,10 @@ import { NetworkKind } from '~lib/network'
 import { QueryService } from '~lib/query'
 import { IChainAccount, INetwork } from '~lib/schema'
 import { getNetworkInfo } from '~lib/services/network'
+import { Balance } from '~lib/services/token'
 
 import { EvmProviderAdaptor } from './evm'
-import { Balance, ProviderAdaptor } from './types'
+import { ProviderAdaptor } from './types'
 
 export async function getProvider(network: INetwork): Promise<ProviderAdaptor> {
   switch (network.kind) {
