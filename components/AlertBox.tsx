@@ -3,8 +3,10 @@ import { ReactNode } from 'react'
 
 import { useTransparentize } from '~hooks/useColor'
 
+export type AlertLevel = 'info' | 'warning' | 'error'
+
 interface AlertBoxProps {
-  level?: 'info' | 'warning' | 'error'
+  level?: AlertLevel
   children: ReactNode
 }
 

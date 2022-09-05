@@ -138,10 +138,7 @@ const isArray = (arr: any) => {
 }
 
 const _WARN_ = (title = '', detail = '') => {
-  process.emitWarning(title, {
-    detail,
-    code: 'CoinGecko'
-  })
+  console.log(`${title}: ${detail}`)
 
   return true
 }

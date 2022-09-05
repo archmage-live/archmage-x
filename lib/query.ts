@@ -31,6 +31,7 @@ export function createQueryCachePersister(
 export enum QueryService {
   PROVIDER = 'provider',
   CRYPTO_COMPARE = 'cryptoCompare',
+  COIN_GECKO = 'coinGecko',
   FOUR_BYTE = 'fourByte',
   CHAIN_LIST = 'chainList'
 }

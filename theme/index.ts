@@ -109,6 +109,43 @@ export const theme: Record<string, any> = extendTheme(
               _active: { bg: mode(`${c}.700`, `${c}.600`)(props) }
             }
           },
+          'solid-secondary': (props: StyleFunctionProps) => {
+            const { colorScheme: c } = props
+            if (c === 'gray') {
+              const bg = mode(`gray.50`, `whiteAlpha.50`)(props)
+
+              return {
+                bg,
+                _hover: {
+                  bg: mode(`gray.100`, `whiteAlpha.200`)(props),
+                  _disabled: {
+                    bg
+                  }
+                },
+                _active: { bg: mode(`gray.100`, `whiteAlpha.200`)(props) }
+              }
+            }
+
+            const bg = mode(`${c}.600`, `${c}.500`)(props)
+            const grayBg = mode(`gray.100`, `whiteAlpha.200`)(props)
+
+            return {
+              bg,
+              color: mode('white', `gray.100`)(props),
+              _hover: {
+                bg: mode(`${c}.700`, `${c}.600`)(props),
+                _disabled: {
+                  bg: grayBg
+                }
+              },
+              _disabled: {
+                opacity: 1,
+                color: mode('gray.500', `gray.400`)(props),
+                bg: grayBg
+              },
+              _active: { bg: mode(`${c}.700`, `${c}.600`)(props) }
+            }
+          },
           ghost: (props: StyleFunctionProps) => {
             const { colorScheme: c, theme } = props
 
@@ -133,6 +170,33 @@ export const theme: Record<string, any> = extendTheme(
               },
               _active: {
                 bg: mode(`${c}.100`, darkActiveBg)(props)
+              }
+            }
+          },
+          'ghost-secondary': (props: StyleFunctionProps) => {
+            const { colorScheme: c, theme } = props
+
+            if (c === 'gray') {
+              return {
+                color: mode(`inherit`, `whiteAlpha.900`)(props),
+                _hover: {
+                  bg: mode(`gray.50`, `whiteAlpha.50`)(props)
+                },
+                _active: { bg: mode(`gray.100`, `whiteAlpha.100`)(props) }
+              }
+            }
+
+            const darkHoverBg = transparentize(`${c}.50`, 0.06)(theme)
+            const darkActiveBg = transparentize(`${c}.50`, 0.12)(theme)
+
+            return {
+              color: mode(`${c}.600`, `${c}.200`)(props),
+              bg: 'transparent',
+              _hover: {
+                bg: mode(`${c}.50`, darkHoverBg)(props)
+              },
+              _active: {
+                bg: mode(`${c}.50`, darkActiveBg)(props)
               }
             }
           }

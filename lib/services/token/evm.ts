@@ -8,7 +8,13 @@ import { ethers } from 'ethers'
 import { DB } from '~lib/db'
 import { NetworkKind } from '~lib/network'
 import { ERC20__factory } from '~lib/network/evm/abi'
-import { IChainAccount, IToken, ITokenList, TokenVisibility } from '~lib/schema'
+import {
+  ChainId,
+  IChainAccount,
+  IToken,
+  ITokenList,
+  TokenVisibility
+} from '~lib/schema'
 import { ETH_BALANCE_CHECKER_API } from '~lib/services/datasource/ethBalanceChecker'
 import { TOKENLISTS_API } from '~lib/services/datasource/tokenlists'
 import { NETWORK_SERVICE } from '~lib/services/network'
@@ -38,7 +44,10 @@ export function getEvmTokenBrief(token: IToken): TokenBrief {
   }
 }
 
-export function getEvmTokenListBrief(token: ITokenList): TokenListBrief {
+export function getEvmTokenListBrief(
+  token: ITokenList,
+  chainId: ChainId
+): TokenListBrief {
   const info = token.info as Omit<TokenList, 'tokens'>
   const { major, minor, patch } = info.version
   return {
@@ -46,7 +55,10 @@ export function getEvmTokenListBrief(token: ITokenList): TokenListBrief {
     desc: `v${major}.${minor}.${patch}`,
     url: `https://tokenlists.org/token-list?url=${token.url}`,
     iconUrl: info.logoURI,
-    tokenCount: token.tokens.length,
+    tokenCount: token.tokens.reduce(
+      (count, token: TokenInfo) => count + (token.chainId === chainId),
+      0
+    ),
     enabled: token.enabled
   }
 }

@@ -1,4 +1,13 @@
-import https from 'https'
+import { useQuery } from '@tanstack/react-query'
+import { ethers } from 'ethers'
+import { useMemo } from 'react'
+
+import { fetchJsonWithCache } from '~lib/fetch'
+import { NetworkKind } from '~lib/network'
+import { QueryService } from '~lib/query'
+import { useQuoteCurrency } from '~lib/quoteCurrency'
+import { INetwork } from '~lib/schema'
+import { PLATFORMS } from '~lib/services/datasource/coingecko/platforms'
 
 import { constants as Constants, ReturnObject, utils as Utils } from './helpers'
 
@@ -759,7 +768,7 @@ export class CoinGecko {
        * @param {boolean} params.include_24hr_vol [default: false] - Include 24hr volume in results or not
        * @param {boolean} params.include_24hr_change [default: false] - Include 24hr change in results or not
        * @param {boolean} params.include_last_updated_at [default: false] - Include last updated date in results or not
-       * @returns {ReturnObject}
+       * @returns {any}
        */
       fetchTokenPrice: (
         params: Record<any, any> = {},
@@ -799,6 +808,8 @@ export class CoinGecko {
         if (Utils.isArray(params['vs_currencies'])) {
           params.vs_currencies = params.vs_currencies.join(',')
         }
+
+        params.include_24hr_change = true
 
         const path = `/simple/token_price/${assetPlatform}`
 
@@ -964,109 +975,82 @@ export class CoinGecko {
     }
   }
 
-  /**
-   * @description Build options for https.request
-   * @function _buildRequestOptions
-   * @protected
-   * @param {string} path - Relative path for API
-   * @param {object} params - Object representing query strings for url parameters
-   * @returns {Object} - {path, method, host, port} Options for request
-   */
-  private _buildRequestOptions(path: string, params?: object | string) {
-    //Stringify object params if exist
-    if (typeof params === 'object')
+  private async _request(path: string, params?: object | string): Promise<any> {
+    if (typeof params === 'object') {
       params = new URLSearchParams(params as any).toString()
-    else params = undefined
-
-    //Make relative path
-    //Check if has params, append accordingly
-    if (params == undefined) path = `/api/v${Constants.API_VERSION}${path}`
-    else path = `/api/v${Constants.API_VERSION}${path}?${params}`
-
-    //Return options
-    return {
-      path,
-      method: 'GET',
-      host: Constants.HOST,
-      port: 443,
-      timeout: CoinGecko.TIMEOUT
     }
-  }
+    let url = Constants.URI + path
+    if (params) url += '?' + params
 
-  /**
-   * @description Perform https request
-   * @function _request
-   * @protected
-   * @param {string} path - Relative path for API
-   * @param {object} params - Object representing query strings for url parameters
-   * @returns {Promise} Body of https request data results
-   */
-  private _request(path: string, params?: object | string) {
-    let options = this._buildRequestOptions(path, params)
-
-    return new Promise((resolve, reject) => {
-      //Perform request
-      let req = https.request(options, (res) => {
-        let body: Uint8Array[] = []
-        let data
-
-        //Set body on data
-        res.on('data', (chunk) => {
-          body.push(chunk)
-        })
-
-        //On end, end the Promise
-        res.on('end', () => {
-          try {
-            const bodyStr = Buffer.concat(body).toString()
-
-            //Check if page is returned instead of JSON
-            if (bodyStr.startsWith('<!DOCTYPE html>')) {
-              Utils._WARN_(
-                'Invalid request',
-                'There was a problem with your request. The parameter(s) you gave are missing or incorrect.'
-              )
-            } else if (bodyStr.startsWith('Throttled')) {
-              Utils._WARN_(
-                'Throttled request',
-                'There was a problem with request limit.'
-              )
-            }
-
-            //Attempt to parse
-            data = JSON.parse(bodyStr)
-
-            //Create return object
-            resolve({
-              success:
-                res.statusCode && res.statusCode >= 200 && res.statusCode < 300,
-              message: res.statusMessage,
-              code: res.statusCode,
-              data
-            } as ReturnObject)
-          } catch (error) {
-            reject(error)
-          }
-        })
-      })
-
-      //On error, reject the Promise
-      req.on('error', (error) => reject(error))
-
-      //On timeout, reject the Promise
-      req.on('timeout', () => {
-        req.abort()
-        reject(
-          new Error(
-            `CoinGecko API request timed out. Current timeout is: ${CoinGecko.TIMEOUT} milliseconds`
-          )
-        )
-      })
-
-      //End request
-      req.end()
-    })
+    return fetchJsonWithCache(url, 1000 * 30)
   }
 }
 
 export const COIN_GECKO_SERVICE = new CoinGecko()
+
+export function useCoinGeckoTokensPrice(
+  network?: INetwork,
+  tokens?: string[]
+):
+  | {
+      currencySymbol: string | undefined
+      prices: Map<string, number | undefined>
+      changes24Hour: Map<string, number | undefined | null>
+    }
+  | undefined {
+  const { quoteCurrency, quoteCurrencySymbol } = useQuoteCurrency()
+
+  const { data: result } = useQuery(
+    [
+      QueryService.COIN_GECKO,
+      network?.kind,
+      network?.chainId,
+      tokens,
+      quoteCurrency
+    ],
+    async () => {
+      if (!network || !tokens?.length) {
+        return
+      }
+      const chains = PLATFORMS.get(network.kind)
+      if (!chains) {
+        return
+      }
+      const chain = chains.get(network.chainId)
+      if (!chain) {
+        return
+      }
+      return (await COIN_GECKO_SERVICE.simple.fetchTokenPrice(
+        {
+          contract_addresses: tokens,
+          vs_currencies: quoteCurrency.toLowerCase()
+        },
+        chain
+      )) as Record<string, Record<string, number>>
+    }
+  )
+
+  return useMemo(() => {
+    if (!network || !result) {
+      return undefined
+    }
+    const qc = quoteCurrency.toLowerCase()
+    const qcChange24Hour = `${qc}_24h_change`
+
+    const prices = new Map()
+    const changes24Hour = new Map()
+    for (const [token, price] of Object.entries(result)) {
+      const addr =
+        network.kind === NetworkKind.EVM
+          ? ethers.utils.getAddress(token) // format returned evm address
+          : token
+      prices.set(addr, price[qc])
+      changes24Hour.set(addr, price[qcChange24Hour])
+    }
+    return {
+      currencySymbol: quoteCurrencySymbol,
+      prices,
+      changes24Hour
+    }
+  }, [network, quoteCurrency, quoteCurrencySymbol, result])
+}

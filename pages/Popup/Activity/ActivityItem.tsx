@@ -59,6 +59,7 @@ export const ActivityItem = ({
       h="63px"
       px={4}
       justifyContent="start"
+      variant="solid-secondary"
       onClick={onClick}>
       <HStack w="full" justify="space-between" fontWeight="normal">
         <Center

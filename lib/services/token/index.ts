@@ -4,7 +4,7 @@ import { useEffect } from 'react'
 import { ENV } from '~lib/env'
 import { NetworkKind } from '~lib/network'
 import { SERVICE_WORKER_CLIENT, SERVICE_WORKER_SERVER } from '~lib/rpc'
-import { IChainAccount, IToken, ITokenList } from '~lib/schema'
+import { ChainId, IChainAccount, IToken, ITokenList } from '~lib/schema'
 import { BaseTokenService } from '~lib/services/token/base'
 
 import {
@@ -43,10 +43,13 @@ export function getTokenBrief(token: IToken): TokenBrief {
   }
 }
 
-export function getTokenListBrief(tokenList: ITokenList): TokenListBrief {
+export function getTokenListBrief(
+  tokenList: ITokenList,
+  chainId: ChainId
+): TokenListBrief {
   switch (tokenList.networkKind) {
     case NetworkKind.EVM:
-      return getEvmTokenListBrief(tokenList)
+      return getEvmTokenListBrief(tokenList, chainId)
     default:
       throw new Error('unknown token')
   }

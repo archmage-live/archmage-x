@@ -85,7 +85,7 @@ const TokenListItem = ({
   network: INetwork
   tokenList: ITokenList
 }) => {
-  const brief = getTokenListBrief(tokenList)
+  const brief = getTokenListBrief(tokenList, network.chainId)
 
   const [iconUrl, setIconUrl] = useState<string | undefined>()
   useEffect(() => {
@@ -156,19 +156,19 @@ const TokenListItem = ({
                   <Icon boxSize="14px" color={color} as={MdOutlineSettings} />
                 }
               />
-              <MenuList>
+              <MenuList minW={32}>
                 <MenuGroup title={brief.desc}>
                   <MenuItem
                     onClick={() => {
                       browser.tabs.create({ url: brief.url })
                     }}>
-                    View List
+                    View list
                   </MenuItem>
                   <MenuItem
                     onClick={() => {
                       TOKEN_SERVICE.deleteTokenList(tokenList.id)
                     }}>
-                    Remove List
+                    Remove list
                   </MenuItem>
                 </MenuGroup>
               </MenuList>

@@ -14,7 +14,7 @@ import assert from 'assert'
 import { ReactNode, useEffect, useState } from 'react'
 import { useWizard } from 'react-use-wizard'
 
-import { AlertBox } from '~components/AlertBox'
+import { AlertBox, AlertLevel } from '~components/AlertBox'
 import { PASSWORD_SERVICE } from '~lib/services/passwordService'
 
 zxcvbnOptions.setOptions({
@@ -36,11 +36,13 @@ export const StepCreatePassword = () => {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [passwordStrength, setPasswordStrength] = useState(-1)
   const [alert, setAlert] = useState<ReactNode | string>('')
+  const [alertLevel, setAlertLevel] = useState<AlertLevel>('warning')
 
   useEffect(() => {
     if (!password) {
       setPasswordStrength(-1)
       setAlert('')
+      setAlertLevel('warning')
       return
     }
 
@@ -68,15 +70,18 @@ export const StepCreatePassword = () => {
       }
     }
     setAlert(alert)
+    setAlertLevel(score < 2 ? 'warning' : 'info')
   }, [password])
 
   useEffect(() => {
     setAlert('')
+    setAlertLevel('warning')
   }, [confirmPassword])
 
   const createPassword = async () => {
     if (password !== confirmPassword) {
       setAlert("Passwords don't match")
+      setAlertLevel('warning')
       return
     }
     await PASSWORD_SERVICE.createPassword(password)
@@ -99,46 +104,50 @@ export const StepCreatePassword = () => {
         </HStack>
       </Stack>
 
-      <InputGroup>
-        <Input
-          type="password"
-          size="lg"
-          sx={{ paddingInlineEnd: '20' }}
-          placeholder="Password"
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
-        />
-        {passwordStrength > -1 && (
-          <InputRightElement
-            w="20"
-            right="4"
-            top="4px"
-            justifyContent="end"
-            color={passwordStrengthColors[passwordStrength]}
-            fontWeight="bold">
-            {passwordStrengths[passwordStrength]}
-          </InputRightElement>
-        )}
-      </InputGroup>
-      <Input
-        type="password"
-        size="lg"
-        placeholder="Confirm Password"
-        value={confirmPassword}
-        onChange={(event) => setConfirmPassword(event.target.value)}
-      />
+      <form onSubmit={createPassword}>
+        <Stack spacing="12">
+          <InputGroup>
+            <Input
+              type="password"
+              size="lg"
+              sx={{ paddingInlineEnd: '20' }}
+              placeholder="Password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+            />
+            {passwordStrength > -1 && (
+              <InputRightElement
+                w="20"
+                right="4"
+                top="4px"
+                justifyContent="end"
+                color={passwordStrengthColors[passwordStrength]}
+                fontWeight="bold">
+                {passwordStrengths[passwordStrength]}
+              </InputRightElement>
+            )}
+          </InputGroup>
+          <Input
+            type="password"
+            size="lg"
+            placeholder="Confirm Password"
+            value={confirmPassword}
+            onChange={(event) => setConfirmPassword(event.target.value)}
+          />
 
-      <AlertBox>{alert}</AlertBox>
+          <AlertBox level={alertLevel}>{alert}</AlertBox>
 
-      <Button
-        h="14"
-        size="lg"
-        colorScheme="purple"
-        borderRadius="8px"
-        disabled={!(passwordStrength >= 2 && confirmPassword)}
-        onClick={createPassword}>
-        Continue
-      </Button>
+          <Button
+            type="submit"
+            h="14"
+            size="lg"
+            colorScheme="purple"
+            borderRadius="8px"
+            disabled={!(passwordStrength >= 2 && confirmPassword)}>
+            Continue
+          </Button>
+        </Stack>
+      </form>
     </Stack>
   )
 }

@@ -206,5 +206,5 @@ export function useCryptoComparePrice(currency?: string):
       displayChange24Hour: result[0].DISPLAY?.CHANGE24HOUR,
       displayChangePercent24Hour: result[0].DISPLAY?.CHANGEPCT24HOUR
     }
-  }, [currency, result])
+  }, [currency, quoteCurrencySymbol, result])
 }

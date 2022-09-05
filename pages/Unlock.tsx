@@ -8,6 +8,15 @@ import { PASSWORD_SERVICE } from '~lib/services/passwordService'
 import { useSubWalletsCount } from '~lib/services/walletService'
 import { createTab } from '~lib/util'
 
+let open = false
+
+function openWelcomeTab() {
+  if (open) return
+  open = true
+  createTab('/tab/welcome')
+  window.close()
+}
+
 export default function Unlock() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
@@ -24,8 +33,7 @@ export default function Unlock() {
 
   const redirect = useCallback(() => {
     if (passwordExists === false || walletCount === 0) {
-      createTab('/tab/add-wallet')
-      window.close()
+      openWelcomeTab()
     } else if (passwordExists && walletCount) {
       const to = searchParams.get('redirect') || '/consent'
       navigate(to, { replace: true })
