@@ -28,7 +28,7 @@ import { useBalance } from '~lib/services/provider'
 import { useCurrentTab } from '~lib/util'
 import { shortenAddress } from '~lib/utils'
 
-import { TokenList } from './TokenList'
+import { TokenListSection } from './TokenList'
 
 export default function Assets() {
   const { network, account, wallet, subWallet } = useActive()
@@ -219,7 +219,7 @@ export default function Assets() {
         </HStack>
       </Stack>
 
-      <TokenList />
+      <TokenListSection />
     </Stack>
   )
 }

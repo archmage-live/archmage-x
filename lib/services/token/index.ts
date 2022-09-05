@@ -1,3 +1,4 @@
+import { shallowCopy } from '@ethersproject/properties'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useEffect } from 'react'
 
@@ -65,6 +66,8 @@ interface ITokenService {
 
   enableTokenList(id: number, enabled: boolean): Promise<void>
 
+  addTokenList(tokenList: ITokenList): Promise<ITokenList>
+
   deleteTokenList(id: number): Promise<void>
 
   getTokenCount(account: IChainAccount): Promise<number>
@@ -75,6 +78,11 @@ interface ITokenService {
 
   setTokenVisibility(id: number, visible: boolean): Promise<void>
 
+  fetchTokenList(
+    networkKind: NetworkKind,
+    url: string
+  ): Promise<ITokenList | undefined>
+
   fetchTokens(account: IChainAccount): Promise<void>
 }
 
@@ -82,12 +90,47 @@ interface ITokenService {
 class TokenServicePartial extends BaseTokenService implements ITokenService {}
 
 export class TokenService extends TokenServicePartial {
-  private waits: Map<string, Promise<void>> = new Map()
+  private waits: Map<string, Promise<any>> = new Map()
 
   static async init() {
     if (ENV.inServiceWorker) {
       await EVM_TOKEN_SERVICE.init()
     }
+  }
+
+  async fetchTokenList(
+    networkKind: NetworkKind,
+    url: string
+  ): Promise<ITokenList | undefined> {
+    const existing = await this.getTokenList(networkKind, url)
+    if (existing) {
+      return existing
+    }
+
+    const waitKey = `${networkKind}-${url}`
+    const wait = this.waits.get(waitKey)
+    if (wait) {
+      return wait
+    }
+
+    let resolve: any
+    this.waits.set(
+      waitKey,
+      new Promise((r) => {
+        resolve = r
+      })
+    )
+
+    let tokenList
+    switch (networkKind) {
+      case NetworkKind.EVM:
+        tokenList = await EVM_TOKEN_SERVICE.fetchTokenList(url)
+        break
+    }
+
+    this.waits.delete(waitKey)
+    resolve(tokenList ? shallowCopy(tokenList) : undefined)
+    return tokenList
   }
 
   async fetchTokens(account: IChainAccount) {
@@ -120,7 +163,7 @@ export class TokenService extends TokenServicePartial {
   }
 }
 
-function createTokenService() {
+function createTokenService(): ITokenService {
   const serviceName = 'tokenService'
   let service
   if (ENV.inServiceWorker) {

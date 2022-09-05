@@ -2,7 +2,7 @@ import Dexie from 'dexie'
 
 import { DB } from '~lib/db'
 import { NetworkKind } from '~lib/network'
-import { IChainAccount, IToken, TokenVisibility } from '~lib/schema'
+import { IChainAccount, IToken, ITokenList, TokenVisibility } from '~lib/schema'
 
 export class BaseTokenService {
   async getTokenLists(networkKind: NetworkKind) {
@@ -18,6 +18,11 @@ export class BaseTokenService {
 
   async enableTokenList(id: number, enabled: boolean) {
     await DB.tokenLists.update(id, { enabled })
+  }
+
+  async addTokenList(tokenList: ITokenList): Promise<ITokenList> {
+    tokenList.id = await DB.tokenLists.add(tokenList)
+    return tokenList
   }
 
   async deleteTokenList(id: number) {

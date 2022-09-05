@@ -62,7 +62,7 @@ class TokenListsApi {
     return DEFAULT_EVM_TOKEN_LIST_URLS
   }
 
-  async getEvmTokenLists(
+  async getTokenLists(
     urls: string[]
   ): Promise<{ url: string; tokenList: TokenList }[]> {
     let result: { url: string; tokenList: TokenList }[] = []

@@ -1,4 +1,4 @@
-import { Text } from '@chakra-ui/react'
+import { Box, Text } from '@chakra-ui/react'
 import { ReactNode } from 'react'
 
 import { useTransparentize } from '~hooks/useColor'
@@ -7,10 +7,15 @@ export type AlertLevel = 'info' | 'warning' | 'error'
 
 interface AlertBoxProps {
   level?: AlertLevel
+  nowrap?: boolean
   children: ReactNode
 }
 
-export const AlertBox = ({ level = 'warning', children }: AlertBoxProps) => {
+export const AlertBox = ({
+  level = 'warning',
+  nowrap = false,
+  children
+}: AlertBoxProps) => {
   let bgColor, borderColor
   switch (level) {
     case 'info':
@@ -28,17 +33,20 @@ export const AlertBox = ({ level = 'warning', children }: AlertBoxProps) => {
   }
 
   const bg = useTransparentize(bgColor, bgColor, 0.1)
-  return children ? (
-    <Text
+
+  if (!children) {
+    return <></>
+  }
+
+  return (
+    <Box
       py="2"
       px="4"
       borderRadius="4px"
       borderWidth="1px"
       borderColor={borderColor}
       bg={bg}>
-      {children}
-    </Text>
-  ) : (
-    <></>
+      {!nowrap ? <Text>{children}</Text> : children}
+    </Box>
   )
 }

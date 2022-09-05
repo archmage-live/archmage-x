@@ -1,35 +1,26 @@
-import {
-  Button,
-  Center,
-  HStack,
-  Icon,
-  IconButton,
-  Image,
-  Menu,
-  MenuButton,
-  MenuGroup,
-  MenuItem,
-  MenuList,
-  Stack,
-  Text
-} from '@chakra-ui/react'
-import Decimal from 'decimal.js'
-import { BiQuestionMark } from 'react-icons/bi'
-import { IoMdSwap } from 'react-icons/io'
-import {
-  MdDelete,
-  MdMoreVert,
-  MdOutlineFormatListBulleted
-} from 'react-icons/md'
-import { useNavigate } from 'react-router-dom'
+import { Button, Icon, Stack, Text, useDisclosure } from '@chakra-ui/react'
+import { MdOutlineFormatListBulleted } from 'react-icons/md'
 
 import { useActive } from '~lib/active'
-import { formatNumber } from '~lib/formatNumber'
-import { IToken, TokenVisibility } from '~lib/schema'
+import { TokenVisibility } from '~lib/schema'
 import { useCoinGeckoTokensPrice } from '~lib/services/datasource/coingecko'
-import { TOKEN_SERVICE, getTokenBrief, useTokens } from '~lib/services/token'
+import { useTokens } from '~lib/services/token'
+import { ManageTokensModal } from '~pages/Popup/ManageTokensModal'
 
-export const TokenList = () => {
+import { TokenItem } from './TokenItem'
+
+export enum TokenVisible {
+  ONLY_WHITELIST,
+  ONLY_BLACKLIST,
+  INCLUDES_WHITELIST,
+  ALL
+}
+
+export const TokenList = ({
+  visible = TokenVisible.INCLUDES_WHITELIST
+}: {
+  visible?: TokenVisible
+}) => {
   const { network, account } = useActive()
   const tokens = useTokens(account)
 
@@ -39,12 +30,21 @@ export const TokenList = () => {
       tokens?.map((t) => t.token)
     ) || {}
 
-  const navigate = useNavigate()
-
   return (
-    <Stack align="center" spacing={4}>
+    <Stack w="full" spacing={4}>
       {tokens
-        ?.filter((token) => token.visible !== TokenVisibility.HIDE)
+        ?.filter((token) => {
+          switch (visible) {
+            case TokenVisible.ONLY_WHITELIST:
+              return token.visible === TokenVisibility.SHOW
+            case TokenVisible.ONLY_BLACKLIST:
+              return token.visible === TokenVisibility.HIDE
+            case TokenVisible.INCLUDES_WHITELIST:
+              return token.visible !== TokenVisibility.HIDE
+            case TokenVisible.ALL:
+              return true
+          }
+        })
         .map((token) => {
           return (
             <TokenItem
@@ -53,164 +53,31 @@ export const TokenList = () => {
               currencySymbol={currencySymbol}
               price={prices?.get(token.token)}
               change24Hour={changes24Hour?.get(token.token)}
-              onClick={() => {
-                navigate(token.id)
-              }}
+              onClick={() => {}}
             />
           )
         })}
+    </Stack>
+  )
+}
+
+export const TokenListSection = () => {
+  const { isOpen, onOpen, onClose } = useDisclosure()
+
+  return (
+    <Stack w="full" align="center" spacing={4}>
+      <TokenList />
 
       <Button
         w={56}
         size="md"
         leftIcon={<Icon color="gray.500" as={MdOutlineFormatListBulleted} />}
         variant="ghost"
-        onClick={() => {
-          navigate('/ManageTokens')
-        }}>
+        onClick={onOpen}>
         <Text color="gray.500">Manage Token Lists</Text>
       </Button>
+
+      <ManageTokensModal isOpen={isOpen} onClose={onClose} />
     </Stack>
-  )
-}
-
-const TokenItem = ({
-  token,
-  currencySymbol,
-  price,
-  change24Hour,
-  onClick
-}: {
-  token: IToken
-  currencySymbol?: string
-  price?: number
-  change24Hour?: number | null
-  onClick: () => void
-}) => {
-  const brief = getTokenBrief(token)
-
-  return (
-    <Button
-      size="lg"
-      w="full"
-      h="63px"
-      px={4}
-      justifyContent="start"
-      variant="solid-secondary"
-      onClick={onClick}>
-      <HStack w="full" justify="space-between" fontWeight="normal">
-        <Image
-          borderRadius="full"
-          boxSize="28px"
-          fit="cover"
-          src={brief.iconUrl}
-          fallback={
-            <Center
-              w={8}
-              h={8}
-              borderRadius="full"
-              borderWidth="1px"
-              borderColor="gray.500">
-              <Icon as={BiQuestionMark} fontSize="xl" />
-            </Center>
-          }
-          alt="Token Icon"
-        />
-
-        <HStack w="calc(100% - 56px)" justify="space-between" align="start">
-          <Stack align="start" maxW="50%">
-            <Text
-              fontWeight="medium"
-              fontSize="md"
-              noOfLines={1}
-              display="block"
-              maxW="full">
-              {brief.name}
-            </Text>
-
-            <Text
-              fontWeight="medium"
-              fontSize="sm"
-              color="gray.500"
-              noOfLines={1}
-              display="block"
-              maxW="full">
-              {formatNumber(brief.balance.amount)}
-              &nbsp;
-              {brief.balance.symbol}
-            </Text>
-          </Stack>
-
-          <Stack maxW="50%" align="end">
-            <Text
-              fontWeight="medium"
-              fontSize="md"
-              noOfLines={1}
-              display="block"
-              maxW="full">
-              {currencySymbol}&nbsp;
-              {formatNumber(
-                price && new Decimal(price).mul(brief.balance.amount)
-              )}
-            </Text>
-
-            <Text
-              fontWeight="medium"
-              fontSize="sm"
-              noOfLines={1}
-              display="block"
-              maxW="full"
-              color={
-                typeof change24Hour !== 'number' || change24Hour === 0
-                  ? 'gray.500'
-                  : change24Hour > 0
-                  ? 'green.500'
-                  : 'red.500'
-              }>
-              {typeof change24Hour !== 'number'
-                ? undefined
-                : change24Hour >= 0
-                ? '+'
-                : '-'}
-              {currencySymbol}&nbsp;
-              {formatNumber(
-                change24Hour &&
-                  new Decimal(change24Hour)
-                    .abs()
-                    .mul(brief.balance.amount)
-                    .div(100)
-              )}
-            </Text>
-          </Stack>
-        </HStack>
-
-        <Menu autoSelect={false} placement="left">
-          <MenuButton
-            variant="link"
-            minW={0}
-            as={IconButton}
-            icon={<Icon as={MdMoreVert} fontSize="xl" />}
-          />
-          <MenuList minW={32}>
-            <MenuGroup title={brief.name}>
-              <MenuItem
-                icon={<Icon as={IoMdSwap} />}
-                iconSpacing={2}
-                onClick={() => {}}>
-                Detail
-              </MenuItem>
-              <MenuItem
-                icon={<Icon as={MdDelete} />}
-                iconSpacing={2}
-                onClick={() => {
-                  TOKEN_SERVICE.setTokenVisibility(token.id, false)
-                }}>
-                Hide
-              </MenuItem>
-            </MenuGroup>
-          </MenuList>
-        </Menu>
-      </HStack>
-    </Button>
   )
 }

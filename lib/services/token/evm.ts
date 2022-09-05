@@ -89,7 +89,7 @@ export class EvmTokenService extends BaseTokenService {
       await DB.tokenLists.where('networkKind').equals(NetworkKind.EVM).toArray()
     ).map((item) => item.url)
     const tokenLists = (
-      await TOKENLISTS_API.getEvmTokenLists(
+      await TOKENLISTS_API.getTokenLists(
         newUrls.filter((url) => existingLists.indexOf(url) < 0)
       )
     ).map(({ url, tokenList }) => this.makeTokenList(url, tokenList))
@@ -118,14 +118,17 @@ export class EvmTokenService extends BaseTokenService {
     } as ITokenList
   }
 
-  async addTokenList(
-    url: string,
-    tokenList: TokenList,
-    enabled: boolean
-  ): Promise<ITokenList> {
-    const item = this.makeTokenList(url, tokenList, enabled)
-    item.id = await DB.tokenLists.add(item)
-    return item
+  async fetchTokenList(url: string): Promise<ITokenList | undefined> {
+    let tokenList
+    try {
+      tokenList = await TOKENLISTS_API.getTokenList(url)
+    } catch (err) {
+      console.error(`get token list from ${url}: ${err}`)
+    }
+    if (!tokenList) {
+      return
+    }
+    return this.makeTokenList(url, tokenList)
   }
 
   async getTokensFromLists(chainId: number): Promise<Map<string, TokenInfo>> {
@@ -149,8 +152,7 @@ export class EvmTokenService extends BaseTokenService {
 
   private async _fetchTokensBalance(
     account: IChainAccount,
-    whitelistedTokens: IToken[],
-    blacklistedTokens: IToken[]
+    whitelistedTokens: IToken[]
   ): Promise<Map<string, EvmTokenInfo>> {
     if (!account.address) {
       return new Map()
@@ -166,11 +168,6 @@ export class EvmTokenService extends BaseTokenService {
     whitelistedTokens.forEach((wt) => {
       if (!tokensMap.has(wt.token)) {
         tokensMap.set(wt.token, wt.info.info)
-      }
-    })
-    blacklistedTokens.forEach((bt) => {
-      if (tokensMap.has(bt.token)) {
-        tokensMap.delete(bt.token)
       }
     })
     if (!tokensMap.size) {
@@ -233,19 +230,20 @@ export class EvmTokenService extends BaseTokenService {
     const whitelistedTokens = existingTokens.filter(
       (token) => token.visible === TokenVisibility.SHOW
     )
-    const blacklistedTokens = existingTokens.filter(
-      (token) => token.visible === TokenVisibility.HIDE
-    )
 
     const tokensBalance = await this._fetchTokensBalance(
       account,
-      whitelistedTokens,
-      blacklistedTokens
+      whitelistedTokens
     )
 
     const bulkRemove = existingTokens
-      .filter((t) => !tokensBalance.has(t.token))
+      .filter(
+        (t) =>
+          !tokensBalance.has(t.token) &&
+          t.visible === TokenVisibility.UNSPECIFIED
+      )
       .map((t) => t.id)
+
     const bulkAdd: IToken[] = []
     const bulkUpdate: [number, EvmTokenInfo][] = []
     for (const [token, info] of tokensBalance.entries()) {

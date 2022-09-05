@@ -7,7 +7,6 @@ import { NavTarget, Navbar } from '~components/Navbar'
 import ActivityPage from '~pages/Popup/Activity'
 import AssetsPage from '~pages/Popup/Assets'
 import ConsentPage from '~pages/Popup/Consent'
-import ManageTokensPage from '~pages/Popup/ManageTokens'
 import NFTsPage from '~pages/Popup/NFTs'
 import SettingsPage from '~pages/Popup/Settings'
 import UnlockPage from '~pages/Unlock'
@@ -72,7 +71,6 @@ export default function Popup() {
                   <Route path="/NFTs" element={<NFTsPage />} />
                   <Route path="/Activity" element={<ActivityPage />} />
                   <Route path="/Settings" element={<SettingsPage />} />
-                  <Route path="/ManageTokens" element={<ManageTokensPage />} />
                 </Routes>
               </Container>
 
