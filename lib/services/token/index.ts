@@ -78,19 +78,13 @@ interface ITokenService {
 // @ts-ignore
 class TokenServicePartial extends BaseTokenService implements ITokenService {}
 
-class TokenService extends TokenServicePartial {
+export class TokenService extends TokenServicePartial {
   private waits: Map<string, Promise<void>> = new Map()
 
-  constructor() {
-    super()
-
+  static async init() {
     if (ENV.inServiceWorker) {
-      this.init()
+      await EVM_TOKEN_SERVICE.init()
     }
-  }
-
-  private async init() {
-    await EVM_TOKEN_SERVICE.init()
   }
 
   async fetchTokens(account: IChainAccount) {

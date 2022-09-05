@@ -47,16 +47,12 @@ export function getNetworkInfo(network: INetwork): NetworkInfo {
   }
 }
 
-class NetworkService {
-  constructor() {
+export class NetworkService {
+  static async init() {
     if (ENV.inServiceWorker) {
-      this.init()
+      await EvmNetworkService.init()
+      await CosmNetworkService.init()
     }
-  }
-
-  private async init() {
-    await EvmNetworkService.init()
-    await CosmNetworkService.init()
   }
 
   async getNetwork(
