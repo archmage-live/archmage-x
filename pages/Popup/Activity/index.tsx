@@ -42,11 +42,16 @@ export default function Activity() {
       return
     }
     const lastItem = virtualItems[virtualItems.length - 1]
-    if (lastItem.index >= transactions!.length && totalCount > count) {
-      setCount((count) => Math.min(count + 20, totalCount))
+    if (lastItem.index >= transactions!.length) {
+      setCount((count) => {
+        if (totalCount > count) {
+          return Math.min(count + 20, totalCount)
+        }
+        return count
+      })
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [count, totalCount, transactions, txVirtualizer.getVirtualItems()])
+  }, [totalCount, transactions, txVirtualizer.getVirtualItems()])
 
   const { isOpen, onClose, onOpen } = useDisclosure()
   const [tx, setTx] = useState<ITransaction>()

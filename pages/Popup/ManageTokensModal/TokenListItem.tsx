@@ -10,6 +10,7 @@ import {
   MenuGroup,
   MenuItem,
   MenuList,
+  Portal,
   Stack,
   Switch,
   Text,
@@ -100,7 +101,7 @@ export const TokenListItem = ({
             </Text>
 
             {!undetermined && (
-              <Menu placement="right" autoSelect={false}>
+              <Menu isLazy placement="right" autoSelect={false}>
                 <MenuButton
                   variant="link"
                   minW={0}
@@ -109,22 +110,24 @@ export const TokenListItem = ({
                     <Icon boxSize="14px" color={color} as={MdOutlineSettings} />
                   }
                 />
-                <MenuList minW={32}>
-                  <MenuGroup title={brief.desc}>
-                    <MenuItem
-                      onClick={() => {
-                        browser.tabs.create({ url: brief.url })
-                      }}>
-                      View list
-                    </MenuItem>
-                    <MenuItem
-                      onClick={() => {
-                        TOKEN_SERVICE.deleteTokenList(tokenList.id)
-                      }}>
-                      Remove list
-                    </MenuItem>
-                  </MenuGroup>
-                </MenuList>
+                <Portal>
+                  <MenuList minW={32} zIndex={1500}>
+                    <MenuGroup title={brief.desc}>
+                      <MenuItem
+                        onClick={() => {
+                          browser.tabs.create({ url: brief.url })
+                        }}>
+                        View list
+                      </MenuItem>
+                      <MenuItem
+                        onClick={() => {
+                          TOKEN_SERVICE.deleteTokenList(tokenList.id)
+                        }}>
+                        Remove list
+                      </MenuItem>
+                    </MenuGroup>
+                  </MenuList>
+                </Portal>
               </Menu>
             )}
           </HStack>
