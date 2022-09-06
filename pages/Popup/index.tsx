@@ -1,8 +1,9 @@
 import { Box, Container, useColorModeValue } from '@chakra-ui/react'
 import { atom, useAtom } from 'jotai'
 import { useState } from 'react'
-import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
+import { Route, Routes, useLocation } from 'react-router-dom'
 
+import { LazyTabs } from '~components/LazyTabs'
 import { NavTarget, Navbar } from '~components/Navbar'
 import ActivityPage from '~pages/Popup/Activity'
 import AssetsPage from '~pages/Popup/Assets'
@@ -28,6 +29,19 @@ function useIsPopupWindow() {
   }
 
   return false
+}
+
+function tabIndex(navTarget: NavTarget) {
+  switch (navTarget) {
+    case 'Assets':
+      return 0
+    case 'NFTs':
+      return 1
+    case 'Activity':
+      return 2
+    case 'Settings':
+      return 3
+  }
 }
 
 export default function Popup() {
@@ -59,19 +73,18 @@ export default function Popup() {
         />
         <Route path="/consent" element={<ConsentPage />} />
         <Route
-          path="/*"
+          path="/home"
           element={
             <>
               <Toolbar />
 
               <Container maxH="469px" overflowY="auto">
-                <Routes>
-                  <Route path="*" element={<Navigate to="Assets" replace />} />
-                  <Route path="/Assets" element={<AssetsPage />} />
-                  <Route path="/NFTs" element={<NFTsPage />} />
-                  <Route path="/Activity" element={<ActivityPage />} />
-                  <Route path="/Settings" element={<SettingsPage />} />
-                </Routes>
+                <LazyTabs index={tabIndex(navTarget)}>
+                  <AssetsPage />
+                  <NFTsPage />
+                  <ActivityPage />
+                  <SettingsPage />
+                </LazyTabs>
               </Container>
 
               <Navbar value={navTarget} onChange={setNavTarget} />

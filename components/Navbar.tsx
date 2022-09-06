@@ -3,7 +3,6 @@ import type { ReactElement } from 'react'
 import { IoMdSettings, IoMdSwap } from 'react-icons/io'
 import { IoFlashSharp, IoGrid } from 'react-icons/io5'
 import { RiMoneyDollarCircleFill } from 'react-icons/ri'
-import { NavLink } from 'react-router-dom'
 
 export type NavTarget = 'Assets' | 'NFTs' | 'Swap' | 'Activity' | 'Settings'
 
@@ -17,20 +16,18 @@ export const Navbar = ({ value, onChange }: NavbarProps) => {
   const btnActiveColor = useColorModeValue('gray.900', 'gray.200')
 
   const Btn = ({ target, icon }: { target: NavTarget; icon: ReactElement }) => (
-    <NavLink to={target}>
-      <IconButton
-        variant="ghost"
-        colorScheme="gray"
-        color={btnColor}
-        _active={{ color: btnActiveColor }}
-        _hover={{ color: btnActiveColor }}
-        icon={icon}
-        aria-label={target}
-        fontSize="2rem"
-        isActive={value === target}
-        onClick={() => onChange(target)}
-      />
-    </NavLink>
+    <IconButton
+      variant="ghost"
+      colorScheme="gray"
+      color={btnColor}
+      _active={{ color: btnActiveColor }}
+      _hover={{ color: btnActiveColor }}
+      icon={icon}
+      aria-label={target}
+      fontSize="2rem"
+      isActive={value === target}
+      onClick={() => onChange(target)}
+    />
   )
 
   return (
