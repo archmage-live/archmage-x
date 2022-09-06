@@ -63,6 +63,10 @@ export function getEvmTokenListBrief(
   }
 }
 
+export function formatEvmTokenIdentifier(token: string) {
+  return ethers.utils.getAddress(token)
+}
+
 export class EvmTokenService extends BaseTokenService {
   async init() {
     const defaultTokenListUrls =
@@ -131,6 +135,45 @@ export class EvmTokenService extends BaseTokenService {
     return this.makeTokenList(url, tokenList)
   }
 
+  async searchToken(account: IChainAccount, token: string) {
+    assert(account.address)
+
+    token = ethers.utils.getAddress(token)
+
+    const network = await NETWORK_SERVICE.getNetwork({
+      kind: NetworkKind.EVM,
+      chainId: account.chainId
+    })
+    assert(network)
+    const provider = await EvmProvider.from(network)
+
+    const tokenContract = ERC20__factory.connect(token, provider)
+    const name = await tokenContract.name()
+    const symbol = await tokenContract.symbol()
+    const decimals = await tokenContract.decimals()
+    const balance = (await tokenContract.balanceOf(account.address)).toString()
+    return {
+      masterId: account.masterId,
+      index: account.index,
+      networkKind: account.networkKind,
+      chainId: account.chainId,
+      address: account.address,
+      sortId: 0, // TODO
+      token,
+      visible: TokenVisibility.UNSPECIFIED,
+      info: {
+        info: {
+          chainId: account.chainId,
+          address: token,
+          name,
+          decimals,
+          symbol
+        },
+        balance
+      } as EvmTokenInfo
+    } as IToken
+  }
+
   async getTokensFromLists(chainId: number): Promise<Map<string, TokenInfo>> {
     const tokenLists = (
       await DB.tokenLists.where('networkKind').equals(NetworkKind.EVM).toArray()
@@ -138,15 +181,20 @@ export class EvmTokenService extends BaseTokenService {
       // only consider enabled list
       return list.enabled
     })
-    const tokens = tokenLists.flatMap((list) =>
-      (list.tokens as TokenInfo[]).filter((token) => {
-        // filter out different chainId
-        return token.chainId === chainId
-      })
-    )
+    const tokens = tokenLists
+      .flatMap((list) =>
+        (list.tokens as TokenInfo[]).filter((token) => {
+          // filter out different chainId
+          return token.chainId === chainId
+        })
+      )
+      .reverse()
     // deduplicate
     return new Map<string, TokenInfo>(
-      tokens.map((token) => [ethers.utils.getAddress(token.address), token])
+      tokens.map((token) => {
+        ;(token as any).address = ethers.utils.getAddress(token.address)
+        return [token.address, token]
+      })
     )
   }
 
@@ -184,7 +232,12 @@ export class EvmTokenService extends BaseTokenService {
       account.address,
       tokens.map((token) => token.address)
     )
-    const tokenBalances = balances ? Object.entries(balances) : []
+    const tokenBalances = balances
+      ? Object.entries(balances).map(([token, balance]) => [
+          ethers.utils.getAddress(token),
+          balance
+        ])
+      : []
 
     if (!balances) {
       // fallback to single query
@@ -255,7 +308,7 @@ export class EvmTokenService extends BaseTokenService {
           networkKind: account.networkKind,
           chainId: account.chainId,
           address: account.address,
-          sortId: 0,
+          sortId: 0, // TODO
           token: token,
           visible: TokenVisibility.UNSPECIFIED,
           info
@@ -275,8 +328,6 @@ export class EvmTokenService extends BaseTokenService {
       await DB.tokens.update(id, { info })
     }
   }
-
-  async addToken() {}
 }
 
 export const EVM_TOKEN_SERVICE = new EvmTokenService()

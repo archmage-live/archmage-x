@@ -2,7 +2,7 @@ import { Button, Icon, Stack, Text, useDisclosure } from '@chakra-ui/react'
 import { MdOutlineFormatListBulleted } from 'react-icons/md'
 
 import { useActive } from '~lib/active'
-import { TokenVisibility } from '~lib/schema'
+import { IToken, TokenVisibility } from '~lib/schema'
 import { useCoinGeckoTokensPrice } from '~lib/services/datasource/coingecko'
 import { useTokens } from '~lib/services/token'
 import { ManageTokensModal } from '~pages/Popup/ManageTokensModal'
@@ -12,17 +12,20 @@ import { TokenItem } from './TokenItem'
 export enum TokenVisible {
   ONLY_WHITELIST,
   ONLY_BLACKLIST,
+  WHTIELIST_AND_BLACKLIST,
   INCLUDES_WHITELIST,
   ALL
 }
 
 export const TokenList = ({
-  visible = TokenVisible.INCLUDES_WHITELIST
+  visible = TokenVisible.INCLUDES_WHITELIST,
+  onChange
 }: {
   visible?: TokenVisible
+  onChange?: (token: IToken) => void
 }) => {
   const { network, account } = useActive()
-  const tokens = useTokens(account)
+  const { tokens } = useTokens(account)
 
   const { currencySymbol, prices, changes24Hour } =
     useCoinGeckoTokensPrice(
@@ -39,6 +42,8 @@ export const TokenList = ({
               return token.visible === TokenVisibility.SHOW
             case TokenVisible.ONLY_BLACKLIST:
               return token.visible === TokenVisibility.HIDE
+            case TokenVisible.WHTIELIST_AND_BLACKLIST:
+              return token.visible !== TokenVisibility.UNSPECIFIED
             case TokenVisible.INCLUDES_WHITELIST:
               return token.visible !== TokenVisibility.HIDE
             case TokenVisible.ALL:
@@ -54,6 +59,7 @@ export const TokenList = ({
               price={prices?.get(token.token)}
               change24Hour={changes24Hour?.get(token.token)}
               onClick={() => {}}
+              onChange={() => onChange?.(token)}
             />
           )
         })}
@@ -63,6 +69,9 @@ export const TokenList = ({
 
 export const TokenListSection = () => {
   const { isOpen, onOpen, onClose } = useDisclosure()
+
+  const { account } = useActive()
+  const { fetchTokens } = useTokens(account)
 
   return (
     <Stack w="full" align="center" spacing={4}>
@@ -77,7 +86,13 @@ export const TokenListSection = () => {
         <Text color="gray.500">Manage Token Lists</Text>
       </Button>
 
-      <ManageTokensModal isOpen={isOpen} onClose={onClose} />
+      <ManageTokensModal
+        isOpen={isOpen}
+        onClose={() => {
+          onClose()
+          fetchTokens()
+        }}
+      />
     </Stack>
   )
 }

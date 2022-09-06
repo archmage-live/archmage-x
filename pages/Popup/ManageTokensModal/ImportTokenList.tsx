@@ -40,7 +40,9 @@ export const ImportTokenList = ({
 
       <Stack spacing={6} align="center">
         <AlertBox level="error" nowrap>
-          <Text fontSize="xl" textAlign="center">Import at your own risk</Text>
+          <Text fontSize="xl" textAlign="center">
+            Import at your own risk
+          </Text>
           <Text mt={4}>
             By adding this list you are implicitly trusting that the data is
             correct. Anyone can create a list, including creating fake versions

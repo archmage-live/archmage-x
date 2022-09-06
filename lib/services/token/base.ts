@@ -3,6 +3,7 @@ import Dexie from 'dexie'
 import { DB } from '~lib/db'
 import { NetworkKind } from '~lib/network'
 import { IChainAccount, IToken, ITokenList, TokenVisibility } from '~lib/schema'
+import { formatTokenIdentifier } from '~lib/services/token/index'
 
 export class BaseTokenService {
   async getTokenLists(networkKind: NetworkKind) {
@@ -72,13 +73,32 @@ export class BaseTokenService {
       .toArray()
   }
 
-  async getToken(id: number) {
-    return DB.tokens.get(id)
+  async getToken(id: number | { account: IChainAccount; token: string }) {
+    if (typeof id === 'number') {
+      return DB.tokens.get(id)
+    } else {
+      const { account, token } = id
+      return DB.tokens
+        .where({
+          masterId: account.masterId,
+          index: account.index,
+          networkKind: account.networkKind,
+          chainId: account.chainId,
+          address: account.address,
+          token: formatTokenIdentifier(account.networkKind, token)
+        })
+        .first()
+    }
   }
 
-  async setTokenVisibility(id: number, visible: boolean) {
+  async addToken(token: IToken): Promise<IToken> {
+    token.id = await DB.tokens.add(token)
+    return token
+  }
+
+  async setTokenVisibility(id: number, visible: TokenVisibility) {
     await DB.tokens.update(id, {
-      visible: visible ? TokenVisibility.SHOW : TokenVisibility.HIDE
+      visible
     })
   }
 }

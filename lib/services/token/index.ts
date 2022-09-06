@@ -1,15 +1,22 @@
 import { shallowCopy } from '@ethersproject/properties'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { useEffect } from 'react'
+import { useCallback, useEffect } from 'react'
 
 import { ENV } from '~lib/env'
 import { NetworkKind } from '~lib/network'
 import { SERVICE_WORKER_CLIENT, SERVICE_WORKER_SERVER } from '~lib/rpc'
-import { ChainId, IChainAccount, IToken, ITokenList } from '~lib/schema'
+import {
+  ChainId,
+  IChainAccount,
+  IToken,
+  ITokenList,
+  TokenVisibility
+} from '~lib/schema'
 import { BaseTokenService } from '~lib/services/token/base'
 
 import {
   EVM_TOKEN_SERVICE,
+  formatEvmTokenIdentifier,
   getEvmTokenBrief,
   getEvmTokenListBrief
 } from './evm'
@@ -56,6 +63,15 @@ export function getTokenListBrief(
   }
 }
 
+export function formatTokenIdentifier(networkKind: NetworkKind, token: string) {
+  switch (networkKind) {
+    case NetworkKind.EVM:
+      return formatEvmTokenIdentifier(token)
+    default:
+      throw new Error('unknown token')
+  }
+}
+
 interface ITokenService {
   getTokenLists(networkKind: NetworkKind): Promise<ITokenList[]>
 
@@ -74,14 +90,23 @@ interface ITokenService {
 
   getTokens(account: IChainAccount): Promise<IToken[]>
 
-  getToken(id: number): Promise<IToken | undefined>
+  getToken(
+    id: number | { account: IChainAccount; token: string }
+  ): Promise<IToken | undefined>
 
-  setTokenVisibility(id: number, visible: boolean): Promise<void>
+  addToken(token: IToken): Promise<IToken>
+
+  setTokenVisibility(id: number, visible: TokenVisibility): Promise<void>
 
   fetchTokenList(
     networkKind: NetworkKind,
     url: string
   ): Promise<ITokenList | undefined>
+
+  searchToken(
+    account: IChainAccount,
+    token: string
+  ): Promise<IToken | undefined>
 
   fetchTokens(account: IChainAccount): Promise<void>
 }
@@ -131,6 +156,54 @@ export class TokenService extends TokenServicePartial {
     this.waits.delete(waitKey)
     resolve(tokenList ? shallowCopy(tokenList) : undefined)
     return tokenList
+  }
+
+  async searchToken(
+    account: IChainAccount,
+    token: string
+  ): Promise<IToken | undefined> {
+    if (!account.address) {
+      return
+    }
+
+    try {
+      const existing = await this.getToken({ account, token })
+      if (existing) {
+        return existing
+      }
+    } catch (err) {
+      console.error(`search token ${token}: ${err}`)
+      return undefined
+    }
+
+    const waitKey = `${account.networkKind}-${account.chainId}-${account.address}-${token}`
+    const wait = this.waits.get(waitKey)
+    if (wait) {
+      return wait
+    }
+
+    let resolve: any
+    this.waits.set(
+      waitKey,
+      new Promise((r) => {
+        resolve = r
+      })
+    )
+
+    let result
+    try {
+      switch (account.networkKind) {
+        case NetworkKind.EVM:
+          result = await EVM_TOKEN_SERVICE.searchToken(account, token)
+          break
+      }
+    } catch (err) {
+      console.error(`search token ${token}: ${err}`)
+    }
+
+    this.waits.delete(waitKey)
+    resolve(result ? shallowCopy(result) : undefined)
+    return result
   }
 
   async fetchTokens(account: IChainAccount) {
@@ -190,16 +263,23 @@ export function useTokenLists(networkKind?: NetworkKind) {
   }, [networkKind])
 }
 
-export function useTokens(account?: IChainAccount): IToken[] | undefined {
-  useEffect(() => {
+export function useTokens(account?: IChainAccount): {
+  tokens: IToken[] | undefined
+  fetchTokens: () => void
+} {
+  const fetchTokens = useCallback(() => {
     if (!account) return
     TOKEN_SERVICE.fetchTokens(account)
   }, [account])
 
-  return useLiveQuery(async () => {
+  useEffect(fetchTokens, [fetchTokens])
+
+  const tokens = useLiveQuery(async () => {
     if (!account) return
     return TOKEN_SERVICE.getTokens(account)
   }, [account])
+
+  return { tokens, fetchTokens }
 }
 
 export function useToken(id?: number) {
