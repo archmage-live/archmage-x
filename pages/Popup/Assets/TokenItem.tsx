@@ -30,11 +30,16 @@ import {
 } from 'react-icons/md'
 
 import { formatNumber } from '~lib/formatNumber'
-import { IToken, TokenVisibility } from '~lib/schema'
-import { TOKEN_SERVICE, getTokenBrief } from '~lib/services/token'
+import { IToken, ITokenList, TokenVisibility } from '~lib/schema'
+import {
+  TOKEN_SERVICE,
+  getTokenBrief,
+  getTokenListBrief
+} from '~lib/services/token'
 
 export const TokenItem = ({
   token,
+  tokenList,
   undetermined,
   currencySymbol,
   price,
@@ -43,6 +48,7 @@ export const TokenItem = ({
   onChange
 }: {
   token: IToken
+  tokenList?: ITokenList
   undetermined?: 'import' | 'display'
   currencySymbol?: string
   price?: number
@@ -51,6 +57,9 @@ export const TokenItem = ({
   onChange?: () => void
 }) => {
   const brief = getTokenBrief(token)
+
+  const tokenListBrief =
+    tokenList && getTokenListBrief(tokenList, token.chainId)
 
   const existing = typeof token.id === 'number'
 
@@ -124,15 +133,37 @@ export const TokenItem = ({
         <HStack
           w={!undetermined ? 'calc(100% - 56px)' : 'calc(100% - 35px)'}
           justify="space-between">
-          <Stack align="start" maxW="50%">
-            <Text
-              fontWeight="medium"
-              fontSize="md"
-              noOfLines={1}
-              display="block"
-              maxW="full">
-              {brief.name}
-            </Text>
+          <Stack align="start" maxW={!tokenListBrief ? '50%' : '65%'}>
+            <Stack maxW="full" spacing={0}>
+              <Text
+                fontWeight="medium"
+                fontSize="md"
+                noOfLines={1}
+                display="block"
+                maxW="full">
+                {brief.name}
+              </Text>
+
+              {tokenListBrief && (
+                <Text
+                  fontWeight="medium"
+                  fontSize="sm"
+                  color="gray.500"
+                  noOfLines={1}
+                  display="block"
+                  maxW="full">
+                  via {tokenListBrief.name}
+                  <Image
+                    borderRadius="full"
+                    boxSize="14px"
+                    fit="cover"
+                    src={tokenListBrief.iconUrl}
+                    fallback={<></>}
+                    alt="Token List Icon"
+                  />
+                </Text>
+              )}
+            </Stack>
 
             <Text
               fontWeight="medium"

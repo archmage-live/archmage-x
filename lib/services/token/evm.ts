@@ -89,9 +89,9 @@ export class EvmTokenService extends BaseTokenService {
     )
     localDefaultTokenListUrls[NetworkKind.EVM] = defaultTokenListUrls
 
-    const existingLists = (
-      await DB.tokenLists.where('networkKind').equals(NetworkKind.EVM).toArray()
-    ).map((item) => item.url)
+    const existingLists = (await this.getTokenLists(NetworkKind.EVM)).map(
+      (item) => item.url
+    )
     const tokenLists = (
       await TOKENLISTS_API.getTokenLists(
         newUrls.filter((url) => existingLists.indexOf(url) < 0)
@@ -135,6 +135,56 @@ export class EvmTokenService extends BaseTokenService {
     return this.makeTokenList(url, tokenList)
   }
 
+  async searchTokenFromTokenLists(
+    account: IChainAccount,
+    token: string
+  ): Promise<{ tokenList: ITokenList; token: IToken } | undefined> {
+    token = ethers.utils.getAddress(token)
+    let foundToken: IToken | undefined
+    const tokenLists = await this.getTokenLists(account.networkKind)
+    const tokenList = tokenLists.find((tokenList) => {
+      if (!tokenList.enabled) {
+        return
+      }
+      return (tokenList.tokens as TokenInfo[]).find((info) => {
+        if (
+          info.chainId === account.chainId &&
+          ethers.utils.getAddress(info.address) === token
+        ) {
+          foundToken = {
+            masterId: account.masterId,
+            index: account.index,
+            networkKind: account.networkKind,
+            chainId: account.chainId,
+            address: account.address,
+            sortId: 0, // TODO
+            token: token,
+            visible: TokenVisibility.UNSPECIFIED,
+            info: {
+              info
+            } as EvmTokenInfo
+          } as IToken
+          return true
+        }
+      })
+    })
+
+    if (!tokenList || !foundToken) return undefined
+
+    const info = foundToken.info as EvmTokenInfo
+    try {
+      const balances = await this._fetchTokensBalance(account, [info.info])
+      info.balance = balances[0][1]
+    } catch (e) {
+      info.balance = '0'
+    }
+
+    return {
+      tokenList,
+      token: foundToken
+    }
+  }
+
   async searchToken(account: IChainAccount, token: string) {
     assert(account.address)
 
@@ -175,12 +225,12 @@ export class EvmTokenService extends BaseTokenService {
   }
 
   async getTokensFromLists(chainId: number): Promise<Map<string, TokenInfo>> {
-    const tokenLists = (
-      await DB.tokenLists.where('networkKind').equals(NetworkKind.EVM).toArray()
-    ).filter((list) => {
-      // only consider enabled list
-      return list.enabled
-    })
+    const tokenLists = (await this.getTokenLists(NetworkKind.EVM)).filter(
+      (list) => {
+        // only consider enabled list
+        return list.enabled
+      }
+    )
     const tokens = tokenLists
       .flatMap((list) =>
         (list.tokens as TokenInfo[]).filter((token) => {
@@ -200,31 +250,16 @@ export class EvmTokenService extends BaseTokenService {
 
   private async _fetchTokensBalance(
     account: IChainAccount,
-    whitelistedTokens: IToken[]
-  ): Promise<Map<string, EvmTokenInfo>> {
-    if (!account.address) {
-      return new Map()
-    }
+    tokens: TokenInfo[]
+  ) {
+    assert(account.address)
+
     const network = await NETWORK_SERVICE.getNetwork({
       kind: NetworkKind.EVM,
       chainId: account.chainId
     })
     assert(network)
     const provider = await EvmProvider.from(network)
-
-    const tokensMap = await this.getTokensFromLists(+account.chainId)
-    whitelistedTokens.forEach((wt) => {
-      if (!tokensMap.has(wt.token)) {
-        tokensMap.set(wt.token, wt.info.info)
-      }
-    })
-    if (!tokensMap.size) {
-      return new Map()
-    }
-
-    const tokens = Array.from(tokensMap.values())
-
-    const tick = Date.now()
 
     // batch query
     const balances = await ETH_BALANCE_CHECKER_API.getAddressBalances(
@@ -249,6 +284,32 @@ export class EvmTokenService extends BaseTokenService {
         tokenBalances.push([token.address, balance])
       }
     }
+    return tokenBalances
+  }
+
+  private async _fetchTokens(
+    account: IChainAccount,
+    whitelistedTokens: IToken[]
+  ): Promise<Map<string, EvmTokenInfo>> {
+    if (!account.address) {
+      return new Map()
+    }
+
+    const tokensMap = await this.getTokensFromLists(+account.chainId)
+    whitelistedTokens.forEach((wt) => {
+      if (!tokensMap.has(wt.token)) {
+        tokensMap.set(wt.token, wt.info.info)
+      }
+    })
+    if (!tokensMap.size) {
+      return new Map()
+    }
+
+    const tokens = Array.from(tokensMap.values())
+
+    const tick = Date.now()
+
+    const tokenBalances = await this._fetchTokensBalance(account, tokens)
 
     const result = new Map<string, EvmTokenInfo>()
     for (const [token, balance] of tokenBalances) {
@@ -284,10 +345,7 @@ export class EvmTokenService extends BaseTokenService {
       (token) => token.visible === TokenVisibility.SHOW
     )
 
-    const tokensBalance = await this._fetchTokensBalance(
-      account,
-      whitelistedTokens
-    )
+    const tokensBalance = await this._fetchTokens(account, whitelistedTokens)
 
     const bulkRemove = existingTokens
       .filter(

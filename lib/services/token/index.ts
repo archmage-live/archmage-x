@@ -72,6 +72,12 @@ export function formatTokenIdentifier(networkKind: NetworkKind, token: string) {
   }
 }
 
+export type SearchedToken = {
+  token: IToken
+  tokenList?: ITokenList
+  existing: boolean
+}
+
 interface ITokenService {
   getTokenLists(networkKind: NetworkKind): Promise<ITokenList[]>
 
@@ -103,10 +109,15 @@ interface ITokenService {
     url: string
   ): Promise<ITokenList | undefined>
 
+  searchTokenFromTokenLists(
+    account: IChainAccount,
+    token: string
+  ): Promise<{ tokenList: ITokenList; token: IToken } | undefined>
+
   searchToken(
     account: IChainAccount,
     token: string
-  ): Promise<IToken | undefined>
+  ): Promise<SearchedToken | undefined>
 
   fetchTokens(account: IChainAccount): Promise<void>
 }
@@ -158,22 +169,43 @@ export class TokenService extends TokenServicePartial {
     return tokenList
   }
 
+  async searchTokenFromTokenLists(
+    account: IChainAccount,
+    token: string
+  ): Promise<{ tokenList: ITokenList; token: IToken } | undefined> {
+    switch (account.networkKind) {
+      case NetworkKind.EVM:
+        return EVM_TOKEN_SERVICE.searchTokenFromTokenLists(account, token)
+    }
+    return undefined
+  }
+
   async searchToken(
     account: IChainAccount,
     token: string
-  ): Promise<IToken | undefined> {
+  ): Promise<SearchedToken | undefined> {
     if (!account.address) {
       return
     }
 
     try {
-      const existing = await this.getToken({ account, token })
-      if (existing) {
-        return existing
-      }
+      token = formatTokenIdentifier(account.networkKind, token)
     } catch (err) {
       console.error(`search token ${token}: ${err}`)
       return undefined
+    }
+
+    const existingFromStore = await this.getToken({ account, token })
+    const existingFromTokenLists = await this.searchTokenFromTokenLists(
+      account,
+      token
+    )
+    if (existingFromStore || existingFromTokenLists) {
+      return {
+        token: existingFromStore || existingFromTokenLists!.token,
+        tokenList: existingFromTokenLists?.tokenList,
+        existing: !!existingFromStore
+      }
     }
 
     const waitKey = `${account.networkKind}-${account.chainId}-${account.address}-${token}`
@@ -190,11 +222,11 @@ export class TokenService extends TokenServicePartial {
       })
     )
 
-    let result
+    let foundToken
     try {
       switch (account.networkKind) {
         case NetworkKind.EVM:
-          result = await EVM_TOKEN_SERVICE.searchToken(account, token)
+          foundToken = await EVM_TOKEN_SERVICE.searchToken(account, token)
           break
       }
     } catch (err) {
@@ -202,6 +234,10 @@ export class TokenService extends TokenServicePartial {
     }
 
     this.waits.delete(waitKey)
+    const result = foundToken && {
+      token: foundToken,
+      existing: false
+    }
     resolve(result ? shallowCopy(result) : undefined)
     return result
   }

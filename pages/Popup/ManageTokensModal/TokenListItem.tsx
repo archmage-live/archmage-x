@@ -80,7 +80,7 @@ export const TokenListItem = ({
             <Icon as={BiQuestionMark} fontSize="xl" />
           </Center>
         }
-        alt="Token Icon"
+        alt="Token List Icon"
       />
 
       <HStack w="calc(100% - 35px)" justify="space-between">

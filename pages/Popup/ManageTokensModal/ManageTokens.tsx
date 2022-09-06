@@ -20,7 +20,11 @@ import { AlertBox } from '~components/AlertBox'
 import { SwitchBar } from '~components/SwitchBar'
 import { useActive, useActiveNetwork } from '~lib/active'
 import { IToken, ITokenList, TokenVisibility } from '~lib/schema'
-import { TOKEN_SERVICE, useTokenLists } from '~lib/services/token'
+import {
+  SearchedToken,
+  TOKEN_SERVICE,
+  useTokenLists
+} from '~lib/services/token'
 import { TokenItem } from '~pages/Popup/Assets/TokenItem'
 import { TokenList, TokenVisible } from '~pages/Popup/Assets/TokenList'
 
@@ -35,7 +39,7 @@ export const ManageTokens = ({
 }: {
   setTitle: (title: string) => void
   setTokenList: (tokenList: ITokenList | undefined) => void
-  setToken: (token: IToken | undefined) => void
+  setToken: (token: SearchedToken | undefined) => void
 }) => {
   useEffect(() => {
     setTitle('Manage Token Lists')
@@ -52,7 +56,7 @@ export const ManageTokens = ({
   const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(false)
   const [newTokenList, setNewTokenList] = useState<ITokenList>()
-  const [newToken, setNewToken] = useState<IToken>()
+  const [newToken, setNewToken] = useState<SearchedToken>()
   const [alert, setAlert] = useState('')
   const [, setFetchCounter] = useState(0)
 
@@ -78,7 +82,7 @@ export const ManageTokens = ({
     })
     setLoading(true)
 
-    let tokenList: ITokenList | undefined, token: IToken | undefined
+    let tokenList: ITokenList | undefined, token: SearchedToken | undefined
     if (network && account && search) {
       if (tab === 'Lists') {
         tokenList = await TOKEN_SERVICE.fetchTokenList(network.kind, search)
@@ -117,7 +121,7 @@ export const ManageTokens = ({
 
   const onTokenChange = useCallback(
     (token: IToken) => {
-      if (token.token.toLowerCase() === newToken?.token.toLowerCase()) {
+      if (token.token.toLowerCase() === newToken?.token.token.toLowerCase()) {
         fetch()
       }
     },
@@ -164,17 +168,23 @@ export const ManageTokens = ({
 
       {newToken && (
         <TokenItem
-          token={newToken}
+          token={newToken.token}
+          tokenList={newToken.tokenList}
           undetermined="import"
           onClick={() => {
             if (
-              typeof newToken.id === 'number' &&
-              newToken.visible === TokenVisibility.UNSPECIFIED
+              (newToken.existing || newToken.tokenList) &&
+              newToken.token.visible === TokenVisibility.UNSPECIFIED
             ) {
-              TOKEN_SERVICE.setTokenVisibility(
-                newToken.id,
-                TokenVisibility.SHOW
-              ).then(fetch)
+              if (newToken.existing) {
+                TOKEN_SERVICE.setTokenVisibility(
+                  newToken.token.id,
+                  TokenVisibility.SHOW
+                ).then(fetch)
+              } else {
+                newToken.token.visible = TokenVisibility.SHOW
+                TOKEN_SERVICE.addToken(newToken.token).then(fetch)
+              }
               return
             }
             setToken(newToken)

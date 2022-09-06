@@ -1,7 +1,8 @@
 import { useState } from 'react'
 
 import { WizardModal } from '~components/WizardModal'
-import { IToken, ITokenList } from '~lib/schema'
+import { ITokenList } from '~lib/schema'
+import { SearchedToken } from '~lib/services/token'
 
 import { ImportToken } from './ImportToken'
 import { ImportTokenList } from './ImportTokenList'
@@ -17,7 +18,7 @@ export const ManageTokensModal = ({
   const [title, setTitle] = useState('')
 
   const [newTokenList, setNewTokenList] = useState<ITokenList>()
-  const [newToken, setNewToken] = useState<IToken>()
+  const [newToken, setNewToken] = useState<SearchedToken>()
 
   return (
     <WizardModal isOpen={isOpen} onClose={onClose} title={title}>
@@ -30,7 +31,7 @@ export const ManageTokensModal = ({
         {newTokenList && (
           <ImportTokenList setTitle={setTitle} tokenList={newTokenList} />
         )}
-        {newToken && <ImportToken setTitle={setTitle} token={newToken} />}
+        {newToken && <ImportToken setTitle={setTitle} token={newToken.token} />}
       </>
     </WizardModal>
   )
