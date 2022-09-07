@@ -54,7 +54,7 @@ export default function Assets() {
   const btnColorScheme = useColorModeValue('purple', undefined)
 
   return (
-    <Stack w="full" py={4} spacing={12}>
+    <Stack w="full" px={4} py={4} spacing={12}>
       <Stack w="full" spacing={8}>
         <Stack w="full" spacing={6}>
           <Stack w="full" spacing={4}>

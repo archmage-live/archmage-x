@@ -57,7 +57,7 @@ export default function Activity() {
   const [tx, setTx] = useState<ITransaction>()
 
   return (
-    <Box>
+    <Box px={4}>
       <Box ref={parentRef} maxH={'469px'} overflowY="auto" userSelect="none">
         <Box h={txVirtualizer.getTotalSize() + 'px'} position="relative">
           {txVirtualizer.getVirtualItems().map((item) => {

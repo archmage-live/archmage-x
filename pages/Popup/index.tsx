@@ -35,13 +35,12 @@ function tabIndex(navTarget: NavTarget) {
   switch (navTarget) {
     case 'Assets':
       return 0
-    case 'NFTs':
-      return 1
     case 'Activity':
-      return 2
+      return 1
     case 'Settings':
-      return 3
+      return 2
   }
+  return 0
 }
 
 export default function Popup() {
@@ -78,14 +77,14 @@ export default function Popup() {
             <>
               <Toolbar />
 
-              <Container maxH="469px" overflowY="auto">
+              <Box h="469px">
                 <LazyTabs index={tabIndex(navTarget)}>
                   <AssetsPage />
-                  <NFTsPage />
+                  {/*<NFTsPage />*/}
                   <ActivityPage />
                   <SettingsPage />
                 </LazyTabs>
-              </Container>
+              </Box>
 
               <Navbar value={navTarget} onChange={setNavTarget} />
             </>
