@@ -18,6 +18,8 @@ export interface NetworkInfo {
   chainId: number | string
   currencySymbol: string
   decimals: number
+  rpcUrl?: string
+  explorerUrl?: string
 }
 
 export function getNetworkInfo(network: INetwork): NetworkInfo {
@@ -29,7 +31,9 @@ export function getNetworkInfo(network: INetwork): NetworkInfo {
         description: info.title || info.name,
         chainId: info.chainId,
         currencySymbol: info.nativeCurrency.symbol,
-        decimals: info.nativeCurrency.decimals
+        decimals: info.nativeCurrency.decimals,
+        rpcUrl: info.rpc.at(0),
+        explorerUrl: info.explorers.at(0)?.url
       }
     }
     case NetworkType.COSM: {

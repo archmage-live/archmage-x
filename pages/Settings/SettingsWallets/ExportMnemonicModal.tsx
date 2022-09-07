@@ -18,8 +18,7 @@ import { WALLET_SERVICE } from '~lib/services/walletService'
 interface ExportMnemonicModalProps {
   walletId: number
   isOpen: boolean
-
-  onClose(): void
+  onClose: () => void
 }
 
 export const ExportMnemonicModal = ({

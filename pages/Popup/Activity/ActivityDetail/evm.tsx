@@ -120,18 +120,17 @@ export const EvmActivityDetail = ({
   const { hasCopied, onCopy } = useClipboard(info.tx.hash)
 
   const txUrl = useMemo(() => {
-    const netInfo = network.info as EvmChainInfo
-    if (!netInfo.explorers.length) {
+    if (!netInfo.explorerUrl) {
       return undefined
     }
     try {
-      const url = new URL(netInfo.explorers[0].url)
+      const url = new URL(netInfo.explorerUrl)
       url.pathname = `/tx/${info.tx.hash}`
       return url.toString()
     } catch {
       return undefined
     }
-  }, [network, info])
+  }, [netInfo, info])
 
   return (
     <Stack w="full" spacing={4} pt={8}>

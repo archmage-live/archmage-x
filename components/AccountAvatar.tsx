@@ -18,9 +18,16 @@ export const AccountAvatar = ({
     <Box
       borderRadius="full"
       overflow="hidden"
-      transform={scale !== undefined ? `scale(${scale})` : undefined}
+      transform={
+        scale !== undefined && scale < 1 ? `scale(${scale})` : undefined
+      }
+      width="fit-content"
       {...props}>
-      <Blockies seed={seed} size={10} scale={3} />
+      <Blockies
+        seed={seed}
+        size={10}
+        scale={scale !== undefined && scale > 1 ? scale : 3}
+      />
     </Box>
   )
 }
