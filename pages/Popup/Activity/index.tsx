@@ -58,7 +58,11 @@ export default function Activity() {
 
   return (
     <Box px={4}>
-      <Box ref={parentRef} maxH={'469px'} overflowY="auto" userSelect="none">
+      <Box
+        ref={parentRef}
+        maxH="calc(100vh - 131px)"
+        overflowY="auto"
+        userSelect="none">
         <Box h={txVirtualizer.getTotalSize() + 'px'} position="relative">
           {txVirtualizer.getVirtualItems().map((item) => {
             if (item.index === 0) {

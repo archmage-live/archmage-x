@@ -133,7 +133,7 @@ export function useCheckUnlocked() {
 
   useEffect(() => {
     if (isLocked) {
-      navigate(`/?redirect=${location.pathname}`, { replace: true })
+      navigate(`/unlock?redirect=${location.pathname}`, { replace: true })
     }
   }, [location, navigate, isLocked])
 }

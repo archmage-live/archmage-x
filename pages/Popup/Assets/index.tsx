@@ -6,8 +6,6 @@ import {
   Icon,
   IconButton,
   Image,
-  Menu,
-  MenuButton,
   Stack,
   Text,
   Tooltip,
@@ -15,9 +13,9 @@ import {
   useColorModeValue
 } from '@chakra-ui/react'
 import Decimal from 'decimal.js'
+import { useEffect } from 'react'
 import { BiQuestionMark } from 'react-icons/bi'
 import { FiCheckCircle, FiCopy } from 'react-icons/fi'
-import { MdMoreVert } from 'react-icons/md'
 
 import { useActive } from '~lib/active'
 import { formatNumber } from '~lib/formatNumber'
@@ -28,9 +26,10 @@ import { useBalance } from '~lib/services/provider'
 import { useCurrentTab } from '~lib/util'
 import { shortenAddress } from '~lib/utils'
 
+import { AccountMenu } from './AccountMenu'
 import { TokenListSection } from './TokenList'
 
-export default function Assets() {
+export default function Assets({ onLoaded }: { onLoaded?: () => void }) {
   const { network, account, wallet, subWallet } = useActive()
   const networkInfo = network && getNetworkInfo(network)
 
@@ -50,6 +49,14 @@ export default function Assets() {
 
   const balance = useBalance(network, account)
   const price = useCryptoComparePrice(balance?.symbol)
+
+  useEffect(() => {
+    if (balance) {
+      setTimeout(() => {
+        onLoaded?.()
+      }, 100)
+    }
+  }, [balance, onLoaded])
 
   const btnColorScheme = useColorModeValue('purple', undefined)
 
@@ -144,13 +151,7 @@ export default function Assets() {
                 </Button>
               </Tooltip>
 
-              <Menu>
-                <MenuButton
-                  variant="ghost"
-                  as={IconButton}
-                  icon={<Icon as={MdMoreVert} fontSize="xl" />}
-                />
-              </Menu>
+              <AccountMenu />
             </HStack>
 
             <Divider />

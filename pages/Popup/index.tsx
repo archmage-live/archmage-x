@@ -1,4 +1,4 @@
-import { Box, Container, useColorModeValue } from '@chakra-ui/react'
+import { Box, useColorModeValue } from '@chakra-ui/react'
 import { atom, useAtom } from 'jotai'
 import { useState } from 'react'
 import { Route, Routes, useLocation } from 'react-router-dom'
@@ -9,6 +9,7 @@ import ActivityPage from '~pages/Popup/Activity'
 import AssetsPage from '~pages/Popup/Assets'
 import ConsentPage from '~pages/Popup/Consent'
 import NFTsPage from '~pages/Popup/NFTs'
+import { OverlayCheckUnlocked } from '~pages/Popup/Overlay'
 import SettingsPage from '~pages/Popup/Settings'
 import UnlockPage from '~pages/Unlock'
 
@@ -45,7 +46,6 @@ function tabIndex(navTarget: NavTarget) {
 
 export default function Popup() {
   const isPopupWindow = useIsPopupWindow()
-  const [navTarget, setNavTarget] = useState<NavTarget>('Assets')
 
   let minW, minH
   if (!isPopupWindow) {
@@ -62,35 +62,35 @@ export default function Popup() {
       bg={useColorModeValue('white', 'gray.800')}
       position="relative">
       <Routes>
-        <Route
-          path="/"
-          element={
-            <Container flex="1">
-              <UnlockPage />
-            </Container>
-          }
-        />
+        <Route path="/" element={<HomePage />} />
+        <Route path="/unlock" element={<UnlockPage />} />
         <Route path="/consent" element={<ConsentPage />} />
-        <Route
-          path="/home"
-          element={
-            <>
-              <Toolbar />
-
-              <Box h="469px">
-                <LazyTabs index={tabIndex(navTarget)}>
-                  <AssetsPage />
-                  {/*<NFTsPage />*/}
-                  <ActivityPage />
-                  <SettingsPage />
-                </LazyTabs>
-              </Box>
-
-              <Navbar value={navTarget} onChange={setNavTarget} />
-            </>
-          }
-        />
       </Routes>
+    </Box>
+  )
+}
+
+export const HomePage = () => {
+  const [loaded, setLoaded] = useState(false)
+
+  const [navTarget, setNavTarget] = useState<NavTarget>('Assets')
+
+  return (
+    <Box position="relative" w="full" h="full">
+      <Toolbar />
+
+      <Box h="calc(100% - 131px)">
+        <LazyTabs index={tabIndex(navTarget)}>
+          <AssetsPage onLoaded={() => setLoaded(true)} />
+          {/*<NFTsPage />*/}
+          <ActivityPage />
+          <SettingsPage />
+        </LazyTabs>
+      </Box>
+
+      <Navbar value={navTarget} onChange={setNavTarget} />
+
+      <OverlayCheckUnlocked isLoading={!loaded} />
     </Box>
   )
 }

@@ -4,9 +4,11 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 
 import { AlertBox } from '~components/AlertBox'
 import { usePassword } from '~lib/password'
+import { CONSENT_SERVICE } from '~lib/services/consentService'
 import { PASSWORD_SERVICE } from '~lib/services/passwordService'
 import { useSubWalletsCount } from '~lib/services/walletService'
 import { createTab } from '~lib/util'
+import { Overlay } from '~pages/Popup/Overlay'
 
 let open = false
 
@@ -35,8 +37,15 @@ export default function Unlock() {
     if (passwordExists === false || walletCount === 0) {
       openWelcomeTab()
     } else if (passwordExists && walletCount) {
-      const to = searchParams.get('redirect') || '/consent'
-      navigate(to, { replace: true })
+      const to = searchParams.get('redirect')
+      if (to) {
+        navigate(to, { replace: true })
+        return
+      }
+
+      CONSENT_SERVICE.getRequests().then((requests) => {
+        navigate(requests.length ? '/consent' : '/', { replace: true })
+      })
     }
   }, [navigate, passwordExists, searchParams, walletCount])
 
@@ -67,25 +76,19 @@ export default function Unlock() {
   )
 
   return (
-    <Stack p="4" pt="40" spacing="12">
-      <Stack>
-        <HStack justify="center">
-          <Text fontSize="4xl" fontWeight="bold">
-            Archmage X
-          </Text>
-        </HStack>
-        {locked && (
+    <Overlay
+      subtitle={
+        locked && (
           <HStack justify="center">
             <Text fontSize="lg" color="gray.500">
               Use your password to unlock
             </Text>
           </HStack>
-        )}
-      </Stack>
-
+        )
+      }>
       {locked && (
         <form onSubmit={unlock}>
-          <Stack spacing="12">
+          <Stack spacing="12" px={4}>
             <Input
               type="password"
               size="lg"
@@ -109,6 +112,6 @@ export default function Unlock() {
           </Stack>
         </form>
       )}
-    </Stack>
+    </Overlay>
   )
 }
