@@ -128,6 +128,16 @@ export default function Activity() {
         </Box>
       </Box>
 
+      {!count && (
+        <Text
+          textAlign="center"
+          fontSize="xl"
+          fontWeight="medium"
+          color="gray.500">
+          No Activity
+        </Text>
+      )}
+
       {network && tx && (
         <ActivityDetailModal
           network={network}

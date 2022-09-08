@@ -1,5 +1,6 @@
 import { stringToPath } from '@cosmjs/crypto'
 import {
+  AccountData,
   DirectSecp256k1HdWallet,
   DirectSecp256k1Wallet
 } from '@cosmjs/proto-signing'
@@ -11,6 +12,10 @@ import { KEYSTORE } from '~lib/keystore'
 import type { SigningWallet, WalletOpts } from './base'
 import { WalletType } from './base'
 
+interface AccountDataWithPrivkey extends AccountData {
+  readonly privkey: Uint8Array
+}
+
 export class CosmWallet implements SigningWallet {
   static defaultPathPrefix = "m/44'/118'/0'/0"
   static defaultPath = CosmWallet.defaultPathPrefix + '/0'
@@ -20,6 +25,7 @@ export class CosmWallet implements SigningWallet {
   prefix?: string
 
   address!: string
+  privateKey!: string
 
   private constructor() {}
 
@@ -43,21 +49,25 @@ export class CosmWallet implements SigningWallet {
         if (!path) {
           path = CosmWallet.defaultPath
         }
-        wallet.wallet = await DirectSecp256k1HdWallet.fromMnemonic(
-          mnemonic.phrase,
-          {
-            hdPaths: [stringToPath(path)],
-            prefix
-          }
-        )
-        wallet.address = (await wallet.wallet.getAccounts())[0].address
+        const w = await DirectSecp256k1HdWallet.fromMnemonic(mnemonic.phrase, {
+          hdPaths: [stringToPath(path)],
+          prefix
+        })
+        wallet.wallet = w
+        const account = (await (
+          w as any
+        ).getAccountsWithPrivkeys()[0]) as AccountDataWithPrivkey
+        wallet.address = account.address
+        wallet.privateKey = ethers.utils.hexlify(account.privkey)
       } else {
         assert(!path)
-        wallet.wallet = await DirectSecp256k1Wallet.fromKey(
+        const w = await DirectSecp256k1Wallet.fromKey(
           ethers.utils.arrayify(ks.privateKey),
           prefix
         )
-        wallet.address = (await wallet.wallet.getAccounts())[0].address
+        wallet.wallet = w
+        wallet.address = (await w.getAccounts())[0].address
+        wallet.privateKey = ks.privateKey
       }
     }
     return wallet

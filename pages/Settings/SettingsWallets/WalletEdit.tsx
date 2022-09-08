@@ -34,8 +34,6 @@ export const WalletEdit = ({ wallet }: WalletEditProps) => {
   const hdPaths = useHdPaths(wallet.id)
   const subWallets = useSubWallets(wallet.id)
 
-  const [isNameExists, setIsNameExists] = useState(false)
-
   const [networkScope, setNetworkScope] = useState(NETWORK_KIND_SCOPES[0])
   const [hdPath, setHdPath] = useState('')
   useEffect(() => {
@@ -91,23 +89,7 @@ export const WalletEdit = ({ wallet }: WalletEditProps) => {
 
   return (
     <Stack spacing="12">
-      <FormControl isInvalid={isNameExists}>
-        <FormLabel>Wallet Name</FormLabel>
-        <SaveInput
-          hideSaveIfNoChange
-          stretchInput
-          value={wallet.name}
-          validate={(value: string) => value.trim().slice(0, 64) || false}
-          asyncValidate={async (value: string) => {
-            return !(await DB.wallets.where('name').equals(value).first())
-          }}
-          onChange={(value: string) => {
-            DB.wallets.update(wallet, { name: value })
-          }}
-          onInvalid={setIsNameExists}
-        />
-        <FormErrorMessage>This wallet name exists.</FormErrorMessage>
-      </FormControl>
+      <WalletNameEdit wallet={wallet} />
 
       <Stack spacing={6}>
         <FormControl>
@@ -203,4 +185,28 @@ export const WalletEdit = ({ wallet }: WalletEditProps) => {
       />
     </Stack>
   )
+}
+
+export const WalletNameEdit = ({wallet}: {
+  wallet: IWallet
+}) => {
+  const [isNameExists, setIsNameExists] = useState(false)
+
+  return <FormControl isInvalid={isNameExists}>
+    <FormLabel>Wallet Name</FormLabel>
+    <SaveInput
+      hideSaveIfNoChange
+      stretchInput
+      value={wallet.name}
+      validate={(value: string) => value.trim().slice(0, 64) || false}
+      asyncValidate={async (value: string) => {
+        return !(await DB.wallets.where('name').equals(value).first())
+      }}
+      onChange={(value: string) => {
+        DB.wallets.update(wallet, { name: value })
+      }}
+      onInvalid={setIsNameExists}
+    />
+    <FormErrorMessage>This wallet name exists.</FormErrorMessage>
+  </FormControl>
 }

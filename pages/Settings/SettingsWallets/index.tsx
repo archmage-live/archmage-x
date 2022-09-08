@@ -116,8 +116,8 @@ export const SettingsWallets = () => {
               network && (
                 <SubWalletEdit
                   network={network}
-                  master={selectedWallet}
-                  wallet={selectedSubWallet}
+                  wallet={selectedWallet}
+                  subWallet={selectedSubWallet}
                 />
               )
             ) : (

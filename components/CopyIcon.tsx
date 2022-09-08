@@ -58,6 +58,7 @@ export const CopyArea = ({
       <HStack
         px={4}
         py={2}
+        color={useColorModeValue('gray.600', 'gray.300')}
         bg={useColorModeValue('blackAlpha.50', 'blackAlpha.500')}
         _hover={{ bg: useColorModeValue('blackAlpha.100', 'blackAlpha.400') }}
         transition="bg 0.2s"
@@ -66,7 +67,9 @@ export const CopyArea = ({
         noOfLines={10}
         {...props}
         onClick={!hasCopied ? onCopy : () => {}}>
-        <chakra.span fontFamily="monospace">{area || copy}</chakra.span>
+        <chakra.span fontFamily="monospace" fontWeight="medium">
+          {area || copy}
+        </chakra.span>
         <Icon as={!hasCopied ? FiCopy : FiCheckCircle} />
       </HStack>
     </Tooltip>

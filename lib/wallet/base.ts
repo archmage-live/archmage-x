@@ -62,6 +62,7 @@ export interface WalletOpts {
 
 export interface SigningWallet {
   address: string
+  privateKey: string
 
   derive(prefixPath: string, index: number): Promise<SigningWallet>
 

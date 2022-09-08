@@ -54,6 +54,11 @@ export class SolWallet implements SigningWallet {
     return this.publicKeyBase58()
   }
 
+  get privateKey(): string {
+    // TODO
+    throw new Error('not implemented')
+  }
+
   publicKeyBase58(): string {
     if (this.wallet instanceof HDNode) {
       return bs58.encode(arrayify(this.wallet.publicKey))

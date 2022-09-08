@@ -72,9 +72,10 @@ export const MnemonicDisplay = ({ mnemonic }: MnemonicDisplayProps) => {
           onClick={onCopyOpen}>
           Copy
         </Button>
-        <Button variant="outline" size="xs" color="gray.500">
-          Download
-        </Button>
+        {/* TODO */}
+        {/*<Button variant="outline" size="xs" color="gray.500">*/}
+        {/*  Download*/}
+        {/*</Button>*/}
       </HStack>
 
       <Modal

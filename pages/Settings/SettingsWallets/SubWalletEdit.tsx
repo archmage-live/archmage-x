@@ -17,26 +17,27 @@ import { SaveInput } from '~components/SaveInput'
 import { DB } from '~lib/db'
 import { INetwork, ISubWallet, IWallet } from '~lib/schema'
 import { useChainAccountByIndex, useHdPaths } from '~lib/services/walletService'
+import { ExportPrivateKeyModal } from '~pages/Settings/SettingsWallets/ExportPrivateKeyModal'
 
 interface SubWalletEditProps {
   network: INetwork
-  master: IWallet
-  wallet: ISubWallet
+  wallet: IWallet
+  subWallet: ISubWallet
 }
 
 export const SubWalletEdit = ({
   network,
-  master,
-  wallet
+  wallet,
+  subWallet
 }: SubWalletEditProps) => {
   const account = useChainAccountByIndex(
-    master.id,
+    wallet.id,
     network.kind,
     network.chainId,
-    wallet.index
+    subWallet.index
   )
 
-  const hdPaths = useHdPaths(master.id)
+  const hdPaths = useHdPaths(wallet.id)
   const [hdPath, setHdPath] = useState('')
   useEffect(() => {
     const hdPath = hdPaths?.get(network.kind)
@@ -45,12 +46,10 @@ export const SubWalletEdit = ({
     }
     const fullHdPath = stringToPath(hdPath).concat(
       // TODO
-      Slip10RawIndex.normal(wallet.index)
+      Slip10RawIndex.normal(subWallet.index)
     )
     setHdPath(pathToString(fullHdPath))
-  }, [hdPaths, network, wallet])
-
-  const [isNameExists, setIsNameExists] = useState(false)
+  }, [hdPaths, network, subWallet])
 
   const {
     isOpen: isExportOpen,
@@ -60,26 +59,7 @@ export const SubWalletEdit = ({
 
   return (
     <Stack spacing="12">
-      <FormControl isInvalid={isNameExists}>
-        <FormLabel>Wallet Name</FormLabel>
-        <SaveInput
-          hideSaveIfNoChange
-          stretchInput
-          value={wallet.name}
-          validate={(value: string) => value.trim().slice(0, 64) || false}
-          asyncValidate={async (value: string) => {
-            return !(await DB.subWallets
-              .where('[masterId+name]')
-              .equals([master.id, value])
-              .first())
-          }}
-          onChange={(value: string) => {
-            DB.subWallets.update(wallet, { name: value })
-          }}
-          onInvalid={setIsNameExists}
-        />
-        <FormErrorMessage>This wallet name exists.</FormErrorMessage>
-      </FormControl>
+      <SubWalletNameEdit wallet={wallet} subWallet={subWallet} />
 
       <Stack>
         <Text fontSize="md" fontWeight="medium">
@@ -94,12 +74,12 @@ export const SubWalletEdit = ({
       <Stack>
         <Text fontSize="md" fontWeight="medium">
           <chakra.span color="gray.500">Master Wallet:&nbsp;</chakra.span>
-          {master.name}
+          {wallet.name}
         </Text>
 
         <Text fontSize="md" fontWeight="medium">
           <chakra.span color="gray.500">Index:&nbsp;</chakra.span>
-          {wallet.index}
+          {subWallet.index}
         </Text>
       </Stack>
 
@@ -120,8 +100,49 @@ export const SubWalletEdit = ({
         <Button variant="outline" colorScheme="purple" onClick={onExportOpen}>
           Export Private Key
         </Button>
-        <Button colorScheme="red">Delete Wallet</Button>
+        <Button colorScheme="red">Delete Account</Button>
       </HStack>
+
+      {account && (
+        <ExportPrivateKeyModal
+          account={account}
+          isOpen={isExportOpen}
+          onClose={onExportClose}
+        />
+      )}
     </Stack>
+  )
+}
+
+export const SubWalletNameEdit = ({
+  wallet,
+  subWallet
+}: {
+  wallet: IWallet
+  subWallet: ISubWallet
+}) => {
+  const [isNameExists, setIsNameExists] = useState(false)
+
+  return (
+    <FormControl isInvalid={isNameExists}>
+      <FormLabel>Account Name</FormLabel>
+      <SaveInput
+        hideSaveIfNoChange
+        stretchInput
+        value={subWallet.name}
+        validate={(value: string) => value.trim().slice(0, 64) || false}
+        asyncValidate={async (value: string) => {
+          return !(await DB.subWallets
+            .where('[masterId+name]')
+            .equals([wallet.id, value])
+            .first())
+        }}
+        onChange={(value: string) => {
+          DB.subWallets.update(subWallet, { name: value })
+        }}
+        onInvalid={setIsNameExists}
+      />
+      <FormErrorMessage>This account name exists.</FormErrorMessage>
+    </FormControl>
   )
 }
