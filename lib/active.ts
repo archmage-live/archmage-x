@@ -1,6 +1,6 @@
 import assert from 'assert'
 import Dexie from 'dexie'
-import { useEffect, useState } from 'react'
+import { useAsync } from 'react-use'
 
 import { IChainAccount, INetwork, ISubWallet, IWallet } from '~lib/schema'
 import {
@@ -16,10 +16,39 @@ export interface ActiveWalletId {
   subId: number
 }
 
+async function getDefaultActiveNetwork(): Promise<number | undefined> {
+  const firstNetwork = await DB.networks.orderBy('sortId').first()
+  return firstNetwork?.id
+}
+
+async function getDefaultActiveWallet(): Promise<ActiveWalletId | undefined> {
+  const firstWallet = await DB.wallets.orderBy('sortId').first()
+  if (!firstWallet) {
+    return
+  }
+  const firstSubWallet = await DB.subWallets
+    .where('[masterId+sortId]')
+    .between([firstWallet.id, Dexie.minKey], [firstWallet.id, Dexie.maxKey])
+    .first()
+  if (!firstSubWallet) {
+    return
+  }
+  return {
+    masterId: firstWallet.id,
+    subId: firstSubWallet.id
+  }
+}
+
 export async function getActiveNetwork(): Promise<INetwork | undefined> {
-  const networkId = await LOCAL_STORE.get<number | undefined>(
+  let networkId = await LOCAL_STORE.get<number | undefined>(
     StoreKey.ACTIVE_NETWORK
   )
+  if (networkId === undefined) {
+    networkId = await getDefaultActiveNetwork()
+    if (networkId !== undefined) {
+      await setActiveNetwork(networkId)
+    }
+  }
   if (networkId === undefined) {
     return undefined
   }
@@ -30,63 +59,78 @@ export async function setActiveNetwork(networkId: number) {
   await LOCAL_STORE.set(StoreKey.ACTIVE_NETWORK, networkId)
 }
 
-export async function getActiveWallet(): Promise<
-  | { wallet: IWallet; subWallet: ISubWallet; chainAccount: IChainAccount }
-  | undefined
-> {
-  const network = await getActiveNetwork()
-  if (!network) {
-    return undefined
-  }
-
-  const activeId = await LOCAL_STORE.get<ActiveWalletId | undefined>(
+export async function getActiveWallet(): Promise<{
+  wallet?: IWallet
+  subWallet?: ISubWallet
+}> {
+  let activeId = await LOCAL_STORE.get<ActiveWalletId | undefined>(
     StoreKey.ACTIVE_WALLET
   )
   if (!activeId) {
-    return undefined
+    activeId = await getDefaultActiveWallet()
+    if (activeId) {
+      await setActiveWallet(activeId)
+    }
+  }
+  if (!activeId) {
+    return {}
   }
 
-  const wallet = await DB.wallets.get(activeId.masterId)
+  const wallet = await WALLET_SERVICE.getWallet(activeId.masterId)
+  const subWallet = await WALLET_SERVICE.getSubWallet(activeId.subId)
   assert(wallet)
-
-  const subWallet = await DB.subWallets.get(activeId.subId)
   assert(subWallet)
 
-  const chainAccount = await WALLET_SERVICE.getChainAccount({
+  return { wallet, subWallet }
+}
+
+export async function setActiveWallet(activeId: ActiveWalletId) {
+  await LOCAL_STORE.set(StoreKey.ACTIVE_WALLET, activeId)
+}
+
+export async function getActive(): Promise<{
+  network?: INetwork
+  wallet?: IWallet
+  subWallet?: ISubWallet
+  account?: IChainAccount
+}> {
+  const network = await getActiveNetwork()
+  if (!network) {
+    return {}
+  }
+
+  const { wallet, subWallet } = await getActiveWallet()
+  if (!wallet || !subWallet) {
+    return { network }
+  }
+
+  const account = await WALLET_SERVICE.getChainAccount({
     masterId: wallet.id,
     index: subWallet.index,
     networkKind: network.kind,
     chainId: network.chainId
   })
-  assert(chainAccount)
+  assert(account)
 
-  return { wallet, subWallet, chainAccount }
+  return { network, wallet, subWallet, account }
 }
 
 export function useActiveNetwork() {
   const [networkId, setNetworkId] = useLocalStorage<number | undefined>(
     StoreKey.ACTIVE_NETWORK,
-    async (activeNetworkId) => {
-      if (activeNetworkId === undefined) {
-        const firstNetwork = await DB.networks.orderBy('sortId').first()
-        return firstNetwork?.id
-      } else {
-        return activeNetworkId
+    async (storedActiveNetwork) => {
+      if (storedActiveNetwork !== undefined) {
+        return storedActiveNetwork
       }
+      return getDefaultActiveNetwork()
     }
   )
 
-  const [network, setNetwork] = useState<INetwork>()
-
-  useEffect(() => {
-    const effect = async () => {
-      if (networkId !== undefined && network?.id !== networkId) {
-        setNetwork(await DB.networks.get(networkId))
-      }
+  const { value: network } = useAsync(async () => {
+    if (networkId !== undefined) {
+      return DB.networks.get(networkId)
     }
-
-    effect()
-  }, [network, networkId, setNetworkId])
+  }, [networkId])
 
   return {
     networkId,
@@ -98,41 +142,23 @@ export function useActiveNetwork() {
 export function useActiveWallet() {
   const [walletId, setWalletId] = useLocalStorage<ActiveWalletId | undefined>(
     StoreKey.ACTIVE_WALLET,
-    async (storedSelectedWallet) => {
-      if (storedSelectedWallet !== undefined) {
-        return storedSelectedWallet
+    async (storedActiveWallet) => {
+      if (storedActiveWallet !== undefined) {
+        return storedActiveWallet
       }
-      const firstWallet = await DB.wallets.orderBy('sortId').first()
-      if (!firstWallet) {
-        return
-      }
-      const firstSubWallet = await DB.subWallets
-        .where('[masterId+sortId]')
-        .between([firstWallet.id, Dexie.minKey], [firstWallet.id, Dexie.maxKey])
-        .first()
-      if (!firstSubWallet) {
-        return
-      }
-      return {
-        masterId: firstWallet.id,
-        subId: firstSubWallet.id
-      }
+      return await getDefaultActiveWallet()
     }
   )
 
-  const [wallet, setWallet] = useState<IWallet | undefined>()
-  const [subWallet, setSubWallet] = useState<ISubWallet | undefined>()
-  useEffect(() => {
-    const effect = async () => {
-      if (!walletId) {
-        return
-      }
-      const wallet = await WALLET_SERVICE.getWallet(walletId.masterId)
-      const subWallet = await WALLET_SERVICE.getSubWallet(walletId.subId)
-      setWallet(wallet)
-      setSubWallet(subWallet)
+  const {
+    value: { wallet, subWallet } = { wallet: undefined, subWallet: undefined }
+  } = useAsync(async () => {
+    if (!walletId) {
+      return
     }
-    effect()
+    const wallet = await WALLET_SERVICE.getWallet(walletId.masterId)
+    const subWallet = await WALLET_SERVICE.getSubWallet(walletId.subId)
+    return { wallet, subWallet }
   }, [walletId])
 
   return {

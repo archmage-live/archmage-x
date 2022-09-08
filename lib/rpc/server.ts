@@ -23,32 +23,17 @@ import {
  * RPC server side.
  */
 export class RpcServer {
-  private handlers = new Map<
-    string,
-    [Map<string, (...args: any[]) => Promise<any>>, boolean]
-  >() // serviceName -> methodName -> handler
   private services = new Map<string, [object, boolean]>()
   private ports: browser.Runtime.Port[] = []
 
   constructor(private channel: string) {}
-
-  registerHandlers(
-    serviceName: string,
-    handlers: Map<string, (...args: any[]) => Promise<any>>,
-    allowExternal?: boolean
-  ) {
-    if (this.handlers.has(serviceName) || this.services.has(serviceName)) {
-      throw new Error(`service ${serviceName} has been registered`)
-    }
-    this.handlers.set(serviceName, [handlers, !allowExternal])
-  }
 
   registerService(
     serviceName: string,
     service: object,
     allowExternal?: boolean
   ) {
-    if (this.handlers.has(serviceName) || this.services.has(serviceName)) {
+    if (this.services.has(serviceName)) {
       throw new Error(`service ${serviceName} has been registered`)
     }
     this.services.set(serviceName, [service, !allowExternal])
@@ -65,7 +50,7 @@ export class RpcServer {
   onConnect = (port: browser.Runtime.Port) => {
     const platform = getPlatform()
     const isInternal =
-      platform === Platform.FIREFOX ||
+      // platform === Platform.FIREFOX ||
       (port.sender as any).origin === `chrome-extension://${browser.runtime.id}`
 
     if (port.name !== this.channel) {
@@ -101,12 +86,8 @@ export class RpcServer {
 
   onMessage = (msg: Request, port: browser.Runtime.Port) => {
     const id = msg.id
-    const handlers = this.handlers.get(msg.service)
     const service = this.services.get(msg.service)
-    if (
-      (!handlers && !service) ||
-      (!msg.ctx.fromInternal && (handlers?.[1] || service?.[1]))
-    ) {
+    if (!service || (!msg.ctx.fromInternal && service?.[1])) {
       port.postMessage({
         id,
         error: `rpc service not found: ${msg.service}`
@@ -122,25 +103,13 @@ export class RpcServer {
       } as Context
     ]
 
-    let promise: Promise<any> | undefined
-    const method = handlers?.[0].get(msg.method)
-    if (method) {
-      promise = method(...args)
-    } else if (service) {
-      try {
-        promise = (service[0] as any)[msg.method](...args)
-      } catch (err) {
-        port.postMessage({
-          id,
-          error: `rpc service call failed: ${msg.service}.${msg.method}, error: ${err}`
-        })
-        return
-      }
-    }
-    if (!promise) {
+    let promise: Promise<any>
+    try {
+      promise = (service[0] as any)[msg.method](...args)
+    } catch (err) {
       port.postMessage({
         id,
-        error: `rpc service method not found: ${msg.service}.${msg.method}`
+        error: `rpc service call failed: ${msg.service}.${msg.method}, error: ${err}`
       })
       return
     }

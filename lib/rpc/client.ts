@@ -40,12 +40,31 @@ export interface Response {
   error?: any
 }
 
+export interface Event {
+  eventName: EventType
+  args: any[]
+}
+
+export type EventType = string
+export type Listener = (...args: Array<any>) => void
+export type EventMethodType = 'on' | 'off'
+
+export interface EventEmitter {
+  on: (eventName: EventType, listener: Listener) => void
+  off: (eventName: EventType, listener: Listener) => void
+}
+
+function isMsgEvent(msg: Response | Event): msg is Event {
+  return !!(msg as Event).eventName
+}
+
 export const HELLO = 'hello'
 
 /**
  * RPC client side.
  */
 export class RpcClient {
+  private listeners = new Map<EventType, Listener[]>()
   private waits = new Map<number, [Promise<Response>, Function]>()
   private port!: browser.Runtime.Port
   private connected: boolean = false
@@ -96,6 +115,39 @@ export class RpcClient {
     }
   }
 
+  private callPartialForEvent(
+    msg: Request
+  ): (eventName: EventType, listener: Listener) => void {
+    const method = msg.method as EventMethodType
+    return (eventName: EventType, listener: Listener) => {
+      let listeners = this.listeners.get(eventName)
+      if (!listeners) {
+        listeners = []
+        this.listeners.set(eventName, listeners)
+      }
+
+      switch (method) {
+        case 'on':
+          listeners.push(listener)
+          break
+        case 'off':
+          const index = listeners.indexOf(listener)
+          if (index > -1) {
+            listeners.splice(index, 1)
+          }
+          if (!listeners.length) {
+            this.listeners.delete(eventName)
+          }
+          break
+      }
+
+      msg.args = [eventName]
+      this.call(msg).catch((err) => {
+        throw err
+      })
+    }
+  }
+
   async call(msg: Request): Promise<any> {
     if (!this.firstConnected) {
       this.connect()
@@ -139,12 +191,19 @@ export class RpcClient {
     return response.result
   }
 
-  onMessage = (msg: Response | typeof HELLO) => {
+  onMessage = (msg: Response | Event | typeof HELLO) => {
     // handshake
     if (msg === HELLO) {
       console.log(`rpc connected`)
       this.connected = true
       this.firstConnected![1](true)
+      return
+    }
+
+    if (isMsgEvent(msg)) {
+      this.listeners
+        .get(msg.eventName)
+        ?.forEach((listener) => listener(...msg.args))
       return
     }
 

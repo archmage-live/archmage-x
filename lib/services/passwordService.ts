@@ -11,6 +11,8 @@ export interface IPasswordService {
 
   existsPassword(): Promise<boolean>
 
+  isLocked(): Promise<boolean>
+
   isUnlocked(): Promise<boolean>
 
   unlock(password: string): Promise<boolean>
@@ -30,6 +32,10 @@ class PasswordService implements IPasswordService {
 
   async existsPassword() {
     return PASSWORD.exists()
+  }
+
+  async isLocked() {
+    return PASSWORD.isLocked()
   }
 
   async isUnlocked() {

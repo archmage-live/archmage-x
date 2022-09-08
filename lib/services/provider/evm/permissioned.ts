@@ -5,18 +5,15 @@ import { Logger } from '@ethersproject/logger'
 import { shallowCopy } from '@ethersproject/properties'
 import { version } from '@ethersproject/providers/lib/_version'
 import { AccessListish } from '@ethersproject/transactions'
+import assert from 'assert'
 import { ethErrors } from 'eth-rpc-errors'
 import { ethers } from 'ethers'
 
-import {
-  getActiveNetwork,
-  getActiveWallet,
-  setActiveNetwork
-} from '~lib/active'
+import { getActive, getActiveNetwork, setActiveNetwork } from '~lib/active'
 import { NetworkKind } from '~lib/network'
 import { EvmChainInfo, EvmExplorer, NativeCurrency } from '~lib/network/evm'
 import { Context } from '~lib/rpc'
-import { IChainAccount, IConnectedSite, INetwork } from '~lib/schema'
+import { IChainAccount, INetwork } from '~lib/schema'
 import { CONNECTED_SITE_SERVICE } from '~lib/services/connectedSiteService'
 import {
   CONSENT_SERVICE,
@@ -26,6 +23,7 @@ import {
   TransactionPayload
 } from '~lib/services/consentService'
 import { NETWORK_SERVICE } from '~lib/services/network'
+import { PASSWORD_SERVICE } from '~lib/services/passwordService'
 import { WALLET_SERVICE } from '~lib/services/walletService'
 
 import { EvmProvider } from '.'
@@ -76,63 +74,164 @@ export const allowedTransactionKeys: Array<string> = [
 ]
 
 export class EvmPermissionedProvider {
-  account?: IChainAccount
+  private account?: IChainAccount
 
   private constructor(
     public network: INetwork,
     public provider: EvmProvider,
     public origin: string
-  ) {}
+  ) {
+    assert(network.kind === NetworkKind.EVM)
+  }
 
   static async from(fromUrl: string): Promise<EvmPermissionedProvider> {
-    const activeNetwork = await getActiveNetwork()
-    if (!activeNetwork) {
+    let network = await getActiveNetwork()
+    if (!network) {
       // no active network
       throw ethErrors.provider.disconnected()
     }
 
-    const provider = await EvmProvider.from(activeNetwork)
+    if (network.kind !== NetworkKind.EVM) {
+      // if active network is not evm, fallback to first evm network
+      const networks = await NETWORK_SERVICE.getNetworks(NetworkKind.EVM)
+      if (!networks.length) {
+        throw ethErrors.provider.disconnected()
+      }
+      network = networks[0]
+    }
+
+    const provider = await EvmProvider.from(network)
     const permissionedProvider = new EvmPermissionedProvider(
-      activeNetwork,
+      network,
       provider,
       new URL(fromUrl).origin
     )
 
-    await permissionedProvider.getWallet()
+    if (await PASSWORD_SERVICE.isUnlocked()) {
+      await permissionedProvider.getWallet()
+    }
 
     return permissionedProvider
   }
 
   private async getWallet() {
+    const accounts = await this.getConnectedAccounts()
+    if (!accounts.length) {
+      return
+    }
+
+    let account
+    const { account: activeAccount } = await getActive()
+    if (activeAccount?.networkKind === NetworkKind.EVM) {
+      // prefer active account
+      account = accounts.find((account) => account.id === activeAccount.id)
+    }
+    if (!account) {
+      // fallback to last account
+      // TODO: select recently visited
+      account = accounts[accounts.length - 1]
+    }
+    this.account = account
+  }
+
+  private async getConnectedAccounts() {
+    // get connections by site
     const connections = await CONNECTED_SITE_SERVICE.getConnectedSitesBySite(
       this.origin
     )
-
-    // has connected accounts
-    if (connections.length) {
-      const activeWallet = await getActiveWallet()
-
-      let conn: IConnectedSite | undefined
-      if (connections.length > 1 && activeWallet) {
-        // prefer current active wallet
-        conn = connections.find(
-          (conn) =>
-            conn.masterId === activeWallet.chainAccount.masterId &&
-            conn.index === activeWallet.chainAccount.index
-        )
-      }
-      if (!conn) {
-        // fallback to first connection
-        conn = connections[0]
-      }
-
-      this.account = await WALLET_SERVICE.getChainAccount({
-        masterId: conn.masterId,
-        index: conn.index,
-        networkKind: this.network.kind,
-        chainId: this.network.chainId
-      })
+    if (!connections.length) {
+      return []
     }
+
+    // get connected accounts
+    const accounts = await WALLET_SERVICE.getChainAccounts(
+      connections.map((conn) => {
+        return {
+          masterId: conn.masterId,
+          index: conn.index,
+          networkKind: NetworkKind.EVM,
+          chainId: this.network.chainId
+        }
+      })
+    )
+
+    // filter accounts with valid address
+    return accounts.filter((account) => !!account.address)
+  }
+
+  async send(ctx: Context, method: string, params: Array<any>): Promise<any> {
+    try {
+      switch (method) {
+        case 'eth_accounts':
+          return await this.getAccounts()
+        case 'eth_requestAccounts':
+          return await this.requestAccounts(ctx)
+        case 'wallet_getPermissions':
+          return await this.getPermissions()
+        case 'wallet_requestPermissions':
+          return await this.requestPermissions(ctx, params)
+        case 'wallet_addEthereumChain':
+          return await this.addEthereumChain(params)
+        case 'wallet_switchEthereumChain':
+          return await this.switchEthereumChain(params)
+        case 'wallet_watchAsset':
+          return await this.watchAsset(params)
+        case 'eth_sendTransaction':
+          return await this.sendTransaction(ctx, params)
+        case 'eth_sign':
+          return await this.legacySignMessage(params)
+        case 'personal_sign':
+          return await this.signMessage(params)
+        case 'eth_signTypedData':
+        // fallthrough
+        case 'eth_signTypedData_v1':
+        // fallthrough
+        case 'eth_signTypedData_v3':
+          throw ethErrors.provider.unsupportedMethod(
+            'Please use eth_signTypedData_v4 instead.'
+          )
+        case 'eth_signTypedData_v4':
+          return await this.signTypedData(params)
+      }
+
+      // always allow readonly calls to provider, regardless of whether locked
+      return await this.provider.send(method, params)
+    } catch (err: any) {
+      console.error(err)
+      // pick out ethers error
+      // TODO: is this enough?
+      if ('code' in err && 'reason' in err) {
+        const err2: any = new Error(err.reason)
+        err2.code = err.code
+        throw err2
+      } else {
+        throw err
+      }
+    }
+  }
+
+  async sendTransaction(ctx: Context, [params]: Array<any>) {
+    if (!this.account?.address) {
+      throw ethErrors.provider.unauthorized()
+    }
+
+    const voidSigner = new VoidSigner(this.account.address, this.provider)
+
+    const [txParams, populatedParams] = await this.populateTransaction(
+      voidSigner,
+      params
+    )
+
+    return CONSENT_SERVICE.requestConsent(ctx, {
+      networkId: this.network.id,
+      accountId: this.account.id,
+      type: ConsentType.TRANSACTION,
+      origin: this.origin,
+      payload: {
+        txParams,
+        populatedParams
+      } as TransactionPayload
+    })
   }
 
   private async populateTransaction(
@@ -342,85 +441,17 @@ export class EvmPermissionedProvider {
     return [tx, populatedParams]
   }
 
-  async send(ctx: Context, method: string, params: Array<any>): Promise<any> {
-    try {
-      switch (method) {
-        case 'eth_accounts':
-          return await this.getAccounts()
-        case 'eth_requestAccounts':
-          return await this.requestAccounts(ctx)
-        case 'wallet_getPermissions':
-          return await this.getPermissions()
-        case 'wallet_requestPermissions':
-          return await this.requestPermissions(ctx, params)
-        case 'wallet_addEthereumChain':
-          return await this.addEthereumChain(params)
-        case 'wallet_switchEthereumChain':
-          return await this.switchEthereumChain(params)
-        case 'wallet_watchAsset':
-          return await this.watchAsset(params)
-        case 'eth_sendTransaction':
-          return await this.sendTransaction(ctx, params)
-        case 'eth_sign':
-          return await this.legacySignMessage(params)
-        case 'personal_sign':
-          return await this.signMessage(params)
-        case 'eth_signTypedData':
-        // fallthrough
-        case 'eth_signTypedData_v1':
-        // fallthrough
-        case 'eth_signTypedData_v3':
-          throw ethErrors.provider.unsupportedMethod(
-            'Please use eth_signTypedData_v4 instead.'
-          )
-        case 'eth_signTypedData_v4':
-          return await this.signTypedData(params)
-      }
-
-      return await this.provider.send(method, params)
-    } catch (err: any) {
-      console.error(err)
-      // pick out ethers error
-      // TODO: is this enough?
-      if ('code' in err && 'reason' in err) {
-        const err2: any = new Error(err.reason)
-        err2.code = err.code
-        throw err2
-      } else {
-        throw err
-      }
-    }
+  async legacySignMessage([params]: Array<any>) {
+    // TODO: consent
   }
 
-  async sendTransaction(ctx: Context, [params]: Array<any>) {
-    if (!this.account?.address) {
-      throw ethErrors.provider.unauthorized()
-    }
-
-    const voidSigner = new VoidSigner(this.account.address, this.provider)
-
-    const [txParams, populatedParams] = await this.populateTransaction(
-      voidSigner,
-      params
-    )
-
-    return CONSENT_SERVICE.requestConsent(ctx, {
-      networkId: this.network.id,
-      accountId: this.account.id,
-      type: ConsentType.TRANSACTION,
-      origin: this.origin,
-      payload: {
-        txParams,
-        populatedParams
-      } as TransactionPayload
-    })
+  async signMessage([params]: Array<any>) {
+    // TODO: consent
   }
 
-  async legacySignMessage([params]: Array<any>) {}
-
-  async signMessage([params]: Array<any>) {}
-
-  async signTypedData([params]: Array<any>) {}
+  async signTypedData([params]: Array<any>) {
+    // TODO: consent
+  }
 
   async getAccounts() {
     return this.account?.address ? [this.account.address] : []
@@ -434,9 +465,11 @@ export class EvmPermissionedProvider {
 
   // https://eips.ethereum.org/EIPS/eip-2255
   async getPermissions() {
-    if (!this.account?.address) {
-      return []
+    let addresses: string[] = []
+    if (await PASSWORD_SERVICE.isUnlocked()) {
+      addresses = (await this.getConnectedAccounts()).map((acc) => acc.address!)
     }
+
     return [
       {
         invoker: this.origin,
@@ -444,7 +477,11 @@ export class EvmPermissionedProvider {
         caveats: [
           {
             type: 'filterResponse',
-            value: [this.account.address]
+            value: addresses
+          },
+          {
+            type: 'restrictReturnedAccounts', // MetaMask
+            value: addresses
           }
         ]
       }
@@ -460,19 +497,20 @@ export class EvmPermissionedProvider {
       // now only support `eth_accounts`
       throw ethErrors.rpc.invalidParams()
     }
-    if (!this.account) {
-      await CONSENT_SERVICE.requestConsent(ctx, {
-        networkId: this.network.id!,
-        accountId: [],
-        type: ConsentType.REQUEST_PERMISSION,
-        origin: this.origin,
-        payload: {
-          permissions: [{ permission: Permission.ACCOUNT }]
-        } as RequestPermissionPayload
-      })
 
-      await this.getWallet()
-    }
+    // TODO: requested overwrite old connected
+    await CONSENT_SERVICE.requestConsent(ctx, {
+      networkId: this.network.id!,
+      accountId: [],
+      type: ConsentType.REQUEST_PERMISSION,
+      origin: this.origin,
+      payload: {
+        permissions: [{ permission: Permission.ACCOUNT }]
+      } as RequestPermissionPayload
+    })
+
+    await this.getWallet()
+
     return this.getPermissions()
   }
 
@@ -538,6 +576,8 @@ export class EvmPermissionedProvider {
       throw ethErrors.rpc.invalidParams('Mismatched chainId')
     }
 
+    // TODO: consent
+
     await NETWORK_SERVICE.addNetwork(NetworkKind.EVM, chainId, info)
 
     return null
@@ -556,6 +596,8 @@ export class EvmPermissionedProvider {
       )
     }
 
+    // TODO: consent
+
     await setActiveNetwork(network.id!)
 
     return null
@@ -563,7 +605,7 @@ export class EvmPermissionedProvider {
 
   // https://eips.ethereum.org/EIPS/eip-747
   async watchAsset([params]: Array<any>) {
-    // TODO
+    // TODO: consent
 
     return true
   }

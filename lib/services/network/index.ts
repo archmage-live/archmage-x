@@ -59,6 +59,14 @@ export class NetworkService {
     }
   }
 
+  async getNetworks(kind?: NetworkKind) {
+    if (!kind) {
+      return DB.networks.toArray()
+    } else {
+      return DB.networks.where('kind').equals(kind).toArray()
+    }
+  }
+
   async getNetwork(
     id: number | { kind: NetworkKind; chainId: number | string }
   ): Promise<INetwork | undefined> {
