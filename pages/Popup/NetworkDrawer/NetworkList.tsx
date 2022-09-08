@@ -35,6 +35,7 @@ export const NetworkList = ({ onSelected }: { onSelected(): void }) => {
             return (
               <Box
                 key={net.id}
+                ref={item.measureElement}
                 position="absolute"
                 top={0}
                 left={0}

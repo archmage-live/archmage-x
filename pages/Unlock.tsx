@@ -4,7 +4,6 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 
 import { AlertBox } from '~components/AlertBox'
 import { usePassword } from '~lib/password'
-import { CONSENT_SERVICE } from '~lib/services/consentService'
 import { PASSWORD_SERVICE } from '~lib/services/passwordService'
 import { useSubWalletsCount } from '~lib/services/walletService'
 import { createTab } from '~lib/util'
@@ -38,14 +37,7 @@ export default function Unlock() {
       openWelcomeTab()
     } else if (passwordExists && walletCount) {
       const to = searchParams.get('redirect')
-      if (to) {
-        navigate(to, { replace: true })
-        return
-      }
-
-      CONSENT_SERVICE.getRequests().then((requests) => {
-        navigate(requests.length ? '/consent' : '/', { replace: true })
-      })
+      navigate(to || '/', { replace: true })
     }
   }, [navigate, passwordExists, searchParams, walletCount])
 

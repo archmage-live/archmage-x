@@ -47,7 +47,7 @@ export const WalletDrawer = ({ onClose }: { onClose(): void }) => {
         subId: id
       } as ActiveWalletId)
     },
-    [selectedId, setWalletId]
+    [setWalletId]
   )
 
   const lock = async () => {

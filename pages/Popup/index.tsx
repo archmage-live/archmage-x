@@ -1,10 +1,11 @@
 import { Box, useColorModeValue } from '@chakra-ui/react'
 import { atom, useAtom } from 'jotai'
 import { useState } from 'react'
-import { Route, Routes, useLocation } from 'react-router-dom'
+import { Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 
 import { LazyTabs } from '~components/LazyTabs'
 import { NavTarget, Navbar } from '~components/Navbar'
+import { CONSENT_SERVICE } from '~lib/services/consentService'
 import ActivityPage from '~pages/Popup/Activity'
 import AssetsPage from '~pages/Popup/Assets'
 import ConsentPage from '~pages/Popup/Consent'
@@ -75,20 +76,35 @@ export const HomePage = () => {
 
   const [navTarget, setNavTarget] = useState<NavTarget>('Assets')
 
+  const navigate = useNavigate()
+
+  const [consentChecked, setConsentChecked] = useState(false)
+  CONSENT_SERVICE.getRequests().then((requests) => {
+    if (requests.length) {
+      navigate('/consent', { replace: true })
+    } else {
+      setConsentChecked(true)
+    }
+  })
+
   return (
     <Box position="relative" w="full" h="full">
-      <Toolbar />
+      {consentChecked && (
+        <>
+          <Toolbar />
 
-      <Box h="calc(100% - 131px)">
-        <LazyTabs index={tabIndex(navTarget)}>
-          <AssetsPage onLoaded={() => setLoaded(true)} />
-          {/*<NFTsPage />*/}
-          <ActivityPage />
-          <SettingsPage />
-        </LazyTabs>
-      </Box>
+          <Box h="calc(100% - 131px)">
+            <LazyTabs index={tabIndex(navTarget)}>
+              <AssetsPage onLoaded={() => setLoaded(true)} />
+              {/*<NFTsPage />*/}
+              <ActivityPage />
+              <SettingsPage />
+            </LazyTabs>
+          </Box>
 
-      <Navbar value={navTarget} onChange={setNavTarget} />
+          <Navbar value={navTarget} onChange={setNavTarget} />
+        </>
+      )}
 
       <OverlayCheckUnlocked isLoading={!loaded} />
     </Box>

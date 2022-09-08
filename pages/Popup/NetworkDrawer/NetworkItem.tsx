@@ -35,7 +35,8 @@ export const NetworkItem = ({
         />
       }>
       <HStack w="calc(100% - 39px)" justify="space-between">
-        <Text fontSize="lg" noOfLines={1} display="block">
+        {/* here zIndex solves the weird incomplete display issue of the last rendered item*/}
+        <Text fontSize="lg" noOfLines={1} display="block" zIndex={15000}>
           {info.name}
         </Text>
 

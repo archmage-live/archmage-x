@@ -38,6 +38,7 @@ import { CopyArea } from '~components/CopyIcon'
 import { useActive } from '~lib/active'
 import { IChainAccount, ISubWallet, IWallet, PSEUDO_INDEX } from '~lib/schema'
 import { getNetworkInfo } from '~lib/services/network'
+import { createTab } from '~lib/util'
 import { WalletType, hasWalletKeystore } from '~lib/wallet'
 import { ExportMnemonicModal } from '~pages/Settings/SettingsWallets/ExportMnemonicModal'
 import { ExportPrivateKeyModal } from '~pages/Settings/SettingsWallets/ExportPrivateKeyModal'
@@ -108,7 +109,9 @@ export const AccountMenu = () => {
           <MenuItem
             icon={<Icon as={FaExpandAlt} />}
             iconSpacing={2}
-            onClick={() => {}}>
+            onClick={() => {
+              createTab('#/')
+            }}>
             Expand view
           </MenuItem>
         </MenuList>
