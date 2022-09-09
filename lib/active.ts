@@ -2,7 +2,9 @@ import assert from 'assert'
 import Dexie from 'dexie'
 import { useAsync } from 'react-use'
 
+import { NetworkKind } from '~lib/network'
 import { IChainAccount, INetwork, ISubWallet, IWallet } from '~lib/schema'
+import { NETWORK_SERVICE } from '~lib/services/network'
 import {
   WALLET_SERVICE,
   useChainAccountByIndex
@@ -37,6 +39,22 @@ async function getDefaultActiveWallet(): Promise<ActiveWalletId | undefined> {
     masterId: firstWallet.id,
     subId: firstSubWallet.id
   }
+}
+
+export async function getActiveNetworkByKind(
+  kind: NetworkKind
+): Promise<INetwork | undefined> {
+  const network = await getActiveNetwork()
+  if (network?.kind === kind) {
+    return network
+  }
+  // if active network is not of the specified kind,
+  // fallback to first network of that kind
+  const networks = await NETWORK_SERVICE.getNetworks(kind)
+  if (!networks.length) {
+    return undefined
+  }
+  return networks[0]
 }
 
 export async function getActiveNetwork(): Promise<INetwork | undefined> {
@@ -113,6 +131,22 @@ export async function getActive(): Promise<{
   assert(account)
 
   return { network, wallet, subWallet, account }
+}
+
+export function watchActiveNetwork(
+  handler: (network: INetwork | undefined) => void
+) {
+  LOCAL_STORE.watch({
+    [StoreKey.ACTIVE_NETWORK]: (change) => {
+      const networkId = change.newValue as number | undefined
+      if (networkId === undefined) {
+        handler(undefined)
+        return
+      }
+      // TODO: mutex
+      NETWORK_SERVICE.getNetwork(networkId).then((network) => handler(network))
+    }
+  })
 }
 
 export function useActiveNetwork() {

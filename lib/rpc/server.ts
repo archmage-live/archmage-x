@@ -7,26 +7,30 @@
  * - The server side accepts connections from multiple RPC clients.
  * - The client must not send rpc call when disconnected to the server side.
  */
+import assert from 'assert'
 import browser from 'webextension-polyfill'
 
-import { Platform, getPlatform } from '~lib/platform'
-
+// import { Platform, getPlatform } from '~lib/platform'
+import { HELLO, SERVICE_WORKER_CHANNEL } from './client'
 import {
   Context,
-  HELLO,
+  Event,
+  EventEmitter,
+  EventMethodType,
+  EventType,
+  Listener,
   Request,
-  Response,
-  SERVICE_WORKER_CHANNEL
-} from './client'
+  isMsgEventMethod
+} from './clientInjected'
 
 /**
  * RPC server side.
  */
 export class RpcServer {
-  private services = new Map<string, [object, boolean]>()
-  private ports: browser.Runtime.Port[] = []
+  services = new Map<string, [object, boolean]>()
+  private conns: RpcConn[] = []
 
-  constructor(private channel: string) {}
+  constructor(public channel: string) {}
 
   registerService(
     serviceName: string,
@@ -43,17 +47,33 @@ export class RpcServer {
     browser.runtime.onConnect.addListener(this.onConnect)
   }
 
-  connections() {
-    return this.ports.length
+  onConnect = (port: browser.Runtime.Port) => {
+    const conn = RpcConn.from(port, this)
+    if (!conn) {
+      return
+    }
+    this.conns.push(conn)
   }
 
-  onConnect = (port: browser.Runtime.Port) => {
-    const platform = getPlatform()
-    const isInternal =
-      // platform === Platform.FIREFOX ||
-      (port.sender as any).origin === `chrome-extension://${browser.runtime.id}`
+  onDisconnect(conn: RpcConn) {
+    const index = this.conns.findIndex((c) => c === conn)
+    if (index >= 0) {
+      this.conns.splice(index, 1)
+    }
+  }
+}
 
-    if (port.name !== this.channel) {
+class RpcConn {
+  private events = new Map<string, Map<string, Listener>>()
+
+  constructor(
+    private port: browser.Runtime.Port,
+    private fromInternal: boolean,
+    private server: RpcServer
+  ) {}
+
+  static from(port: browser.Runtime.Port, server: RpcServer) {
+    if (port.name !== server.channel) {
       port.disconnect()
       console.warn(
         `invalid connection, port: ${port.name}, sender: ${
@@ -63,49 +83,89 @@ export class RpcServer {
       return
     }
 
-    this.ports.push(port)
-    port.onMessage.addListener(
-      isInternal ? this.onMessageInternal : this.onMessage
-    )
-    port.onDisconnect.addListener(this.onDisconnect)
+    // const platform = getPlatform()
+    const isInternal =
+      // platform === Platform.FIREFOX ||
+      (port.sender as any).origin === `chrome-extension://${browser.runtime.id}`
+
+    const conn = new RpcConn(port, isInternal, server)
+
+    port.onMessage.addListener(conn.onMessage)
+    port.onDisconnect.addListener(conn.onDisconnect)
     // say hello to handshake
     port.postMessage(HELLO)
+
+    return conn
   }
 
-  onDisconnect = (port: browser.Runtime.Port) => {
-    const index = this.ports.findIndex((p) => p === port)
-    if (index >= 0) {
-      this.ports.splice(index, 1)
-    }
-  }
-
-  onMessageInternal = (msg: Request, port: browser.Runtime.Port) => {
-    msg.ctx.fromInternal = true
-    this.onMessage(msg, port)
+  onDisconnect = () => {
+    this.server.onDisconnect(this)
   }
 
   onMessage = (msg: Request, port: browser.Runtime.Port) => {
-    const id = msg.id
-    const service = this.services.get(msg.service)
-    if (!service || (!msg.ctx.fromInternal && service?.[1])) {
+    const service = this.server.services.get(msg.service)
+    if (!service || (!this.fromInternal && service?.[1])) {
       port.postMessage({
-        id,
+        id: msg.id,
         error: `rpc service not found: ${msg.service}`
       })
       return
     }
 
+    if (isMsgEventMethod(msg.method)) {
+      return this.onEvent(service[0], msg, port)
+    }
+
+    return this.onCall(service[0], msg, port)
+  }
+
+  onEvent = (service: any, msg: Request, port: browser.Runtime.Port) => {
+    let map = this.events.get(service)
+    if (!map) {
+      map = new Map()
+      this.events.set(service, map)
+    }
+
+    const emitter = service as EventEmitter
+    const eventName = msg.args[0] as EventType
+
+    switch (msg.method as EventMethodType) {
+      case 'on': {
+        assert(!map.has(eventName))
+        const listener = (...args: any[]) => {
+          port.postMessage({
+            eventName,
+            args
+          } as Event)
+        }
+        emitter.on(eventName, listener)
+        map.set(eventName, listener)
+        break
+      }
+      case 'off': {
+        const listener = map.get(eventName)
+        if (listener) {
+          emitter.off(eventName, listener)
+          map.delete(eventName)
+        }
+        break
+      }
+    }
+  }
+
+  onCall = (service: any, msg: Request, port: browser.Runtime.Port) => {
+    const id = msg.id
     const args = [
       ...msg.args,
       {
         ...msg.ctx,
-        fromUrl: msg.ctx?.fromInternal ? undefined : port.sender?.url
+        fromUrl: this.fromInternal ? undefined : port.sender?.url
       } as Context
     ]
 
     let promise: Promise<any>
     try {
-      promise = (service[0] as any)[msg.method](...args)
+      promise = service[msg.method](...args)
     } catch (err) {
       port.postMessage({
         id,

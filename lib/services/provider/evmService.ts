@@ -1,8 +1,26 @@
-import { EVM_PROVIDER_NAME } from '~lib/provider/evm'
-import { Context, SERVICE_WORKER_SERVER } from '~lib/rpc'
+import { ethers } from 'ethers'
+
+import {
+  Context,
+  EventEmitter,
+  EventType,
+  Listener,
+  SERVICE_WORKER_SERVER
+} from '~lib/rpc'
+import { PASSWORD_SERVICE } from '~lib/services/passwordService'
 import { EvmPermissionedProvider } from '~lib/services/provider/evm/permissioned'
 
-export interface IEvmProviderService {
+export const EVM_PROVIDER_NAME = 'evmProvider' as const
+
+export interface IEvmProviderService extends EventEmitter {
+  info(ctx?: Context): Promise<{
+    isUnlocked: boolean
+    chainId: string
+    networkVersion: string
+    connected: boolean
+    activeAddress: string | undefined
+  }>
+
   request(
     args: { method: string; params?: Array<any> },
     ctx?: Context
@@ -10,6 +28,20 @@ export interface IEvmProviderService {
 }
 
 class EvmProviderService implements IEvmProviderService {
+  async info(ctx: Context) {
+    const provider = await EvmPermissionedProvider.from(ctx.fromUrl!)
+    const network = provider.network
+    return {
+      isUnlocked: await PASSWORD_SERVICE.isUnlocked(),
+      chainId: ethers.utils.hexStripZeros(
+        ethers.utils.hexlify(network.chainId)
+      ),
+      networkVersion: String(network.chainId),
+      connected: navigator.onLine,
+      activeAddress: provider.account?.address
+    }
+  }
+
   async request(
     args: {
       method: string
@@ -17,13 +49,13 @@ class EvmProviderService implements IEvmProviderService {
     },
     ctx: Context
   ): Promise<any> {
-    // TODO
-    // check fromUrl
-    // check method and params
-    // get its connected network and wallet
     const provider = await EvmPermissionedProvider.from(ctx.fromUrl!)
     return provider.send(ctx, args.method, args.params ?? [])
   }
+
+  on(eventName: EventType, listener: Listener): void {}
+
+  off(eventName: EventType, listener: Listener): void {}
 }
 
 SERVICE_WORKER_SERVER.registerService(

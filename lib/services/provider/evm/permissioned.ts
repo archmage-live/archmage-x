@@ -9,7 +9,11 @@ import assert from 'assert'
 import { ethErrors } from 'eth-rpc-errors'
 import { ethers } from 'ethers'
 
-import { getActive, getActiveNetwork, setActiveNetwork } from '~lib/active'
+import {
+  getActive,
+  getActiveNetworkByKind,
+  setActiveNetwork
+} from '~lib/active'
 import { NetworkKind } from '~lib/network'
 import { EvmChainInfo, EvmExplorer, NativeCurrency } from '~lib/network/evm'
 import { Context } from '~lib/rpc'
@@ -74,7 +78,7 @@ export const allowedTransactionKeys: Array<string> = [
 ]
 
 export class EvmPermissionedProvider {
-  private account?: IChainAccount
+  account?: IChainAccount
 
   private constructor(
     public network: INetwork,
@@ -85,19 +89,10 @@ export class EvmPermissionedProvider {
   }
 
   static async from(fromUrl: string): Promise<EvmPermissionedProvider> {
-    let network = await getActiveNetwork()
+    const network = await getActiveNetworkByKind(NetworkKind.EVM)
     if (!network) {
       // no active network
       throw ethErrors.provider.disconnected()
-    }
-
-    if (network.kind !== NetworkKind.EVM) {
-      // if active network is not evm, fallback to first evm network
-      const networks = await NETWORK_SERVICE.getNetworks(NetworkKind.EVM)
-      if (!networks.length) {
-        throw ethErrors.provider.disconnected()
-      }
-      network = networks[0]
     }
 
     const provider = await EvmProvider.from(network)

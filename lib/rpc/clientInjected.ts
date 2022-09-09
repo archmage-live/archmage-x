@@ -1,5 +1,16 @@
+export interface Context {
+  fromUrl?: string
+  window?: {
+    x: number
+    y: number
+    width: number
+    height: number
+  }
+}
+
 export interface Request {
   id: number
+  ctx: Context
   service: string
   method: string
   args: any[]
@@ -11,7 +22,32 @@ export interface Response {
   error?: any
 }
 
+export interface Event {
+  eventName: EventType
+  args: any[]
+}
+
+export type EventType = string
+export type Listener = (...args: Array<any>) => void
+export type EventMethodType = 'on' | 'off'
+
+export interface EventEmitter {
+  on: (eventName: EventType, listener: Listener) => void
+  off: (eventName: EventType, listener: Listener) => void
+}
+
+export function isMsgEvent(msg: Response | Event): msg is Event {
+  return !!(msg as Event).eventName
+}
+
+export function isMsgEventMethod(
+  method: EventMethodType | any
+): method is EventMethodType {
+  return method === 'on' || method === 'off'
+}
+
 export abstract class AbstractRpcClient {
+  protected listeners = new Map<EventType, Listener[]>()
   protected waits = new Map<number, [Promise<Response>, Function]>()
   protected nextId = 0
 
@@ -26,25 +62,64 @@ export abstract class AbstractRpcClient {
           service: serviceName,
           method
         } as Request
-        return this.callPartial(msg)
+
+        if (isMsgEventMethod(method)) {
+          return this.eventFn(msg)
+        }
+
+        return this.callFn(msg)
       }
     }) as Service
   }
 
-  private callPartial(msg: Request): (...args: any[]) => Promise<any> {
+  private callFn(msg: Request): (...args: any[]) => Promise<any> {
     return (...args: any[]) => {
       msg.args = args
       return this.call(msg)
     }
   }
 
+  private eventFn(
+    msg: Request
+  ): (eventName: EventType, listener: Listener) => void {
+    const method = msg.method as EventMethodType
+    return (eventName: EventType, listener: Listener) => {
+      let listeners = this.listeners.get(eventName)
+      if (!listeners) {
+        listeners = []
+        this.listeners.set(eventName, listeners)
+      }
+
+      switch (method) {
+        case 'on':
+          listeners.push(listener)
+          if (listeners.length > 1) {
+            // has been registered
+            return
+          }
+          break
+        case 'off':
+          const index = listeners.indexOf(listener)
+          if (index > -1) {
+            listeners.splice(index, 1)
+          }
+          if (listeners.length) {
+            // don't need to unregister
+            return
+          }
+          this.listeners.delete(eventName)
+          break
+      }
+
+      msg.args = [eventName]
+      this.call(msg).catch((err) => {
+        throw err
+      })
+    }
+  }
+
   abstract call(msg: Request): Promise<any>
 }
-
-const version = `RpcClient-${Date.now()}`
-window.postMessage({
-  version
-})
 
 export class RpcClientInjected extends AbstractRpcClient {
   constructor() {
@@ -52,14 +127,6 @@ export class RpcClientInjected extends AbstractRpcClient {
 
     const listener = (event: MessageEvent) => {
       if (event.source !== window) {
-        return
-      }
-
-      if (
-        event.data.version?.startsWith('RpcClient') &&
-        event.data.version !== version
-      ) {
-        window.removeEventListener('message', listener)
         return
       }
 
@@ -110,8 +177,12 @@ export class RpcClientInjected extends AbstractRpcClient {
   }
 }
 
-const global = globalThis as any
-if (!global.archmage) {
-  global.archmage = {}
+if (typeof window !== 'undefined') {
+  const global = window as any
+  if (!global.archmage) {
+    global.archmage = {}
+  }
+  if (!global.archmage.RpcClientInjected) {
+    global.archmage.RpcClientInjected = RpcClientInjected
+  }
 }
-global.archmage._service_client_proxy = new RpcClientInjected()

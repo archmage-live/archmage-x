@@ -13,9 +13,13 @@ if (!global.archmage) {
 }
 
 function getService() {
-  return (
-    global.archmage._service_client_proxy as RpcClientInjected
-  ).service<IEvmProviderService>(EVM_PROVIDER_NAME)
+  if (!global.archmage.clientProxy && global.archmage.RpcClientInjected) {
+    global.archmage.clientProxy = new global.archmage.RpcClientInjected()
+    global.archmage.evmService = (
+      global.archmage.clientProxy as RpcClientInjected
+    ).service<IEvmProviderService>(EVM_PROVIDER_NAME)
+  }
+  return global.archmage.evmService as IEvmProviderService
 }
 
 global.archmage.evm = {
@@ -32,8 +36,9 @@ global.ethereum = {
   connected: false,
   isConnected: () => global.ethereum.connected,
 
+  _isUnlocked: false,
   _metamask: {
-    isUnlocked: () => false
+    isUnlocked: () => global.ethereum._isUnlocked
   },
 
   // deprecated
@@ -66,3 +71,22 @@ global.ethereum = {
       .catch((err) => callback(err, undefined))
   }
 }
+
+async function init() {
+  try {
+    const info = await getService().info()
+
+    global.ethereum.chainId = info.chainId
+    global.ethereum.networkVersion = info.networkVersion
+    global.ethereum.connected = info.connected
+    global.ethereum.selectedAddress = info.activeAddress || null
+    global.ethereum._isUnlocked = info.isUnlocked
+
+    global.dispatchEvent(new CustomEvent('ethereum#initialized'))
+  } catch (err) {
+    console.error(err)
+    setTimeout(init, 500)
+  }
+}
+
+init()

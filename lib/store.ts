@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 
-import { Storage, useStorage } from '@plasmohq/storage'
+import { Storage, StorageAreaName, useStorage } from '@plasmohq/storage'
 
 export enum StoreArea {
   LOCAL = 'local',
@@ -19,6 +19,15 @@ export enum StoreKey {
   CONSENT_REQUESTS = 'consentRequests'
 }
 
+function isKeySecret(key: StoreKey) {
+  switch (key) {
+    case StoreKey.PASSWORD_HASH:
+    case StoreKey.PASSWORD:
+      return true
+  }
+  return false
+}
+
 // local persistent
 export const LOCAL_STORE = new Storage({
   area: StoreArea.LOCAL,
@@ -31,14 +40,16 @@ export const SESSION_STORE = new Storage({
   secretKeyList: [StoreKey.PASSWORD]
 })
 
-export function useLocalStorage<T = any>(
+function _useStorage<T = any>(
   key: StoreKey,
+  area: StorageAreaName,
   onInit?: T | ((v?: T) => T | Promise<T>)
 ) {
   const [renderValue, ...rest] = useStorage<T>(
     {
       key,
-      area: StoreArea.LOCAL
+      area,
+      isSecret: isKeySecret(key)
     },
     onInit as any
   )
@@ -49,20 +60,16 @@ export function useLocalStorage<T = any>(
   return [value, ...rest] as const
 }
 
+export function useLocalStorage<T = any>(
+  key: StoreKey,
+  onInit?: T | ((v?: T) => T | Promise<T>)
+) {
+  return _useStorage(key, StoreArea.LOCAL, onInit)
+}
+
 export function useSessionStorage<T = any>(
   key: StoreKey,
   onInit?: T | ((v?: T) => T | Promise<T>)
 ) {
-  const [renderValue, ...rest] = useStorage<T>(
-    {
-      key,
-      area: StoreArea.SESSION
-    },
-    onInit as any
-  )
-  const value = useMemo(
-    () => ((renderValue as any)?.then ? undefined : renderValue),
-    [renderValue]
-  )
-  return [value, ...rest] as const
+  return _useStorage(key, StoreArea.SESSION, onInit)
 }

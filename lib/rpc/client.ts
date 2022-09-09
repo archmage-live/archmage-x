@@ -7,71 +7,30 @@
  * - The server side accepts connections from multiple RPC clients.
  * - The client must not send rpc call when disconnected to the server side.
  */
-// import browser from "webextension-polyfill";
+import browser from 'webextension-polyfill'
 
-namespace browser {
-  export namespace Runtime {
-    export type Port = any
-  }
-}
-
-export interface Context {
-  fromInternal?: boolean
-  fromUrl?: string
-  window?: {
-    x: number
-    y: number
-    width: number
-    height: number
-  }
-}
-
-export interface Request {
-  id: number
-  ctx: Context
-  service: string
-  method: string
-  args: any[]
-}
-
-export interface Response {
-  id: number
-  result?: any
-  error?: any
-}
-
-export interface Event {
-  eventName: EventType
-  args: any[]
-}
-
-export type EventType = string
-export type Listener = (...args: Array<any>) => void
-export type EventMethodType = 'on' | 'off'
-
-export interface EventEmitter {
-  on: (eventName: EventType, listener: Listener) => void
-  off: (eventName: EventType, listener: Listener) => void
-}
-
-function isMsgEvent(msg: Response | Event): msg is Event {
-  return !!(msg as Event).eventName
-}
+import {
+  AbstractRpcClient,
+  Context,
+  Event,
+  Request,
+  Response,
+  isMsgEvent
+} from './clientInjected'
 
 export const HELLO = 'hello'
 
 /**
  * RPC client side.
  */
-export class RpcClient {
-  private listeners = new Map<EventType, Listener[]>()
-  private waits = new Map<number, [Promise<Response>, Function]>()
+export class RpcClient extends AbstractRpcClient {
   private port!: browser.Runtime.Port
   private connected: boolean = false
-  private firstConnected?: [Promise<boolean>, Function]
-  private nextId = 0
+  private firstConnected: [Promise<boolean>, Function] | undefined
 
-  constructor(private channel: string) {}
+  constructor(private channel: string) {
+    super()
+  }
 
   connect() {
     let resolve
@@ -88,65 +47,9 @@ export class RpcClient {
     this.port.onDisconnect.addListener(this.onDisconnect)
   }
 
-  disconnect() {
-    this.port.disconnect()
-  }
-
-  service<Service>(serviceName: string, service?: Service): Service {
-    return new Proxy(service ?? {}, {
-      get: (target: Service, method: string | symbol) => {
-        if (typeof (target as any)[method] === 'function') {
-          return (target as any)[method].bind(target)
-        }
-
-        const msg = {
-          service: serviceName,
-          method
-        } as Request
-        return this.callPartial(msg)
-      }
-    }) as Service
-  }
-
-  private callPartial(msg: Request): (...args: any[]) => Promise<any> {
-    return (...args: any[]) => {
-      msg.args = args
-      return this.call(msg)
-    }
-  }
-
-  private callPartialForEvent(
-    msg: Request
-  ): (eventName: EventType, listener: Listener) => void {
-    const method = msg.method as EventMethodType
-    return (eventName: EventType, listener: Listener) => {
-      let listeners = this.listeners.get(eventName)
-      if (!listeners) {
-        listeners = []
-        this.listeners.set(eventName, listeners)
-      }
-
-      switch (method) {
-        case 'on':
-          listeners.push(listener)
-          break
-        case 'off':
-          const index = listeners.indexOf(listener)
-          if (index > -1) {
-            listeners.splice(index, 1)
-          }
-          if (!listeners.length) {
-            this.listeners.delete(eventName)
-          }
-          break
-      }
-
-      msg.args = [eventName]
-      this.call(msg).catch((err) => {
-        throw err
-      })
-    }
-  }
+  // disconnect() {
+  //   this.port.disconnect()
+  // }
 
   async call(msg: Request): Promise<any> {
     if (!this.firstConnected) {
@@ -222,13 +125,14 @@ export class RpcClient {
     console.log(`rpc disconnected`)
     this.connected = false
     this.firstConnected = undefined // enable reconnect
-    for (const [id, [promise, resolve]] of this.waits.entries()) {
+    for (const [id, [, resolve]] of this.waits.entries()) {
       resolve({
         id,
         error: `rpc disconnected`
       })
     }
-    this.port = undefined
+    this.port = undefined as any
+    this.listeners.clear()
     this.waits.clear()
   }
 }
