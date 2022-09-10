@@ -88,11 +88,21 @@ export class EvmPermissionedProvider {
     assert(network.kind === NetworkKind.EVM)
   }
 
-  static async from(fromUrl: string): Promise<EvmPermissionedProvider> {
-    const network = await getActiveNetworkByKind(NetworkKind.EVM)
-    if (!network) {
+  static async fromMayThrow(fromUrl: string): Promise<EvmPermissionedProvider> {
+    const provider = await EvmPermissionedProvider.from(fromUrl)
+    if (!provider) {
       // no active network
       throw ethErrors.provider.disconnected()
+    }
+    return provider
+  }
+
+  static async from(
+    fromUrl: string
+  ): Promise<EvmPermissionedProvider | undefined> {
+    const network = await getActiveNetworkByKind(NetworkKind.EVM)
+    if (!network) {
+      return
     }
 
     const provider = await EvmProvider.from(network)
@@ -111,25 +121,12 @@ export class EvmPermissionedProvider {
 
   private async getWallet() {
     const accounts = await this.getConnectedAccounts()
-    if (!accounts.length) {
-      return
+    if (accounts.length) {
+      this.account = accounts[0]
     }
-
-    let account
-    const { account: activeAccount } = await getActive()
-    if (activeAccount?.networkKind === NetworkKind.EVM) {
-      // prefer active account
-      account = accounts.find((account) => account.id === activeAccount.id)
-    }
-    if (!account) {
-      // fallback to last account
-      // TODO: select recently visited
-      account = accounts[accounts.length - 1]
-    }
-    this.account = account
   }
 
-  private async getConnectedAccounts() {
+  async getConnectedAccounts() {
     // get connections by site
     const connections = await CONNECTED_SITE_SERVICE.getConnectedSitesBySite(
       this.origin
@@ -139,7 +136,7 @@ export class EvmPermissionedProvider {
     }
 
     // get connected accounts
-    const accounts = await WALLET_SERVICE.getChainAccounts(
+    let accounts = await WALLET_SERVICE.getChainAccounts(
       connections.map((conn) => {
         return {
           masterId: conn.masterId,
@@ -151,7 +148,28 @@ export class EvmPermissionedProvider {
     )
 
     // filter accounts with valid address
-    return accounts.filter((account) => !!account.address)
+    accounts = accounts.filter((account) => !!account.address)
+    if (!accounts.length) {
+      return accounts
+    }
+
+    let index = -1
+    const { account: activeAccount } = await getActive()
+    if (activeAccount?.networkKind === NetworkKind.EVM) {
+      // prefer active account
+      index = accounts.findIndex((account) => account.id === activeAccount.id)
+    }
+    if (index < 0) {
+      // fallback to last account
+      // TODO: select recently visited
+      index = accounts.length - 1
+    }
+
+    // put active account at the front of the array
+    const [active] = accounts.splice(index, 1)
+    accounts.unshift(active)
+
+    return accounts
   }
 
   async send(ctx: Context, method: string, params: Array<any>): Promise<any> {

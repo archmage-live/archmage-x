@@ -28,65 +28,115 @@ global.archmage.evm = {
   }
 } as IEvmProvider
 
-global.ethereum = {
-  ...global.archmage.evm,
-
-  isMetaMask: true,
-
-  connected: false,
-  isConnected: () => global.ethereum.connected,
-
-  _isUnlocked: false,
-  _metamask: {
-    isUnlocked: () => global.ethereum._isUnlocked
-  },
-
-  // deprecated
-  chainId: '',
-  networkVersion: '',
-  selectedAddress: null,
-
-  // deprecated
-  enable: () => global.ethereum.request({ method: 'eth_requestAccounts' }),
-
-  // deprecated
-  sendAsync(
-    request: { method: string; params?: Array<any> },
-    callback: (error: any, response: any) => void
-  ) {
-    getService()
-      .request(request)
-      .then((rep) => callback(undefined, rep))
-      .catch((err) => callback(err, undefined))
-  },
-
-  // deprecated
-  send(
-    request: { method: string; params?: Array<any> },
-    callback: (error: any, response: any) => void
-  ) {
-    getService()
-      .request(request)
-      .then((rep) => callback(undefined, rep))
-      .catch((err) => callback(err, undefined))
-  }
-}
-
 async function init() {
-  try {
-    const info = await getService().info()
-
-    global.ethereum.chainId = info.chainId
-    global.ethereum.networkVersion = info.networkVersion
-    global.ethereum.connected = info.connected
-    global.ethereum.selectedAddress = info.activeAddress || null
-    global.ethereum._isUnlocked = info.isUnlocked
-
-    global.dispatchEvent(new CustomEvent('ethereum#initialized'))
-  } catch (err) {
-    console.error(err)
-    setTimeout(init, 500)
+  if (global.ethereum) {
+    return
   }
+
+  const listeners = new Map<string, Function[]>()
+
+  getService().on('unlocked', (isUnlocked) => {
+    global.ethereum._state.isUnlocked = isUnlocked
+  })
+
+  getService().on('networkChanged', ({ chainId, networkVersion }) => {
+    global.ethereum.chainId = chainId
+    global.ethereum.networkVersion = networkVersion
+
+    listeners.get('chainChanged')?.forEach((handler) => handler(chainId))
+  })
+
+  getService().on('accountsChanged', async () => {
+    const { chainId, networkVersion, ...state } = await getService().state()
+    global.ethereum._state = state
+    global.ethereum.selectedAddress = state.accounts.length
+      ? state.accounts[0]
+      : null
+
+    listeners
+      .get('accountsChanged')
+      ?.forEach((handler) => handler(state.accounts.slice(0, 1)))
+  })
+
+  const { chainId, networkVersion, ...state } = await getService().state()
+  const selectedAddress = state.accounts.length ? state.accounts[0] : null
+
+  const ethereum = {
+    ...global.archmage.evm,
+
+    _state: state,
+
+    isMetaMask: true,
+    isArchmage: true,
+
+    isConnected: () => ethereum._state.isConnected,
+
+    on: (event: string, handler: (...args: any[]) => void) => {
+      let handlers = listeners.get(event)
+      if (!handlers) {
+        handlers = []
+        listeners.set(event, handlers)
+      }
+      switch (event) {
+        case 'connect':
+        case 'disconnect':
+        case 'chainChanged':
+        case 'accountsChanged':
+        case 'message':
+          handlers.push(handler)
+          break
+      }
+    },
+
+    removeListener: (event: string, handler: (...args: any[]) => void) => {
+      const handlers = listeners.get(event)
+      if (!handlers?.length) {
+        return
+      }
+      const index = handlers.findIndex((h) => h === handler)
+      if (index > -1) {
+        handlers.splice(index, 1)
+      }
+    },
+
+    _metamask: {
+      isUnlocked: () => ethereum._state.isUnlocked
+    },
+
+    // deprecated
+    chainId,
+    networkVersion,
+    selectedAddress,
+
+    // deprecated
+    enable: () => ethereum.request({ method: 'eth_requestAccounts' }),
+
+    // deprecated
+    sendAsync(
+      request: { method: string; params?: Array<any> },
+      callback: (error: any, response: any) => void
+    ) {
+      getService()
+        .request(request)
+        .then((rep) => callback(undefined, rep))
+        .catch((err) => callback(err, undefined))
+    },
+
+    // deprecated
+    send(
+      request: { method: string; params?: Array<any> },
+      callback: (error: any, response: any) => void
+    ) {
+      getService()
+        .request(request)
+        .then((rep) => callback(undefined, rep))
+        .catch((err) => callback(err, undefined))
+    }
+  }
+
+  global.ethereum = ethereum
+
+  global.dispatchEvent(new CustomEvent('ethereum#initialized'))
 }
 
 init()

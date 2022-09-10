@@ -64,7 +64,7 @@ export class RpcServer {
 }
 
 class RpcConn {
-  private events = new Map<string, Map<string, Listener>>()
+  private events = new Map<any, Map<EventType, Listener>>()
 
   constructor(
     private port: browser.Runtime.Port,
@@ -120,10 +120,10 @@ class RpcConn {
   }
 
   onEvent = (service: any, msg: Request, port: browser.Runtime.Port) => {
-    let map = this.events.get(service)
-    if (!map) {
-      map = new Map()
-      this.events.set(service, map)
+    let events = this.events.get(service)
+    if (!events) {
+      events = new Map()
+      this.events.set(service, events)
     }
 
     const emitter = service as EventEmitter
@@ -131,22 +131,23 @@ class RpcConn {
 
     switch (msg.method as EventMethodType) {
       case 'on': {
-        assert(!map.has(eventName))
+        assert(!events.has(eventName))
         const listener = (...args: any[]) => {
           port.postMessage({
+            service: msg.service,
             eventName,
             args
           } as Event)
         }
         emitter.on(eventName, listener)
-        map.set(eventName, listener)
+        events.set(eventName, listener)
         break
       }
       case 'off': {
-        const listener = map.get(eventName)
+        const listener = events.get(eventName)
         if (listener) {
           emitter.off(eventName, listener)
-          map.delete(eventName)
+          events.delete(eventName)
         }
         break
       }

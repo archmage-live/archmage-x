@@ -1,7 +1,15 @@
 import type { PlasmoContentScript } from 'plasmo'
 
 import { SERVICE_WORKER_CLIENT } from '~lib/rpc/client'
-import type { Request, Response } from '~lib/rpc/clientInjected'
+import type {
+  Event,
+  EventMethodType,
+  EventType,
+  Listener,
+  Request,
+  Response
+} from '~lib/rpc/clientInjected'
+import { isMsgEventMethod } from '~lib/rpc/clientInjected'
 
 export const config: PlasmoContentScript = {
   // matches: ['*://*/*'],
@@ -11,9 +19,11 @@ export const config: PlasmoContentScript = {
   run_at: 'document_start'
 }
 
-console.log('injected content script')
+// console.log('archmage content script')
 
 class RpcClientMiddleware {
+  private events = new Map<string, Map<EventType, Listener>>()
+
   constructor() {
     const listener = (event: MessageEvent) => {
       if (event.source !== window) {
@@ -24,6 +34,45 @@ class RpcClientMiddleware {
       if (typeof msg.id !== 'number' || !msg.service || !msg.method) {
         return
       }
+
+      if (isMsgEventMethod(msg.method)) {
+        let events = this.events.get(msg.service)
+        if (!events) {
+          events = new Map()
+          this.events.set(msg.service, events)
+        }
+
+        const eventName = msg.args[0] as EventType
+        switch (msg.method as EventMethodType) {
+          case 'on': {
+            if (events.has(eventName)) {
+              throw new Error(
+                `event ${eventName} has been registered on service ${msg.service}`
+              )
+            }
+            const listener = (...args: any[]) => {
+              window.postMessage({
+                service: msg.service,
+                eventName,
+                args
+              } as Event)
+            }
+            SERVICE_WORKER_CLIENT.event(msg, listener)
+            events.set(eventName, listener)
+            break
+          }
+          case 'off': {
+            const listener = events.get(eventName)
+            if (listener) {
+              SERVICE_WORKER_CLIENT.event(msg, listener)
+              events.delete(eventName)
+            }
+            break
+          }
+        }
+        return
+      }
+
       const id = msg.id
       SERVICE_WORKER_CLIENT.call(msg)
         .then((result) => {

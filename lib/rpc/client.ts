@@ -14,8 +14,7 @@ import {
   Context,
   Event,
   Request,
-  Response,
-  isMsgEvent
+  Response
 } from './clientInjected'
 
 export const HELLO = 'hello'
@@ -37,7 +36,7 @@ export class RpcClient extends AbstractRpcClient {
     const promise = new Promise((r: (value: boolean) => void) => {
       resolve = r
     })
-    console.log('rpc connecting...')
+    console.log('archmage connecting...')
 
     const browser = ((globalThis as any).browser || globalThis.chrome) as any
     this.port = browser.runtime.connect({ name: this.channel })
@@ -97,32 +96,17 @@ export class RpcClient extends AbstractRpcClient {
   onMessage = (msg: Response | Event | typeof HELLO) => {
     // handshake
     if (msg === HELLO) {
-      console.log(`rpc connected`)
+      console.log(`archmage connected`)
       this.connected = true
       this.firstConnected![1](true)
       return
     }
 
-    if (isMsgEvent(msg)) {
-      this.listeners
-        .get(msg.eventName)
-        ?.forEach((listener) => listener(...msg.args))
-      return
-    }
-
-    const wait = this.waits.get(msg.id)
-    if (!wait) {
-      console.error(
-        `rpc received response, but no receiver: ${JSON.stringify(msg)}`
-      )
-      return
-    }
-    this.waits.delete(msg.id)
-    wait[1](msg)
+    this.onMsg(msg)
   }
 
   onDisconnect = () => {
-    console.log(`rpc disconnected`)
+    console.log(`archmage disconnected`)
     this.connected = false
     this.firstConnected = undefined // enable reconnect
     for (const [id, [, resolve]] of this.waits.entries()) {

@@ -23,6 +23,7 @@ export interface Response {
 }
 
 export interface Event {
+  service: string
   eventName: EventType
   args: any[]
 }
@@ -47,7 +48,7 @@ export function isMsgEventMethod(
 }
 
 export abstract class AbstractRpcClient {
-  protected listeners = new Map<EventType, Listener[]>()
+  protected listeners = new Map<string, Map<EventType, Listener[]>>()
   protected waits = new Map<number, [Promise<Response>, Function]>()
   protected nextId = 0
 
@@ -72,22 +73,20 @@ export abstract class AbstractRpcClient {
     }) as Service
   }
 
-  private callFn(msg: Request): (...args: any[]) => Promise<any> {
-    return (...args: any[]) => {
-      msg.args = args
-      return this.call(msg)
-    }
-  }
-
   private eventFn(
     msg: Request
   ): (eventName: EventType, listener: Listener) => void {
     const method = msg.method as EventMethodType
     return (eventName: EventType, listener: Listener) => {
-      let listeners = this.listeners.get(eventName)
+      let events = this.listeners.get(msg.service)
+      if (!events) {
+        events = new Map()
+        this.listeners.set(msg.service, events)
+      }
+      let listeners = events.get(eventName)
       if (!listeners) {
         listeners = []
-        this.listeners.set(eventName, listeners)
+        events.set(eventName, listeners)
       }
 
       switch (method) {
@@ -107,7 +106,10 @@ export abstract class AbstractRpcClient {
             // don't need to unregister
             return
           }
-          this.listeners.delete(eventName)
+          events.delete(eventName)
+          if (!events.size) {
+            this.listeners.delete(msg.service)
+          }
           break
       }
 
@@ -118,34 +120,62 @@ export abstract class AbstractRpcClient {
     }
   }
 
+  private callFn(msg: Request): (...args: any[]) => Promise<any> {
+    return (...args: any[]) => {
+      msg.args = args
+      return this.call(msg)
+    }
+  }
+
+  event(msg: Request, listener: Listener) {
+    this.eventFn(msg)(msg.args[0], listener)
+  }
+
   abstract call(msg: Request): Promise<any>
+
+  protected onMsg(msg: Response | Event) {
+    if (isMsgEvent(msg)) {
+      this.listeners
+        .get(msg.service)
+        ?.get(msg.eventName)
+        ?.forEach((listener) => listener(...msg.args))
+      return
+    }
+
+    const wait = this.waits.get(msg.id)
+    if (!wait) {
+      console.error(
+        `rpc received response, but no receiver: ${JSON.stringify(msg)}`
+      )
+      return
+    }
+    this.waits.delete(msg.id)
+    wait[1](msg)
+  }
 }
 
 export class RpcClientInjected extends AbstractRpcClient {
   constructor() {
     super()
 
-    const listener = (event: MessageEvent) => {
-      if (event.source !== window) {
+    const listener = (evt: MessageEvent) => {
+      if (evt.source !== window) {
         return
       }
 
-      const msg = event.data as Response
+      const event = evt.data as Event
+      const msg = evt.data as Response
       if (
-        typeof (msg as any).id !== 'number' ||
-        !(Object.hasOwn(msg, 'result') || Object.hasOwn(msg, 'error'))
+        !(event.service && event.eventName && event.args) &&
+        !(
+          typeof (msg as any).id === 'number' &&
+          (Object.hasOwn(msg, 'result') || Object.hasOwn(msg, 'error'))
+        )
       ) {
         return
       }
-      const wait = this.waits.get(msg.id)
-      if (!wait) {
-        console.error(
-          `rpc received response, but no receiver: ${JSON.stringify(msg)}`
-        )
-        return
-      }
-      this.waits.delete(msg.id)
-      wait[1](msg)
+
+      this.onMsg(evt.data)
     }
 
     window.addEventListener('message', listener)

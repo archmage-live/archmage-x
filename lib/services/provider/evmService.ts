@@ -1,5 +1,14 @@
+import { liveQuery } from 'dexie'
 import { ethers } from 'ethers'
 
+import {
+  getActiveNetworkByKind,
+  watchActiveNetworkChange,
+  watchActiveWalletChange
+} from '~lib/active'
+import { DB } from '~lib/db'
+import { NetworkKind } from '~lib/network'
+import { watchPasswordUnlocked } from '~lib/password'
 import {
   Context,
   EventEmitter,
@@ -13,12 +22,12 @@ import { EvmPermissionedProvider } from '~lib/services/provider/evm/permissioned
 export const EVM_PROVIDER_NAME = 'evmProvider' as const
 
 export interface IEvmProviderService extends EventEmitter {
-  info(ctx?: Context): Promise<{
+  state(ctx?: Context): Promise<{
     isUnlocked: boolean
-    chainId: string
-    networkVersion: string
-    connected: boolean
-    activeAddress: string | undefined
+    chainId?: string
+    networkVersion?: string
+    isConnected: boolean
+    accounts: string[]
   }>
 
   request(
@@ -28,17 +37,52 @@ export interface IEvmProviderService extends EventEmitter {
 }
 
 class EvmProviderService implements IEvmProviderService {
-  async info(ctx: Context) {
+  private listeners = new Map<EventType, Listener[]>()
+
+  constructor() {
+    watchPasswordUnlocked((isUnlocked) => {
+      this.listeners
+        .get('unlocked')
+        ?.forEach((listener) => listener(isUnlocked))
+    })
+
+    watchActiveNetworkChange(async () => {
+      const network = await getActiveNetworkByKind(NetworkKind.EVM)
+      this.listeners.get('networkChanged')?.forEach((listener) =>
+        listener({
+          chainId: network
+            ? ethers.utils.hexStripZeros(ethers.utils.hexlify(network.chainId))
+            : '',
+          networkVersion: network ? String(network.chainId) : null
+        })
+      )
+    })
+
+    const handleAccountsChanged = () =>
+      this.listeners.get('accountsChanged')?.forEach((listener) => listener())
+
+    watchActiveWalletChange(handleAccountsChanged)
+
+    DB.connectedSites.hook('creating', handleAccountsChanged)
+    DB.connectedSites.hook('updating', handleAccountsChanged)
+    DB.connectedSites.hook('deleting', handleAccountsChanged)
+  }
+
+  async state(ctx: Context) {
+    let network, accounts
     const provider = await EvmPermissionedProvider.from(ctx.fromUrl!)
-    const network = provider.network
+    if (provider) {
+      network = provider.network
+      accounts = await provider.getConnectedAccounts()
+    }
     return {
       isUnlocked: await PASSWORD_SERVICE.isUnlocked(),
-      chainId: ethers.utils.hexStripZeros(
-        ethers.utils.hexlify(network.chainId)
-      ),
-      networkVersion: String(network.chainId),
-      connected: navigator.onLine,
-      activeAddress: provider.account?.address
+      chainId: network
+        ? ethers.utils.hexStripZeros(ethers.utils.hexlify(network.chainId))
+        : undefined,
+      networkVersion: network ? String(network.chainId) : undefined,
+      isConnected: navigator.onLine,
+      accounts: accounts?.map((acc) => acc.address!) || []
     }
   }
 
@@ -49,13 +93,28 @@ class EvmProviderService implements IEvmProviderService {
     },
     ctx: Context
   ): Promise<any> {
-    const provider = await EvmPermissionedProvider.from(ctx.fromUrl!)
+    const provider = await EvmPermissionedProvider.fromMayThrow(ctx.fromUrl!)
     return provider.send(ctx, args.method, args.params ?? [])
   }
 
-  on(eventName: EventType, listener: Listener): void {}
+  on(eventName: EventType, listener: Listener): void {
+    let listeners = this.listeners.get(eventName)
+    if (!listeners) {
+      listeners = []
+      this.listeners.set(eventName, listeners)
+    }
+    listeners.push(listener)
+  }
 
-  off(eventName: EventType, listener: Listener): void {}
+  off(eventName: EventType, listener: Listener): void {
+    const listeners = this.listeners.get(eventName)
+    if (listeners) {
+      const index = listeners.indexOf(listener)
+      if (index > -1) {
+        listeners.splice(index, 1)
+      }
+    }
+  }
 }
 
 SERVICE_WORKER_SERVER.registerService(

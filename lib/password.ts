@@ -90,6 +90,14 @@ class Password {
 
 export const PASSWORD = new Password(ENV.inServiceWorker)
 
+export function watchPasswordUnlocked(handler: (isUnlocked: boolean) => void) {
+  SESSION_STORE.watch({
+    [StoreKey.PASSWORD]: (change) => {
+      handler(!!change.newValue)
+    }
+  })
+}
+
 export function usePassword(): {
   exists: boolean | undefined
   isLocked: boolean | undefined

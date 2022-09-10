@@ -133,19 +133,15 @@ export async function getActive(): Promise<{
   return { network, wallet, subWallet, account }
 }
 
-export function watchActiveNetwork(
-  handler: (network: INetwork | undefined) => void
-) {
+export function watchActiveNetworkChange(handler: () => void) {
   LOCAL_STORE.watch({
-    [StoreKey.ACTIVE_NETWORK]: (change) => {
-      const networkId = change.newValue as number | undefined
-      if (networkId === undefined) {
-        handler(undefined)
-        return
-      }
-      // TODO: mutex
-      NETWORK_SERVICE.getNetwork(networkId).then((network) => handler(network))
-    }
+    [StoreKey.ACTIVE_NETWORK]: handler
+  })
+}
+
+export function watchActiveWalletChange(handler: () => void) {
+  LOCAL_STORE.watch({
+    [StoreKey.ACTIVE_WALLET]: handler
   })
 }
 
