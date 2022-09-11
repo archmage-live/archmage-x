@@ -58,6 +58,10 @@ async function init() {
       ?.forEach((handler) => handler(state.accounts.slice(0, 1)))
   })
 
+  getService().on('message', (...args: any[]) => {
+    listeners.get('message')?.forEach((handler) => handler(...args))
+  })
+
   const { chainId, networkVersion, ...state } = await getService().state()
   const selectedAddress = state.accounts.length ? state.accounts[0] : null
 
