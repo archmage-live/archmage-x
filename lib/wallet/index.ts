@@ -81,22 +81,22 @@ export async function getMasterSigningWallet(
 }
 
 export async function getSigningWallet(
-  wallet: IChainAccount
+  account: IChainAccount
 ): Promise<SigningWallet> {
-  const master = await WALLET_SERVICE.getWallet(wallet.masterId)
+  const master = await WALLET_SERVICE.getWallet(account.masterId)
   assert(master)
   let signingWallet = await getMasterSigningWallet(
     master,
-    wallet.networkKind,
-    wallet.chainId
+    account.networkKind,
+    account.chainId
   )
   if (master.type === WalletType.HD) {
     const hdPath = await DB.hdPaths
-      .where({ masterId: wallet.id, networkKind: wallet.networkKind })
+      .where({ masterId: account.masterId, networkKind: account.networkKind })
       .first()
     assert(hdPath)
-    signingWallet = await signingWallet.derive(hdPath.path, wallet.index!)
+    signingWallet = await signingWallet.derive(hdPath.path, account.index!)
   }
-  assert(signingWallet.address === wallet.address)
+  assert(signingWallet.address === account.address)
   return signingWallet
 }

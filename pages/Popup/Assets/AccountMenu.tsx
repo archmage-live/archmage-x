@@ -1,4 +1,4 @@
-import { EditIcon, ExternalLinkIcon } from '@chakra-ui/icons'
+import { DeleteIcon, EditIcon, ExternalLinkIcon } from '@chakra-ui/icons'
 import {
   Box,
   Button,
@@ -40,6 +40,7 @@ import { IChainAccount, ISubWallet, IWallet, PSEUDO_INDEX } from '~lib/schema'
 import { getNetworkInfo } from '~lib/services/network'
 import { createTab } from '~lib/util'
 import { WalletType, hasWalletKeystore } from '~lib/wallet'
+import { DeleteSubWalletModal } from '~pages/Settings/SettingsWallets/DeleteSubWalletModal'
 import { ExportMnemonicModal } from '~pages/Settings/SettingsWallets/ExportMnemonicModal'
 import { ExportPrivateKeyModal } from '~pages/Settings/SettingsWallets/ExportPrivateKeyModal'
 import { SubWalletNameEdit } from '~pages/Settings/SettingsWallets/SubWalletEdit'
@@ -67,6 +68,12 @@ export const AccountMenu = () => {
     isOpen: isDetailOpen,
     onOpen: onDetailOpen,
     onClose: onDetailClose
+  } = useDisclosure()
+
+  const {
+    isOpen: isDeleteOpen,
+    onOpen: onDeleteOpen,
+    onClose: onDeleteClose
   } = useDisclosure()
 
   if (!wallet || !subWallet || !account) {
@@ -114,6 +121,13 @@ export const AccountMenu = () => {
             }}>
             Expand view
           </MenuItem>
+          <MenuItem
+            icon={<DeleteIcon />}
+            iconSpacing={2}
+            isDisabled={!account.address}
+            onClick={onDeleteOpen}>
+            Remove account
+          </MenuItem>
         </MenuList>
       </Portal>
 
@@ -125,6 +139,15 @@ export const AccountMenu = () => {
         subWallet={subWallet}
         account={account}
         accountUrl={accountUrl}
+      />
+
+      <DeleteSubWalletModal
+        wallet={wallet}
+        subWallet={subWallet}
+        account={account}
+        accountUrl={accountUrl}
+        isOpen={isDeleteOpen}
+        onClose={onDeleteClose}
       />
     </Menu>
   )
@@ -177,52 +200,57 @@ const AccountDetailModal = ({
               <AccountAvatar text={account.address} scale={6} mt="-30px" />
             </Center>
 
-            <Stack align="center" p={8} spacing={8}>
-              <Popover isLazy>
-                <HStack>
-                  <Box w={12}></Box>
+            <Stack p={8} spacing={8}>
+              <Center>
+                <Popover isLazy>
+                  <HStack>
+                    <Box w={12}></Box>
 
-                  <PopoverAnchor>
-                    <Stack maxW={64} spacing={0} align="center">
-                      <Text noOfLines={2} fontSize="lg" fontWeight="medium">
-                        {wallet.name}
-                      </Text>
-                      {subWallet.index !== PSEUDO_INDEX && (
-                        <>
-                          <Text fontSize="xs" color="gray.500">
-                            /
-                          </Text>
-                          <Text noOfLines={2} fontSize="lg" fontWeight="medium">
-                            {subWallet.name}
-                          </Text>
-                        </>
-                      )}
-                    </Stack>
-                  </PopoverAnchor>
+                    <PopoverAnchor>
+                      <Stack maxW={64} spacing={0} align="center">
+                        <Text noOfLines={2} fontSize="lg" fontWeight="medium">
+                          {wallet.name}
+                        </Text>
+                        {subWallet.index !== PSEUDO_INDEX && (
+                          <>
+                            <Text fontSize="xs" color="gray.500">
+                              /
+                            </Text>
+                            <Text
+                              noOfLines={2}
+                              fontSize="lg"
+                              fontWeight="medium">
+                              {subWallet.name}
+                            </Text>
+                          </>
+                        )}
+                      </Stack>
+                    </PopoverAnchor>
 
-                  <PopoverTrigger>
-                    <IconButton
-                      variant="link"
-                      aria-label="Edit name"
-                      icon={<EditIcon />}
-                    />
-                  </PopoverTrigger>
-                </HStack>
-                <PopoverContent>
-                  <PopoverArrow />
-                  <PopoverBody>
-                    <Stack p={2} spacing={4}>
-                      <WalletNameEdit wallet={wallet} />
-                      {subWallet.index !== PSEUDO_INDEX && (
-                        <SubWalletNameEdit
-                          wallet={wallet}
-                          subWallet={subWallet}
-                        />
-                      )}
-                    </Stack>
-                  </PopoverBody>
-                </PopoverContent>
-              </Popover>
+                    <PopoverTrigger>
+                      <IconButton
+                        variant="link"
+                        aria-label="Edit name"
+                        icon={<EditIcon />}
+                      />
+                    </PopoverTrigger>
+                  </HStack>
+                  <PopoverContent>
+                    <PopoverArrow />
+                    <PopoverBody>
+                      <Stack p={2} spacing={4}>
+                        <WalletNameEdit wallet={wallet} />
+                        {subWallet.index !== PSEUDO_INDEX && (
+                          <SubWalletNameEdit
+                            wallet={wallet}
+                            subWallet={subWallet}
+                          />
+                        )}
+                      </Stack>
+                    </PopoverBody>
+                  </PopoverContent>
+                </Popover>
+              </Center>
 
               <Stack align="center" spacing={6}>
                 <QRCodeSVG
@@ -295,6 +323,7 @@ const AccountDetailModal = ({
           onExportMnemonicClose()
           onOpen()
         }}
+        size="full"
       />
     </>
   )

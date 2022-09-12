@@ -106,6 +106,10 @@ export async function setActiveWallet(activeId: ActiveWalletId) {
   await LOCAL_STORE.set(StoreKey.ACTIVE_WALLET, activeId)
 }
 
+export async function deleteActiveWallet() {
+  await LOCAL_STORE.remove(StoreKey.ACTIVE_WALLET)
+}
+
 export async function getActive(): Promise<{
   network?: INetwork
   wallet?: IWallet

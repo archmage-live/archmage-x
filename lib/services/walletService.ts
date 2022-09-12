@@ -82,6 +82,8 @@ export interface IWalletService {
 
   deleteWallet(id: number): Promise<void>
 
+  deleteSubWallet(id: number): Promise<void>
+
   getWallet(id: number): Promise<IWallet | undefined>
 
   getSubWallet(id: number | SubIndex): Promise<ISubWallet | undefined>
@@ -429,6 +431,47 @@ class WalletService extends WalletServicePartial {
 
   async deleteWallet(id: number) {
     await DB.wallets.delete(id)
+  }
+
+  async deleteSubWallet(id: number) {
+    await DB.transaction(
+      'rw',
+      [
+        DB.subWallets,
+        DB.chainAccounts,
+        DB.chainAccountsAux,
+        DB.connectedSites,
+        DB.tokens,
+        DB.transactions
+      ],
+      async () => {
+        const subWallet = await DB.subWallets.get(id)
+        if (!subWallet) {
+          return
+        }
+        await DB.subWallets.delete(id)
+        await DB.chainAccounts
+          .where('[masterId+index]')
+          .equals([subWallet.masterId, subWallet.index])
+          .delete()
+        await DB.chainAccountsAux
+          .where('[masterId+index]')
+          .equals([subWallet.masterId, subWallet.index])
+          .delete()
+        await DB.connectedSites
+          .where('[masterId+index]')
+          .equals([subWallet.masterId, subWallet.index])
+          .delete()
+        await DB.tokens
+          .where('[masterId+index]')
+          .equals([subWallet.masterId, subWallet.index])
+          .delete()
+        await DB.transactions
+          .where('[masterId+index]')
+          .equals([subWallet.masterId, subWallet.index])
+          .delete()
+      }
+    )
   }
 
   private _ensureLocks = new Map<number, Promise<unknown>>()

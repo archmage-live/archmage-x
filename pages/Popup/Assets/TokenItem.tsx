@@ -14,8 +14,7 @@ import {
   Portal,
   Stack,
   Text,
-  forwardRef,
-  useColorModeValue
+  forwardRef
 } from '@chakra-ui/react'
 import Decimal from 'decimal.js'
 import { useCallback } from 'react'
@@ -29,6 +28,7 @@ import {
   MdOutlineCheckCircle
 } from 'react-icons/md'
 
+import { BtnBox } from '~components/BtnBox'
 import { formatNumber } from '~lib/formatNumber'
 import { IToken, ITokenList, TokenVisibility } from '~lib/schema'
 import {
@@ -248,7 +248,7 @@ export const TokenItem = ({
 
         {!undetermined && (
           <Menu isLazy autoSelect={false} placement="left">
-            <MenuButton as={IconBtn} />
+            <MenuButton as={MenuBtn} />
             <Portal>
               <MenuList minW={32} zIndex={1500}>
                 <MenuGroup title={brief.name}>
@@ -280,12 +280,8 @@ export const TokenItem = ({
   )
 }
 
-const IconBtn = forwardRef<BoxProps, 'div'>((props, ref) => (
-  <Box
-    ref={ref}
-    color={useColorModeValue('gray.500', 'gray.200')}
-    _active={{ color: useColorModeValue('gray.700', 'gray.500') }}
-    {...props}>
+const MenuBtn = forwardRef<BoxProps, 'div'>((props, ref) => (
+  <BtnBox ref={ref} {...props}>
     <Icon as={MdMoreVert} fontSize="xl" />
-  </Box>
+  </BtnBox>
 ))

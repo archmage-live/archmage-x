@@ -1,17 +1,29 @@
-import { CheckIcon } from '@chakra-ui/icons'
+import { AddIcon, CheckIcon, SmallAddIcon } from '@chakra-ui/icons'
 import {
   Box,
+  BoxProps,
   Button,
   Center,
   Checkbox,
   HStack,
+  Icon,
+  Menu,
+  MenuButton,
+  MenuGroup,
+  MenuItem,
+  MenuList,
+  Portal,
   Text,
+  forwardRef,
   useDisclosure
 } from '@chakra-ui/react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { IoMdSwap } from 'react-icons/io'
+import { MdMoreVert } from 'react-icons/md'
 
 import { AccountAvatar } from '~components/AccountAvatar'
 import { Badge } from '~components/Badge'
+import { BtnBox } from '~components/BtnBox'
 import { ActiveWalletId } from '~lib/active'
 import { formatNumber } from '~lib/formatNumber'
 import { IChainAccount, ISubWallet, PSEUDO_INDEX } from '~lib/schema'
@@ -156,6 +168,26 @@ export const WalletItem = ({
 
   const typeIdentifier = getWalletTypeIdentifier(wallet.type)
 
+  const [scrollIndex, setScrollIndex] = useState<number>()
+
+  const onAddAccount = useCallback(async () => {
+    switch (wallet.type) {
+      case WalletType.HD:
+        await WALLET_SERVICE.deriveSubWallets(wallet.id, 1)
+        if (network) {
+          await WALLET_SERVICE.ensureChainAccounts(
+            wallet.id,
+            network.kind,
+            network.chainId
+          )
+        }
+        const subWallets = await WALLET_SERVICE.getSubWallets(wallet.id)
+        setSubWallets(subWallets)
+        setScrollIndex(subWallets.length - 1)
+        break
+    }
+  }, [network, wallet])
+
   return (
     <Box ref={elRef}>
       <Button
@@ -202,9 +234,31 @@ export const WalletItem = ({
                   {wallet.name}
                 </Text>
 
-                <Text fontFamily="monospace" fontSize="sm" color="gray.500">
-                  {account ? shortenAddress(account.address) : ''}
-                </Text>
+                {isWalletGroup(wallet.type) && (
+                  <Box onClick={(event) => event.stopPropagation()}>
+                    <Menu isLazy autoSelect={false} placement="left">
+                      <MenuButton as={MenuBtn} />
+                      <Portal>
+                        <MenuList minW={32} zIndex={1500}>
+                          <MenuGroup title={wallet.name}>
+                            <MenuItem
+                              icon={<AddIcon />}
+                              iconSpacing={2}
+                              onClick={onAddAccount}>
+                              Add account
+                            </MenuItem>
+                          </MenuGroup>
+                        </MenuList>
+                      </Portal>
+                    </Menu>
+                  </Box>
+                )}
+
+                {account && (
+                  <Text fontFamily="monospace" fontSize="sm" color="gray.500">
+                    {shortenAddress(account.address)}
+                  </Text>
+                )}
               </HStack>
             </HStack>
 
@@ -237,6 +291,8 @@ export const WalletItem = ({
           network={network}
           wallets={subWallets}
           accounts={accounts}
+          scrollIndex={scrollIndex}
+          setScrollIndex={setScrollIndex}
           selectedId={selectedSubId}
           onSelectedId={(id) => {
             onSelectedSubId?.(id)
@@ -267,3 +323,9 @@ export const WalletItem = ({
     </Box>
   )
 }
+
+const MenuBtn = forwardRef<BoxProps, 'div'>((props, ref) => (
+  <BtnBox ref={ref} {...props}>
+    <Icon as={MdMoreVert} fontSize="xl" />
+  </BtnBox>
+))

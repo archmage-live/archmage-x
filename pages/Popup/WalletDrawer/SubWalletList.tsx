@@ -1,6 +1,7 @@
 import { Box } from '@chakra-ui/react'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { useEffect, useRef, useState } from 'react'
+import { useDebounce } from 'react-use'
 
 import { ActiveWalletId } from '~lib/active'
 import { INetwork, ISubWallet } from '~lib/schema'
@@ -12,6 +13,8 @@ interface SubWalletListProps {
   network: INetwork
   wallets: ISubWallet[]
   accounts: (IChainAccount | undefined)[]
+  scrollIndex?: number
+  setScrollIndex?: (scrollIndex?: number) => void
   selectedId?: number
   onSelectedId: (selectedId: number) => void
   activeId?: ActiveWalletId
@@ -24,6 +27,8 @@ export const SubWalletList = ({
   network,
   wallets,
   accounts,
+  scrollIndex,
+  setScrollIndex,
   selectedId,
   onSelectedId,
   activeId,
@@ -41,6 +46,17 @@ export const SubWalletList = ({
     getItemKey: (index) => wallets?.[index].id!
   })
 
+  useDebounce(
+    () => {
+      if (scrollIndex !== undefined) {
+        walletsVirtualizer.scrollToIndex(scrollIndex)
+        setScrollIndex?.(undefined)
+      }
+    },
+    500,
+    [scrollIndex, setScrollIndex]
+  )
+
   const [checkedSet, setCheckedSet] = useState<Set<number>>(new Set())
   useEffect(() => {
     setCheckedSet(new Set(checked || []))
@@ -54,7 +70,7 @@ export const SubWalletList = ({
     <Box py={2} px={4}>
       <Box
         ref={parentRef}
-        maxH="336px"
+        maxH="338px"
         overflowY="auto"
         borderRadius="xl"
         borderWidth="1px">

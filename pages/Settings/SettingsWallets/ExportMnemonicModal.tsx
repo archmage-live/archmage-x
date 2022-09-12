@@ -35,6 +35,7 @@ export const ExportMnemonicModal = ({
       onClose={onClose}
       isCentered
       motionPreset="slideInBottom"
+      scrollBehavior="inside"
       size={size || 'lg'}>
       <ModalOverlay />
       <ModalContent>
