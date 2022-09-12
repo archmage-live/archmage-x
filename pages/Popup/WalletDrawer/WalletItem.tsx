@@ -1,9 +1,8 @@
-import { AddIcon, CheckIcon, SmallAddIcon } from '@chakra-ui/icons'
+import { AddIcon, CheckIcon } from '@chakra-ui/icons'
 import {
   Box,
   BoxProps,
   Button,
-  Center,
   Checkbox,
   HStack,
   Icon,
@@ -15,11 +14,11 @@ import {
   Portal,
   Text,
   forwardRef,
+  useColorModeValue,
   useDisclosure
 } from '@chakra-ui/react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { IoMdSwap } from 'react-icons/io'
-import { MdMoreVert } from 'react-icons/md'
+import { MdOutlineMoreHoriz } from 'react-icons/md'
 
 import { AccountAvatar } from '~components/AccountAvatar'
 import { Badge } from '~components/Badge'
@@ -234,26 +233,6 @@ export const WalletItem = ({
                   {wallet.name}
                 </Text>
 
-                {isWalletGroup(wallet.type) && (
-                  <Box onClick={(event) => event.stopPropagation()}>
-                    <Menu isLazy autoSelect={false} placement="left">
-                      <MenuButton as={MenuBtn} />
-                      <Portal>
-                        <MenuList minW={32} zIndex={1500}>
-                          <MenuGroup title={wallet.name}>
-                            <MenuItem
-                              icon={<AddIcon />}
-                              iconSpacing={2}
-                              onClick={onAddAccount}>
-                              Add account
-                            </MenuItem>
-                          </MenuGroup>
-                        </MenuList>
-                      </Portal>
-                    </Menu>
-                  </Box>
-                )}
-
                 {account && (
                   <Text fontFamily="monospace" fontSize="sm" color="gray.500">
                     {shortenAddress(account.address)}
@@ -268,22 +247,43 @@ export const WalletItem = ({
           </HStack>
 
           <HStack
+            w="calc(100% - 29.75px)"
             ps={onChecked !== undefined ? '62px' : '32px'}
             pt="10px"
-            h="14px">
-            {balance && (
-              <Text fontSize="xs" color="gray.500" textAlign="start">
-                {formatNumber(balance.amount)} {balance.symbol}
-              </Text>
-            )}
-            {typeIdentifier && (
-              <Text textAlign="start">
-                <Badge>{typeIdentifier}</Badge>
-              </Text>
-            )}
+            h="14px"
+            justify="space-between">
+            <HStack>
+              {balance && (
+                <Text fontSize="xs" color="gray.500" textAlign="start">
+                  {formatNumber(balance.amount)} {balance.symbol}
+                </Text>
+              )}
+              {typeIdentifier && (
+                <Text textAlign="start">
+                  <Badge>{typeIdentifier}</Badge>
+                </Text>
+              )}
+            </HStack>
+
+            <Box onClick={(event) => event.stopPropagation()}>
+              <Menu isLazy autoSelect={false} placement="left">
+                <MenuButton as={MenuBtn} />
+                <Portal>
+                  <MenuList minW={32} zIndex={1500}>
+                    <MenuGroup title={wallet.name}>
+                      <MenuItem
+                        icon={<AddIcon w={3} h={3} />}
+                        iconSpacing={2}
+                        onClick={onAddAccount}>
+                        Add account
+                      </MenuItem>
+                    </MenuGroup>
+                  </MenuList>
+                </Portal>
+              </Menu>
+            </Box>
           </HStack>
         </Box>
-        {/*</HStack>*/}
       </Button>
 
       {isOpen && network && isWalletGroup(wallet.type) && (
@@ -326,6 +326,11 @@ export const WalletItem = ({
 
 const MenuBtn = forwardRef<BoxProps, 'div'>((props, ref) => (
   <BtnBox ref={ref} {...props}>
-    <Icon as={MdMoreVert} fontSize="xl" />
+    <Icon
+      as={MdOutlineMoreHoriz}
+      color={useColorModeValue('gray.500', 'gray.500')}
+      _active={{ color: useColorModeValue('gray.700', 'whiteAlpha.600') }}
+      fontSize="xl"
+    />
   </BtnBox>
 ))

@@ -24,20 +24,19 @@ async function getDefaultActiveNetwork(): Promise<number | undefined> {
 }
 
 async function getDefaultActiveWallet(): Promise<ActiveWalletId | undefined> {
-  const firstWallet = await DB.wallets.orderBy('sortId').first()
-  if (!firstWallet) {
-    return
-  }
-  const firstSubWallet = await DB.subWallets
-    .where('[masterId+sortId]')
-    .between([firstWallet.id, Dexie.minKey], [firstWallet.id, Dexie.maxKey])
-    .first()
-  if (!firstSubWallet) {
-    return
-  }
-  return {
-    masterId: firstWallet.id,
-    subId: firstSubWallet.id
+  const wallets = await DB.wallets.orderBy('sortId').toArray()
+  for (const firstWallet of wallets) {
+    const firstSubWallet = await DB.subWallets
+      .where('[masterId+sortId]')
+      .between([firstWallet.id, Dexie.minKey], [firstWallet.id, Dexie.maxKey])
+      .first()
+    if (!firstSubWallet) {
+      continue
+    }
+    return {
+      masterId: firstWallet.id,
+      subId: firstSubWallet.id
+    }
   }
 }
 
@@ -106,8 +105,9 @@ export async function setActiveWallet(activeId: ActiveWalletId) {
   await LOCAL_STORE.set(StoreKey.ACTIVE_WALLET, activeId)
 }
 
-export async function deleteActiveWallet() {
+export async function resetActiveWallet() {
   await LOCAL_STORE.remove(StoreKey.ACTIVE_WALLET)
+  await getActiveWallet()
 }
 
 export async function getActive(): Promise<{

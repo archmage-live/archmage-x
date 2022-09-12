@@ -18,7 +18,7 @@ import browser from 'webextension-polyfill'
 
 import { AlertBox } from '~components/AlertBox'
 import { CopyArea } from '~components/CopyIcon'
-import { deleteActiveWallet } from '~lib/active'
+import { resetActiveWallet } from '~lib/active'
 import { IChainAccount, ISubWallet, IWallet, PSEUDO_INDEX } from '~lib/schema'
 import { WALLET_SERVICE } from '~lib/services/walletService'
 import { shortenAddress } from '~lib/utils'
@@ -154,7 +154,7 @@ export const DeleteSubWalletModal = ({
                 flex={1}
                 onClick={async () => {
                   await WALLET_SERVICE.deleteSubWallet(subWallet.id)
-                  await deleteActiveWallet()
+                  await resetActiveWallet()
                   onClose()
                 }}>
                 Delete

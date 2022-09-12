@@ -839,7 +839,18 @@ async function ensureChainAccounts(
   await queue.onIdle()
   console.log(`derive chain accounts: ${(Date.now() - tick) / 1000}s`)
 
-  await DB.chainAccounts.bulkAdd(bulkAdd)
+  await DB.transaction('rw', [DB.subWallets, DB.chainAccounts], async () => {
+    // check sub wallet existence, to avoid issue of deletion before add
+    const subWalletsNum = await DB.subWallets
+      .where('[masterId+index]')
+      .anyOf(bulkAdd.map((account) => [account.masterId, account.index]))
+      .count()
+    if (bulkAdd.length !== subWalletsNum) {
+      return
+    }
+
+    await DB.chainAccounts.bulkAdd(bulkAdd)
+  })
   console.log(
     `ensured info for derived wallets: master wallet ${wallet.id}, network: ${networkKind}, chainID: ${chainId}`
   )
@@ -929,6 +940,14 @@ async function ensureChainAccount(
     address,
     info: {}
   } as IChainAccount
-  account.id = await DB.chainAccounts.add(account)
-  return account
+
+  return DB.transaction('rw', [DB.subWallets, DB.chainAccounts], async () => {
+    // check sub wallet existence, to avoid issue of deletion before add
+    if (!(await WALLET_SERVICE.getSubWallet({ masterId: wallet.id, index }))) {
+      return
+    }
+
+    account.id = await DB.chainAccounts.add(account)
+    return account
+  })
 }
