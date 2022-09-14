@@ -8,47 +8,32 @@ import {
   Text,
   useColorModeValue
 } from '@chakra-ui/react'
-import assert from 'assert'
-import { useCallback, useEffect, useState } from 'react'
 import { IoMdSettings } from 'react-icons/io'
 import { useNavigate } from 'react-router-dom'
 
-import { ActiveWalletId, useActiveNetwork, useActiveWallet } from '~lib/active'
+import { WalletId } from '~lib/active'
+import { INetwork } from '~lib/schema'
 import { PASSWORD_SERVICE } from '~lib/services/passwordService'
-import { WALLET_SERVICE, useWallets } from '~lib/services/walletService'
 import { createTab } from '~lib/util'
 import { WalletList } from '~pages/Popup/WalletDrawer/WalletList'
+import { WalletEntry } from '~pages/Popup/WalletDrawer/tree'
 
-export const WalletDrawer = ({ onClose }: { onClose(): void }) => {
+export const WalletDrawer = ({
+  network,
+  wallets,
+  toggleOpen,
+  setSelected,
+  activeId,
+  onClose
+}: {
+  network: INetwork | undefined
+  wallets?: WalletEntry[]
+  toggleOpen: (id: number) => void
+  setSelected: (newSelected: WalletId) => void
+  activeId?: WalletId
+  onClose(): void
+}) => {
   const navigate = useNavigate()
-
-  const wallets = useWallets()
-
-  const { network } = useActiveNetwork()
-  const { walletId, setWalletId } = useActiveWallet()
-
-  const [selectedId, setSelectedId] = useState<number>()
-  const [selectedSubId, setSelectedSubId] = useState<number>()
-
-  useEffect(() => {
-    if (walletId) {
-      setSelectedId(walletId.masterId)
-      setSelectedSubId(walletId.subId)
-    }
-  }, [walletId])
-
-  const setSubId = useCallback(
-    async (id: number) => {
-      setSelectedSubId(id)
-      const subWallet = await WALLET_SERVICE.getSubWallet(id)
-      assert(subWallet)
-      await setWalletId({
-        masterId: subWallet.masterId,
-        subId: id
-      } as ActiveWalletId)
-    },
-    [setWalletId]
-  )
 
   const lock = async () => {
     await PASSWORD_SERVICE.lock()
@@ -71,11 +56,9 @@ export const WalletDrawer = ({ onClose }: { onClose(): void }) => {
             <WalletList
               network={network}
               wallets={wallets}
-              selectedId={selectedId}
-              onSelectedId={setSelectedId}
-              selectedSubId={selectedSubId}
-              onSelectedSubId={setSubId}
-              activeId={walletId}
+              onToggleOpen={toggleOpen}
+              onSelected={setSelected}
+              activeId={activeId}
               onClose={onClose}
             />
           </Stack>

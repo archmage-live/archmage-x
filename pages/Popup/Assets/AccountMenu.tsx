@@ -28,7 +28,6 @@ import {
   useDisclosure
 } from '@chakra-ui/react'
 import { QRCodeSVG } from 'qrcode.react'
-import { useMemo } from 'react'
 import { FaExpandAlt, FaPlug } from 'react-icons/fa'
 import { MdMoreVert, MdQrCode } from 'react-icons/md'
 import browser from 'webextension-polyfill'
@@ -37,7 +36,7 @@ import { AccountAvatar } from '~components/AccountAvatar'
 import { CopyArea } from '~components/CopyIcon'
 import { useActive } from '~lib/active'
 import { IChainAccount, ISubWallet, IWallet, PSEUDO_INDEX } from '~lib/schema'
-import { getNetworkInfo } from '~lib/services/network'
+import { getAccountUrl } from '~lib/services/network'
 import { createTab } from '~lib/util'
 import { WalletType, hasWalletKeystore } from '~lib/wallet'
 import { DeleteSubWalletModal } from '~pages/Settings/SettingsWallets/DeleteSubWalletModal'
@@ -49,20 +48,7 @@ import { WalletNameEdit } from '~pages/Settings/SettingsWallets/WalletEdit'
 export const AccountMenu = () => {
   const { network, wallet, subWallet, account } = useActive()
 
-  const netInfo = network && getNetworkInfo(network)
-
-  const accountUrl = useMemo(() => {
-    if (!netInfo?.explorerUrl || !account?.address) {
-      return undefined
-    }
-    try {
-      const url = new URL(netInfo.explorerUrl)
-      url.pathname = `/address/${account.address}`
-      return url.toString()
-    } catch {
-      return undefined
-    }
-  }, [account, netInfo])
+  const accountUrl = network && account && getAccountUrl(network, account)
 
   const {
     isOpen: isDetailOpen,

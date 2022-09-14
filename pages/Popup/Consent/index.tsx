@@ -12,8 +12,11 @@ import { SignMessage } from './SignMessage'
 import { SignTypedData } from './SignTypedData'
 import { Transaction } from './Transaction'
 import { WatchAsset } from './WatchAsset'
+import { useCheckUnlocked } from "~lib/password";
 
 export default function Consent() {
+  useCheckUnlocked()
+
   const navigate = useNavigate()
   const [requests, setRequests] = useState<ConsentRequest[]>()
 

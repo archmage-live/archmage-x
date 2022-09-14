@@ -19,9 +19,15 @@ export default function Activity() {
 
   const totalCount = useEvmTransactionCount(account)
   useEffect(() => {
-    setCount((count) =>
-      totalCount !== undefined && count === 0 ? Math.min(totalCount, 20) : count
-    )
+    if (totalCount === undefined) {
+      return
+    }
+    setCount((count) => {
+      if (count === 0) {
+        count = 20
+      }
+      return Math.min(count, totalCount)
+    })
   }, [totalCount])
 
   const transactions = useEvmTransactions(network, account, count)

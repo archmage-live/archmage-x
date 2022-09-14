@@ -23,7 +23,7 @@ import { useConnectedSitesBySite } from '~lib/services/connectedSiteService'
 import { useCryptoComparePrice } from '~lib/services/datasource/cryptocompare'
 import { getNetworkInfo } from '~lib/services/network'
 import { useBalance } from '~lib/services/provider'
-import { useCurrentTab } from '~lib/util'
+import { useCurrentSiteUrl } from '~lib/util'
 import { shortenAddress } from '~lib/utils'
 
 import { AccountMenu } from './AccountMenu'
@@ -33,8 +33,7 @@ export default function Assets({ onLoaded }: { onLoaded?: () => void }) {
   const { network, account, wallet, subWallet } = useActive()
   const networkInfo = network && getNetworkInfo(network)
 
-  const tab = useCurrentTab()
-  const origin = tab?.url && new URL(tab.url).origin
+  const origin = useCurrentSiteUrl()?.origin
 
   const conns = useConnectedSitesBySite()
   const connected =

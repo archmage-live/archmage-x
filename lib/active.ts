@@ -1,5 +1,6 @@
 import assert from 'assert'
 import Dexie from 'dexie'
+import { atom, useAtom } from 'jotai'
 import { useAsync } from 'react-use'
 
 import { NetworkKind } from '~lib/network'
@@ -13,8 +14,8 @@ import { LOCAL_STORE, StoreKey, useLocalStorage } from '~lib/store'
 
 import { DB } from './db'
 
-export interface ActiveWalletId {
-  masterId: number
+export interface WalletId {
+  id: number
   subId: number
 }
 
@@ -23,7 +24,7 @@ async function getDefaultActiveNetwork(): Promise<number | undefined> {
   return firstNetwork?.id
 }
 
-async function getDefaultActiveWallet(): Promise<ActiveWalletId | undefined> {
+async function getDefaultActiveWallet(): Promise<WalletId | undefined> {
   const wallets = await DB.wallets.orderBy('sortId').toArray()
   for (const firstWallet of wallets) {
     const firstSubWallet = await DB.subWallets
@@ -34,7 +35,7 @@ async function getDefaultActiveWallet(): Promise<ActiveWalletId | undefined> {
       continue
     }
     return {
-      masterId: firstWallet.id,
+      id: firstWallet.id,
       subId: firstSubWallet.id
     }
   }
@@ -80,7 +81,7 @@ export async function getActiveWallet(): Promise<{
   wallet?: IWallet
   subWallet?: ISubWallet
 }> {
-  let activeId = await LOCAL_STORE.get<ActiveWalletId | undefined>(
+  let activeId = await LOCAL_STORE.get<WalletId | undefined>(
     StoreKey.ACTIVE_WALLET
   )
   if (!activeId) {
@@ -93,15 +94,17 @@ export async function getActiveWallet(): Promise<{
     return {}
   }
 
-  const wallet = await WALLET_SERVICE.getWallet(activeId.masterId)
+  const wallet = await WALLET_SERVICE.getWallet(activeId.id)
   const subWallet = await WALLET_SERVICE.getSubWallet(activeId.subId)
-  assert(wallet)
-  assert(subWallet)
+
+  if (!wallet || !subWallet) {
+    await resetActiveWallet()
+  }
 
   return { wallet, subWallet }
 }
 
-export async function setActiveWallet(activeId: ActiveWalletId) {
+export async function setActiveWallet(activeId: WalletId) {
   await LOCAL_STORE.set(StoreKey.ACTIVE_WALLET, activeId)
 }
 
@@ -149,6 +152,8 @@ export function watchActiveWalletChange(handler: () => void) {
   })
 }
 
+const networkAtom = atom<INetwork | undefined>(undefined)
+
 export function useActiveNetwork() {
   const [networkId, setNetworkId] = useLocalStorage<number | undefined>(
     StoreKey.ACTIVE_NETWORK,
@@ -160,9 +165,15 @@ export function useActiveNetwork() {
     }
   )
 
-  const { value: network } = useAsync(async () => {
+  const [network, setNetwork] = useAtom(networkAtom)
+
+  useAsync(async () => {
     if (networkId !== undefined) {
-      return DB.networks.get(networkId)
+      setNetwork(await DB.networks.get(networkId))
+      return
+    }
+    if ((await getDefaultActiveNetwork()) === undefined) {
+      setNetwork(undefined)
     }
   }, [networkId])
 
@@ -174,7 +185,7 @@ export function useActiveNetwork() {
 }
 
 export function useActiveWallet() {
-  const [walletId, setWalletId] = useLocalStorage<ActiveWalletId | undefined>(
+  const [walletId, setWalletId] = useLocalStorage<WalletId | undefined>(
     StoreKey.ACTIVE_WALLET,
     async (storedActiveWallet) => {
       if (storedActiveWallet !== undefined) {
@@ -190,8 +201,13 @@ export function useActiveWallet() {
     if (!walletId) {
       return
     }
-    const wallet = await WALLET_SERVICE.getWallet(walletId.masterId)
+    const wallet = await WALLET_SERVICE.getWallet(walletId.id)
     const subWallet = await WALLET_SERVICE.getSubWallet(walletId.subId)
+
+    if (!wallet || !subWallet) {
+      await resetActiveWallet()
+    }
+
     return { wallet, subWallet }
   }, [walletId])
 

@@ -1,32 +1,57 @@
-import { CheckIcon } from '@chakra-ui/icons'
-import { Box, Button, Checkbox, HStack, Stack, Text } from '@chakra-ui/react'
+import { AddIcon, CheckIcon } from '@chakra-ui/icons'
+import {
+  Box,
+  BoxProps,
+  Button,
+  Checkbox,
+  HStack,
+  Icon,
+  Menu,
+  MenuButton,
+  MenuGroup,
+  MenuItem,
+  MenuList,
+  Portal,
+  Stack,
+  Text,
+  forwardRef,
+  useColorModeValue
+} from '@chakra-ui/react'
+import { MdOutlineMoreHoriz } from 'react-icons/md'
 
 import { AccountAvatar } from '~components/AccountAvatar'
+import { BtnBox } from '~components/BtnBox'
 import { formatNumber } from '~lib/formatNumber'
 import { IChainAccount, INetwork, ISubWallet } from '~lib/schema'
 import { useBalance } from '~lib/services/provider'
 import { shortenAddress } from '~lib/utils'
+import { SubWalletEntry } from '~pages/Popup/WalletDrawer/tree'
+import { useDeleteSubWalletModal } from '~pages/Settings/SettingsWallets/DeleteSubWalletModal'
 
 export const SubWalletItem = ({
   network,
-  wallet,
-  account,
-  selected,
+  subWallet,
   onSelected,
   active,
-  isChecked,
-  onChecked
+  onChecked,
+  onClose
 }: {
   network: INetwork
-  wallet: ISubWallet
-  account: IChainAccount
-  selected?: boolean
+  subWallet: SubWalletEntry
   onSelected?: () => void
   active?: boolean
-  isChecked?: boolean
   onChecked?: (checked: boolean) => void
+  onClose?: () => void
 }) => {
+  const {
+    subWallet: wallet,
+    account,
+    isSelected: selected,
+    isChecked
+  } = subWallet
   const balance = useBalance(network, account)
+
+  const { onOpen: onDeleteAccount } = useDeleteSubWalletModal()
 
   return (
     <Button
@@ -71,14 +96,48 @@ export const SubWalletItem = ({
           {active && <CheckIcon fontSize="lg" color="green.500" />}
         </HStack>
 
-        <Text
-          ps={onChecked !== undefined ? '62px' : '32px'}
-          fontSize="xs"
-          color="gray.500"
-          textAlign="start">
-          {formatNumber(balance?.amount)} {balance?.symbol}
-        </Text>
+        <HStack w="calc(100% - 29.75px)" justify="space-between">
+          <Text
+            ps={onChecked !== undefined ? '62px' : '32px'}
+            fontSize="xs"
+            color="gray.500"
+            textAlign="start">
+            {formatNumber(balance?.amount)} {balance?.symbol}
+          </Text>
+
+          <Box onClick={(event) => event.stopPropagation()}>
+            <Menu isLazy autoSelect={false} placement="left">
+              <MenuButton as={MenuBtn} />
+              <Portal>
+                <MenuList minW={32} zIndex={1500}>
+                  <MenuGroup title={wallet.name}>
+                    <MenuItem
+                      icon={<AddIcon w={3} h={3} />}
+                      iconSpacing={2}
+                      onClick={() => {
+                        onDeleteAccount(account)
+                        onClose?.()
+                      }}>
+                      Remove account
+                    </MenuItem>
+                  </MenuGroup>
+                </MenuList>
+              </Portal>
+            </Menu>
+          </Box>
+        </HStack>
       </Box>
     </Button>
   )
 }
+
+export const MenuBtn = forwardRef<BoxProps, 'div'>((props, ref) => (
+  <BtnBox ref={ref} {...props}>
+    <Icon
+      as={MdOutlineMoreHoriz}
+      color={useColorModeValue('gray.500', 'gray.500')}
+      _active={{ color: useColorModeValue('gray.700', 'whiteAlpha.600') }}
+      fontSize="xl"
+    />
+  </BtnBox>
+))

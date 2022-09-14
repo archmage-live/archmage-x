@@ -14,9 +14,10 @@ import {
   Portal,
   Text,
   forwardRef,
-  useColorModeValue
+  useColorModeValue,
+  useDisclosure
 } from '@chakra-ui/react'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { MdOutlineMoreHoriz } from 'react-icons/md'
 
 import { AccountAvatar } from '~components/AccountAvatar'
@@ -24,40 +25,49 @@ import { Badge } from '~components/Badge'
 import { BtnBox } from '~components/BtnBox'
 import { WalletId } from '~lib/active'
 import { formatNumber } from '~lib/formatNumber'
+import { IChainAccount, ISubWallet, PSEUDO_INDEX } from '~lib/schema'
 import { INetwork } from '~lib/schema/network'
+import { IWallet } from '~lib/schema/wallet'
 import { useBalance } from '~lib/services/provider'
-import { WALLET_SERVICE } from '~lib/services/walletService'
+import {
+  WALLET_SERVICE,
+  useChainAccountByIndex,
+  useChainAccounts
+} from '~lib/services/walletService'
 import { shortenAddress } from '~lib/utils'
 import { WalletType, getWalletTypeIdentifier, isWalletGroup } from '~lib/wallet'
-import { WalletEntry } from '~pages/Popup/WalletDrawer/tree'
 
-import { MenuBtn } from './SubWalletItem'
 import { SubWalletList } from './SubWalletList'
 
 interface WalletItemProps {
   network?: INetwork
-  walletEntry: WalletEntry
-  onToggleOpen: (id: number) => void
-  onSelected?: (selected: WalletId) => void
+  wallet: IWallet
+  selected?: boolean
+  onSelected?: () => void
+  selectedSubId?: number
+  onSelectedSubId?: (selectedSubId: number) => void
   activeId?: WalletId
   onClose?: () => void
-  onChecked?: (selected: WalletId | number, isChecked: boolean) => void
+  checked?: number[]
+  onChecked?: (ids: number[]) => void
   measureElement?: (element?: HTMLElement | null) => any
 }
 
 export const WalletItem = ({
   network,
-  walletEntry,
-  onToggleOpen,
+  wallet,
+  selected,
   onSelected,
+  selectedSubId,
+  onSelectedSubId,
   activeId,
   onClose,
+  checked,
   onChecked,
   measureElement
 }: WalletItemProps) => {
-  const { wallet, isOpen, subWallets } = walletEntry
-
   const elRef = useRef(null)
+  const { isOpen, onToggle } = useDisclosure()
 
   const measure = useCallback(() => {
     measureElement?.(elRef.current)
@@ -67,31 +77,93 @@ export const WalletItem = ({
     measure()
   }, [isOpen, measure])
 
-  const account = !isWalletGroup(wallet.type)
-    ? subWallets[0].account
-    : undefined
+  const account = useChainAccountByIndex(
+    wallet.id,
+    network?.kind,
+    network?.chainId,
+    !isWalletGroup(wallet.type) ? PSEUDO_INDEX : undefined
+  )
 
   const balance = useBalance(network, account)
+
+  const [subWallets, setSubWallets] = useState<ISubWallet[]>([])
+  useEffect(() => {
+    const effect = async () => {
+      if (onChecked || isOpen) {
+        const subWallets = await WALLET_SERVICE.getSubWallets(wallet.id)
+        setSubWallets(subWallets)
+      }
+    }
+    effect()
+  }, [wallet, onChecked, isOpen])
+
+  const queriedAccounts = useChainAccounts(
+    wallet.id,
+    network?.kind,
+    network?.chainId
+  )
+  const accounts = useMemo(() => {
+    const m = new Map<string, IChainAccount>()
+    queriedAccounts?.forEach((info) =>
+      m.set(`${info.masterId}-${info.index}`, info)
+    )
+    return subWallets.map((wallet) =>
+      m.get(`${wallet.masterId}-${wallet.index}`)
+    )
+  }, [queriedAccounts, subWallets])
 
   const [isChecked, setIsChecked] = useState<boolean>()
   const [isIndeterminate, setIsIndeterminate] = useState<boolean>()
 
   useEffect(() => {
-    if (!onChecked) {
+    if (
+      !onChecked ||
+      !checked?.length ||
+      accounts.findIndex((account) => !account) > -1
+    ) {
       return
     }
 
     if (!isWalletGroup(wallet.type)) {
-      setIsChecked(subWallets?.[0].isChecked)
+      setIsChecked(checked[0] === account?.id)
       return
     }
 
-    const all = subWallets?.every((subWallet) => subWallet.isChecked)
-    const none = subWallets?.every((subWallet) => !subWallet.isChecked)
-
+    const set = new Set(checked)
+    const array = accounts.map((a) => a!.id!)
+    const all = set.size === array.length && array.every((id) => set.has(id))
     setIsChecked(all)
-    setIsIndeterminate(!none && !all)
-  }, [onChecked, wallet, subWallets])
+    setIsIndeterminate(!all)
+  }, [checked, onChecked, wallet, accounts, account])
+
+  const onCheckedChange = useCallback(
+    (isChecked: boolean) => {
+      if (!onChecked || accounts.findIndex((account) => !account) > -1) {
+        return
+      }
+
+      setIsChecked(isChecked)
+      setIsIndeterminate(false)
+
+      if (!isWalletGroup(wallet.type)) {
+        if (account) {
+          onChecked(isChecked ? [account.id!] : [])
+        }
+        return
+      }
+
+      const set = new Set(checked)
+      const array = accounts.map((a) => a!.id!)
+      const all = set.size === array.length && array.every((id) => set.has(id))
+      const none = !checked?.length
+      if (isChecked || !all) {
+        onChecked(array)
+      } else if (!isChecked && !none) {
+        onChecked([])
+      }
+    },
+    [checked, onChecked, wallet, accounts, account]
+  )
 
   const typeIdentifier = getWalletTypeIdentifier(wallet.type)
 
@@ -108,6 +180,9 @@ export const WalletItem = ({
             network.chainId
           )
         }
+        const subWallets = await WALLET_SERVICE.getSubWallets(wallet.id)
+        setSubWallets(subWallets)
+        setScrollIndex(subWallets.length - 1)
         break
     }
   }, [network, wallet])
@@ -123,17 +198,12 @@ export const WalletItem = ({
         px={4}
         justifyContent="start"
         onClick={() => {
+          onSelected?.()
           if (isWalletGroup(wallet.type)) {
-            onToggleOpen(wallet.id)
+            onToggle()
           } else {
-            if (account) {
-              onSelected?.({
-                id: wallet.id,
-                subId: subWallets?.[0].subWallet.id
-              })
-            }
             onClose?.()
-            onChecked?.(wallet.id, !isChecked)
+            onCheckedChange(!isChecked)
           }
         }}>
         <Box w="full">
@@ -145,7 +215,7 @@ export const WalletItem = ({
                 isChecked={isChecked}
                 pointerEvents={!isWalletGroup(wallet.type) ? 'none' : undefined}
                 onChange={(e) => {
-                  onChecked?.(wallet.id, e.target.checked)
+                  onCheckedChange(e.target.checked)
                 }}
               />
             )}
@@ -166,12 +236,6 @@ export const WalletItem = ({
                 {account && (
                   <Text fontFamily="monospace" fontSize="sm" color="gray.500">
                     {shortenAddress(account.address)}
-                  </Text>
-                )}
-
-                {isWalletGroup(wallet.type) && (
-                  <Text fontSize="sm" color="gray.500">
-                    {subWallets.length} accounts
                   </Text>
                 )}
               </HStack>
@@ -225,19 +289,48 @@ export const WalletItem = ({
       {isOpen && network && isWalletGroup(wallet.type) && (
         <SubWalletList
           network={network}
-          subWallets={subWallets}
+          wallets={subWallets}
+          accounts={accounts}
           scrollIndex={scrollIndex}
           setScrollIndex={setScrollIndex}
+          selectedId={selectedSubId}
           onSelectedId={(id) => {
-            onSelected?.(id)
+            onSelectedSubId?.(id)
             onClose?.()
           }}
           activeId={activeId}
-          onChecked={onChecked}
-          onClose={onClose}
+          checked={checked}
+          onChecked={
+            onChecked
+              ? (ids) => {
+                  onChecked(ids)
+                  if (ids.length === 0) {
+                    setIsChecked(false)
+                    setIsIndeterminate(false)
+                  } else if (ids.length === subWallets.length) {
+                    setIsChecked(true)
+                    setIsIndeterminate(false)
+                  } else {
+                    setIsChecked(undefined)
+                    setIsIndeterminate(true)
+                  }
+                }
+              : undefined
+          }
           measure={measure}
         />
       )}
     </Box>
   )
 }
+
+const MenuBtn = forwardRef<BoxProps, 'div'>((props, ref) => (
+  <BtnBox ref={ref} {...props}>
+    <Icon
+      as={MdOutlineMoreHoriz}
+      color={useColorModeValue('gray.500', 'gray.500')}
+      _active={{ color: useColorModeValue('gray.700', 'whiteAlpha.600') }}
+      fontSize="xl"
+    />
+  </BtnBox>
+))

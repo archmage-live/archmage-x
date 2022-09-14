@@ -14,13 +14,15 @@ import {
   useDisclosure
 } from '@chakra-ui/react'
 import icon from 'data-base64:~assets/icon512.png'
-import { useCallback } from 'react'
+import { useCallback, useEffect } from 'react'
 
 import { AccountAvatar } from '~components/AccountAvatar'
 import { ToggleButton } from '~components/ToggleButton'
-import { useActive } from '~lib/active'
+import { useActive, useActiveNetwork, useActiveWallet } from '~lib/active'
 import { useEvmChainLogoUrl } from '~lib/services/datasource/chainlist'
 import { getNetworkInfo } from '~lib/services/network'
+import { useWalletTree } from '~pages/Popup/WalletDrawer/tree'
+import { WrappedDeleteSubWalletModal } from '~pages/Settings/SettingsWallets/DeleteSubWalletModal'
 
 import { NetworkDrawer } from './NetworkDrawer'
 import { WalletDrawer } from './WalletDrawer'
@@ -49,6 +51,12 @@ export const Toolbar = () => {
     onNetworkClose()
     onWalletClose()
   }, [onNetworkClose, onWalletClose])
+
+  const { walletId } = useActiveWallet()
+  const { wallets, toggleOpen, setSelected } = useWalletTree(
+    network,
+    true
+  )
 
   return (
     <Box width="full" p="4" bg={bg} boxShadow={useColorModeValue('sm', 'sm')}>
@@ -98,10 +106,21 @@ export const Toolbar = () => {
           <DrawerContent>
             <DrawerCloseButton />
             {isNetworkOpen && <NetworkDrawer onClose={onClose} />}
-            {isWalletOpen && <WalletDrawer onClose={onClose} />}
+            {isWalletOpen && (
+              <WalletDrawer
+                onClose={onClose}
+                network={network}
+                wallets={wallets}
+                toggleOpen={toggleOpen}
+                setSelected={setSelected}
+                activeId={walletId}
+              />
+            )}
           </DrawerContent>
         </Drawer>
       </Flex>
+
+      <WrappedDeleteSubWalletModal />
     </Box>
   )
 }

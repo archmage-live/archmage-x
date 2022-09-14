@@ -46,6 +46,9 @@ class ConnectedSiteService implements IConnectedSiteService {
     iconUrl?: string
   ): Promise<IConnectedSite[]> {
     assert(accounts.length)
+    const accountsMap = new Map(
+      accounts.map((acc) => [`${acc.masterId}-${acc.index}`, acc])
+    )
 
     const origin = new URL(href).origin
 
@@ -56,15 +59,31 @@ class ConnectedSiteService implements IConnectedSiteService {
       }
     }
 
-    const conns: IConnectedSite[] = []
-    for (const account of accounts) {
-      const existing = await this.getConnectedSite(account, href, false)
-      if (existing) {
+    const bulkPut: IConnectedSite[] = []
+    const bulkDelete: number[] = []
+
+    const existings = await this.getConnectedSitesBySite(href, undefined)
+    const existingMap = new Map(
+      existings.map((existing) => [
+        `${existing.masterId}-${existing.index}`,
+        existing
+      ])
+    )
+
+    for (const existing of existings) {
+      const acc = accountsMap.get(`${existing.masterId}-${existing.index}`)
+      if (!acc) {
+        bulkDelete.push(existing.id)
+      } else {
         existing.iconUrl = iconUrl || existing.iconUrl
         existing.connected = booleanToNumber(true)
         existing.info.connectedAt = Date.now()
-        conns.push(existing)
-      } else {
+        bulkPut.push(existing)
+      }
+    }
+
+    for (const account of accounts) {
+      if (!existingMap.has(`${account.masterId}-${account.index}`)) {
         const add = {
           masterId: account.masterId,
           index: account.index,
@@ -75,20 +94,24 @@ class ConnectedSiteService implements IConnectedSiteService {
             connectedAt: Date.now()
           }
         } as IConnectedSite
-        conns.push(add)
+        bulkPut.push(add)
       }
     }
 
-    const ids = await DB.connectedSites.bulkPut(conns, { allKeys: true })
-    ids.forEach((id, index) => {
-      if (conns[index].id === undefined) {
-        conns[index].id = id
-      } else {
-        assert(conns[index].id === id)
-      }
+    await DB.transaction('rw', [DB.connectedSites], async () => {
+      await DB.connectedSites.bulkDelete(bulkDelete)
+
+      const ids = await DB.connectedSites.bulkPut(bulkPut, { allKeys: true })
+      ids.forEach((id, index) => {
+        if (bulkPut[index].id === undefined) {
+          bulkPut[index].id = id
+        } else {
+          assert(bulkPut[index].id === id)
+        }
+      })
     })
 
-    return conns
+    return bulkPut
   }
 
   async getConnectedSite(
@@ -124,13 +147,17 @@ class ConnectedSiteService implements IConnectedSiteService {
 
   async getConnectedSitesBySite(
     href: string,
-    connected = true
+    connected: boolean | undefined = true
   ): Promise<IConnectedSite[]> {
     const origin = new URL(href).origin
-    return DB.connectedSites
-      .where('[origin+connected]')
-      .equals([origin, booleanToNumber(connected)] as Array<any>)
-      .toArray()
+    if (typeof connected === 'boolean') {
+      return DB.connectedSites
+        .where('[origin+connected]')
+        .equals([origin, booleanToNumber(connected)])
+        .toArray()
+    } else {
+      return DB.connectedSites.where('origin').equals(origin).toArray()
+    }
   }
 
   async disconnectSite(id: number) {

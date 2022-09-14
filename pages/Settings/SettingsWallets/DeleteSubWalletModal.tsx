@@ -14,20 +14,31 @@ import {
   Stack,
   Text
 } from '@chakra-ui/react'
+import { atom, useAtom } from 'jotai'
+import { useCallback } from 'react'
 import browser from 'webextension-polyfill'
 
 import { AlertBox } from '~components/AlertBox'
 import { CopyArea } from '~components/CopyIcon'
-import { resetActiveWallet } from '~lib/active'
+import {
+  getActiveWallet,
+  resetActiveWallet,
+  useActiveNetwork
+} from '~lib/active'
 import { IChainAccount, ISubWallet, IWallet, PSEUDO_INDEX } from '~lib/schema'
-import { WALLET_SERVICE } from '~lib/services/walletService'
+import { getAccountUrl } from '~lib/services/network'
+import {
+  WALLET_SERVICE,
+  useSubWalletByIndex,
+  useWallet
+} from '~lib/services/walletService'
 import { shortenAddress } from '~lib/utils'
 import { WalletType } from '~lib/wallet'
 
 interface DeleteSubWalletModalProps {
-  wallet: IWallet
-  subWallet: ISubWallet
-  account: IChainAccount
+  wallet?: IWallet
+  subWallet?: ISubWallet
+  account?: IChainAccount
   accountUrl?: string
   isOpen: boolean
   onClose: () => void
@@ -43,7 +54,7 @@ export const DeleteSubWalletModal = ({
   onClose,
   size
 }: DeleteSubWalletModalProps) => {
-  if (!account.address) {
+  if (!wallet || !subWallet || !account?.address) {
     return <></>
   }
 
@@ -154,7 +165,7 @@ export const DeleteSubWalletModal = ({
                 flex={1}
                 onClick={async () => {
                   await WALLET_SERVICE.deleteSubWallet(subWallet.id)
-                  await resetActiveWallet()
+                  await getActiveWallet()
                   onClose()
                 }}>
                 Delete
@@ -164,5 +175,51 @@ export const DeleteSubWalletModal = ({
         </ModalBody>
       </ModalContent>
     </Modal>
+  )
+}
+
+const isOpenAtom = atom<boolean>(false)
+const deleteAccountAtom = atom<IChainAccount | undefined>(undefined)
+
+export function useDeleteSubWalletModal() {
+  const [isOpen, setIsOpen] = useAtom(isOpenAtom)
+  const [account, setAccount] = useAtom(deleteAccountAtom)
+
+  const onOpen = useCallback(
+    (account: IChainAccount) => {
+      setIsOpen(true)
+      setAccount(account)
+    },
+    [setAccount, setIsOpen]
+  )
+  const onClose = useCallback(() => setIsOpen(false), [setIsOpen])
+
+  return {
+    isOpen,
+    account,
+    onOpen,
+    onClose
+  }
+}
+
+export const WrappedDeleteSubWalletModal = () => {
+  const { account, isOpen, onClose } = useDeleteSubWalletModal()
+
+  const { network } = useActiveNetwork()
+
+  const wallet = useWallet(account?.masterId)
+  const subWallet = useSubWalletByIndex(account?.masterId, account?.index)
+
+  const accountUrl = network && account && getAccountUrl(network, account)
+
+  return (
+    <DeleteSubWalletModal
+      wallet={wallet}
+      subWallet={subWallet}
+      account={account}
+      accountUrl={accountUrl}
+      isOpen={isOpen}
+      onClose={onClose}
+    />
   )
 }

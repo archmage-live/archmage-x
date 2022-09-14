@@ -9,6 +9,7 @@ import {
   IFetchCache,
   IHdPath,
   INetwork,
+  IPendingTx,
   IQueryCache,
   ISubWallet,
   IToken,
@@ -22,6 +23,7 @@ import {
   fetchCacheSchemaV1,
   hdPathSchemaV1,
   networkSchemaV1,
+  pendingTxSchemaV1,
   queryCacheSchemaV1,
   subWalletSchemaV1,
   tokenListSchemaV1,
@@ -37,6 +39,7 @@ export class Database extends Dexie {
   subWallets!: Dexie.Table<ISubWallet, number>
   chainAccounts!: Dexie.Table<IChainAccount, number>
   chainAccountsAux!: Dexie.Table<IChainAccountAux, number>
+  pendingTxs!: Dexie.Table<IPendingTx, number>
   transactions!: Dexie.Table<ITransaction, number>
   tokenLists!: Dexie.Table<ITokenList, number>
   tokens!: Dexie.Table<IToken, number>
@@ -54,6 +57,7 @@ export class Database extends Dexie {
       subWallets: subWalletSchemaV1,
       chainAccounts: chainAccountSchemaV1,
       chainAccountsAux: chainAccountAuxSchemaV1,
+      pendingTxs: pendingTxSchemaV1,
       transactions: transactionSchemaV1,
       tokenLists: tokenListSchemaV1,
       tokens: tokenSchemaV1,
