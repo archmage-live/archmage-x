@@ -5,6 +5,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { useStorage } from '@plasmohq/storage'
 
 import { ENV } from '~lib/env'
+import { useSubWalletsCount } from '~lib/services/walletService'
 import { LOCAL_STORE, SESSION_STORE, StoreArea, StoreKey } from '~lib/store'
 
 class Password {
@@ -139,9 +140,11 @@ export function useCheckUnlocked() {
   const navigate = useNavigate()
   const { isLocked } = usePassword()
 
+  const walletCount = useSubWalletsCount()
+
   useEffect(() => {
-    if (isLocked) {
+    if (isLocked || walletCount === 0) {
       navigate(`/unlock?redirect=${location.pathname}`, { replace: true })
     }
-  }, [location, navigate, isLocked])
+  }, [location, navigate, isLocked, walletCount])
 }

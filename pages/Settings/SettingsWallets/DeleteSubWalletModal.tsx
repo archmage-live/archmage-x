@@ -12,49 +12,59 @@ import {
   ModalOverlay,
   ModalProps,
   Stack,
-  Text
+  Text,
+  chakra
 } from '@chakra-ui/react'
+import assert from 'assert'
 import { atom, useAtom } from 'jotai'
-import { useCallback } from 'react'
+import { useCallback, useState } from 'react'
 import browser from 'webextension-polyfill'
 
 import { AlertBox } from '~components/AlertBox'
 import { CopyArea } from '~components/CopyIcon'
-import {
-  getActiveWallet,
-  resetActiveWallet,
-  useActiveNetwork
-} from '~lib/active'
-import { IChainAccount, ISubWallet, IWallet, PSEUDO_INDEX } from '~lib/schema'
+import { getActiveWallet, useActiveNetwork } from '~lib/active'
+import { ISubWallet, IWallet, PSEUDO_INDEX } from '~lib/schema'
 import { getAccountUrl } from '~lib/services/network'
 import {
   WALLET_SERVICE,
-  useSubWalletByIndex,
+  useChainAccountByIndex,
+  useSubWalletsCount,
   useWallet
 } from '~lib/services/walletService'
 import { shortenAddress } from '~lib/utils'
 import { WalletType } from '~lib/wallet'
 
 interface DeleteSubWalletModalProps {
+  all?: boolean
   wallet?: IWallet
   subWallet?: ISubWallet
-  account?: IChainAccount
-  accountUrl?: string
   isOpen: boolean
   onClose: () => void
   size?: ModalProps['size']
 }
 
 export const DeleteSubWalletModal = ({
+  all,
   wallet,
   subWallet,
-  account,
-  accountUrl,
   isOpen,
   onClose,
   size
 }: DeleteSubWalletModalProps) => {
-  if (!wallet || !subWallet || !account?.address) {
+  const { network } = useActiveNetwork()
+  const account = useChainAccountByIndex(
+    subWallet?.masterId,
+    network?.kind,
+    network?.chainId,
+    subWallet?.index
+  )
+  const accountUrl = network && account && getAccountUrl(network, account)
+
+  const subWalletsCount = useSubWalletsCount(wallet?.id)
+
+  const [isLoading, setIsLoading] = useState(false)
+
+  if (!wallet || (!all && (!subWallet || !account?.address))) {
     return <></>
   }
 
@@ -68,7 +78,9 @@ export const DeleteSubWalletModal = ({
       size={size || 'lg'}>
       <ModalOverlay />
       <ModalContent>
-        <ModalHeader textAlign="center">Delete Account?</ModalHeader>
+        <ModalHeader textAlign="center">
+          Delete {!all ? 'account' : 'wallet'}?
+        </ModalHeader>
         <ModalCloseButton />
         <ModalBody>
           <Stack pb={8} spacing={8}>
@@ -81,59 +93,75 @@ export const DeleteSubWalletModal = ({
               borderColor="gray.500"
               align="center">
               <HStack>
-                <Box w={12}></Box>
+                {!all && accountUrl && <Box w={12}></Box>}
+
                 <Stack maxW={64} spacing={0} align="center">
                   <Text noOfLines={2} fontSize="lg" fontWeight="medium">
                     {wallet.name}
                   </Text>
-                  {subWallet.index !== PSEUDO_INDEX && (
+                  {!all && subWallet!.index !== PSEUDO_INDEX && (
                     <>
                       <Text fontSize="xs" color="gray.500">
                         /
                       </Text>
                       <Text noOfLines={2} fontSize="lg" fontWeight="medium">
-                        {subWallet.name}
+                        {subWallet!.name}
                       </Text>
                     </>
                   )}
                 </Stack>
 
-                <IconButton
-                  variant="link"
-                  aria-label="View account on block explorer"
-                  icon={<ExternalLinkIcon />}
-                  onClick={() => {
-                    browser.tabs.create({ url: accountUrl })
-                  }}
-                />
+                {!all && accountUrl && (
+                  <IconButton
+                    variant="link"
+                    aria-label="View account on block explorer"
+                    icon={<ExternalLinkIcon />}
+                    onClick={() => {
+                      browser.tabs.create({ url: accountUrl })
+                    }}
+                  />
+                )}
               </HStack>
 
-              <CopyArea
-                name="Address"
-                copy={account.address}
-                area={shortenAddress(account.address)}
-                props={{
-                  bg: undefined,
-                  color: undefined,
-                  _hover: undefined
-                }}
-              />
+              {!all && (
+                <CopyArea
+                  name="Address"
+                  copy={account!.address!}
+                  area={shortenAddress(account!.address)}
+                  props={{
+                    bg: undefined,
+                    color: undefined,
+                    _hover: undefined
+                  }}
+                />
+              )}
             </Stack>
 
-            <AlertBox>
-              This account will be removed from your wallet.
+            <AlertBox level={!all ? 'warning' : 'error'}>
+              {!all && <>This account will be removed from your wallet.</>}
+              {all && (
+                <>
+                  This wallet (with{' '}
+                  <chakra.span fontStyle="italic" fontWeight="medium">
+                    {subWalletsCount}
+                  </chakra.span>{' '}
+                  accounts) will be removed from Archmage.
+                </>
+              )}
+              &nbsp;
               {wallet.type === WalletType.HD ? (
                 <>
-                  You can recover this account again from the wallet management
-                  settings. You can also create new accounts again from the
-                  account drop-down.
+                  You can recover this wallet/account again from the wallet
+                  management settings. You can also create new wallets/accounts
+                  again from the account drop-down.
                 </>
               ) : wallet.type === WalletType.PRIVATE_KEY ||
                 wallet.type === WalletType.PRIVATE_KEY_GROUP ? (
                 <>
-                  Please make sure you have the original Secret Recovery Phrase
-                  or Private Key for this imported account before continuing.
-                  You can import accounts again from the account drop-down.
+                  Please make sure you have the original Secret Recovery
+                  Phrase(s) or Private Key(s) for this/these imported account(s)
+                  before continuing. You can import accounts again from the
+                  account drop-down.
                 </>
               ) : wallet.type === WalletType.WATCH ||
                 wallet.type === WalletType.WATCH_GROUP ? (
@@ -157,15 +185,23 @@ export const DeleteSubWalletModal = ({
                 variant="outline"
                 colorScheme="purple"
                 flex={1}
+                isDisabled={isLoading}
                 onClick={onClose}>
                 Cancel
               </Button>
               <Button
                 colorScheme="red"
                 flex={1}
+                isLoading={isLoading}
                 onClick={async () => {
-                  await WALLET_SERVICE.deleteSubWallet(subWallet.id)
+                  setIsLoading(true)
+                  if (!all) {
+                    await WALLET_SERVICE.deleteSubWallet(subWallet!.id)
+                  } else {
+                    await WALLET_SERVICE.deleteWallet(wallet.id)
+                  }
                   await getActiveWallet()
+                  setIsLoading(false)
                   onClose()
                 }}>
                 Delete
@@ -178,46 +214,47 @@ export const DeleteSubWalletModal = ({
   )
 }
 
-const isOpenAtom = atom<boolean>(false)
-const deleteAccountAtom = atom<IChainAccount | undefined>(undefined)
+export type DeleteWalletOpts = {
+  all?: boolean
+  wallet?: IWallet
+  subWallet?: ISubWallet
+}
 
-export function useDeleteSubWalletModal() {
+const isOpenAtom = atom<boolean>(false)
+const deleteWalletOptsAtom = atom<DeleteWalletOpts | undefined>(undefined)
+
+export function useDeleteWalletModal() {
   const [isOpen, setIsOpen] = useAtom(isOpenAtom)
-  const [account, setAccount] = useAtom(deleteAccountAtom)
+  const [deleteOpts, setDeleteOpts] = useAtom(deleteWalletOptsAtom)
 
   const onOpen = useCallback(
-    (account: IChainAccount) => {
+    (opts: DeleteWalletOpts) => {
+      assert(opts.all ? opts.wallet : opts.subWallet)
       setIsOpen(true)
-      setAccount(account)
+      setDeleteOpts(opts)
     },
-    [setAccount, setIsOpen]
+    [setDeleteOpts, setIsOpen]
   )
   const onClose = useCallback(() => setIsOpen(false), [setIsOpen])
 
   return {
     isOpen,
-    account,
+    deleteOpts,
     onOpen,
     onClose
   }
 }
 
 export const WrappedDeleteSubWalletModal = () => {
-  const { account, isOpen, onClose } = useDeleteSubWalletModal()
+  const { deleteOpts, isOpen, onClose } = useDeleteWalletModal()
 
-  const { network } = useActiveNetwork()
-
-  const wallet = useWallet(account?.masterId)
-  const subWallet = useSubWalletByIndex(account?.masterId, account?.index)
-
-  const accountUrl = network && account && getAccountUrl(network, account)
+  const wallet = useWallet(deleteOpts?.subWallet?.masterId)
 
   return (
     <DeleteSubWalletModal
-      wallet={wallet}
-      subWallet={subWallet}
-      account={account}
-      accountUrl={accountUrl}
+      all={deleteOpts?.all}
+      wallet={deleteOpts?.wallet || wallet}
+      subWallet={deleteOpts?.subWallet}
       isOpen={isOpen}
       onClose={onClose}
     />

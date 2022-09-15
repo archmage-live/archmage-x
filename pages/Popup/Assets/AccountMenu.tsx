@@ -130,8 +130,6 @@ export const AccountMenu = () => {
       <DeleteSubWalletModal
         wallet={wallet}
         subWallet={subWallet}
-        account={account}
-        accountUrl={accountUrl}
         isOpen={isDeleteOpen}
         onClose={onDeleteClose}
       />

@@ -12,8 +12,7 @@ interface WalletListProps {
   network?: INetwork
   wallets: WalletEntry[]
   onToggleOpen: (id: number) => void
-  onSelected: (selected: WalletId) => void
-  onClose: () => void
+  onChecked: (item: WalletId | number, isChecked: boolean) => void
   renderItems?: number
   px?: number | string
   py?: number | string
@@ -23,8 +22,7 @@ export const WalletList = ({
   network,
   wallets,
   onToggleOpen,
-  onSelected,
-  onClose,
+  onChecked,
   renderItems = 6,
   px,
   py = '14px'
@@ -74,8 +72,7 @@ export const WalletList = ({
                   network={network}
                   walletEntry={walletEntry}
                   onToggleOpen={onToggleOpen}
-                  onSelected={onSelected}
-                  onClose={onClose}
+                  onChecked={onChecked}
                   measureElement={(el: unknown) => {
                     item.measureElement(el)
                     ;(walletsVirtualizer as any).calculateRange()

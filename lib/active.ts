@@ -8,7 +8,9 @@ import { IChainAccount, INetwork, ISubWallet, IWallet } from '~lib/schema'
 import { NETWORK_SERVICE } from '~lib/services/network'
 import {
   WALLET_SERVICE,
-  useChainAccountByIndex
+  useChainAccountByIndex,
+  useSubWallet,
+  useWallet
 } from '~lib/services/walletService'
 import { LOCAL_STORE, StoreKey, useLocalStorage } from '~lib/store'
 
@@ -195,9 +197,10 @@ export function useActiveWallet() {
     }
   )
 
-  const {
-    value: { wallet, subWallet } = { wallet: undefined, subWallet: undefined }
-  } = useAsync(async () => {
+  const wallet = useWallet(walletId?.id)
+  const subWallet = useSubWallet(walletId?.subId)
+
+  useAsync(async () => {
     if (!walletId) {
       return
     }
@@ -207,8 +210,6 @@ export function useActiveWallet() {
     if (!wallet || !subWallet) {
       await resetActiveWallet()
     }
-
-    return { wallet, subWallet }
   }, [walletId])
 
   return {

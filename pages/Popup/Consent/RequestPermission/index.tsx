@@ -13,10 +13,12 @@ import { FaGlobeAmericas } from 'react-icons/fa'
 
 import { useActiveNetwork } from '~lib/active'
 import { CONSENT_SERVICE, ConsentRequest } from '~lib/services/consentService'
-import { WALLET_SERVICE, useWallets } from '~lib/services/walletService'
+import { WALLET_SERVICE } from '~lib/services/walletService'
 import { getTab } from '~lib/util'
 import { shortenAddress } from '~lib/utils'
-import { WalletList } from '~pages/Popup/WalletDrawer/WalletList'
+import { useWalletTree } from '~pages/Popup/WalletDrawer/tree'
+
+import { WalletList } from './WalletList'
 
 export const RequestPermission = ({ request }: { request: ConsentRequest }) => {
   const [iconUrl, setIconUrl] = useState<string>()
@@ -34,21 +36,15 @@ export const RequestPermission = ({ request }: { request: ConsentRequest }) => {
 
   const { network } = useActiveNetwork()
 
-  const wallets = useWallets()
+  const { wallets, toggleOpen, checked, setChecked } = useWalletTree(network)
 
-  const [checked, setChecked] = useState<Map<number, number[]>>()
   const [flatChecked, setFlatChecked] = useState<number[]>()
 
   const [info, setInfo] = useState<any>()
   useEffect(() => {
     const effect = async () => {
-      const flatChecked = Array.from(checked?.values() || []).flat()
-      setFlatChecked((checked) =>
-        checked?.length === flatChecked.length &&
-        checked?.every((v, i) => v === flatChecked[i])
-          ? checked
-          : flatChecked
-      )
+      const flatChecked = Array.from(checked.keys())
+      setFlatChecked(flatChecked)
 
       if (flatChecked.length !== 1) {
         return
@@ -116,10 +112,10 @@ export const RequestPermission = ({ request }: { request: ConsentRequest }) => {
               <WalletList
                 network={network}
                 wallets={wallets}
-                renderItems={4}
-                px={4}
-                checked={checked}
+                onToggleOpen={toggleOpen}
                 onChecked={setChecked}
+                renderItems={6}
+                px={4}
               />
             </Box>
 

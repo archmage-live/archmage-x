@@ -1,9 +1,8 @@
-import { AddIcon, CheckIcon } from '@chakra-ui/icons'
+import { CheckIcon, DeleteIcon } from '@chakra-ui/icons'
 import {
   Box,
   BoxProps,
   Button,
-  Checkbox,
   HStack,
   Icon,
   Menu,
@@ -12,7 +11,6 @@ import {
   MenuItem,
   MenuList,
   Portal,
-  Stack,
   Text,
   forwardRef,
   useColorModeValue
@@ -22,36 +20,25 @@ import { MdOutlineMoreHoriz } from 'react-icons/md'
 import { AccountAvatar } from '~components/AccountAvatar'
 import { BtnBox } from '~components/BtnBox'
 import { formatNumber } from '~lib/formatNumber'
-import { IChainAccount, INetwork, ISubWallet } from '~lib/schema'
+import { INetwork } from '~lib/schema'
 import { useBalance } from '~lib/services/provider'
 import { shortenAddress } from '~lib/utils'
 import { SubWalletEntry } from '~pages/Popup/WalletDrawer/tree'
-import { useDeleteSubWalletModal } from '~pages/Settings/SettingsWallets/DeleteSubWalletModal'
+import { DeleteWalletOpts } from '~pages/Settings/SettingsWallets/DeleteSubWalletModal'
 
 export const SubWalletItem = ({
   network,
   subWallet,
   onSelected,
-  active,
-  onChecked,
-  onClose
+  onDelete
 }: {
   network: INetwork
   subWallet: SubWalletEntry
-  onSelected?: () => void
-  active?: boolean
-  onChecked?: (checked: boolean) => void
-  onClose?: () => void
+  onSelected: () => void
+  onDelete: (opts: DeleteWalletOpts) => void
 }) => {
-  const {
-    subWallet: wallet,
-    account,
-    isSelected: selected,
-    isChecked
-  } = subWallet
+  const { subWallet: wallet, account, isSelected } = subWallet
   const balance = useBalance(network, account)
-
-  const { onOpen: onDeleteAccount } = useDeleteSubWalletModal()
 
   return (
     <Button
@@ -62,15 +49,9 @@ export const SubWalletItem = ({
       h={16}
       px={4}
       justifyContent="start"
-      onClick={() => {
-        onSelected?.()
-        onChecked?.(!isChecked)
-      }}>
+      onClick={onSelected}>
       <Box w="full">
         <HStack w="full" justify="space-between">
-          {onChecked !== undefined && (
-            <Checkbox mb="-12px" isChecked={isChecked} pointerEvents="none" />
-          )}
           <HStack w="calc(100% - 29.75px)" justify="space-between">
             <AccountAvatar
               text={account.address || ''}
@@ -93,15 +74,13 @@ export const SubWalletItem = ({
             </HStack>
           </HStack>
 
-          {active && <CheckIcon fontSize="lg" color="green.500" />}
+          {subWallet.isSelected && (
+            <CheckIcon fontSize="lg" color="green.500" />
+          )}
         </HStack>
 
         <HStack w="calc(100% - 29.75px)" justify="space-between">
-          <Text
-            ps={onChecked !== undefined ? '62px' : '32px'}
-            fontSize="xs"
-            color="gray.500"
-            textAlign="start">
+          <Text ps="32px" fontSize="xs" color="gray.500" textAlign="start">
             {formatNumber(balance?.amount)} {balance?.symbol}
           </Text>
 
@@ -112,11 +91,17 @@ export const SubWalletItem = ({
                 <MenuList minW={32} zIndex={1500}>
                   <MenuGroup title={wallet.name}>
                     <MenuItem
-                      icon={<AddIcon w={3} h={3} />}
+                      icon={<CheckIcon />}
+                      iconSpacing={2}
+                      isDisabled={isSelected}
+                      onClick={onSelected}>
+                      Select
+                    </MenuItem>
+                    <MenuItem
+                      icon={<DeleteIcon />}
                       iconSpacing={2}
                       onClick={() => {
-                        onDeleteAccount(account)
-                        onClose?.()
+                        onDelete({ subWallet: wallet })
                       }}>
                       Remove account
                     </MenuItem>

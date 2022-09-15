@@ -14,14 +14,17 @@ import {
   useDisclosure
 } from '@chakra-ui/react'
 import icon from 'data-base64:~assets/icon512.png'
-import { useCallback, useEffect } from 'react'
+import { useCallback, useState } from 'react'
 
 import { AccountAvatar } from '~components/AccountAvatar'
-import { ToggleButton } from '~components/ToggleButton'
-import { useActive, useActiveNetwork, useActiveWallet } from '~lib/active'
+import { useActive } from '~lib/active'
 import { useEvmChainLogoUrl } from '~lib/services/datasource/chainlist'
 import { getNetworkInfo } from '~lib/services/network'
-import { useWalletTree } from '~pages/Popup/WalletDrawer/tree'
+import {
+  WalletEntry,
+  filterWalletTreeBySearch,
+  useWalletTree
+} from '~pages/Popup/WalletDrawer/tree'
 import { WrappedDeleteSubWalletModal } from '~pages/Settings/SettingsWallets/DeleteSubWalletModal'
 
 import { NetworkDrawer } from './NetworkDrawer'
@@ -52,9 +55,19 @@ export const Toolbar = () => {
     onWalletClose()
   }, [onNetworkClose, onWalletClose])
 
-  const { walletId } = useActiveWallet()
+  const [search, setSearch] = useState('')
+
+  const filter = useCallback(
+    (entries: WalletEntry[]) => {
+      return filterWalletTreeBySearch(entries, search)
+    },
+    [search]
+  )
+
   const { wallets, toggleOpen, setSelected } = useWalletTree(
     network,
+    undefined,
+    filter,
     true
   )
 
@@ -93,7 +106,6 @@ export const Toolbar = () => {
             </Box>
           </Box>
         </Center>
-        {/*<ToggleButton isOpen={isWalletOpen} onClick={onWalletToggle} />*/}
 
         <Drawer
           isOpen={isNetworkOpen || isWalletOpen}
@@ -108,12 +120,12 @@ export const Toolbar = () => {
             {isNetworkOpen && <NetworkDrawer onClose={onClose} />}
             {isWalletOpen && (
               <WalletDrawer
-                onClose={onClose}
                 network={network}
                 wallets={wallets}
                 toggleOpen={toggleOpen}
                 setSelected={setSelected}
-                activeId={walletId}
+                setSearch={setSearch}
+                onClose={onClose}
               />
             )}
           </DrawerContent>

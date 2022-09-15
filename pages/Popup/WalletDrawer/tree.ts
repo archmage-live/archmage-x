@@ -2,6 +2,8 @@ import assert from 'assert'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { atom, useAtom } from 'jotai'
 import { useCallback, useEffect, useState } from 'react'
+// @ts-ignore
+import stableHash from 'stable-hash'
 
 import { WalletId, useActiveWallet } from '~lib/active'
 import { IChainAccount, INetwork, ISubWallet, IWallet } from '~lib/schema'
@@ -21,44 +23,49 @@ export interface SubWalletEntry {
 }
 
 const walletEntriesAtom = atom<WalletEntry[] | undefined>(undefined)
-const selectedAtom = atom<WalletId | undefined>(undefined)
 
-export function useWalletTree(network?: INetwork, activeAsSelected = false) {
-  const [walletEntries, setWalletEntries] = useAtom(walletEntriesAtom)
+function useWalletSelected(
+  activeAsSelected = false
+): [WalletId | undefined, (selected: WalletId | undefined) => void] {
+  const [selected, setSelected] = useState<WalletId>()
 
   const { walletId: activeWallet, setWalletId: setActiveWallet } =
     useActiveWallet()
 
-  useLiveQuery(async () => {
-    if (!network) {
-      return
-    }
+  return [
+    activeAsSelected ? activeWallet : selected,
+    activeAsSelected ? setActiveWallet : setSelected
+  ]
+}
 
-    const wallets = await WALLET_SERVICE.getWallets()
-    const entries = wallets.map((wallet) => {
-      return {
-        wallet,
-        isOpen: false
-      } as WalletEntry
-    })
+export async function fetchWalletTree(
+  network: INetwork
+): Promise<WalletEntry[]> {
+  const wallets = await WALLET_SERVICE.getWallets()
+  const entries = wallets.map((wallet) => {
+    return {
+      wallet,
+      isOpen: false
+    } as WalletEntry
+  })
 
-    const promises = []
-    for (const entry of entries) {
-      const async = async () => {
-        const subWallets = await WALLET_SERVICE.getSubWallets(entry.wallet.id)
+  const promises = []
+  for (const entry of entries) {
+    const async = async () => {
+      const subWallets = await WALLET_SERVICE.getSubWallets(entry.wallet.id)
 
-        const accounts = await WALLET_SERVICE.getChainAccounts({
-          masterId: entry.wallet.id,
-          networkKind: network.kind,
-          chainId: network.chainId
-        })
-        const accountMap = new Map(
-          accounts.map((account) => [account.index, account])
-        )
+      const accounts = await WALLET_SERVICE.getChainAccounts({
+        masterId: entry.wallet.id,
+        networkKind: network.kind,
+        chainId: network.chainId
+      })
+      const accountMap = new Map(
+        accounts.map((account) => [account.index, account])
+      )
 
-        entry.subWallets = subWallets.map((subWallet) => {
+      entry.subWallets = subWallets
+        .map((subWallet) => {
           const account = accountMap.get(subWallet.index)
-          assert(account)
           return {
             subWallet,
             account,
@@ -66,11 +73,89 @@ export function useWalletTree(network?: INetwork, activeAsSelected = false) {
             isSelected: false
           } as SubWalletEntry
         })
-      }
-      promises.push(async())
+        .filter((subEntry) => !!subEntry.account)
+    }
+    promises.push(async())
+  }
+
+  await Promise.all(promises)
+
+  return entries
+}
+
+export function filterWalletTreeBySearch(
+  entries: WalletEntry[],
+  search: string
+): WalletEntry[] {
+  search = search.trim().toLowerCase()
+  if (!search) {
+    return entries
+  }
+
+  let isFiltered = false
+  let filtered = []
+
+  for (const entry of entries) {
+    if (entry.wallet.name.toLowerCase().includes(search)) {
+      filtered.push(entry)
+      continue
     }
 
-    await Promise.all(promises)
+    let subWallets = []
+    for (const subEntry of entry.subWallets) {
+      if (subEntry.subWallet.name.toLowerCase().includes(search)) {
+        subWallets.push(subEntry)
+      } else if (subEntry.account.address?.toLowerCase().includes(search)) {
+        subWallets.push(subEntry)
+      }
+    }
+
+    if (!subWallets.length) {
+      isFiltered = true
+      continue
+    }
+    if (subWallets.length === entry.subWallets.length) {
+      filtered.push(entry)
+    } else {
+      isFiltered = true
+      filtered.push({
+        ...entry,
+        subWallets
+      } as WalletEntry)
+    }
+  }
+
+  if (filtered.length < entries.length) {
+    isFiltered = true
+  }
+
+  return isFiltered ? filtered : entries
+}
+
+export function useWalletTree(
+  network?: INetwork,
+  fetcher?: (network: INetwork) => Promise<WalletEntry[]>,
+  filter?: (entries: WalletEntry[]) => WalletEntry[],
+  activeAsSelected = false
+) {
+  const [walletEntries, setWalletEntries] = useAtom(walletEntriesAtom)
+
+  const [filtered, setFiltered] = useState<WalletEntry[] | undefined>()
+
+  useEffect(() => {
+    if (filter && walletEntries) {
+      setFiltered(filter(walletEntries))
+    } else {
+      setFiltered(walletEntries)
+    }
+  }, [filter, walletEntries])
+
+  useLiveQuery(async () => {
+    if (!network) {
+      return
+    }
+
+    const entries = await (fetcher || fetchWalletTree)(network)
 
     setWalletEntries((oldEntries) => {
       const oldEntryMap = new Map(
@@ -86,6 +171,8 @@ export function useWalletTree(network?: INetwork, activeAsSelected = false) {
           return entry
         }
 
+        const walletChanged = !isSameWallet(entry.wallet, oldEntry.wallet)
+
         const oldSubEntryMap = new Map(
           oldEntry.subWallets?.map((entry) => [entry.subWallet.id, entry])
         )
@@ -94,7 +181,11 @@ export function useWalletTree(network?: INetwork, activeAsSelected = false) {
 
         const subEntries = entry.subWallets.map((subEntry) => {
           const oldSubEntry = oldSubEntryMap.get(subEntry.subWallet.id)
-          if (oldSubEntry && oldSubEntry.account.id === subEntry.account.id) {
+          if (
+            oldSubEntry &&
+            isSameSubWallet(subEntry.subWallet, oldSubEntry.subWallet) &&
+            isSameAccount(subEntry.account, oldSubEntry.account)
+          ) {
             return oldSubEntry
           }
           subChanged = true
@@ -108,13 +199,15 @@ export function useWalletTree(network?: INetwork, activeAsSelected = false) {
           } as SubWalletEntry
         })
 
-        if (subChanged) {
+        if (walletChanged || subChanged) {
           changed = true
-        }
-
-        return {
-          ...oldEntry,
-          subWallets: subChanged ? subEntries : oldEntry.subWallets
+          return {
+            ...oldEntry,
+            wallet: walletChanged ? entry.wallet : oldEntry.wallet,
+            subWallets: subChanged ? subEntries : oldEntry.subWallets
+          } as WalletEntry
+        } else {
+          return oldEntry
         }
       })
 
@@ -128,7 +221,7 @@ export function useWalletTree(network?: INetwork, activeAsSelected = false) {
       )
       return changed ? newEntries : oldEntries
     })
-  }, [network])
+  }, [network, fetcher])
 
   const toggleOpen = useCallback(
     (id: number) => {
@@ -149,79 +242,81 @@ export function useWalletTree(network?: INetwork, activeAsSelected = false) {
     [setWalletEntries]
   )
 
-  const [selected, _setSelected] = useAtom(selectedAtom)
+  const [selected, _setSelected] = useWalletSelected(activeAsSelected)
 
   useEffect(() => {
-    const newSelected = activeAsSelected ? activeWallet : selected
-    if (!newSelected) {
-      return
-    }
-    if (!walletEntries) {
+    if (!selected || !walletEntries) {
       return
     }
 
     const notChanged = walletEntries.find((entry) => {
-      if (entry.wallet.id !== newSelected.id) {
+      if (entry.wallet.id !== selected.id) {
         return false
       }
       return entry.subWallets.find(
         (subEntry) =>
-          subEntry.subWallet.id === newSelected.subId && subEntry.isSelected
+          subEntry.subWallet.id === selected.subId && subEntry.isSelected
       )
     })
     if (notChanged) {
       return
     }
 
-    const { changedWallets } = markSubWalletItem(
-      walletEntries.slice(),
-      newSelected.id,
-      newSelected.subId,
-      true,
-      undefined,
-      true
-    )
-
-    for (const wallet of changedWallets) {
-      if (wallet.wallet.id === newSelected.id) {
-        wallet.isOpen = true
-        break
-      }
+    const found = walletEntries.find(({ wallet }) => wallet.id === selected.id)
+    if (!found) {
+      return
     }
 
-    setWalletEntries(changedWallets)
-  }, [
-    activeAsSelected,
-    activeWallet,
-    selected,
-    walletEntries,
-    setWalletEntries
-  ])
+    let changed = false
+    const entries = walletEntries.map((entry) => {
+      let subChanged = false
+      let isOpen = undefined
+      const subWallets = entry.subWallets.map((subEntry) => {
+        if (subEntry.subWallet.id === selected.subId) {
+          assert(entry.wallet.id === selected.id)
+          subChanged = true
+          isOpen = true
+          return {
+            ...subEntry,
+            isSelected: true
+          }
+        } else if (subEntry.isSelected) {
+          subChanged = true
+          return {
+            ...subEntry,
+            isSelected: false
+          }
+        }
+        return subEntry
+      })
+      if (!subChanged) {
+        return entry
+      }
+      changed = true
+      return {
+        ...entry,
+        isOpen: isOpen !== undefined ? isOpen : entry.isOpen,
+        subWallets
+      }
+    })
+
+    if (changed) {
+      setWalletEntries(entries)
+    }
+  }, [selected, setWalletEntries, walletEntries])
 
   const setSelected = useCallback(
     (newSelected: WalletId) => {
       if (!walletEntries) {
         return
       }
-      const oldSelected = activeAsSelected ? activeWallet : selected
-      if (oldSelected && newSelected.subId === oldSelected.subId) {
+      if (selected && newSelected.subId === selected.subId) {
         return
       }
 
-      if (activeAsSelected) {
-        setActiveWallet(newSelected)
-      } else {
-        _setSelected(newSelected)
-      }
+      _setSelected(newSelected)
     },
-    [
-      _setSelected,
-      activeAsSelected,
-      activeWallet,
-      selected,
-      setActiveWallet,
-      walletEntries
-    ]
+    [_setSelected, selected, walletEntries]
   )
 
   const [checked, _setChecked] = useState<Map<number, WalletId>>(new Map())
@@ -279,9 +374,9 @@ export function useWalletTree(network?: INetwork, activeAsSelected = false) {
   )
 
   return {
-    wallets: walletEntries,
+    wallets: filtered,
     toggleOpen,
-    selected: activeAsSelected ? activeWallet : selected,
+    selected,
     setSelected,
     checked,
     setChecked
@@ -333,4 +428,16 @@ function markSubWalletItem(
     changedWallets,
     changedSubWallet
   }
+}
+
+function isSameWallet(a: IWallet, b: IWallet) {
+  return a.id === b.id && a.sortId === b.sortId && a.name === b.name
+}
+
+function isSameSubWallet(a: ISubWallet, b: ISubWallet) {
+  return a.id === b.id && a.sortId === b.sortId && a.name === b.name
+}
+
+function isSameAccount(a: IChainAccount, b: IChainAccount) {
+  return a.id === b.id && stableHash(a.info) === stableHash(b.info)
 }

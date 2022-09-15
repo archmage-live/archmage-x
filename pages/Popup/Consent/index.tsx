@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
+import { useCheckUnlocked } from '~lib/password'
 import {
   CONSENT_SERVICE,
   ConsentRequest,
@@ -12,7 +13,6 @@ import { SignMessage } from './SignMessage'
 import { SignTypedData } from './SignTypedData'
 import { Transaction } from './Transaction'
 import { WatchAsset } from './WatchAsset'
-import { useCheckUnlocked } from "~lib/password";
 
 export default function Consent() {
   useCheckUnlocked()

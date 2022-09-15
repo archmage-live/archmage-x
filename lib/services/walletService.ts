@@ -152,7 +152,9 @@ class WalletServicePartial implements IWalletService {
       return DB.chainAccounts.get(id)
     } else {
       const wallet = await this.getWallet(id.masterId)
-      assert(wallet)
+      if (!wallet) {
+        return undefined
+      }
       return this._ensureChainAccount(
         wallet,
         id.index,
@@ -451,48 +453,97 @@ class WalletService extends WalletServicePartial {
   }
 
   async deleteWallet(id: number) {
-    await DB.wallets.delete(id)
+    const wallet = await DB.wallets.get(id)
+    if (!wallet) {
+      return
+    }
+
+    const unlock = await this._ensureLock(id)
+
+    try {
+      await DB.transaction(
+        'rw',
+        [
+          DB.wallets,
+          DB.hdPaths,
+          DB.subWallets,
+          DB.chainAccounts,
+          DB.chainAccountsAux,
+          DB.connectedSites,
+          DB.tokens,
+          DB.transactions,
+          DB.pendingTxs
+        ],
+        async () => {
+          await DB.hdPaths.where('masterId').equals(id).delete()
+          await DB.subWallets.where('masterId').equals(id).delete()
+          await DB.chainAccounts.where('masterId').equals(id).delete()
+          await DB.chainAccountsAux.where('masterId').equals(id).delete()
+          await DB.connectedSites.where('masterId').equals(id).delete()
+          await DB.tokens.where('masterId').equals(id).delete()
+          await DB.transactions.where('masterId').equals(id).delete()
+          await DB.pendingTxs.where('masterId').equals(id).delete()
+
+          await DB.wallets.delete(id)
+        }
+      )
+    } finally {
+      unlock()
+    }
   }
 
   async deleteSubWallet(id: number) {
-    await DB.transaction(
-      'rw',
-      [
-        DB.subWallets,
-        DB.chainAccounts,
-        DB.chainAccountsAux,
-        DB.connectedSites,
-        DB.tokens,
-        DB.transactions
-      ],
-      async () => {
-        const subWallet = await DB.subWallets.get(id)
-        if (!subWallet) {
-          return
+    const subWallet = await DB.subWallets.get(id)
+    if (!subWallet) {
+      return
+    }
+
+    const unlock = await this._ensureLock(subWallet.masterId)
+
+    try {
+      await DB.transaction(
+        'rw',
+        [
+          DB.subWallets,
+          DB.chainAccounts,
+          DB.chainAccountsAux,
+          DB.connectedSites,
+          DB.tokens,
+          DB.transactions,
+          DB.pendingTxs
+        ],
+        async () => {
+          await DB.chainAccounts
+            .where('[masterId+index]')
+            .equals([subWallet.masterId, subWallet.index])
+            .delete()
+          await DB.chainAccountsAux
+            .where('[masterId+index]')
+            .equals([subWallet.masterId, subWallet.index])
+            .delete()
+          await DB.connectedSites
+            .where('[masterId+index]')
+            .equals([subWallet.masterId, subWallet.index])
+            .delete()
+          await DB.tokens
+            .where('[masterId+index]')
+            .equals([subWallet.masterId, subWallet.index])
+            .delete()
+          await DB.transactions
+            .where('[masterId+index]')
+            .equals([subWallet.masterId, subWallet.index])
+            .delete()
+          await DB.pendingTxs
+            .where('[masterId+index]')
+            .equals([subWallet.masterId, subWallet.index])
+            .delete()
+
+          await DB.subWallets.delete(id)
         }
-        await DB.subWallets.delete(id)
-        await DB.chainAccounts
-          .where('[masterId+index]')
-          .equals([subWallet.masterId, subWallet.index])
-          .delete()
-        await DB.chainAccountsAux
-          .where('[masterId+index]')
-          .equals([subWallet.masterId, subWallet.index])
-          .delete()
-        await DB.connectedSites
-          .where('[masterId+index]')
-          .equals([subWallet.masterId, subWallet.index])
-          .delete()
-        await DB.tokens
-          .where('[masterId+index]')
-          .equals([subWallet.masterId, subWallet.index])
-          .delete()
-        await DB.transactions
-          .where('[masterId+index]')
-          .equals([subWallet.masterId, subWallet.index])
-          .delete()
-      }
-    )
+      )
+    } finally {
+      unlock()
+    }
   }
 
   private _ensureLocks = new Map<number, Promise<unknown>>()
@@ -593,8 +644,12 @@ export function useSubWallets(walletId: number) {
 
 export function useSubWalletsCount(walletId?: number) {
   return useLiveQuery(() => {
-    return DB.subWallets.count()
-  }, [])
+    if (walletId === undefined) {
+      return DB.subWallets.count()
+    } else {
+      return DB.subWallets.where('masterId').equals(walletId).count()
+    }
+  }, [walletId])
 }
 
 export function useChainAccounts(

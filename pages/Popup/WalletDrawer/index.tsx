@@ -1,15 +1,22 @@
 import { AddIcon, DragHandleIcon, LockIcon } from '@chakra-ui/icons'
 import {
+  Box,
   Button,
   Divider,
   HStack,
   Icon,
+  Input,
+  InputGroup,
+  InputLeftElement,
   Stack,
   Text,
   useColorModeValue
 } from '@chakra-ui/react'
+import { useState } from 'react'
+import { FiSearch } from 'react-icons/all'
 import { IoMdSettings } from 'react-icons/io'
 import { useNavigate } from 'react-router-dom'
+import { useDebounce } from 'react-use'
 
 import { WalletId } from '~lib/active'
 import { INetwork } from '~lib/schema'
@@ -23,14 +30,14 @@ export const WalletDrawer = ({
   wallets,
   toggleOpen,
   setSelected,
-  activeId,
+  setSearch,
   onClose
 }: {
   network: INetwork | undefined
   wallets?: WalletEntry[]
   toggleOpen: (id: number) => void
   setSelected: (newSelected: WalletId) => void
-  activeId?: WalletId
+  setSearch: (search: string) => void
   onClose(): void
 }) => {
   const navigate = useNavigate()
@@ -42,12 +49,35 @@ export const WalletDrawer = ({
 
   const btnColorScheme = useColorModeValue('purple', undefined)
 
+  const [search, _setSearch] = useState('')
+
+  useDebounce(
+    () => {
+      setSearch(search)
+    },
+    300,
+    [search]
+  )
+
   if (!wallets) {
     return <></>
   }
 
   return (
-    <Stack pt={1} pb={4} mt={12} h="calc(100% - 42px)">
+    <Stack pt={2} pb={4} h="full">
+      <Box ps={4} pe={8} me="32px">
+        <InputGroup w="full" size="md">
+          <InputLeftElement pointerEvents="none">
+            <Icon as={FiSearch} />
+          </InputLeftElement>
+          <Input
+            placeholder="Search wallet or account"
+            value={search}
+            onChange={(e) => _setSearch(e.target.value)}
+          />
+        </InputGroup>
+      </Box>
+
       <Divider />
 
       <Stack overflowY="auto">
@@ -58,7 +88,6 @@ export const WalletDrawer = ({
               wallets={wallets}
               onToggleOpen={toggleOpen}
               onSelected={setSelected}
-              activeId={activeId}
               onClose={onClose}
             />
           </Stack>
