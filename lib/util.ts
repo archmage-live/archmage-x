@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useAsync } from 'react-use'
 import browser from 'webextension-polyfill'
 
 import { Context } from '~lib/rpc'
@@ -98,4 +99,15 @@ export function useCurrentSiteUrl(): URL | undefined {
   }, [tab])
 
   return url
+}
+
+export function useSiteIconUrl(origin?: string) {
+  const { value } = useAsync(async () => {
+    if (!origin) {
+      return
+    }
+    const tab = await getTab({ origin })
+    return tab?.favIconUrl
+  }, [origin])
+  return value
 }

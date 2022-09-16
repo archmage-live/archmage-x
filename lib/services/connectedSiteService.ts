@@ -200,7 +200,7 @@ export const CONNECTED_SITE_SERVICE = createConnectedSiteService()
 export function useConnectedSitesBySite(href?: string) {
   return useLiveQuery(async () => {
     if (!href) {
-      href = (await getCurrentTab())?.url
+      href = (await Promise.resolve(getCurrentTab()))?.url
     }
     if (!href) {
       return undefined

@@ -10,7 +10,8 @@ import {
   Text,
   Tooltip,
   useClipboard,
-  useColorModeValue
+  useColorModeValue,
+  useDisclosure
 } from '@chakra-ui/react'
 import Decimal from 'decimal.js'
 import { useEffect } from 'react'
@@ -25,6 +26,7 @@ import { getNetworkInfo } from '~lib/services/network'
 import { useBalance } from '~lib/services/provider'
 import { useCurrentSiteUrl } from '~lib/util'
 import { shortenAddress } from '~lib/utils'
+import { SiteConnsModal } from '~pages/Popup/Assets/SiteConns'
 
 import { AccountMenu } from './AccountMenu'
 import { TokenListSection } from './TokenList'
@@ -59,6 +61,12 @@ export default function Assets({ onLoaded }: { onLoaded?: () => void }) {
 
   const btnColorScheme = useColorModeValue('purple', undefined)
 
+  const {
+    isOpen: isConnsOpen,
+    onOpen: onConnsOpen,
+    onClose: onConnsClose
+  } = useDisclosure()
+
   return (
     <Stack w="full" px={4} py={4} spacing={12}>
       <Stack w="full" spacing={8}>
@@ -89,6 +97,7 @@ export default function Assets({ onLoaded }: { onLoaded?: () => void }) {
                       />
                     )
                   }
+                  onClick={onConnsOpen}
                 />
               </Tooltip>
 
@@ -220,6 +229,8 @@ export default function Assets({ onLoaded }: { onLoaded?: () => void }) {
       </Stack>
 
       <TokenListSection />
+
+      <SiteConnsModal isOpen={isConnsOpen} onClose={onConnsClose} />
     </Stack>
   )
 }

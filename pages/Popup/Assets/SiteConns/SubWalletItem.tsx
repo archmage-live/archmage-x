@@ -1,32 +1,34 @@
-import { CheckIcon } from '@chakra-ui/icons'
-import { Box, Button, Checkbox, HStack, Stack, Text } from '@chakra-ui/react'
+import {
+  Box,
+  Button,
+  Center,
+  HStack,
+  Icon,
+  IconButton,
+  Menu,
+  MenuButton,
+  MenuItem,
+  MenuList,
+  Portal,
+  Text,
+  Tooltip
+} from '@chakra-ui/react'
+import { MdMoreVert } from 'react-icons/md'
+import { VscDebugDisconnect } from 'react-icons/vsc'
 
 import { AccountAvatar } from '~components/AccountAvatar'
-import { formatNumber } from '~lib/formatNumber'
-import { IChainAccount, INetwork, ISubWallet } from '~lib/schema'
-import { useBalance } from '~lib/services/provider'
+import { INetwork } from '~lib/schema'
 import { shortenAddress } from '~lib/utils'
+import { SubWalletEntry } from '~pages/Popup/WalletDrawer/tree'
 
 export const SubWalletItem = ({
   network,
-  wallet,
-  account,
-  selected,
-  onSelected,
-  active,
-  isChecked,
-  onChecked
+  subWallet
 }: {
   network: INetwork
-  wallet: ISubWallet
-  account: IChainAccount
-  selected?: boolean
-  onSelected?: () => void
-  active?: boolean
-  isChecked?: boolean
-  onChecked?: (checked: boolean) => void
+  subWallet: SubWalletEntry
 }) => {
-  const balance = useBalance(network, account)
+  const { subWallet: wallet, account } = subWallet
 
   return (
     <Button
@@ -36,16 +38,9 @@ export const SubWalletItem = ({
       w="full"
       h={16}
       px={4}
-      justifyContent="start"
-      onClick={() => {
-        onSelected?.()
-        onChecked?.(!isChecked)
-      }}>
+      justifyContent="start">
       <Box w="full">
         <HStack w="full" justify="space-between">
-          {onChecked !== undefined && (
-            <Checkbox mb="-12px" isChecked={isChecked} pointerEvents="none" />
-          )}
           <HStack w="calc(100% - 29.75px)" justify="space-between">
             <AccountAvatar
               text={account.address || ''}
@@ -68,17 +63,71 @@ export const SubWalletItem = ({
             </HStack>
           </HStack>
 
-          {active && <CheckIcon fontSize="lg" color="green.500" />}
+          <Menu isLazy autoSelect={false} placement="left">
+            <MenuButton
+              variant="link"
+              minW={0}
+              as={IconButton}
+              icon={<Icon as={MdMoreVert} fontSize="xl" />}
+            />
+
+            <Portal>
+              <MenuList w={48}>
+                <MenuItem
+                  icon={<Icon as={VscDebugDisconnect} />}
+                  iconSpacing={2}
+                  onClick={() => {}}>
+                  Disconnect
+                </MenuItem>
+              </MenuList>
+            </Portal>
+          </Menu>
         </HStack>
 
-        <Text
-          ps={onChecked !== undefined ? '62px' : '32px'}
-          fontSize="xs"
-          color="gray.500"
-          textAlign="start">
-          {formatNumber(balance?.amount)} {balance?.symbol}
-        </Text>
+        <HStack w="calc(100% - 29.75px)" ps="32px">
+          <ConnIndicator isConnected={true} isActive={true} />
+        </HStack>
       </Box>
     </Button>
+  )
+}
+
+export const ConnIndicator = ({
+  isConnected,
+  isActive
+}: {
+  isConnected: boolean
+  isActive: boolean
+}) => {
+  return (
+    <>
+      <Tooltip
+        label={isConnected ? 'Connected' : 'Not connected'}
+        placement="top-start">
+        {isConnected ? (
+          <Center w={3} h={3} borderRadius="50%" bg={'green.500'} />
+        ) : (
+          <Center
+            w={3}
+            h={3}
+            borderRadius="50%"
+            borderWidth="2px"
+            borderColor="red.500"
+          />
+        )}
+      </Tooltip>
+
+      {isActive && (
+        <Tooltip label="Active" placement="top-start">
+          <Center w={3} h={3} borderRadius="50%" bg={'blue.500'} />
+        </Tooltip>
+      )}
+
+      {(!isConnected || !isActive) && (
+        <Button variant="ghost" size="sm">
+          {!isConnected ? 'Connect' : 'Switch'}
+        </Button>
+      )}
+    </>
   )
 }

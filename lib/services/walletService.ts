@@ -98,9 +98,9 @@ export interface IWalletService {
       | { masterId: number; networkKind: NetworkKind; chainId: ChainId }
   ): Promise<IChainAccount[]>
 
-  getSubWallets(id: number): Promise<ISubWallet[]>
+  getSubWallets(query: number | SubIndex[]): Promise<ISubWallet[]>
 
-  getWallets(): Promise<IWallet[]>
+  getWallets(query?: number[]): Promise<IWallet[]>
 
   deriveSubWallets(id: number, num: number): Promise<ISubWallet[]>
 
@@ -181,6 +181,7 @@ class WalletServicePartial implements IWalletService {
           .toArray()
       } else {
         // NOTE: no ensureChainAccounts here
+        // TODO
         const anyOf = (query as ChainAccountIndex[]).map(
           ({ masterId, index, networkKind, chainId }) => [
             masterId,
@@ -211,15 +212,27 @@ class WalletServicePartial implements IWalletService {
     }
   }
 
-  async getSubWallets(id: number): Promise<ISubWallet[]> {
-    return DB.subWallets
-      .where('[masterId+sortId]')
-      .between([id, Dexie.minKey], [id, Dexie.maxKey])
-      .toArray()
+  async getSubWallets(query: number | SubIndex[]): Promise<ISubWallet[]> {
+    if (typeof query === 'number') {
+      const id = query
+      return DB.subWallets
+        .where('[masterId+sortId]')
+        .between([id, Dexie.minKey], [id, Dexie.maxKey])
+        .toArray()
+    } else {
+      return DB.subWallets
+        .where('[masterId+index]')
+        .anyOf(query.map(({ masterId, index }) => [masterId, index]))
+        .sortBy('sortId')
+    }
   }
 
-  async getWallets(): Promise<IWallet[]> {
-    return DB.wallets.orderBy('sortId').toArray()
+  async getWallets(query?: number[]): Promise<IWallet[]> {
+    if (Array.isArray(query)) {
+      return DB.wallets.where('id').anyOf(query).sortBy('sortId')
+    } else {
+      return DB.wallets.orderBy('sortId').toArray()
+    }
   }
 
   async deriveSubWallets(id: number, num: number) {

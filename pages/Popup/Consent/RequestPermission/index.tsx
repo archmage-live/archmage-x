@@ -14,25 +14,14 @@ import { FaGlobeAmericas } from 'react-icons/fa'
 import { useActiveNetwork } from '~lib/active'
 import { CONSENT_SERVICE, ConsentRequest } from '~lib/services/consentService'
 import { WALLET_SERVICE } from '~lib/services/walletService'
-import { getTab } from '~lib/util'
+import { getTab, useSiteIconUrl } from '~lib/util'
 import { shortenAddress } from '~lib/utils'
 import { useWalletTree } from '~pages/Popup/WalletDrawer/tree'
 
 import { WalletList } from './WalletList'
 
 export const RequestPermission = ({ request }: { request: ConsentRequest }) => {
-  const [iconUrl, setIconUrl] = useState<string>()
-
-  useEffect(() => {
-    const effect = async () => {
-      const tab = await getTab({ origin: request.origin })
-      if (tab?.favIconUrl) {
-        setIconUrl(tab.favIconUrl)
-      }
-    }
-
-    effect()
-  }, [request])
+  const iconUrl = useSiteIconUrl(request.origin)
 
   const { network } = useActiveNetwork()
 
