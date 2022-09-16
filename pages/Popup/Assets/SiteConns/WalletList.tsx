@@ -3,28 +3,26 @@ import { useVirtualizer } from '@tanstack/react-virtual'
 import { useRef } from 'react'
 
 import { INetwork } from '~lib/schema'
-import { WalletEntry } from '~pages/Popup/WalletDrawer/tree'
+import { isWalletGroup } from '~lib/wallet'
 
+import { Entry } from '.'
 import { WalletItem } from './WalletItem'
 
 interface WalletListProps {
   network?: INetwork
-  wallets: WalletEntry[]
+  wallets: Entry[]
   onToggleOpen: (id: number) => void
   renderItems?: number
-  px?: number | string
-  py?: number | string
 }
 
 export const WalletList = ({
   network,
   wallets,
   onToggleOpen,
-  renderItems = 6,
-  px,
-  py = '14px'
+  renderItems = 6
 }: WalletListProps) => {
   const itemSize = 56
+  const selfItemSize = itemSize + 2 + 7
 
   const parentRef = useRef(null)
   const walletsVirtualizer = useVirtualizer({
@@ -32,52 +30,50 @@ export const WalletList = ({
     getScrollElement: () => parentRef.current,
     estimateSize: (index) => {
       const wallet = wallets[index]
-      if (!wallet.isOpen || !wallet.subWallets.length) {
-        return itemSize
+      if (!wallet.isOpen || !isWalletGroup(wallet.wallet.type)) {
+        return selfItemSize
       } else {
-        return itemSize * wallet.subWallets.length + itemSize + 16
+        return (
+          selfItemSize +
+          (itemSize * Math.min(wallet.subWallets.length, 6) + 2 + 14)
+        )
       }
     },
-    getItemKey: (index) => wallets[index].wallet.id,
-    overscan: Math.max(Math.min(wallets.length || 0, 50) - renderItems, 1)
+    getItemKey: (index) => wallets[index].wallet.id
   })
 
   return (
-    <Box py={py}>
-      <Box
-        ref={parentRef}
-        maxH={renderItems * itemSize + 'px'}
-        px={px}
-        overflowY="auto"
-        borderRadius="xl"
-        userSelect="none">
-        <Box h={walletsVirtualizer.getTotalSize() + 'px'} position="relative">
-          {walletsVirtualizer.getVirtualItems().map((item) => {
-            const walletEntry = wallets[item.index]!
-            const { wallet } = walletEntry
+    <Box
+      ref={parentRef}
+      maxH={renderItems * selfItemSize + 'px'}
+      overflowY="auto"
+      userSelect="none">
+      <Box h={walletsVirtualizer.getTotalSize() + 'px'} position="relative">
+        {walletsVirtualizer.getVirtualItems().map((item) => {
+          const walletEntry = wallets[item.index]!
+          const { wallet } = walletEntry
 
-            return (
-              <Box
-                key={wallet.id}
-                position="absolute"
-                top={0}
-                left={0}
-                transform={`translateY(${item.start}px)`}
-                w="full"
-                minH={itemSize + 'px'}>
-                <WalletItem
-                  network={network}
-                  walletEntry={walletEntry}
-                  onToggleOpen={onToggleOpen}
-                  measureElement={(el: unknown) => {
-                    item.measureElement(el)
-                    ;(walletsVirtualizer as any).calculateRange()
-                  }}
-                />
-              </Box>
-            )
-          })}
-        </Box>
+          return (
+            <Box
+              key={wallet.id}
+              position="absolute"
+              top={0}
+              left={0}
+              transform={`translateY(${item.start}px)`}
+              w="full"
+              minH={selfItemSize + 'px'}>
+              <WalletItem
+                network={network}
+                walletEntry={walletEntry}
+                onToggleOpen={onToggleOpen}
+                measureElement={(el: unknown) => {
+                  item.measureElement(el)
+                  ;(walletsVirtualizer as any).calculateRange()
+                }}
+              />
+            </Box>
+          )
+        })}
       </Box>
     </Box>
   )

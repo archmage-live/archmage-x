@@ -14,7 +14,7 @@ export interface IChainAccount {
 }
 
 export const chainAccountSchemaV1 =
-  '++id, &[masterId+index+networkKind+chainId], &[masterId+networkKind+chainId+index], address'
+  '++id, &[masterId+index+networkKind+chainId], &[masterId+networkKind+chainId+index], &[networkKind+chainId+masterId+index], address'
 
 export function isValidChainAccount(account: IChainAccount) {
   return !!account.address

@@ -226,7 +226,7 @@ export const ManageTokens = ({
 }
 
 const TokenLists = () => {
-  const { network } = useActiveNetwork()
+  const network = useActiveNetwork()
   const tokenLists = useTokenLists(network?.kind)
 
   return (

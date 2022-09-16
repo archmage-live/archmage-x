@@ -23,7 +23,7 @@ import { WalletList } from './WalletList'
 export const RequestPermission = ({ request }: { request: ConsentRequest }) => {
   const iconUrl = useSiteIconUrl(request.origin)
 
-  const { network } = useActiveNetwork()
+  const network = useActiveNetwork()
 
   const { wallets, toggleOpen, checked, setChecked } = useWalletTree(network)
 

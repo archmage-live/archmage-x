@@ -66,7 +66,6 @@ export const Toolbar = () => {
 
   const { wallets, toggleOpen, setSelected } = useWalletTree(
     network,
-    undefined,
     filter,
     true
   )

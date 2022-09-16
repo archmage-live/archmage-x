@@ -51,7 +51,7 @@ export const DeleteSubWalletModal = ({
   onClose,
   size
 }: DeleteSubWalletModalProps) => {
-  const { network } = useActiveNetwork()
+  const network = useActiveNetwork()
   const account = useChainAccountByIndex(
     subWallet?.masterId,
     network?.kind,

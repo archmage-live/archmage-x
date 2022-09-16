@@ -36,12 +36,15 @@ export async function fetchDataWithCache<T = Uint8Array>(
   }
 
   const response = await fetchData(connection, undefined, processFunc)
-  await DB.fetchCache.put({
-    id: cache && cache.id, // add or update
-    url,
-    response,
-    cachedAt: Date.now()
-  } as IFetchCache)
+  if (cache) {
+    await DB.fetchCache.update(cache.id, { response, cachedAt: Date.now() })
+  } else {
+    await DB.fetchCache.put({
+      url,
+      response,
+      cachedAt: Date.now()
+    } as IFetchCache)
+  }
   return response
 }
 
@@ -60,11 +63,14 @@ export async function fetchJsonWithCache(
   }
 
   const response = await fetchJson(connection, undefined, processFunc)
-  await DB.fetchCache.put({
-    id: cache && cache.id, // add or update
-    url,
-    response,
-    cachedAt: Date.now()
-  } as IFetchCache)
+  if (cache) {
+    await DB.fetchCache.update(cache.id, { response, cachedAt: Date.now() })
+  } else {
+    await DB.fetchCache.put({
+      url,
+      response,
+      cachedAt: Date.now()
+    } as IFetchCache)
+  }
   return response
 }

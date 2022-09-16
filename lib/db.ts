@@ -45,7 +45,7 @@ export class Database extends Dexie {
   tokens!: Dexie.Table<IToken, number>
   connectedSites!: Dexie.Table<IConnectedSite, number>
   addressBook!: Dexie.Table<IAddressBook, number>
-  fetchCache!: Dexie.Table<IFetchCache, number>
+  fetchCache!: Dexie.Table<IFetchCache, string>
   queryCache!: Dexie.Table<IQueryCache, number>
 
   constructor() {

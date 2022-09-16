@@ -549,7 +549,11 @@ export function useEvmTransactions(
       if (network === undefined || account === undefined) {
         return
       }
-      await EVM_TRANSACTION_SERVICE.fetchTransactions(account)
+      try {
+        await EVM_TRANSACTION_SERVICE.fetchTransactions(account)
+      } catch (e) {
+        console.error(e)
+      }
     }
     effect()
   }, [network, account])

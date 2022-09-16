@@ -9,7 +9,6 @@ import {
   MenuButton,
   MenuItem,
   MenuList,
-  Portal,
   Text,
   Tooltip
 } from '@chakra-ui/react'
@@ -19,20 +18,23 @@ import { VscDebugDisconnect } from 'react-icons/vsc'
 import { AccountAvatar } from '~components/AccountAvatar'
 import { INetwork } from '~lib/schema'
 import { shortenAddress } from '~lib/utils'
-import { SubWalletEntry } from '~pages/Popup/WalletDrawer/tree'
+
+import { SubEntry } from '.'
+import { ConnStatus } from '.'
 
 export const SubWalletItem = ({
   network,
   subWallet
 }: {
   network: INetwork
-  subWallet: SubWalletEntry
+  subWallet: SubEntry
 }) => {
   const { subWallet: wallet, account } = subWallet
 
   return (
     <Button
       key={wallet.id}
+      as="div"
       variant="ghost"
       size="lg"
       w="full"
@@ -63,42 +65,21 @@ export const SubWalletItem = ({
             </HStack>
           </HStack>
 
-          <Menu isLazy autoSelect={false} placement="left">
-            <MenuButton
-              variant="link"
-              minW={0}
-              as={IconButton}
-              icon={<Icon as={MdMoreVert} fontSize="xl" />}
-            />
-
-            <Portal>
-              <MenuList w={48}>
-                <MenuItem
-                  icon={<Icon as={VscDebugDisconnect} />}
-                  iconSpacing={2}
-                  onClick={() => {}}>
-                  Disconnect
-                </MenuItem>
-              </MenuList>
-            </Portal>
-          </Menu>
+          {subWallet.isConnected && <ConnMenu />}
         </HStack>
 
         <HStack w="calc(100% - 29.75px)" ps="32px">
-          <ConnIndicator isConnected={true} isActive={true} />
+          <ConnIndicator
+            isConnected={subWallet.isConnected}
+            isActive={subWallet.isActive}
+          />
         </HStack>
       </Box>
     </Button>
   )
 }
 
-export const ConnIndicator = ({
-  isConnected,
-  isActive
-}: {
-  isConnected: boolean
-  isActive: boolean
-}) => {
+export const ConnIndicator = ({ isConnected, isActive }: ConnStatus) => {
   return (
     <>
       <Tooltip
@@ -124,10 +105,34 @@ export const ConnIndicator = ({
       )}
 
       {(!isConnected || !isActive) && (
-        <Button variant="ghost" size="sm">
+        <Button variant="ghost" colorScheme="purple" size="sm">
           {!isConnected ? 'Connect' : 'Switch'}
         </Button>
       )}
     </>
+  )
+}
+
+export const ConnMenu = () => {
+  return (
+    <Box onClick={(e) => e.stopPropagation()}>
+      <Menu isLazy autoSelect={false} placement="left">
+        <MenuButton
+          variant="link"
+          minW={0}
+          as={IconButton}
+          icon={<Icon as={MdMoreVert} fontSize="xl" />}
+        />
+
+        <MenuList minW={32} fontSize="sm">
+          <MenuItem
+            icon={<Icon as={VscDebugDisconnect} />}
+            iconSpacing={2}
+            onClick={() => {}}>
+            Disconnect
+          </MenuItem>
+        </MenuList>
+      </Menu>
+    </Box>
   )
 }

@@ -95,14 +95,19 @@ export interface IWalletService {
   getChainAccounts(
     query:
       | (number | ChainAccountIndex)[]
-      | { masterId: number; networkKind: NetworkKind; chainId: ChainId }
+      | { masterId?: number; networkKind: NetworkKind; chainId: ChainId }
   ): Promise<IChainAccount[]>
 
-  getSubWallets(query: number | SubIndex[]): Promise<ISubWallet[]>
+  getSubWallets(query?: number | SubIndex[]): Promise<ISubWallet[]>
 
   getWallets(query?: number[]): Promise<IWallet[]>
 
   deriveSubWallets(id: number, num: number): Promise<ISubWallet[]>
+
+  ensureAllChainAccounts(
+    networkKind: NetworkKind,
+    chainId: ChainId
+  ): Promise<void>
 
   ensureChainAccounts(
     wallet: IWallet | number,
@@ -167,7 +172,7 @@ class WalletServicePartial implements IWalletService {
   async getChainAccounts(
     query:
       | (number | ChainAccountIndex)[]
-      | { masterId: number; networkKind: NetworkKind; chainId: ChainId }
+      | { masterId?: number; networkKind: NetworkKind; chainId: ChainId }
   ): Promise<IChainAccount[]> {
     if (Array.isArray(query)) {
       if (!query.length) {
@@ -200,30 +205,43 @@ class WalletServicePartial implements IWalletService {
     } else {
       const { masterId, networkKind, chainId } = query
 
-      await WALLET_SERVICE.ensureChainAccounts(masterId, networkKind, chainId)
+      if (typeof masterId === 'number') {
+        await WALLET_SERVICE.ensureChainAccounts(masterId, networkKind, chainId)
 
-      return DB.chainAccounts
-        .where('[masterId+networkKind+chainId+index]')
-        .between(
-          [masterId, networkKind, chainId, Dexie.minKey],
-          [masterId, networkKind, chainId, Dexie.maxKey]
-        )
-        .toArray()
+        return DB.chainAccounts
+          .where('[masterId+networkKind+chainId+index]')
+          .between(
+            [masterId, networkKind, chainId, Dexie.minKey],
+            [masterId, networkKind, chainId, Dexie.maxKey]
+          )
+          .toArray()
+      } else {
+        await WALLET_SERVICE.ensureAllChainAccounts(networkKind, chainId)
+        return DB.chainAccounts
+          .where('[networkKind+chainId+masterId+index]')
+          .between(
+            [networkKind, chainId, Dexie.minKey, Dexie.minKey],
+            [networkKind, chainId, Dexie.maxKey, Dexie.maxKey]
+          )
+          .toArray()
+      }
     }
   }
 
-  async getSubWallets(query: number | SubIndex[]): Promise<ISubWallet[]> {
+  async getSubWallets(query?: number | SubIndex[]): Promise<ISubWallet[]> {
     if (typeof query === 'number') {
       const id = query
       return DB.subWallets
         .where('[masterId+sortId]')
         .between([id, Dexie.minKey], [id, Dexie.maxKey])
         .toArray()
-    } else {
+    } else if (Array.isArray(query)) {
       return DB.subWallets
         .where('[masterId+index]')
         .anyOf(query.map(({ masterId, index }) => [masterId, index]))
         .sortBy('sortId')
+    } else {
+      return DB.subWallets.orderBy('[masterId+sortId]').toArray()
     }
   }
 
@@ -293,11 +311,8 @@ class WalletServicePartial implements IWalletService {
       return account
     }
     // slow path
-    return WALLET_SERVICE.ensureChainAccount(
-      wallet,
-      index,
-      networkKind,
-      chainId
+    return Promise.resolve(
+      WALLET_SERVICE.ensureChainAccount(wallet, index, networkKind, chainId)
     )
   }
 }
@@ -578,6 +593,13 @@ class WalletService extends WalletServicePartial {
     }
   }
 
+  async ensureAllChainAccounts(networkKind: NetworkKind, chainId: ChainId) {
+    const wallets = await this.getWallets()
+    for (const wallet of wallets) {
+      await this.ensureChainAccounts(wallet, networkKind, chainId)
+    }
+  }
+
   async ensureChainAccounts(
     wallet: IWallet | number,
     networkKind: NetworkKind,
@@ -591,7 +613,11 @@ class WalletService extends WalletServicePartial {
         wallet = (await DB.wallets.get(wallet))!
       }
       // time-consuming
-      await ensureChainAccounts(wallet, networkKind, chainId)
+      try {
+        await ensureChainAccounts(wallet, networkKind, chainId)
+      } catch (e) {
+        console.error(e)
+      }
     } finally {
       unlock()
     }
@@ -724,16 +750,16 @@ export function useWallet(id?: number) {
     if (id === undefined) {
       return undefined
     }
-    return DB.wallets.get(id)
+    return WALLET_SERVICE.getWallet(id)
   }, [id])
 }
 
 export function useSubWallet(id?: number) {
-  return useLiveQuery(() => {
+  return useLiveQuery(async () => {
     if (id === undefined) {
       return undefined
     }
-    return WALLET_SERVICE.getSubWallet(id)
+    return await WALLET_SERVICE.getSubWallet(id)
   }, [id])
 }
 

@@ -4,6 +4,7 @@ import { useRef } from 'react'
 
 import { WalletId } from '~lib/active'
 import { INetwork } from '~lib/schema'
+import { isWalletGroup } from '~lib/wallet'
 import { WalletEntry } from '~pages/Popup/WalletDrawer/tree'
 
 import { WalletItem } from './WalletItem'
@@ -35,14 +36,15 @@ export const WalletList = ({
     getScrollElement: () => parentRef.current,
     estimateSize: (index) => {
       const wallet = wallets[index]
-      if (!wallet.isOpen || !wallet.subWallets.length) {
+      if (!wallet.isOpen || !isWalletGroup(wallet.wallet.type)) {
         return itemSize
       } else {
-        return itemSize * wallet.subWallets.length + itemSize + 16
+        return (
+          itemSize + (itemSize * Math.min(wallet.subWallets.length, 6) + 2 + 14)
+        )
       }
     },
-    getItemKey: (index) => wallets[index].wallet.id,
-    overscan: Math.max(Math.min(wallets.length || 0, 50) - renderItems, 1)
+    getItemKey: (index) => wallets[index].wallet.id
   })
 
   return (

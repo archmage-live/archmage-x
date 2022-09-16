@@ -3,13 +3,13 @@ import { useVirtualizer } from '@tanstack/react-virtual'
 import { useEffect, useRef } from 'react'
 
 import { INetwork } from '~lib/schema'
-import { SubWalletEntry } from '~pages/Popup/WalletDrawer/tree'
 
+import { SubEntry } from '.'
 import { SubWalletItem } from './SubWalletItem'
 
 interface SubWalletListProps {
   network: INetwork
-  subWallets: SubWalletEntry[]
+  subWallets: SubEntry[]
   measure: () => void
 }
 
