@@ -16,11 +16,13 @@ import { MdMoreVert } from 'react-icons/md'
 import { VscDebugDisconnect } from 'react-icons/vsc'
 
 import { AccountAvatar } from '~components/AccountAvatar'
+import { setActiveWallet } from '~lib/active'
 import { INetwork } from '~lib/schema'
+import { CONNECTED_SITE_SERVICE } from '~lib/services/connectedSiteService'
+import { getCurrentTab } from '~lib/util'
 import { shortenAddress } from '~lib/utils'
 
 import { SubEntry } from '.'
-import { ConnStatus } from '.'
 
 export const SubWalletItem = ({
   network,
@@ -65,21 +67,22 @@ export const SubWalletItem = ({
             </HStack>
           </HStack>
 
-          {subWallet.isConnected && <ConnMenu />}
+          {subWallet.isConnected && <ConnMenu subWallet={subWallet} />}
         </HStack>
 
         <HStack w="calc(100% - 29.75px)" ps="32px">
-          <ConnIndicator
-            isConnected={subWallet.isConnected}
-            isActive={subWallet.isActive}
-          />
+          <ConnIndicator subWallet={subWallet} />
         </HStack>
       </Box>
     </Button>
   )
 }
 
-export const ConnIndicator = ({ isConnected, isActive }: ConnStatus) => {
+export const ConnIndicator = ({
+  subWallet: { subWallet, account, isConnected, isActive, isCurrent }
+}: {
+  subWallet: SubEntry
+}) => {
   return (
     <>
       <Tooltip
@@ -104,8 +107,24 @@ export const ConnIndicator = ({ isConnected, isActive }: ConnStatus) => {
         </Tooltip>
       )}
 
-      {(!isConnected || !isActive) && (
-        <Button variant="ghost" colorScheme="purple" size="sm">
+      {(!isConnected || !isCurrent) && (
+        <Button
+          variant="ghost"
+          colorScheme="purple"
+          size="xs"
+          onClick={async () => {
+            if (!isConnected) {
+              const tab = await getCurrentTab()
+              if (tab?.url) {
+                await CONNECTED_SITE_SERVICE.connectSite(account, tab.url)
+              }
+            } else {
+              await setActiveWallet({
+                id: subWallet.masterId,
+                subId: subWallet.id
+              })
+            }
+          }}>
           {!isConnected ? 'Connect' : 'Switch'}
         </Button>
       )}
@@ -113,7 +132,11 @@ export const ConnIndicator = ({ isConnected, isActive }: ConnStatus) => {
   )
 }
 
-export const ConnMenu = () => {
+export const ConnMenu = ({
+  subWallet: { connId }
+}: {
+  subWallet: SubEntry
+}) => {
   return (
     <Box onClick={(e) => e.stopPropagation()}>
       <Menu isLazy autoSelect={false} placement="left">
@@ -128,7 +151,11 @@ export const ConnMenu = () => {
           <MenuItem
             icon={<Icon as={VscDebugDisconnect} />}
             iconSpacing={2}
-            onClick={() => {}}>
+            onClick={async () => {
+              if (connId !== undefined) {
+                await CONNECTED_SITE_SERVICE.disconnectSite(connId)
+              }
+            }}>
             Disconnect
           </MenuItem>
         </MenuList>

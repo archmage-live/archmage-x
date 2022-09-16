@@ -232,7 +232,7 @@ class ConsentService implements IConsentService {
     for (const { permission } of payload.permissions) {
       switch (permission) {
         case Permission.ACCOUNT:
-          await CONNECTED_SITE_SERVICE.connectSite(accounts, origin)
+          await CONNECTED_SITE_SERVICE.connectSiteWithReplace(accounts, origin)
       }
     }
   }

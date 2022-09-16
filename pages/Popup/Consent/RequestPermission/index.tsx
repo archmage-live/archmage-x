@@ -14,7 +14,7 @@ import { FaGlobeAmericas } from 'react-icons/fa'
 import { useActiveNetwork } from '~lib/active'
 import { CONSENT_SERVICE, ConsentRequest } from '~lib/services/consentService'
 import { WALLET_SERVICE } from '~lib/services/walletService'
-import { getTab, useSiteIconUrl } from '~lib/util'
+import { useSiteIconUrl } from '~lib/util'
 import { shortenAddress } from '~lib/utils'
 import { useWalletTree } from '~pages/Popup/WalletDrawer/tree'
 
@@ -61,6 +61,8 @@ export const RequestPermission = ({ request }: { request: ConsentRequest }) => {
 
     effect()
   }, [checked])
+
+  const [isLoading, setIsLoading] = useState(false)
 
   if (!wallets) {
     return <></>
@@ -151,12 +153,14 @@ export const RequestPermission = ({ request }: { request: ConsentRequest }) => {
             w={36}
             colorScheme="purple"
             disabled={!flatChecked?.length}
+            isLoading={isLoading}
             onClick={async () => {
               if (!network) {
                 return
               }
 
               request.accountId = flatChecked!
+              setIsLoading(true)
               await CONSENT_SERVICE.processRequest(request, true)
               window.close()
             }}>

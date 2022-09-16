@@ -82,11 +82,18 @@ export default function Assets({ onLoaded }: { onLoaded?: () => void }) {
                 }
                 placement="top-start">
                 <IconButton
-                  variant="ghost"
+                  variant="link"
                   aria-label="Show accounts connected to this site"
                   icon={
                     connected ? (
-                      <Center w="4" h="4" borderRadius="50%" bg={'green.500'} />
+                      <Center
+                        w="4"
+                        h="4"
+                        borderRadius="50%"
+                        bg={'green.500'}
+                        _hover={{ bg: 'green.600' }}
+                        transition="background 0.2s ease-out"
+                      />
                     ) : (
                       <Center
                         w="4"
@@ -94,6 +101,8 @@ export default function Assets({ onLoaded }: { onLoaded?: () => void }) {
                         borderRadius="50%"
                         borderWidth="2px"
                         borderColor="red.500"
+                        _hover={{ borderColor: 'red.600' }}
+                        transition="border-color 0.2s ease-out"
                       />
                     )
                   }
@@ -102,14 +111,15 @@ export default function Assets({ onLoaded }: { onLoaded?: () => void }) {
               </Tooltip>
 
               <Tooltip
+                closeOnClick={false}
                 label={
                   !hasCopied ? (
                     <>
-                      <Text>
+                      <Text textAlign="center">
                         {wallet?.name}
                         {subWallet?.name && ` / ${subWallet.name}`}
                       </Text>
-                      <Text>
+                      <Text textAlign="center">
                         {account?.address
                           ? account.address
                           : `Not Available for network ${networkInfo?.name}`}
@@ -123,28 +133,32 @@ export default function Assets({ onLoaded }: { onLoaded?: () => void }) {
                 <Button
                   variant="ghost"
                   size="lg"
-                  h={16}
+                  h="70px"
                   maxW={64}
                   px={2}
                   colorScheme="purple"
                   onClick={onCopy}>
-                  <Stack>
-                    <HStack justify="center" fontSize="lg" spacing={1}>
+                  <Stack align="center">
+                    <Stack align="center" spacing={1}>
+                      {subWallet?.name && (
+                        <Text
+                          fontSize="xs"
+                          transform="scale(0.9)"
+                          color="gray.500"
+                          noOfLines={1}
+                          display="block"
+                          maxW="196px">
+                          {wallet?.name}
+                        </Text>
+                      )}
                       <Text
+                        fontSize="lg"
                         noOfLines={1}
                         display="block"
-                        maxW={subWallet?.name ? '98px' : '196px'}>
-                        {wallet?.name}
+                        maxW="196px">
+                        {subWallet?.name || wallet?.name}
                       </Text>
-                      {subWallet?.name && (
-                        <>
-                          <Text>/</Text>
-                          <Text noOfLines={1} display="block" maxW="98px">
-                            {subWallet.name}
-                          </Text>
-                        </>
-                      )}
-                    </HStack>
+                    </Stack>
                     <HStack justify="center" color="gray.500" ps={5}>
                       <Text fontSize="md">
                         {shortenAddress(account?.address)}

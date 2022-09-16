@@ -10,6 +10,12 @@ import { getCurrentTab, getTab } from '~lib/util'
 
 interface IConnectedSiteService {
   connectSite(
+    accounts: IChainAccount,
+    href: string,
+    iconUrl?: string
+  ): Promise<IConnectedSite>
+
+  connectSiteWithReplace(
     accounts: IChainAccount[],
     href: string,
     iconUrl?: string,
@@ -41,6 +47,36 @@ interface IConnectedSiteService {
 
 class ConnectedSiteService implements IConnectedSiteService {
   async connectSite(
+    account: IChainAccount,
+    href: string,
+    iconUrl?: string
+  ): Promise<IConnectedSite> {
+    const origin = new URL(href).origin
+
+    if (!iconUrl) {
+      const tab = await getTab({ origin })
+      if (tab) {
+        iconUrl = tab.favIconUrl
+      }
+    }
+
+    const conn = {
+      masterId: account.masterId,
+      index: account.index,
+      origin,
+      iconUrl,
+      connected: booleanToNumber(true),
+      info: {
+        connectedAt: Date.now()
+      }
+    } as IConnectedSite
+
+    conn.id = await DB.connectedSites.add(conn)
+
+    return conn
+  }
+
+  async connectSiteWithReplace(
     accounts: IChainAccount[],
     href: string,
     iconUrl?: string

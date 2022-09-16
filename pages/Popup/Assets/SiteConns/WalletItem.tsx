@@ -42,7 +42,7 @@ export const WalletItem = ({
     <Box ref={elRef} py={1}>
       <Box
         borderWidth="1px"
-        borderRadius="xl"
+        borderRadius="md"
         borderColor={!subWallets[0].isConnected ? 'purple.500' : undefined}>
         <Button
           key={wallet.id}
@@ -88,16 +88,11 @@ export const WalletItem = ({
                 </HStack>
               </HStack>
 
-              {subWallet?.isConnected && <ConnMenu />}
+              {subWallet?.isConnected && <ConnMenu subWallet={subWallet} />}
             </HStack>
 
             <HStack w="calc(100% - 29.75px)" ps="32px" pt="10px" h="14px">
-              {subWallet && (
-                <ConnIndicator
-                  isConnected={subWallet.isConnected}
-                  isActive={subWallet.isActive}
-                />
-              )}
+              {subWallet && <ConnIndicator subWallet={subWallet} />}
             </HStack>
           </Box>
         </Button>

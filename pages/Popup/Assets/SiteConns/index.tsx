@@ -64,7 +64,9 @@ export const SiteConnsModal = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
+      returnFocusOnClose={false}
       isCentered
+      motionPreset="slideInBottom"
       scrollBehavior="inside"
       size="lg">
       <ModalOverlay />
@@ -152,8 +154,10 @@ export const SiteConnsModal = ({
 }
 
 export type ConnStatus = {
+  connId?: number
   isConnected: boolean
   isActive: boolean
+  isCurrent: boolean
 }
 
 export type Entry = {
@@ -214,19 +218,22 @@ function useWalletTreeByConns(
           continue
         }
 
+        const subEntry = {
+          subWallet: subWallet.subWallet,
+          account: subWallet.account,
+          connId: conn.id,
+          isConnected: true
+        } as SubEntry
+
         if (
           currentSubWallet &&
           currentSubWallet.id === subWallet.subWallet.id
         ) {
           isCurrentConnected = true
+          subEntry.isCurrent = true
         }
 
-        subEntries.push({
-          subWallet: subWallet.subWallet,
-          account: subWallet.account,
-          isConnected: true,
-          isActive: false
-        } as SubEntry)
+        subEntries.push(subEntry)
       }
 
       if (!subEntries.length) {
@@ -257,8 +264,7 @@ function useWalletTreeByConns(
           {
             subWallet: currentSubWallet,
             account: currentAccount,
-            isConnected: false,
-            isActive: false
+            isCurrent: true
           } as SubEntry
         ]
       } as Entry)
@@ -293,19 +299,14 @@ function useWalletTreeByConns(
             isSameSubWallet(subEntry.subWallet, oldSubEntry.subWallet) &&
             isSameAccount(subEntry.account, oldSubEntry.account) &&
             subEntry.isConnected === oldSubEntry.isConnected &&
-            subEntry.isActive === oldSubEntry.isActive
+            subEntry.isActive === oldSubEntry.isActive &&
+            subEntry.isCurrent === oldSubEntry.isCurrent &&
+            subEntry.connId === oldSubEntry.connId
           ) {
             return oldSubEntry
           }
           subChanged = true
-          if (!oldSubEntry) {
-            return subEntry
-          }
-          return {
-            ...oldSubEntry,
-            subWallet: subEntry.subWallet,
-            account: subEntry.account
-          } as SubEntry
+          return subEntry
         })
 
         if (walletChanged || subChanged) {
@@ -320,6 +321,7 @@ function useWalletTreeByConns(
         }
       })
 
+      console.log(newEntries)
       console.log(
         `useWalletTreeByConns, get all entries: changed ${changed}, entries: ${
           newEntries.length
