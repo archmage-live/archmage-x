@@ -1,3 +1,5 @@
+import { SubIndex } from '~lib/schema/subWallet'
+
 export * from './network'
 export * from './wallet'
 export * from './hdPath'
@@ -26,4 +28,20 @@ export function booleanToNumber(b: boolean) {
 
 export function numberToBoolean(n: number) {
   return n !== 0
+}
+
+export function mapBySubIndex<T extends SubIndex>(
+  array: T[]
+): Map<number, Map<number, T>> {
+  const map = new Map<number, Map<number, T>>()
+  for (const item of array) {
+    let m = map.get(item.masterId)
+    if (!m) {
+      m = new Map()
+      map.set(item.masterId, m)
+    }
+
+    m.set(item.index, item)
+  }
+  return map
 }

@@ -13,7 +13,10 @@ export const subWalletSchemaV1 =
 export const PSEUDO_INDEX = -1 // pseudo index for imported single wallet
 export type Index = number | typeof PSEUDO_INDEX
 
-export type SubIndex = { masterId: number; index: Index }
+export interface SubIndex {
+  masterId: number
+  index: Index
+}
 
 const namePrefix = 'Account '
 

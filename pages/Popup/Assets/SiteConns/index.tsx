@@ -1,7 +1,6 @@
 import { ChevronDownIcon } from '@chakra-ui/icons'
 import {
   Box,
-  Center,
   Checkbox,
   Collapse,
   Divider,
@@ -20,9 +19,9 @@ import {
 import { useCallback, useEffect, useState } from 'react'
 import { FaGlobeAmericas } from 'react-icons/fa'
 
-import { useActive, useActiveNetwork, useActiveWallet } from '~lib/active'
-import { IChainAccount, IConnectedSite, ISubWallet, IWallet } from '~lib/schema'
-import { useConnectedSitesBySite } from '~lib/services/connectedSiteService'
+import { useActive, useActiveNetwork } from '~lib/active'
+import { IChainAccount, ISubWallet, IWallet, mapBySubIndex } from '~lib/schema'
+import { useConnectedAccountsBySite } from '~lib/services/connectedSiteService'
 import { useCurrentSiteUrl, useSiteIconUrl } from '~lib/util'
 import {
   WalletEntry,
@@ -32,6 +31,7 @@ import {
   useReadonlyWalletTree
 } from '~pages/Popup/WalletDrawer/tree'
 
+import { WalletItem } from './WalletItem'
 import { WalletList } from './WalletList'
 
 export const SiteConnsModal = ({
@@ -47,11 +47,15 @@ export const SiteConnsModal = ({
 
   const network = useActiveNetwork()
 
-  const conns = useConnectedSitesBySite(origin)
+  const { accounts, activeAccount } = useConnectedAccountsBySite(
+    origin,
+    network
+  )
 
   const entries = useReadonlyWalletTree()
 
-  const { wallets, toggleOpen } = useWalletTreeByConns(entries, conns)
+  const { wallets, toggleOpen, notConnectedWallet, setNotConnectedWallet } =
+    useWalletTreeByConns(entries, accounts, activeAccount)
 
   const accountCount = wallets
     ? wallets.reduce((sum, entry) => sum + entry.subWallets.length, 0)
@@ -90,7 +94,16 @@ export const SiteConnsModal = ({
               </HStack>
 
               <Text color="gray.500" fontSize="sm">
-                You have {accountCount} account(s) connected to this site.
+                {accountCount ? (
+                  <>
+                    You have {accountCount} account(s) connected to this site.
+                  </>
+                ) : (
+                  <>
+                    Archmage is not connected to this site. To connect to a Web3
+                    site, find and click the connect button.
+                  </>
+                )}
               </Text>
             </Stack>
 
@@ -98,6 +111,22 @@ export const SiteConnsModal = ({
               <Divider />
 
               <Box w="full" minH="65px">
+                {notConnectedWallet && (
+                  <WalletItem
+                    network={network}
+                    walletEntry={notConnectedWallet}
+                    onToggleOpen={() =>
+                      setNotConnectedWallet((wallet) => {
+                        return (
+                          wallet && {
+                            ...wallet,
+                            isOpen: !wallet.isOpen
+                          }
+                        )
+                      })
+                    }
+                  />
+                )}
                 {wallets && (
                   <WalletList
                     network={network}
@@ -173,9 +202,11 @@ export type SubEntry = {
 
 function useWalletTreeByConns(
   wallets?: WalletEntry[],
-  conns?: IConnectedSite[]
+  connectedAccounts?: IChainAccount[],
+  activeConnectedAccount?: IChainAccount
 ) {
   const [entries, setEntries] = useState<Entry[]>()
+  const [notConnectedEntry, setNotConnectedEntry] = useState<Entry>()
 
   const {
     wallet: currentWallet,
@@ -184,20 +215,12 @@ function useWalletTreeByConns(
   } = useActive()
 
   useEffect(() => {
-    if (!wallets || !conns) {
+    if (!wallets || !connectedAccounts) {
       setEntries(undefined)
       return
     }
 
-    const connMap = new Map<number, Map<number, IConnectedSite>>()
-    conns.forEach((conn) => {
-      let map = connMap.get(conn.masterId)
-      if (!map) {
-        map = new Map()
-        connMap.set(conn.masterId, map)
-      }
-      map.set(conn.index, conn)
-    })
+    const connMap = mapBySubIndex(connectedAccounts)
 
     let isCurrentConnected = false
 
@@ -222,7 +245,8 @@ function useWalletTreeByConns(
           subWallet: subWallet.subWallet,
           account: subWallet.account,
           connId: conn.id,
-          isConnected: true
+          isConnected: true,
+          isActive: subWallet.account.id === activeConnectedAccount?.id
         } as SubEntry
 
         if (
@@ -247,17 +271,13 @@ function useWalletTreeByConns(
       } as Entry)
     }
 
-    if (entries.length && entries[0].subWallets.length) {
-      entries[0].subWallets[0].isActive = true
-    }
-
     if (
       !isCurrentConnected &&
       currentWallet &&
       currentSubWallet &&
       currentAccount
     ) {
-      entries.unshift({
+      setNotConnectedEntry({
         wallet: currentWallet,
         isOpen: true,
         subWallets: [
@@ -332,7 +352,14 @@ function useWalletTreeByConns(
       )
       return changed ? newEntries : oldEntries
     })
-  }, [conns, currentAccount, currentSubWallet, currentWallet, wallets])
+  }, [
+    wallets,
+    connectedAccounts,
+    activeConnectedAccount,
+    currentAccount,
+    currentSubWallet,
+    currentWallet
+  ])
 
   const toggleOpen = useCallback(
     (id: number) => {
@@ -355,6 +382,8 @@ function useWalletTreeByConns(
 
   return {
     wallets: entries,
-    toggleOpen
+    toggleOpen,
+    notConnectedWallet: notConnectedEntry,
+    setNotConnectedWallet: setNotConnectedEntry
   }
 }

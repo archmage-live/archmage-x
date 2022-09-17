@@ -20,7 +20,7 @@ import { FiCheckCircle, FiCopy } from 'react-icons/fi'
 
 import { useActive } from '~lib/active'
 import { formatNumber } from '~lib/formatNumber'
-import { useConnectedSitesBySite } from '~lib/services/connectedSiteService'
+import { useConnectedSite } from '~lib/services/connectedSiteService'
 import { useCryptoComparePrice } from '~lib/services/datasource/cryptocompare'
 import { getNetworkInfo } from '~lib/services/network'
 import { useBalance } from '~lib/services/provider'
@@ -37,14 +37,7 @@ export default function Assets({ onLoaded }: { onLoaded?: () => void }) {
 
   const origin = useCurrentSiteUrl()?.origin
 
-  const conns = useConnectedSitesBySite()
-  const connected =
-    account &&
-    conns &&
-    conns.find(
-      (conn) =>
-        conn.masterId === account.masterId && conn.index === account.index
-    )
+  const connected = !!useConnectedSite(account, origin)
 
   const { hasCopied, onCopy } = useClipboard(account?.address ?? '')
 

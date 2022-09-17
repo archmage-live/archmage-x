@@ -81,7 +81,7 @@ export const SubWalletItem = ({
 export const ConnIndicator = ({
   subWallet: { subWallet, account, isConnected, isActive, isCurrent }
 }: {
-  subWallet: SubEntry
+  subWallet: Partial<SubEntry>
 }) => {
   return (
     <>
@@ -107,7 +107,7 @@ export const ConnIndicator = ({
         </Tooltip>
       )}
 
-      {(!isConnected || !isCurrent) && (
+      {subWallet && account && (!isConnected || !isCurrent) && (
         <Button
           variant="ghost"
           colorScheme="purple"

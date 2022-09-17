@@ -14,7 +14,7 @@ import { useDebounce } from 'react-use'
 import { IChainAccount, INetwork, ISubWallet } from '~lib/schema'
 import {
   reorderSubWallets,
-  useChainAccounts,
+  useChainAccountsByWallet,
   useSubWallets
 } from '~lib/services/walletService'
 
@@ -43,7 +43,7 @@ export const SubWalletList = ({
 
   useDebounce(measure, 50, [measure, wallets])
 
-  const queriedAccounts = useChainAccounts(
+  const queriedAccounts = useChainAccountsByWallet(
     masterId,
     network.kind,
     network.chainId

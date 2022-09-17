@@ -1,11 +1,20 @@
 import assert from 'assert'
 import { useLiveQuery } from 'dexie-react-hooks'
+import { useMemo } from 'react'
+import { useAsync } from 'react-use'
 
+import { getActive, useActiveAccount } from '~lib/active'
 import { DB } from '~lib/db'
 import { ENV } from '~lib/env'
 import { SERVICE_WORKER_CLIENT, SERVICE_WORKER_SERVER } from '~lib/rpc'
-import { IChainAccount, booleanToNumber } from '~lib/schema'
+import {
+  IChainAccount,
+  INetwork,
+  booleanToNumber,
+  mapBySubIndex
+} from '~lib/schema'
 import { IConnectedSite } from '~lib/schema/connectedSite'
+import { WALLET_SERVICE, useChainAccounts } from '~lib/services/walletService'
 import { getCurrentTab, getTab } from '~lib/util'
 
 interface IConnectedSiteService {
@@ -233,6 +242,43 @@ function createConnectedSiteService() {
 
 export const CONNECTED_SITE_SERVICE = createConnectedSiteService()
 
+export function useConnectedSiteAccessTime() {
+  const account = useActiveAccount()
+  const conn = useConnectedSite(account)
+
+  useAsync(async () => {
+    if (!conn) {
+      return
+    }
+    const accessedAt = conn.info.accessedAt
+    if (typeof accessedAt === 'number' && Date.now() - accessedAt <= 1000) {
+      return
+    }
+
+    await DB.connectedSites.update(conn.id, {
+      info: {
+        ...conn.info,
+        accessedAt: Date.now()
+      }
+    })
+  }, [conn])
+}
+
+export function useConnectedSite(account?: IChainAccount, href?: string) {
+  return useLiveQuery(async () => {
+    if (!account) {
+      return
+    }
+    if (!href) {
+      href = (await Promise.resolve(getCurrentTab()))?.url
+    }
+    if (!href) {
+      return
+    }
+    return CONNECTED_SITE_SERVICE.getConnectedSite(account, href)
+  }, [account, href])
+}
+
 export function useConnectedSitesBySite(href?: string) {
   return useLiveQuery(async () => {
     if (!href) {
@@ -245,8 +291,125 @@ export function useConnectedSitesBySite(href?: string) {
   }, [href])
 }
 
-export function useConnectedSitesByWallet(account: IChainAccount) {
+export function useConnectedSitesByAccount(account: IChainAccount) {
   return useLiveQuery(async () => {
     return CONNECTED_SITE_SERVICE.getConnectedSitesByAccount(account)
   }, [account])
+}
+
+export function useConnectedAccountsBySite(href?: string, network?: INetwork) {
+  const conns = useConnectedSitesBySite(href)
+
+  const query = useMemo(() => {
+    if (!network || !conns) {
+      return
+    }
+    return {
+      networkKind: network.kind,
+      chainId: network.chainId,
+      subIndices: conns.map(({ masterId, index }) => ({ masterId, index }))
+    }
+  }, [network, conns])
+
+  const accounts = useChainAccounts(query)
+
+  const activeAccount = useActiveAccount()
+
+  const account = useMemo(() => {
+    if (!conns || !accounts) {
+      return
+    }
+    const activeIndex = findActiveFromConnectedAccounts(
+      conns,
+      accounts,
+      activeAccount
+    )
+    if (activeIndex < 0) {
+      return
+    }
+    return accounts[activeIndex]
+  }, [accounts, activeAccount, conns])
+
+  return {
+    accounts,
+    activeAccount: account
+  }
+}
+
+export async function getConnectedAccountsBySite(
+  href: string,
+  network: INetwork
+) {
+  // get connections by site
+  const conns = await CONNECTED_SITE_SERVICE.getConnectedSitesBySite(href)
+  if (!conns.length) {
+    return []
+  }
+
+  // get connected accounts
+  let accounts = await WALLET_SERVICE.getChainAccounts({
+    networkKind: network.kind,
+    chainId: network.chainId,
+    subIndices: conns.map(({ masterId, index }) => ({ masterId, index }))
+  })
+
+  assert(conns.length === accounts.length)
+
+  // filter accounts with valid address
+  accounts = accounts.filter((account) => !!account.address)
+  if (!accounts.length) {
+    return []
+  }
+
+  const { account: activeAccount } = await getActive()
+
+  const activeIndex = findActiveFromConnectedAccounts(
+    conns,
+    accounts,
+    activeAccount
+  )
+
+  assert(activeIndex > -1)
+  if (activeIndex > 0) {
+    // put active account at the front of the array
+    const [active] = accounts.splice(activeIndex, 1)
+    accounts.unshift(active)
+  }
+
+  return accounts
+}
+
+function findActiveFromConnectedAccounts(
+  conns: IConnectedSite[],
+  accounts: IChainAccount[],
+  activeAccount?: IChainAccount
+) {
+  const connMap = mapBySubIndex(conns)
+
+  let index = -1
+  let maxAccessedAt = -1
+  for (let i = 0; i < accounts.length; i++) {
+    const account = accounts[i]
+
+    if (!account.address) {
+      continue
+    }
+
+    if (account.id === activeAccount?.id) {
+      // prefer active account
+      index = i
+      break
+    }
+
+    const accessedAt = connMap.get(account.masterId)?.get(account.index)
+      ?.info.accessedAt
+
+    if ((accessedAt || 0) > maxAccessedAt) {
+      // secondly to most recently accessed
+      maxAccessedAt = accessedAt
+      index = i
+    }
+  }
+
+  return index
 }

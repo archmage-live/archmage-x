@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { useWizard } from 'react-use-wizard'
 
 import { AlertBox } from '~components/AlertBox'
-import { useActive } from '~lib/active'
+import { useActiveNetwork } from '~lib/active'
 import { ITokenList } from '~lib/schema'
 import { TOKEN_SERVICE } from '~lib/services/token'
 
@@ -20,7 +20,7 @@ export const ImportTokenList = ({
     setTitle('Import List')
   }, [setTitle])
 
-  const { network } = useActive()
+  const network = useActiveNetwork()
 
   const [isChecked, setIsChecked] = useState(false)
 

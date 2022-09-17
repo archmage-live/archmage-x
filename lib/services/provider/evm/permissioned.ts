@@ -9,16 +9,12 @@ import assert from 'assert'
 import { ethErrors } from 'eth-rpc-errors'
 import { ethers } from 'ethers'
 
-import {
-  getActive,
-  getActiveNetworkByKind,
-  setActiveNetwork
-} from '~lib/active'
+import { getActiveNetworkByKind, setActiveNetwork } from '~lib/active'
 import { NetworkKind } from '~lib/network'
 import { EvmChainInfo, EvmExplorer, NativeCurrency } from '~lib/network/evm'
 import { Context } from '~lib/rpc'
 import { IChainAccount, INetwork } from '~lib/schema'
-import { CONNECTED_SITE_SERVICE } from '~lib/services/connectedSiteService'
+import { getConnectedAccountsBySite } from '~lib/services/connectedSiteService'
 import {
   CONSENT_SERVICE,
   ConsentType,
@@ -28,7 +24,6 @@ import {
 } from '~lib/services/consentService'
 import { NETWORK_SERVICE } from '~lib/services/network'
 import { PASSWORD_SERVICE } from '~lib/services/passwordService'
-import { WALLET_SERVICE } from '~lib/services/walletService'
 
 import { EvmProvider } from '.'
 
@@ -127,49 +122,7 @@ export class EvmPermissionedProvider {
   }
 
   async getConnectedAccounts() {
-    // get connections by site
-    const connections = await CONNECTED_SITE_SERVICE.getConnectedSitesBySite(
-      this.origin
-    )
-    if (!connections.length) {
-      return []
-    }
-
-    // get connected accounts
-    let accounts = await WALLET_SERVICE.getChainAccounts(
-      connections.map((conn) => {
-        return {
-          masterId: conn.masterId,
-          index: conn.index,
-          networkKind: NetworkKind.EVM,
-          chainId: this.network.chainId
-        }
-      })
-    )
-
-    // filter accounts with valid address
-    accounts = accounts.filter((account) => !!account.address)
-    if (!accounts.length) {
-      return accounts
-    }
-
-    let index = -1
-    const { account: activeAccount } = await getActive()
-    if (activeAccount?.networkKind === NetworkKind.EVM) {
-      // prefer active account
-      index = accounts.findIndex((account) => account.id === activeAccount.id)
-    }
-    if (index < 0) {
-      // fallback to last account
-      // TODO: select recently visited
-      index = accounts.length - 1
-    }
-
-    // put active account at the front of the array
-    const [active] = accounts.splice(index, 1)
-    accounts.unshift(active)
-
-    return accounts
+    return getConnectedAccountsBySite(this.origin, this.network)
   }
 
   async send(ctx: Context, method: string, params: Array<any>): Promise<any> {
@@ -214,7 +167,12 @@ export class EvmPermissionedProvider {
       // pick out ethers error
       // TODO: is this enough?
       if ('code' in err && 'reason' in err) {
-        const err2: any = new Error(err.reason)
+        let message = err.reason
+        if (err.reason?.includes('processing response error')) {
+          const { body } = err
+          message = body
+        }
+        const err2: any = new Error(message)
         err2.code = err.code
         throw err2
       } else {

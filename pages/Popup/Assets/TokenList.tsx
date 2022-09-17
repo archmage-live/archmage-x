@@ -1,7 +1,7 @@
 import { Button, Icon, Stack, Text, useDisclosure } from '@chakra-ui/react'
 import { MdOutlineFormatListBulleted } from 'react-icons/md'
 
-import { useActive } from '~lib/active'
+import { useActive, useActiveAccount } from '~lib/active'
 import { IToken, TokenVisibility } from '~lib/schema'
 import { useCoinGeckoTokensPrice } from '~lib/services/datasource/coingecko'
 import { useTokens } from '~lib/services/token'
@@ -70,7 +70,7 @@ export const TokenList = ({
 export const TokenListSection = () => {
   const { isOpen, onOpen, onClose } = useDisclosure()
 
-  const { account } = useActive()
+  const account = useActiveAccount()
   const { fetchTokens } = useTokens(account)
 
   return (

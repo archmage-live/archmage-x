@@ -258,6 +258,11 @@ export function useActiveWallet() {
   return { wallet, subWallet }
 }
 
+export function useActiveAccount() {
+  const [account] = useAtom(accountAtom)
+  return account
+}
+
 export function useActiveBuild() {
   const network = useActiveNetworkBuild()
   const { wallet, subWallet } = useActiveWalletBuild()
@@ -294,7 +299,7 @@ export function useActiveBuild() {
 export function useActive() {
   const network = useActiveNetwork()
   const { wallet, subWallet } = useActiveWallet()
-  const [account] = useAtom(accountAtom)
+  const account = useActiveAccount()
 
   return {
     network,

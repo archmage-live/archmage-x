@@ -94,8 +94,13 @@ export interface IWalletService {
 
   getChainAccounts(
     query:
-      | (number | ChainAccountIndex)[]
-      | { masterId?: number; networkKind: NetworkKind; chainId: ChainId }
+      | number[]
+      | {
+          networkKind: NetworkKind
+          chainId: ChainId
+          masterId?: number
+          subIndices?: SubIndex[]
+        }
   ): Promise<IChainAccount[]>
 
   getSubWallets(query?: number | SubIndex[]): Promise<ISubWallet[]>
@@ -171,41 +176,54 @@ class WalletServicePartial implements IWalletService {
 
   async getChainAccounts(
     query:
-      | (number | ChainAccountIndex)[]
-      | { masterId?: number; networkKind: NetworkKind; chainId: ChainId }
+      | number[]
+      | {
+          networkKind: NetworkKind
+          chainId: ChainId
+          masterId?: number
+          subIndices?: SubIndex[]
+        }
   ): Promise<IChainAccount[]> {
     if (Array.isArray(query)) {
       if (!query.length) {
         return []
       }
-      let wallets
-      if (typeof query[0] === 'number') {
-        wallets = await DB.chainAccounts
-          .where('id')
-          .anyOf(query as number[])
-          .toArray()
-      } else {
-        // NOTE: no ensureChainAccounts here
-        // TODO
-        const anyOf = (query as ChainAccountIndex[]).map(
-          ({ masterId, index, networkKind, chainId }) => [
+      const accounts = await DB.chainAccounts
+        .where('id')
+        .anyOf(query as number[])
+        .toArray()
+
+      assert(accounts.length === query.length)
+      return accounts
+    } else {
+      const { networkKind, chainId, masterId, subIndices } = query
+
+      if (subIndices) {
+        if (!subIndices.length) {
+          return []
+        }
+
+        for (const { masterId } of subIndices) {
+          await WALLET_SERVICE.ensureChainAccounts(
             masterId,
-            index,
             networkKind,
             chainId
-          ]
-        )
-        wallets = await DB.chainAccounts
-          .where('[masterId+index+networkKind+chainId]')
+          )
+        }
+
+        const anyOf = subIndices.map(({ masterId, index }) => [
+          query.networkKind,
+          query.chainId,
+          masterId,
+          index
+        ])
+        const accounts = await DB.chainAccounts
+          .where('[networkKind+chainId+masterId+index]')
           .anyOf(anyOf)
           .toArray()
-      }
-      assert(wallets.length === query.length)
-      return wallets
-    } else {
-      const { masterId, networkKind, chainId } = query
-
-      if (typeof masterId === 'number') {
+        assert(accounts.length === subIndices.length)
+        return accounts
+      } else if (typeof masterId === 'number') {
         await WALLET_SERVICE.ensureChainAccounts(masterId, networkKind, chainId)
 
         return DB.chainAccounts
@@ -217,6 +235,7 @@ class WalletServicePartial implements IWalletService {
           .toArray()
       } else {
         await WALLET_SERVICE.ensureAllChainAccounts(networkKind, chainId)
+
         return DB.chainAccounts
           .where('[networkKind+chainId+masterId+index]')
           .between(
@@ -691,7 +710,7 @@ export function useSubWalletsCount(walletId?: number) {
   }, [walletId])
 }
 
-export function useChainAccounts(
+export function useChainAccountsByWallet(
   id?: number,
   networkKind?: NetworkKind,
   chainId?: number | string
@@ -710,6 +729,24 @@ export function useChainAccounts(
       chainId
     })
   }, [id, networkKind, chainId])
+}
+
+export function useChainAccounts(
+  query?:
+    | number[]
+    | {
+        networkKind: NetworkKind
+        chainId: ChainId
+        masterId?: number
+        subIndices?: SubIndex[]
+      }
+) {
+  return useLiveQuery(async () => {
+    if (query === undefined) {
+      return
+    }
+    return WALLET_SERVICE.getChainAccounts(query)
+  }, [query])
 }
 
 export function useChainAccount(id?: number) {
