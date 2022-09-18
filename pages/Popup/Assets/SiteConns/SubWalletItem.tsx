@@ -133,7 +133,7 @@ export const ConnIndicator = ({
 }
 
 export const ConnMenu = ({
-  subWallet: { connId }
+  subWallet: { account }
 }: {
   subWallet: SubEntry
 }) => {
@@ -152,9 +152,9 @@ export const ConnMenu = ({
             icon={<Icon as={VscDebugDisconnect} />}
             iconSpacing={2}
             onClick={async () => {
-              if (connId !== undefined) {
-                await CONNECTED_SITE_SERVICE.disconnectSite(connId)
-              }
+              const href = (await getCurrentTab())?.url
+              if (!href) return
+              await CONNECTED_SITE_SERVICE.disconnectSite({ account, href })
             }}>
             Disconnect
           </MenuItem>

@@ -1,4 +1,5 @@
 import {
+  Box,
   Button,
   Center,
   Divider,
@@ -20,7 +21,10 @@ import { FiCheckCircle, FiCopy } from 'react-icons/fi'
 
 import { useActive } from '~lib/active'
 import { formatNumber } from '~lib/formatNumber'
-import { useConnectedSite } from '~lib/services/connectedSiteService'
+import {
+  useConnectedSite,
+  useConnectedSiteAccess
+} from '~lib/services/connectedSiteService'
 import { useCryptoComparePrice } from '~lib/services/datasource/cryptocompare'
 import { getNetworkInfo } from '~lib/services/network'
 import { useBalance } from '~lib/services/provider'
@@ -37,7 +41,8 @@ export default function Assets({ onLoaded }: { onLoaded?: () => void }) {
 
   const origin = useCurrentSiteUrl()?.origin
 
-  const connected = !!useConnectedSite(account, origin)
+  const conn = useConnectedSiteAccess(account, origin)
+  const connected = conn !== undefined ? !!conn : undefined
 
   const { hasCopied, onCopy } = useClipboard(account?.address ?? '')
 
@@ -66,42 +71,47 @@ export default function Assets({ onLoaded }: { onLoaded?: () => void }) {
         <Stack w="full" spacing={6}>
           <Stack w="full" spacing={4}>
             <HStack justify="space-between" minH={16}>
-              <Tooltip
-                label={
-                  origin && !origin.startsWith('chrome')
-                    ? (connected ? 'Connected to ' : 'Not connected to ') +
-                      origin
-                    : ''
-                }
-                placement="top-start">
-                <IconButton
-                  variant="link"
-                  aria-label="Show accounts connected to this site"
-                  icon={
-                    connected ? (
-                      <Center
-                        w="4"
-                        h="4"
-                        borderRadius="50%"
-                        bg={'green.500'}
-                        _hover={{ bg: 'green.600' }}
-                        transition="background 0.2s ease-out"
-                      />
-                    ) : (
-                      <Center
-                        w="4"
-                        h="4"
-                        borderRadius="50%"
-                        borderWidth="2px"
-                        borderColor="red.500"
-                        _hover={{ borderColor: 'red.600' }}
-                        transition="border-color 0.2s ease-out"
-                      />
-                    )
-                  }
-                  onClick={onConnsOpen}
-                />
-              </Tooltip>
+              <Center w="24px">
+                {connected !== undefined && (
+                  <Tooltip
+                    label={
+                      origin && !origin.startsWith('chrome')
+                        ? (connected ? 'Connected to ' : 'Not connected to ') +
+                          origin
+                        : ''
+                    }
+                    placement="top-start">
+                    <IconButton
+                      variant="link"
+                      minW={4}
+                      aria-label="Show accounts connected to this site"
+                      icon={
+                        connected ? (
+                          <Center
+                            w="4"
+                            h="4"
+                            borderRadius="50%"
+                            bg={'green.500'}
+                            _hover={{ bg: 'green.600' }}
+                            transition="background 0.2s ease-out"
+                          />
+                        ) : (
+                          <Center
+                            w="4"
+                            h="4"
+                            borderRadius="50%"
+                            borderWidth="2px"
+                            borderColor="red.500"
+                            _hover={{ borderColor: 'red.600' }}
+                            transition="border-color 0.2s ease-out"
+                          />
+                        )
+                      }
+                      onClick={onConnsOpen}
+                    />
+                  </Tooltip>
+                )}
+              </Center>
 
               <Tooltip
                 closeOnClick={false}
@@ -166,7 +176,9 @@ export default function Assets({ onLoaded }: { onLoaded?: () => void }) {
                 </Button>
               </Tooltip>
 
-              <AccountMenu />
+              <HStack w="24px" justify="end">
+                <AccountMenu />
+              </HStack>
             </HStack>
 
             <Divider />

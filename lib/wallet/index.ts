@@ -39,6 +39,8 @@ export function checkAddress(
   switch (networkKind) {
     case NetworkKind.EVM:
       return EvmWallet.checkAddress(address)
+    case NetworkKind.COSM:
+      return CosmWallet.checkAddress(address)
     default:
       return false
   }

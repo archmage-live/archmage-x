@@ -93,7 +93,7 @@ export const SiteConnsModal = ({
                 </Text>
               </HStack>
 
-              <Text color="gray.500" fontSize="sm">
+              <Text color="gray.500" fontSize="md">
                 {accountCount ? (
                   <>
                     You have {accountCount} account(s) connected to this site.
@@ -107,74 +107,82 @@ export const SiteConnsModal = ({
               </Text>
             </Stack>
 
-            <Stack spacing={4}>
-              <Divider />
+            {accountCount && (
+              <>
+                <Stack spacing={4}>
+                  <Divider />
 
-              <Box w="full" minH="65px">
-                {notConnectedWallet && (
-                  <WalletItem
-                    network={network}
-                    walletEntry={notConnectedWallet}
-                    onToggleOpen={() =>
-                      setNotConnectedWallet((wallet) => {
-                        return (
-                          wallet && {
-                            ...wallet,
-                            isOpen: !wallet.isOpen
-                          }
-                        )
-                      })
-                    }
-                  />
-                )}
-                {wallets && (
-                  <WalletList
-                    network={network}
-                    wallets={wallets}
-                    onToggleOpen={toggleOpen}
-                  />
-                )}
-              </Box>
+                  <Box w="full" minH="65px">
+                    {notConnectedWallet && (
+                      <WalletItem
+                        network={network}
+                        walletEntry={notConnectedWallet}
+                        onToggleOpen={() =>
+                          setNotConnectedWallet((wallet) => {
+                            return (
+                              wallet && {
+                                ...wallet,
+                                isOpen: !wallet.isOpen
+                              }
+                            )
+                          })
+                        }
+                      />
+                    )}
+                    {wallets && (
+                      <WalletList
+                        network={network}
+                        wallets={wallets}
+                        onToggleOpen={toggleOpen}
+                      />
+                    )}
+                  </Box>
 
-              <Divider />
-            </Stack>
+                  <Divider />
+                </Stack>
 
-            <Stack w="full" spacing={0}>
-              <HStack
-                h={12}
-                justify="space-between"
-                cursor="pointer"
-                onClick={onPermissionsToggle}>
-                <Text fontWeight="medium">Permissions</Text>
+                <Stack w="full" spacing={0}>
+                  <HStack
+                    h={12}
+                    justify="space-between"
+                    cursor="pointer"
+                    onClick={onPermissionsToggle}>
+                    <Text fontWeight="medium">Permissions</Text>
 
-                <Text fontSize="3xl" color="gray.500">
-                  <ChevronDownIcon
-                    transition="all 0.2s ease-out"
-                    transform={isPermissionsOpen ? 'rotate(180deg)' : undefined}
-                  />
-                </Text>
-              </HStack>
+                    <Text fontSize="3xl" color="gray.500">
+                      <ChevronDownIcon
+                        transition="all 0.2s ease-out"
+                        transform={
+                          isPermissionsOpen ? 'rotate(180deg)' : undefined
+                        }
+                      />
+                    </Text>
+                  </HStack>
 
-              <Collapse in={isPermissionsOpen} animateOpacity>
-                <Box
-                  w="full"
-                  px={4}
-                  py={2}
-                  borderWidth="1px"
-                  borderRadius="8px">
-                  <Stack color="gray.500">
-                    <Text>You have authorized the following permissions:</Text>
-                    <HStack>
-                      <Checkbox isDisabled defaultChecked color="black" />
-                      <Text>
-                        See address, account balance, activity and suggest
-                        transactions to approve
-                      </Text>
-                    </HStack>
-                  </Stack>
-                </Box>
-              </Collapse>
-            </Stack>
+                  <Collapse in={isPermissionsOpen} animateOpacity>
+                    <Box
+                      w="full"
+                      px={4}
+                      py={2}
+                      borderWidth="1px"
+                      borderRadius="8px">
+                      <Stack color="gray.500">
+                        <Text>
+                          You have authorized the following permissions:
+                        </Text>
+                        <HStack>
+                          <Checkbox isDisabled defaultChecked color="black" />
+                          <Text>
+                            See address, account balance, activity and suggest
+                            transactions to approve
+                          </Text>
+                        </HStack>
+                      </Stack>
+                    </Box>
+                  </Collapse>
+                </Stack>
+              </>
+            )}
           </Stack>
         </ModalBody>
       </ModalContent>
@@ -183,7 +191,6 @@ export const SiteConnsModal = ({
 }
 
 export type ConnStatus = {
-  connId?: number
   isConnected: boolean
   isActive: boolean
   isCurrent: boolean
@@ -244,7 +251,6 @@ function useWalletTreeByConns(
         const subEntry = {
           subWallet: subWallet.subWallet,
           account: subWallet.account,
-          connId: conn.id,
           isConnected: true,
           isActive: subWallet.account.id === activeConnectedAccount?.id
         } as SubEntry
@@ -288,6 +294,8 @@ function useWalletTreeByConns(
           } as SubEntry
         ]
       } as Entry)
+    } else {
+      setNotConnectedEntry(undefined)
     }
 
     setEntries((oldEntries) => {
@@ -320,8 +328,7 @@ function useWalletTreeByConns(
             isSameAccount(subEntry.account, oldSubEntry.account) &&
             subEntry.isConnected === oldSubEntry.isConnected &&
             subEntry.isActive === oldSubEntry.isActive &&
-            subEntry.isCurrent === oldSubEntry.isCurrent &&
-            subEntry.connId === oldSubEntry.connId
+            subEntry.isCurrent === oldSubEntry.isCurrent
           ) {
             return oldSubEntry
           }

@@ -47,14 +47,65 @@ interface IConnectedSiteService {
     connected?: boolean
   ): Promise<IConnectedSite[]>
 
-  disconnectSite(id: number): Promise<void>
+  disconnectSite(
+    query: number | { account: IChainAccount; href: string }
+  ): Promise<void>
 
-  disconnectSitesByWallet(account: IChainAccount): Promise<void>
+  disconnectSitesByAccount(account: IChainAccount): Promise<void>
 
   disconnectSitesBySite(href: string): Promise<void>
 }
 
-class ConnectedSiteService implements IConnectedSiteService {
+// @ts-ignore
+class ConnectedSiteServicePartial implements IConnectedSiteService {
+  async getConnectedSite(
+    account: IChainAccount,
+    href: string,
+    connected = true
+  ): Promise<IConnectedSite | undefined> {
+    const origin = new URL(href).origin
+    return DB.connectedSites
+      .where('[masterId+index+origin+connected]')
+      .equals([
+        account.masterId,
+        account.index,
+        origin,
+        booleanToNumber(connected)
+      ] as Array<any>)
+      .first()
+  }
+
+  async getConnectedSitesByAccount(
+    account: IChainAccount,
+    connected = true
+  ): Promise<IConnectedSite[]> {
+    return DB.connectedSites
+      .where('[masterId+index+connected]')
+      .equals([
+        account.masterId,
+        account.index,
+        booleanToNumber(connected)
+      ] as Array<any>)
+      .toArray()
+  }
+
+  async getConnectedSitesBySite(
+    href: string,
+    connected: boolean | undefined = true
+  ): Promise<IConnectedSite[]> {
+    const origin = new URL(href).origin
+    if (typeof connected === 'boolean') {
+      return DB.connectedSites
+        .where('[origin+connected]')
+        .equals([origin, booleanToNumber(connected)])
+        .toArray()
+    } else {
+      return DB.connectedSites.where('origin').equals(origin).toArray()
+    }
+  }
+}
+
+class ConnectedSiteService extends ConnectedSiteServicePartial {
   async connectSite(
     account: IChainAccount,
     href: string,
@@ -159,57 +210,22 @@ class ConnectedSiteService implements IConnectedSiteService {
     return bulkPut
   }
 
-  async getConnectedSite(
-    account: IChainAccount,
-    href: string,
-    connected = true
-  ): Promise<IConnectedSite | undefined> {
-    const origin = new URL(href).origin
-    return DB.connectedSites
-      .where('[masterId+index+origin+connected]')
-      .equals([
-        account.masterId,
-        account.index,
-        origin,
-        booleanToNumber(connected)
-      ] as Array<any>)
-      .first()
-  }
-
-  async getConnectedSitesByAccount(
-    account: IChainAccount,
-    connected = true
-  ): Promise<IConnectedSite[]> {
-    return DB.connectedSites
-      .where('[masterId+index+connected]')
-      .equals([
-        account.masterId,
-        account.index,
-        booleanToNumber(connected)
-      ] as Array<any>)
-      .toArray()
-  }
-
-  async getConnectedSitesBySite(
-    href: string,
-    connected: boolean | undefined = true
-  ): Promise<IConnectedSite[]> {
-    const origin = new URL(href).origin
-    if (typeof connected === 'boolean') {
-      return DB.connectedSites
-        .where('[origin+connected]')
-        .equals([origin, booleanToNumber(connected)])
-        .toArray()
+  async disconnectSite(
+    query: number | { account: IChainAccount; href: string }
+  ) {
+    if (typeof query === 'number') {
+      await DB.connectedSites.update(query, { connected: false })
     } else {
-      return DB.connectedSites.where('origin').equals(origin).toArray()
+      const { account, href } = query
+      const conn = await this.getConnectedSite(account, href)
+      if (!conn) {
+        return
+      }
+      await DB.connectedSites.update(conn.id, { connected: false })
     }
   }
 
-  async disconnectSite(id: number) {
-    await DB.connectedSites.update(id, { connected: false })
-  }
-
-  async disconnectSitesByWallet(account: IChainAccount) {
+  async disconnectSitesByAccount(account: IChainAccount) {
     await DB.connectedSites
       .where('[masterId+index+connected]')
       .equals([
@@ -236,15 +252,18 @@ function createConnectedSiteService() {
     SERVICE_WORKER_SERVER.registerService(serviceName, service)
     return service
   } else {
-    return SERVICE_WORKER_CLIENT.service<IConnectedSiteService>(serviceName)
+    return SERVICE_WORKER_CLIENT.service<IConnectedSiteService>(
+      serviceName,
+      // @ts-ignore
+      new ConnectedSiteServicePartial()
+    )
   }
 }
 
 export const CONNECTED_SITE_SERVICE = createConnectedSiteService()
 
-export function useConnectedSiteAccessTime() {
-  const account = useActiveAccount()
-  const conn = useConnectedSite(account)
+export function useConnectedSiteAccess(account?: IChainAccount, href?: string) {
+  const conn = useConnectedSite(account, href)
 
   useAsync(async () => {
     if (!conn) {
@@ -262,6 +281,8 @@ export function useConnectedSiteAccessTime() {
       }
     })
   }, [conn])
+
+  return conn
 }
 
 export function useConnectedSite(account?: IChainAccount, href?: string) {
@@ -275,7 +296,8 @@ export function useConnectedSite(account?: IChainAccount, href?: string) {
     if (!href) {
       return
     }
-    return CONNECTED_SITE_SERVICE.getConnectedSite(account, href)
+    const conn = await CONNECTED_SITE_SERVICE.getConnectedSite(account, href)
+    return conn || null
   }, [account, href])
 }
 

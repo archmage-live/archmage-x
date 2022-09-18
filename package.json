@@ -20,6 +20,7 @@
     "@chakra-ui/react": "^2.2.1",
     "@chakra-ui/theme-tools": "^2.0.2",
     "@cosmjs/crypto": "^0.28.10",
+    "@cosmjs/encoding": "^0.29.0",
     "@cosmjs/proto-signing": "^0.28.10",
     "@ctrl/tinycolor": "^3.4.1",
     "@emotion/react": "^11.9.3",

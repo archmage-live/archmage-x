@@ -1,4 +1,5 @@
 import { stringToPath } from '@cosmjs/crypto'
+import { normalizeBech32 } from '@cosmjs/encoding'
 import {
   AccountData,
   DirectSecp256k1HdWallet,
@@ -98,5 +99,13 @@ export class CosmWallet implements SigningWallet {
   async signTypedData(typedData: any): Promise<string> {
     // TODO
     throw new Error('not implemented')
+  }
+
+  static checkAddress(address: string): string | false {
+    try {
+      return normalizeBech32(address)
+    } catch {
+      return false
+    }
   }
 }
