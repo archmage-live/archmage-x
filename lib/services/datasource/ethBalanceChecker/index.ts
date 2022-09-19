@@ -6,6 +6,9 @@ import {
 } from 'eth-balance-checker/lib/ethers'
 
 import { EvmProvider } from '~lib/services/provider/evm'
+import { AddressZero } from "@ethersproject/constants";
+
+const NATIVE_TOKEN = AddressZero
 
 class EthBalanceCheckerApi {
   private static chainContracts: Map<number, string> = new Map([
@@ -25,10 +28,12 @@ class EthBalanceCheckerApi {
     [61, '0xfC701A6b65e1BcF59fb3BDbbe5cb41f35FC7E009']
   ])
 
+  NATIVE_TOKEN = NATIVE_TOKEN
+
   async getAddressBalances(
     provider: EvmProvider,
     address: string,
-    tokens: (string | '0x0')[] // '0x0' means native currency token
+    tokens: (string | typeof NATIVE_TOKEN)[] = [NATIVE_TOKEN] // '0x0' means native currency token
   ): Promise<Record<string, string> | undefined> {
     const network = await provider.getNetwork()
     const contractAddress = EthBalanceCheckerApi.chainContracts.get(
@@ -45,7 +50,7 @@ class EthBalanceCheckerApi {
   async getAddressesBalances(
     provider: EvmProvider,
     addresses: string[],
-    tokens: (string | '0x0')[] // '0x0' means native currency token
+    tokens: (string | typeof NATIVE_TOKEN)[] = [NATIVE_TOKEN] // '0x0' means native currency token
   ): Promise<Record<string, string>[] | undefined> {
     const network = await provider.getNetwork()
     const contractAddress = EthBalanceCheckerApi.chainContracts.get(

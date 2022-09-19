@@ -1,11 +1,14 @@
 import { Box } from '@chakra-ui/react'
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { useEffect, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useDebounce } from 'react-use'
 
 import { WalletId } from '~lib/active'
 import { INetwork } from '~lib/schema'
-import { SubWalletEntry } from '~pages/Popup/WalletDrawer/tree'
+import { useBalances } from '~lib/services/provider'
+import { Balance } from '~lib/services/token'
+import { isWalletGroup } from '~lib/wallet'
+import { SubWalletEntry, WalletEntry } from '~pages/Popup/WalletDrawer/tree'
 import { DeleteWalletOpts } from '~pages/Settings/SettingsWallets/DeleteSubWalletModal'
 
 import { SubWalletItem } from './SubWalletItem'
@@ -39,6 +42,15 @@ export const SubWalletList = ({
     getItemKey: (index) => subWallets![index].subWallet.id
   })
 
+  const virtualItems = walletsVirtualizer.getVirtualItems()
+
+  const balanceMap = usePaginatedBalances(
+    network,
+    subWallets,
+    virtualItems[0].index,
+    virtualItems[0].index + virtualItems.length
+  )
+
   useDebounce(
     () => {
       if (scrollIndex !== undefined) {
@@ -65,11 +77,14 @@ export const SubWalletList = ({
         <Box h={walletsVirtualizer.getTotalSize() + 'px'} position="relative">
           {walletsVirtualizer.getVirtualItems().map((item) => {
             const subWallet = subWallets[item.index]
-            const { subWallet: wallet, account } = subWallet
+            const {
+              subWallet: { masterId, id },
+              account
+            } = subWallet
 
             return (
               <Box
-                key={wallet.id}
+                key={id}
                 ref={item.measureElement}
                 position="absolute"
                 top={0}
@@ -81,10 +96,11 @@ export const SubWalletList = ({
                   <SubWalletItem
                     network={network}
                     subWallet={subWallet}
+                    balance={balanceMap.get(account.id)}
                     onSelected={() =>
                       onSelectedId({
-                        id: wallet.masterId,
-                        subId: wallet.id
+                        id: masterId,
+                        subId: id
                       })
                     }
                     onDelete={onDelete}
@@ -97,4 +113,72 @@ export const SubWalletList = ({
       </Box>
     </Box>
   )
+}
+
+export function usePaginatedBalances(
+  network: INetwork | undefined,
+  wallets: WalletEntry[] | SubWalletEntry[] | undefined,
+  startIndex: number,
+  endIndex: number
+) {
+  const [balanceMap, setBalanceMap] = useState(new Map<number, Balance>())
+
+  useEffect(() => {
+    setBalanceMap(new Map())
+  }, [network])
+
+  const pageSize = 100
+  const startPage = Math.floor(startIndex / pageSize)
+  const endPage = Math.floor((endIndex - 1) / pageSize) + 1
+  const start = startPage * pageSize
+  const end = endPage * pageSize
+  // console.log('start, end:', start, end)
+
+  const accounts = useMemo(() => {
+    if (isWalletEntries(wallets)) {
+      return wallets
+        .slice(start, end)
+        .filter(({ wallet }) => !isWalletGroup(wallet.type))
+        .map(({ subWallets }) => subWallets[0].account)
+    } else {
+      return wallets?.slice(start, end).map((subWallet) => subWallet.account)
+    }
+  }, [wallets, start, end])
+
+  const balances = useBalances(network, accounts)
+
+  useEffect(() => {
+    if (!balances || !accounts) {
+      return
+    }
+
+    setBalanceMap((oldBalances) => {
+      const balanceMap = new Map(oldBalances.entries())
+      let changed = false
+      for (let i = 0; i < accounts.length; i++) {
+        const account = accounts[i]
+        const balance = balances[i]
+        const existing = balanceMap.get(account.id)
+        if (
+          existing &&
+          existing.symbol === balance.symbol &&
+          existing.amount === balance.amount &&
+          existing.amountParticle === balance.amountParticle
+        ) {
+          continue
+        }
+        balanceMap.set(account.id, balance)
+        changed = true
+      }
+      return changed ? balanceMap : oldBalances
+    })
+  }, [accounts, balances])
+
+  return balanceMap
+}
+
+function isWalletEntries(
+  wallets: WalletEntry[] | SubWalletEntry[] | undefined
+): wallets is WalletEntry[] {
+  return !!(wallets?.length && (wallets[0] as WalletEntry).wallet)
 }

@@ -18,6 +18,7 @@ import { IPFS_GATEWAY_API } from '~lib/services/datasource/ipfsGateway'
 import { NETWORK_SERVICE } from '~lib/services/network'
 import { ProviderAdaptor } from '~lib/services/provider/types'
 import { getSigningWallet } from '~lib/wallet'
+import { ETH_BALANCE_CHECKER_API } from "~lib/services/datasource/ethBalanceChecker";
 
 const logger = new Logger(version)
 
@@ -184,6 +185,18 @@ export class EvmProviderAdaptor implements ProviderAdaptor {
   async getBalance(address: string): Promise<string> {
     const balance = await this.provider.getBalance(address)
     return balance.toString()
+  }
+
+  async getBalances(addresses: string[]): Promise<string[] | undefined> {
+    const balances = await ETH_BALANCE_CHECKER_API.getAddressesBalances(this.provider, addresses)
+    if (!balances) {
+      return
+    }
+    const result = balances.map(item => item[ETH_BALANCE_CHECKER_API.NATIVE_TOKEN])
+    if (result.some(item => !item)) {
+      return
+    }
+    return result
   }
 
   async getTransactions(address: string): Promise<any> {

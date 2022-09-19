@@ -348,7 +348,6 @@ function useWalletTreeByConns(
         }
       })
 
-      console.log(newEntries)
       console.log(
         `useWalletTreeByConns, get all entries: changed ${changed}, entries: ${
           newEntries.length

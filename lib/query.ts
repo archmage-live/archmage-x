@@ -33,7 +33,8 @@ export enum QueryService {
   CRYPTO_COMPARE = 'cryptoCompare',
   COIN_GECKO = 'coinGecko',
   FOUR_BYTE = 'fourByte',
-  CHAIN_LIST = 'chainList'
+  CHAIN_LIST = 'chainList',
+  ETH_BALANCE_CHECKER = 'ethBalanceChecker'
 }
 
 const QUERY_SERVICES = new Map<string, any>()

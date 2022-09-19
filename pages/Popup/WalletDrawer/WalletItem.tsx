@@ -18,7 +18,7 @@ import { Badge } from '~components/Badge'
 import { WalletId } from '~lib/active'
 import { formatNumber } from '~lib/formatNumber'
 import { INetwork } from '~lib/schema/network'
-import { useBalance } from '~lib/services/provider'
+import { Balance } from '~lib/services/token'
 import { WALLET_SERVICE } from '~lib/services/walletService'
 import { shortenAddress } from '~lib/utils'
 import { WalletType, getWalletTypeIdentifier, isWalletGroup } from '~lib/wallet'
@@ -31,6 +31,7 @@ import { SubWalletList } from './SubWalletList'
 interface WalletItemProps {
   network?: INetwork
   walletEntry: WalletEntry
+  balance?: Balance
   onToggleOpen: (id: number) => void
   onSelected: (selected: WalletId) => void
   onClose: () => void
@@ -40,6 +41,7 @@ interface WalletItemProps {
 export const WalletItem = ({
   network,
   walletEntry,
+  balance,
   onToggleOpen,
   onSelected,
   onClose,
@@ -59,8 +61,6 @@ export const WalletItem = ({
 
   const subWallet = !isWalletGroup(wallet.type) ? subWallets[0] : undefined
   const account = subWallet?.account
-
-  const balance = useBalance(network, account)
 
   const typeIdentifier = getWalletTypeIdentifier(wallet.type)
 

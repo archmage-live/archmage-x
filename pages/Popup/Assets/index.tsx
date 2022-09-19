@@ -22,7 +22,6 @@ import { FiCheckCircle, FiCopy } from 'react-icons/fi'
 import { useActive } from '~lib/active'
 import { formatNumber } from '~lib/formatNumber'
 import {
-  useConnectedSite,
   useConnectedSiteAccess
 } from '~lib/services/connectedSiteService'
 import { useCryptoComparePrice } from '~lib/services/datasource/cryptocompare'

@@ -1,7 +1,7 @@
 import { ChakraProvider } from '@chakra-ui/react'
 import { HashRouter, Route, Routes } from 'react-router-dom'
 
-import { QueryCacheProvider } from '~components/QueryCacheProvider'
+import { QueryProvider } from '~components/QueryProvider'
 import { useActiveBuild } from '~lib/active'
 import { LanguageProvider } from '~lib/i18n'
 import AddWalletPage from '~pages/AddWallet'
@@ -14,7 +14,7 @@ export default function Popup() {
   useActiveBuild()
 
   return (
-    <QueryCacheProvider>
+    <QueryProvider>
       <LanguageProvider>
         <ChakraProvider resetCSS theme={theme}>
           <HashRouter>
@@ -34,6 +34,6 @@ export default function Popup() {
           </HashRouter>
         </ChakraProvider>
       </LanguageProvider>
-    </QueryCacheProvider>
+    </QueryProvider>
   )
 }

@@ -5,6 +5,7 @@ import { useRef } from 'react'
 import { WalletId } from '~lib/active'
 import { INetwork } from '~lib/schema'
 import { isWalletGroup } from '~lib/wallet'
+import { usePaginatedBalances } from '~pages/Popup/WalletDrawer/SubWalletList'
 import { WalletEntry } from '~pages/Popup/WalletDrawer/tree'
 
 import { WalletItem } from './WalletItem'
@@ -49,6 +50,15 @@ export const WalletList = ({
     getItemKey: (index) => wallets[index].wallet.id
   })
 
+  const virtualItems = walletsVirtualizer.getVirtualItems()
+
+  const balanceMap = usePaginatedBalances(
+    network,
+    wallets,
+    virtualItems[0].index,
+    virtualItems[0].index + virtualItems.length
+  )
+
   return (
     <Box py={py}>
       <Box
@@ -61,7 +71,11 @@ export const WalletList = ({
         <Box h={walletsVirtualizer.getTotalSize() + 'px'} position="relative">
           {walletsVirtualizer.getVirtualItems().map((item) => {
             const walletEntry = wallets[item.index]!
-            const { wallet } = walletEntry
+            const { wallet, subWallets } = walletEntry
+
+            const subWallet = !isWalletGroup(wallet.type)
+              ? subWallets[0]
+              : undefined
 
             return (
               <Box
@@ -75,6 +89,7 @@ export const WalletList = ({
                 <WalletItem
                   network={network}
                   walletEntry={walletEntry}
+                  balance={subWallet && balanceMap.get(subWallet.account.id)}
                   onToggleOpen={onToggleOpen}
                   onSelected={onSelected}
                   onClose={onClose}
