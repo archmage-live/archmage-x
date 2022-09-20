@@ -26,6 +26,8 @@ import { getNetworkInfo } from '~lib/services/network'
 import { useBalance } from '~lib/services/provider'
 import { useCurrentSiteUrl } from '~lib/util'
 import { shortenAddress } from '~lib/utils'
+import { useDepositModal } from '~pages/Popup/Assets/Deposit'
+import { useSendModal } from '~pages/Popup/Assets/Send'
 import { SiteConnsModal } from '~pages/Popup/Assets/SiteConns'
 
 import { AccountMenu } from './AccountMenu'
@@ -63,6 +65,9 @@ export default function Assets({ onLoaded }: { onLoaded?: () => void }) {
     onOpen: onConnsOpen,
     onClose: onConnsClose
   } = useDisclosure()
+
+  const { onOpen: onSendOpen } = useSendModal()
+  const { onOpen: onDepositOpen } = useDepositModal()
 
   return (
     <Stack w="full" px={4} py={4} spacing={12}>
@@ -237,10 +242,18 @@ export default function Assets({ onLoaded }: { onLoaded?: () => void }) {
         </Stack>
 
         <HStack justify="center" spacing={4}>
-          <Button size="md" w={36} colorScheme={btnColorScheme}>
+          <Button
+            size="md"
+            w={36}
+            colorScheme={btnColorScheme}
+            onClick={onDepositOpen}>
             Deposit
           </Button>
-          <Button size="md" w={36} colorScheme={btnColorScheme}>
+          <Button
+            size="md"
+            w={36}
+            colorScheme={btnColorScheme}
+            onClick={onSendOpen}>
             Send
           </Button>
         </HStack>

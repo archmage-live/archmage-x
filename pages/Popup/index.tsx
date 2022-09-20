@@ -9,6 +9,7 @@ import { CONSENT_SERVICE } from '~lib/services/consentService'
 import ActivityPage from '~pages/Popup/Activity'
 import AssetsPage from '~pages/Popup/Assets'
 import ConsentPage from '~pages/Popup/Consent'
+import { ModalBox } from '~pages/Popup/ModalBox'
 import NFTsPage from '~pages/Popup/NFTs'
 import { OverlayCheckUnlocked } from '~pages/Popup/Overlay'
 import SettingsPage from '~pages/Popup/Settings'
@@ -93,16 +94,20 @@ export const HomePage = () => {
         <>
           <Toolbar />
 
-          <Box h="calc(100% - 131px)">
-            <LazyTabs index={tabIndex(navTarget)}>
-              <AssetsPage onLoaded={() => setLoaded(true)} />
-              {/*<NFTsPage />*/}
-              <ActivityPage />
-              <SettingsPage />
-            </LazyTabs>
-          </Box>
+          <Box w="full" h="calc(100% - 68px)" position="relative">
+            <ModalBox />
 
-          <Navbar value={navTarget} onChange={setNavTarget} />
+            <Box h="calc(100% - 63px)">
+              <LazyTabs index={tabIndex(navTarget)}>
+                <AssetsPage onLoaded={() => setLoaded(true)} />
+                {/*<NFTsPage />*/}
+                <ActivityPage />
+                <SettingsPage />
+              </LazyTabs>
+            </Box>
+
+            <Navbar value={navTarget} onChange={setNavTarget} />
+          </Box>
         </>
       )}
 
