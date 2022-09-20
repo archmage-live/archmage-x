@@ -1,9 +1,7 @@
 import { _fetchData, fetchJson as fetch } from '@ethersproject/web'
 import { ConnectionInfo, FetchJsonResponse } from '@ethersproject/web/src.ts'
 
-import { IFetchCache } from '~lib/schema'
-
-import { DB } from './db'
+import { CACHE_SERVICE, CacheCategory } from '~lib/services/cacheService'
 
 export async function fetchData<T = Uint8Array>(
   connection: string | ConnectionInfo,
@@ -27,24 +25,16 @@ export async function fetchDataWithCache<T = Uint8Array>(
   processFunc?: (value: Uint8Array, response: FetchJsonResponse) => T
 ): Promise<T> {
   const url = typeof connection === 'string' ? connection : connection.url
-  const cache = await DB.fetchCache.where('url').equals(url).first()
+  const cache = await CACHE_SERVICE.getCache1(CacheCategory.FETCH, url)
   if (
     cache &&
     (cacheTime === undefined || Date.now() - cache.cachedAt <= cacheTime)
   ) {
-    return cache.response
+    return cache.data
   }
 
   const response = await fetchData(connection, undefined, processFunc)
-  if (cache) {
-    await DB.fetchCache.update(cache.id, { response, cachedAt: Date.now() })
-  } else {
-    await DB.fetchCache.put({
-      url,
-      response,
-      cachedAt: Date.now()
-    } as IFetchCache)
-  }
+  await CACHE_SERVICE.setCache1(CacheCategory.FETCH, url, response)
   return response
 }
 
@@ -54,23 +44,15 @@ export async function fetchJsonWithCache(
   processFunc?: (value: any, response: FetchJsonResponse) => any
 ): Promise<any> {
   const url = typeof connection === 'string' ? connection : connection.url
-  const cache = await DB.fetchCache.where('url').equals(url).first()
+  const cache = await CACHE_SERVICE.getCache1(CacheCategory.FETCH, url)
   if (
     cache &&
     (cacheTime === undefined || Date.now() - cache.cachedAt <= cacheTime)
   ) {
-    return cache.response
+    return cache.data
   }
 
   const response = await fetchJson(connection, undefined, processFunc)
-  if (cache) {
-    await DB.fetchCache.update(cache.id, { response, cachedAt: Date.now() })
-  } else {
-    await DB.fetchCache.put({
-      url,
-      response,
-      cachedAt: Date.now()
-    } as IFetchCache)
-  }
+  await CACHE_SERVICE.setCache1(CacheCategory.FETCH, url, response)
   return response
 }

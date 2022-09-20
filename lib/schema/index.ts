@@ -12,8 +12,7 @@ export * from './tokenList'
 export * from './token'
 export * from './connectedSite'
 export * from './addressBook'
-export * from './fetchCache'
-export * from './queryCache'
+export * from './cache'
 
 // https://dexie.org/docs/Indexable-Type
 // non-indexable types:

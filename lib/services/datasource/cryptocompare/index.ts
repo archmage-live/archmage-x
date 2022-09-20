@@ -4,6 +4,7 @@ import { useMemo } from 'react'
 import { fetchJsonWithCache } from '~lib/fetch'
 import { QueryService } from '~lib/query'
 import { useQuoteCurrency } from '~lib/quoteCurrency'
+import { CacheCategory, useCache2 } from '~lib/services/cacheService'
 
 type PriceMultiFullRawItem = {
   TYPE: string // "5"
@@ -175,11 +176,19 @@ export function useCryptoComparePrice(currency?: string):
   | undefined {
   const { quoteCurrency, quoteCurrencySymbol } = useQuoteCurrency()
 
-  const { data: result } = useQuery(
+  const { data } = useQuery(
     [QueryService.CRYPTO_COMPARE, currency, quoteCurrency],
     async () =>
-      currency &&
-      CRYPTO_COMPARE_SERVICE.multiFullPrices([currency], quoteCurrency)
+      currency
+        ? CRYPTO_COMPARE_SERVICE.multiFullPrices([currency], quoteCurrency)
+        : undefined
+  )
+
+  const result: typeof data = useCache2(
+    CacheCategory.CRYPTO_COMPARE,
+    currency,
+    quoteCurrency,
+    data
   )
 
   return useMemo(() => {

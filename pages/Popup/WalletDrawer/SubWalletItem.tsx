@@ -82,7 +82,11 @@ export const SubWalletItem = ({
 
         <HStack w="calc(100% - 29.75px)" justify="space-between">
           <Text ps="32px" fontSize="xs" color="gray.500" textAlign="start">
-            {formatNumber(balance?.amount)} {balance?.symbol}
+            {balance && (
+              <>
+                {formatNumber(balance.amount)} {balance.symbol}
+              </>
+            )}
           </Text>
 
           <Box onClick={(event) => event.stopPropagation()}>

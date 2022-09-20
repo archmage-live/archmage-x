@@ -1,5 +1,4 @@
 import {
-  Box,
   Button,
   Center,
   Divider,
@@ -21,9 +20,7 @@ import { FiCheckCircle, FiCopy } from 'react-icons/fi'
 
 import { useActive } from '~lib/active'
 import { formatNumber } from '~lib/formatNumber'
-import {
-  useConnectedSiteAccess
-} from '~lib/services/connectedSiteService'
+import { useConnectedSiteAccess } from '~lib/services/connectedSiteService'
 import { useCryptoComparePrice } from '~lib/services/datasource/cryptocompare'
 import { getNetworkInfo } from '~lib/services/network'
 import { useBalance } from '~lib/services/provider'
@@ -49,12 +46,15 @@ export default function Assets({ onLoaded }: { onLoaded?: () => void }) {
   const price = useCryptoComparePrice(balance?.symbol)
 
   useEffect(() => {
-    if (balance) {
+    setTimeout(() => {
+      onLoaded?.()
+    }, 3000)
+    if (balance && price) {
       setTimeout(() => {
         onLoaded?.()
       }, 100)
     }
-  }, [balance, onLoaded])
+  }, [balance, price, onLoaded])
 
   const btnColorScheme = useColorModeValue('purple', undefined)
 

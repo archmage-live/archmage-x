@@ -3,28 +3,26 @@ import { Config, animals, uniqueNamesGenerator } from 'unique-names-generator'
 
 import {
   IAddressBook,
+  ICache,
   IChainAccount,
   IChainAccountAux,
   IConnectedSite,
-  IFetchCache,
   IHdPath,
   INetwork,
   IPendingTx,
-  IQueryCache,
   ISubWallet,
   IToken,
   ITokenList,
   ITransaction,
   IWallet,
   addressBookSchemaV1,
+  cacheSchemaV1,
   chainAccountAuxSchemaV1,
   chainAccountSchemaV1,
   connectedSiteSchemaV1,
-  fetchCacheSchemaV1,
   hdPathSchemaV1,
   networkSchemaV1,
   pendingTxSchemaV1,
-  queryCacheSchemaV1,
   subWalletSchemaV1,
   tokenListSchemaV1,
   tokenSchemaV1,
@@ -45,8 +43,7 @@ export class Database extends Dexie {
   tokens!: Dexie.Table<IToken, number>
   connectedSites!: Dexie.Table<IConnectedSite, number>
   addressBook!: Dexie.Table<IAddressBook, number>
-  fetchCache!: Dexie.Table<IFetchCache, string>
-  queryCache!: Dexie.Table<IQueryCache, number>
+  cache!: Dexie.Table<ICache, number>
 
   constructor() {
     super('database')
@@ -63,8 +60,7 @@ export class Database extends Dexie {
       tokens: tokenSchemaV1,
       connectedSites: connectedSiteSchemaV1,
       addressBook: addressBookSchemaV1,
-      fetchCache: fetchCacheSchemaV1,
-      queryCache: queryCacheSchemaV1
+      cache: cacheSchemaV1
     })
   }
 }

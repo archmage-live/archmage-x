@@ -1,12 +1,12 @@
 // https://github.com/wbobeirne/eth-balance-checker
 // A smart contract and library pair that allows you to check for multiple ERC20 and Ether balances across multiple addresses in a single RPC call.
+import { AddressZero } from '@ethersproject/constants'
 import {
   getAddressBalances,
   getAddressesBalances
 } from 'eth-balance-checker/lib/ethers'
 
 import { EvmProvider } from '~lib/services/provider/evm'
-import { AddressZero } from "@ethersproject/constants";
 
 const NATIVE_TOKEN = AddressZero
 

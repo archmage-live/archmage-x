@@ -5,6 +5,11 @@ import { useCallback, useMemo } from 'react'
 import { NetworkKind } from '~lib/network'
 import { QueryService } from '~lib/query'
 import { IChainAccount, INetwork } from '~lib/schema'
+import {
+  CacheCategory,
+  useCache3,
+  useCachesByKeys3
+} from '~lib/services/cacheService'
 import { getNetworkInfo } from '~lib/services/network'
 import { Balance } from '~lib/services/token'
 
@@ -25,13 +30,20 @@ export function useBalance(
   network?: INetwork,
   account?: IChainAccount
 ): Balance | undefined {
-  // TODO: cache
-  const { data: balance } = useQuery(
-    [QueryService.PROVIDER, network, account?.address, 'getBalance'],
+  const { data } = useQuery(
+    [QueryService.PROVIDER, network?.id, account?.address, 'getBalance'],
     async () =>
       network &&
       account?.address &&
       (await getProvider(network)).getBalance(account.address)
+  )
+
+  const balance = useCache3(
+    CacheCategory.PROVIDER,
+    network?.id,
+    'balance',
+    account?.address,
+    data
   )
 
   return useMemo(() => {
@@ -85,7 +97,7 @@ export function useBalances(
 
   // TODO: cache
   const { data: balances1, error: error } = useQuery(
-    [QueryService.ETH_BALANCE_CHECKER, network, addresses],
+    [QueryService.ETH_BALANCE_CHECKER, network?.id, addresses],
     getBalances
   )
 
@@ -103,29 +115,38 @@ export function useBalances(
   const queriesResult = useQueries({
     queries: addresses.map((address) => {
       return {
-        queryKey: [QueryService.PROVIDER, network, address, 'getBalance'],
+        queryKey: [QueryService.PROVIDER, network?.id, address, 'getBalance'],
         queryFn: async () => address && (await getBalance(address)),
         enabled: balances1 === null
       }
     })
   })
 
-  return useMemo(() => {
-    if (!network || !addresses.length) {
-      return undefined
-    }
-
-    const info = getNetworkInfo(network)
-
+  const queriedBalances = useMemo(() => {
     const balances2 = queriesResult.map(({ data, error }) => {
       if (error) {
         console.error(error)
       }
       return data
     })
-    const balances = balances1 || balances2
+    return balances1 || balances2
+  }, [balances1, queriesResult])
 
-    return balances.map((balance) => {
+  const balanceMap = useCachesByKeys3(
+    CacheCategory.PROVIDER,
+    network?.id,
+    'balance',
+    addresses,
+    queriedBalances
+  )
+
+  return useMemo(() => {
+    if (!network || !balanceMap) {
+      return undefined
+    }
+    const info = getNetworkInfo(network)
+    return addresses.map((address) => {
+      const balance = balanceMap.get(address)
       return {
         symbol: info.currencySymbol,
         amount: balance
@@ -136,5 +157,5 @@ export function useBalances(
         amountParticle: balance || '0'
       } as Balance
     })
-  }, [network, addresses, balances1, queriesResult])
+  }, [network, addresses, balanceMap])
 }

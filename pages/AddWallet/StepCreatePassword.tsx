@@ -86,7 +86,7 @@ export const StepCreatePassword = () => {
     }
     await PASSWORD_SERVICE.createPassword(password)
     assert(await PASSWORD_SERVICE.checkPassword(password))
-    nextStep()
+    await nextStep()
   }
 
   return (
@@ -104,7 +104,11 @@ export const StepCreatePassword = () => {
         </HStack>
       </Stack>
 
-      <form onSubmit={createPassword}>
+      <form
+        onSubmit={async (e) => {
+          e.preventDefault()
+          await createPassword()
+        }}>
         <Stack spacing="12">
           <InputGroup>
             <Input

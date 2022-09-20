@@ -1,6 +1,7 @@
 import { sha256 } from '@ethersproject/sha2'
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { useAsync } from 'react-use'
 
 import { useStorage } from '@plasmohq/storage'
 
@@ -104,10 +105,6 @@ export function usePassword(): {
   isLocked: boolean | undefined
   isUnlocked: boolean | undefined
 } {
-  const [exists, setExists] = useState<boolean | undefined>(undefined)
-  const [isLocked, setIsLocked] = useState<boolean | undefined>(undefined)
-  const [isUnlocked, setIsUnlocked] = useState<boolean | undefined>(undefined)
-
   const [p1] = useStorage({
     key: StoreKey.PASSWORD_HASH,
     area: StoreArea.LOCAL
@@ -117,22 +114,19 @@ export function usePassword(): {
     area: StoreArea.SESSION
   })
 
-  useEffect(() => {
-    const effect = async () => {
-      setExists(await PASSWORD.exists())
-      const isLocked = await PASSWORD.isLocked()
-      setIsLocked(isLocked)
-      setIsUnlocked(!isLocked)
+  const { value: result } = useAsync(async () => {
+    const exists = await PASSWORD.exists()
+    const isLocked = await PASSWORD.isLocked()
+    return {
+      exists,
+      isLocked,
+      isUnlocked: !isLocked
     }
-    effect()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [p1, p2])
 
-  return {
-    exists,
-    isLocked,
-    isUnlocked
-  }
+  return (
+    result || { exists: undefined, isLocked: undefined, isUnlocked: undefined }
+  )
 }
 
 export function useCheckUnlocked() {

@@ -14,11 +14,11 @@ import assert from 'assert'
 import { NetworkKind } from '~lib/network'
 import { EvmChainInfo } from '~lib/network/evm'
 import { IChainAccount, INetwork } from '~lib/schema'
+import { ETH_BALANCE_CHECKER_API } from '~lib/services/datasource/ethBalanceChecker'
 import { IPFS_GATEWAY_API } from '~lib/services/datasource/ipfsGateway'
 import { NETWORK_SERVICE } from '~lib/services/network'
 import { ProviderAdaptor } from '~lib/services/provider/types'
 import { getSigningWallet } from '~lib/wallet'
-import { ETH_BALANCE_CHECKER_API } from "~lib/services/datasource/ethBalanceChecker";
 
 const logger = new Logger(version)
 
@@ -188,12 +188,17 @@ export class EvmProviderAdaptor implements ProviderAdaptor {
   }
 
   async getBalances(addresses: string[]): Promise<string[] | undefined> {
-    const balances = await ETH_BALANCE_CHECKER_API.getAddressesBalances(this.provider, addresses)
+    const balances = await ETH_BALANCE_CHECKER_API.getAddressesBalances(
+      this.provider,
+      addresses
+    )
     if (!balances) {
       return
     }
-    const result = balances.map(item => item[ETH_BALANCE_CHECKER_API.NATIVE_TOKEN])
-    if (result.some(item => !item)) {
+    const result = balances.map(
+      (item) => item[ETH_BALANCE_CHECKER_API.NATIVE_TOKEN]
+    )
+    if (result.some((item) => !item)) {
       return
     }
     return result

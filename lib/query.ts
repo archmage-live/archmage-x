@@ -1,32 +1,6 @@
 import { QueryFunctionContext, QueryKey } from '@tanstack/query-core'
 import { useQuery } from '@tanstack/react-query'
-import {
-  PersistedClient,
-  Persister
-} from '@tanstack/react-query-persist-client'
 import assert from 'assert'
-
-import { DB } from '~lib/db'
-
-export function createQueryCachePersister(
-  id: string = 'queryCache'
-): Persister {
-  return {
-    persistClient: async (client: PersistedClient) => {
-      await DB.queryCache.put({
-        id,
-        persisted: client
-      })
-    },
-    restoreClient: async () => {
-      const cache = await DB.queryCache.where('id').equals(id).first()
-      return cache?.persisted
-    },
-    removeClient: async () => {
-      await DB.queryCache.where('id').equals(id).delete()
-    }
-  }
-}
 
 export enum QueryService {
   PROVIDER = 'provider',
