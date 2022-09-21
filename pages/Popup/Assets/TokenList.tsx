@@ -7,6 +7,7 @@ import { useCoinGeckoTokensPrice } from '~lib/services/datasource/coingecko'
 import { useTokens } from '~lib/services/token'
 import { ManageTokensModal } from '~pages/Popup/ManageTokensModal'
 
+import { useTokenDetailModal } from './TokenDetail'
 import { TokenItem } from './TokenItem'
 
 export enum TokenVisible {
@@ -18,9 +19,11 @@ export enum TokenVisible {
 }
 
 export const TokenList = ({
+  onClick,
   visible = TokenVisible.INCLUDES_WHITELIST,
   onChange
 }: {
+  onClick?: (token: IToken) => void
   visible?: TokenVisible
   onChange?: (token: IToken) => void
 }) => {
@@ -58,7 +61,7 @@ export const TokenList = ({
               currencySymbol={currencySymbol}
               price={prices?.get(token.token)}
               change24Hour={changes24Hour?.get(token.token)}
-              onClick={() => {}}
+              onClick={() => onClick?.(token)}
               onChange={() => onChange?.(token)}
             />
           )
@@ -73,9 +76,16 @@ export const TokenListSection = () => {
   const account = useActiveAccount()
   const { fetchTokens } = useTokens(account)
 
+  const { onOpen: onTokenDetailOpen, setToken } = useTokenDetailModal()
+
   return (
     <Stack w="full" align="center" spacing={4}>
-      <TokenList />
+      <TokenList
+        onClick={(token) => {
+          setToken(token)
+          onTokenDetailOpen()
+        }}
+      />
 
       <Button
         w={56}

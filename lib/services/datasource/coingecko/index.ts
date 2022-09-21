@@ -7,6 +7,7 @@ import { NetworkKind } from '~lib/network'
 import { QueryService } from '~lib/query'
 import { useQuoteCurrency } from '~lib/quoteCurrency'
 import { INetwork } from '~lib/schema'
+import { CacheCategory, useCachesByKeys3 } from '~lib/services/cacheService'
 import { PLATFORMS } from '~lib/services/datasource/coingecko/platforms'
 
 import { constants as Constants, ReturnObject, utils as Utils } from './helpers'
@@ -993,14 +994,14 @@ export function useCoinGeckoTokensPrice(
   tokens?: string[]
 ):
   | {
-      currencySymbol: string | undefined
+      currencySymbol: string
       prices: Map<string, number | undefined>
       changes24Hour: Map<string, number | undefined | null>
     }
   | undefined {
   const { quoteCurrency, quoteCurrencySymbol } = useQuoteCurrency()
 
-  const { data: result } = useQuery(
+  const { data: priceByToken } = useQuery(
     [
       QueryService.COIN_GECKO,
       network?.kind,
@@ -1020,18 +1021,35 @@ export function useCoinGeckoTokensPrice(
       if (!chain) {
         return
       }
-      return (await COIN_GECKO_SERVICE.simple.fetchTokenPrice(
+      const result = (await COIN_GECKO_SERVICE.simple.fetchTokenPrice(
         {
           contract_addresses: tokens,
           vs_currencies: quoteCurrency.toLowerCase()
         },
         chain
       )) as Record<string, Record<string, number>>
+      return new Map(
+        Object.entries(result).map(([addr, price]) => {
+          addr =
+            network.kind === NetworkKind.EVM
+              ? ethers.utils.getAddress(addr) // format returned evm address
+              : addr
+          return [addr, price]
+        })
+      )
     }
   )
 
+  const tokenPrices = useCachesByKeys3(
+    CacheCategory.COIN_GECKO,
+    network?.id,
+    `price-${quoteCurrency}`,
+    tokens,
+    priceByToken
+  )
+
   return useMemo(() => {
-    if (!network || !result) {
+    if (!network || !tokenPrices) {
       return undefined
     }
     const qc = quoteCurrency.toLowerCase()
@@ -1039,11 +1057,7 @@ export function useCoinGeckoTokensPrice(
 
     const prices = new Map()
     const changes24Hour = new Map()
-    for (const [token, price] of Object.entries(result)) {
-      const addr =
-        network.kind === NetworkKind.EVM
-          ? ethers.utils.getAddress(token) // format returned evm address
-          : token
+    for (const [addr, price] of tokenPrices) {
       prices.set(addr, price[qc])
       changes24Hour.set(addr, price[qcChange24Hour])
     }
@@ -1052,5 +1066,33 @@ export function useCoinGeckoTokensPrice(
       prices,
       changes24Hour
     }
-  }, [network, quoteCurrency, quoteCurrencySymbol, result])
+  }, [network, quoteCurrency, quoteCurrencySymbol, tokenPrices])
+}
+
+export function useCoinGeckoTokenPrice(
+  network?: INetwork,
+  token?: string
+):
+  | {
+      currencySymbol: string
+      price?: number
+      change24Hour?: number | null
+    }
+  | undefined {
+  const tokens = useMemo(() => {
+    return token ? [token] : undefined
+  }, [token])
+
+  const prices = useCoinGeckoTokensPrice(network, tokens)
+
+  return useMemo(() => {
+    if (!token || !prices) {
+      return undefined
+    }
+    return {
+      currencySymbol: prices.currencySymbol,
+      price: prices.prices.get(token),
+      change24Hour: prices.changes24Hour.get(token)
+    }
+  }, [token, prices])
 }

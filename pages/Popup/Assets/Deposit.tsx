@@ -1,6 +1,16 @@
-import { Button, Stack, Text, useColorModeValue } from '@chakra-ui/react'
+import { ChevronLeftIcon } from '@chakra-ui/icons'
+import {
+  Box,
+  Button,
+  HStack,
+  IconButton,
+  Stack,
+  Text,
+  useColorModeValue
+} from '@chakra-ui/react'
 import { atom } from 'jotai'
 import { QRCodeSVG } from 'qrcode.react'
+import * as React from 'react'
 
 import { CopyArea } from '~components/CopyIcon'
 import { useActive } from '~lib/active'
@@ -25,10 +35,23 @@ export const Deposit = ({ onClose }: { onClose: () => void }) => {
   return (
     <Stack h="full" px={4} pt={2} pb={4} justify="space-between">
       <Stack>
-        <Stack spacing={12}>
-          <Text textAlign="center" fontSize="3xl" fontWeight="medium">
-            Deposit
-          </Text>
+        <Stack spacing={24}>
+          <HStack justify="space-between" minH={16}>
+            <IconButton
+              icon={<ChevronLeftIcon fontSize="2xl" />}
+              aria-label="Close"
+              variant="ghost"
+              borderRadius="full"
+              size="sm"
+              onClick={onClose}
+            />
+
+            <Text textAlign="center" fontSize="3xl" fontWeight="medium">
+              Deposit
+            </Text>
+
+            <Box w={10}></Box>
+          </HStack>
 
           <Stack align="center" spacing={6}>
             <QRCodeSVG

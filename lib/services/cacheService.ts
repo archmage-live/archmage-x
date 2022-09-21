@@ -1,5 +1,4 @@
 import assert from 'assert'
-import { useEffect, useState } from 'react'
 import { useAsync } from 'react-use'
 // @ts-ignore
 import stableHash from 'stable-hash'
@@ -55,7 +54,8 @@ function formatKey(key: Key) {
 export enum CacheCategory {
   FETCH = 'fetch',
   PROVIDER = 'provider',
-  CRYPTO_COMPARE = 'cryptoCompare'
+  CRYPTO_COMPARE = 'cryptoCompare',
+  COIN_GECKO = 'coinGecko'
 }
 
 class CacheService {
@@ -72,42 +72,39 @@ class CacheService {
   ) {
     if (Array.isArray(key1)) {
       const key1s = key1.map(formatKey)
+      const key1Map = new Map(key1s.map((key1Str, i) => [key1Str, key1[i]]))
 
       const caches = await DB.cache
         .where('[category+key1]')
         .anyOf(key1s.map((key1) => [category, key1]))
         .toArray()
 
-      const cacheMap = new Map(caches.map((item) => [item.key1, item.data]))
-
-      return key1s.map((key1) => cacheMap.get(key1))
+      return new Map(caches.map((item) => [key1Map.get(item.key1), item.data]))
     } else if (Array.isArray(key2)) {
       assert(key1 !== undefined)
       key1 = formatKey(key1)
       const key2s = key2.map(formatKey)
+      const key2Map = new Map(key2s.map((key2Str, i) => [key2Str, key2[i]]))
 
       const caches = await DB.cache
         .where('[category+key1+key2]')
         .anyOf(key2s.map((key2) => [category, key1, key2]))
         .toArray()
 
-      const cacheMap = new Map(caches.map((item) => [item.key2, item.data]))
-
-      return key2s.map((key2) => cacheMap.get(key2))
+      return new Map(caches.map((item) => [key2Map.get(item.key2), item.data]))
     } else if (Array.isArray(key3)) {
       assert(key1 !== undefined && key2 !== undefined)
       key1 = formatKey(key1)
       key2 = formatKey(key2)
       const key3s = key3.map(formatKey)
+      const key3Map = new Map(key3s.map((key3Str, i) => [key3Str, key3[i]]))
 
       const caches = await DB.cache
         .where('[category+key1+key2+key3]')
         .anyOf(key3s.map((key3) => [category, key1, key2, key3]))
         .toArray()
 
-      const cacheMap = new Map(caches.map((item) => [item.key3, item.data]))
-
-      return key3s.map((key3) => cacheMap.get(key3))
+      return new Map(caches.map((item) => [key3Map.get(item.key3), item.data]))
     } else {
       throw new Error('_getCachesByKeys, invalid params')
     }
@@ -300,87 +297,6 @@ export function useCache_(
   return value
 }
 
-export function useCaches_(
-  category: CacheCategory,
-  key1?: Key | Key[],
-  key2?: Key | Key[],
-  key3?: Key[],
-  data?: any[]
-): Map<Key, any> | undefined {
-  const { value } = useAsync(async () => {
-    if (Array.isArray(key1)) {
-      if (data) {
-        assert(key1.length === data.length)
-        const add = data
-          .map((data, i) => [key1[i], data] as [Key, any])
-          .filter(([key1, data]) => key1 !== undefined && data !== undefined)
-        if (add.length) {
-          await CACHE_SERVICE.setCaches1(category, add)
-        }
-      }
-
-      const key1s = key1.filter((key1) => key1 !== undefined)
-
-      const result = await CACHE_SERVICE.getCachesByKeys1(category, key1s)
-      return new Map(key1s.map((key1, i) => [key1, result[i]]))
-    } else if (Array.isArray(key2)) {
-      if (key1 === undefined) {
-        return
-      }
-
-      if (data) {
-        assert(key2.length === data.length)
-        const add = data
-          .map((data, i) => [key1, key2[i], data] as [Key, Key, any])
-          .filter(
-            ([key1, key2, data]) =>
-              key1 !== undefined && key2 !== undefined && data !== undefined
-          )
-        if (add.length) {
-          await CACHE_SERVICE.setCaches2(category, add)
-        }
-      }
-
-      const key2s = key2.filter((key2) => key2 !== undefined)
-
-      const result = await CACHE_SERVICE.getCachesByKeys2(category, key1, key2s)
-      return new Map(key2s.map((key2, i) => [key2, result[i]]))
-    } else {
-      if (key1 === undefined || key2 === undefined || key3 === undefined) {
-        return
-      }
-
-      if (data) {
-        assert(key3.length === data.length)
-        const add = data
-          .map((data, i) => [key1, key2, key3[i], data] as [Key, Key, Key, any])
-          .filter(
-            ([key1, key2, key3, data]) =>
-              key1 !== undefined &&
-              key2 !== undefined &&
-              key3 !== undefined &&
-              data !== undefined
-          )
-        if (add.length) {
-          await CACHE_SERVICE.setCaches3(category, add)
-        }
-      }
-
-      const key3s = key3.filter((key3) => key3 !== undefined)
-
-      const result = await CACHE_SERVICE.getCachesByKeys3(
-        category,
-        key1,
-        key2,
-        key3s
-      )
-      return new Map(key3s.map((key3, i) => [key3, result[i]]))
-    }
-  }, [category, key1, key2, key3, data])
-
-  return value
-}
-
 export function useCache(category: CacheCategory, data?: any) {
   return useCache_(category, '', '', '', data)
 }
@@ -410,27 +326,93 @@ export function useCache3(
 
 export function useCachesByKeys1(
   category: CacheCategory,
-  key1?: Key[],
-  data?: any[]
+  key1s?: Key[],
+  dataByKey1?: Map<Key, any | undefined>
 ) {
-  return useCaches_(category, key1, undefined, undefined, data)
+  const { value } = useAsync(async () => {
+    if (!key1s) {
+      return
+    }
+
+    if (dataByKey1) {
+      const add = []
+      for (const [key1, data] of dataByKey1.entries()) {
+        assert(key1 !== undefined)
+        if (data !== undefined) {
+          add.push([key1, data] as [Key, any])
+        }
+      }
+
+      if (add.length) {
+        await CACHE_SERVICE.setCaches1(category, add)
+      }
+    }
+
+    return await CACHE_SERVICE.getCachesByKeys1(category, key1s)
+  }, [category, key1s, dataByKey1])
+
+  return value
 }
 
 export function useCachesByKeys2(
   category: CacheCategory,
   key1?: Key,
-  key2?: Key[],
-  data?: any[]
+  key2s?: Key[],
+  dataByKey2?: Map<Key, any | undefined>
 ) {
-  return useCaches_(category, key1, key2, undefined, data)
+  const { value } = useAsync(async () => {
+    if (key1 === undefined || !key2s) {
+      return
+    }
+
+    if (dataByKey2) {
+      const add = []
+      for (const [key2, data] of dataByKey2.entries()) {
+        assert(key2 !== undefined)
+        if (data !== undefined) {
+          add.push([key1, key2, data] as [Key, Key, any])
+        }
+      }
+
+      if (add.length) {
+        await CACHE_SERVICE.setCaches2(category, add)
+      }
+    }
+
+    return await CACHE_SERVICE.getCachesByKeys2(category, key1, key2s)
+  }, [category, key1, key2s, dataByKey2])
+
+  return value
 }
 
 export function useCachesByKeys3(
   category: CacheCategory,
   key1?: Key,
   key2?: Key,
-  key3?: Key[],
-  data?: any[]
+  key3s?: Key[],
+  dataByKey3?: Map<Key, any | undefined>
 ) {
-  return useCaches_(category, key1, key2, key3, data)
+  const { value } = useAsync(async () => {
+    if (key1 === undefined || key2 === undefined || !key3s) {
+      return
+    }
+
+    if (dataByKey3) {
+      const add = []
+      for (const [key3, data] of dataByKey3.entries()) {
+        assert(key3 !== undefined)
+        if (data !== undefined) {
+          add.push([key1, key2, key3, data] as [Key, Key, Key, any])
+        }
+      }
+
+      if (add.length) {
+        await CACHE_SERVICE.setCaches3(category, add)
+      }
+    }
+
+    return await CACHE_SERVICE.getCachesByKeys3(category, key1, key2, key3s)
+  }, [category, key1, key2, key3s, dataByKey3])
+
+  return value
 }

@@ -1,4 +1,6 @@
+import { ChevronLeftIcon } from '@chakra-ui/icons'
 import {
+  Box,
   Button,
   HStack,
   Icon,
@@ -13,6 +15,7 @@ import {
 import Decimal from 'decimal.js'
 import { atom } from 'jotai'
 import { useState } from 'react'
+import * as React from 'react'
 import { BiQuestionMark } from 'react-icons/bi'
 import { IoSwapVertical } from 'react-icons/io5'
 
@@ -46,9 +49,22 @@ export const Send = ({ onClose }: { onClose: () => void }) => {
   return (
     <Stack h="full" px={4} pt={2} pb={4} justify="space-between">
       <Stack spacing={12}>
-        <Text textAlign="center" fontSize="3xl" fontWeight="medium">
-          Send
-        </Text>
+        <HStack justify="space-between" minH={16}>
+          <IconButton
+            icon={<ChevronLeftIcon fontSize="2xl" />}
+            aria-label="Close"
+            variant="ghost"
+            borderRadius="full"
+            size="sm"
+            onClick={onClose}
+          />
+
+          <Text textAlign="center" fontSize="3xl" fontWeight="medium">
+            Send
+          </Text>
+
+          <Box w={10}></Box>
+        </HStack>
 
         <Stack spacing={4}>
           <Input

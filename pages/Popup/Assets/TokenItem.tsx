@@ -247,33 +247,35 @@ export const TokenItem = ({
         </HStack>
 
         {!undetermined && (
-          <Menu isLazy autoSelect={false} placement="left">
-            <MenuButton as={MenuBtn} />
-            <Portal>
-              <MenuList minW={32} zIndex={1500}>
-                <MenuGroup title={brief.name}>
-                  <MenuItem
-                    icon={<Icon as={IoMdSwap} />}
-                    iconSpacing={2}
-                    onClick={() => {}}>
-                    Detail
-                  </MenuItem>
-                  <MenuItem
-                    icon={<Icon as={icon1} />}
-                    iconSpacing={2}
-                    onClick={onClick1}>
-                    {title1}
-                  </MenuItem>
-                  <MenuItem
-                    icon={<Icon as={icon2} />}
-                    iconSpacing={2}
-                    onClick={onClick2}>
-                    {title2}
-                  </MenuItem>
-                </MenuGroup>
-              </MenuList>
-            </Portal>
-          </Menu>
+          <Box onClick={(event) => event.stopPropagation()}>
+            <Menu isLazy autoSelect={false} placement="left">
+              <MenuButton as={MenuBtn} />
+              <Portal>
+                <MenuList minW={32} zIndex={1500}>
+                  <MenuGroup title={brief.name}>
+                    <MenuItem
+                      icon={<Icon as={IoMdSwap} />}
+                      iconSpacing={2}
+                      onClick={() => {}}>
+                      Detail
+                    </MenuItem>
+                    <MenuItem
+                      icon={<Icon as={icon1} />}
+                      iconSpacing={2}
+                      onClick={onClick1}>
+                      {title1}
+                    </MenuItem>
+                    <MenuItem
+                      icon={<Icon as={icon2} />}
+                      iconSpacing={2}
+                      onClick={onClick2}>
+                      {title2}
+                    </MenuItem>
+                  </MenuGroup>
+                </MenuList>
+              </Portal>
+            </Menu>
+          </Box>
         )}
       </HStack>
     </Button>

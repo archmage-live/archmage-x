@@ -76,7 +76,7 @@ export const AccountMenu = () => {
       />
 
       <Portal>
-        <MenuList w={48}>
+        <MenuList w={48} zIndex={2}>
           <MenuItem
             icon={<ExternalLinkIcon />}
             iconSpacing={2}

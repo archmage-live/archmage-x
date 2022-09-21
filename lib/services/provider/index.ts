@@ -65,9 +65,12 @@ export function useBalance(
 export function useBalances(
   network?: INetwork,
   accounts?: IChainAccount[]
-): Balance[] | undefined {
+): Map<number, Balance> | undefined {
   const addresses = useMemo(
-    () => (accounts || []).map((acc) => acc.address),
+    () =>
+      (accounts || [])
+        .map((acc) => acc.address)
+        .filter((acc) => !!acc) as string[],
     [accounts]
   )
 
@@ -75,27 +78,14 @@ export function useBalances(
     if (!network || !addresses.length) {
       return
     }
-    const balances = await (
-      await getProvider(network)
-    ).getBalances(addresses.filter((addr) => addr) as string[])
+    const balances = await (await getProvider(network)).getBalances(addresses)
     // console.log(addresses, balances)
     if (!balances) {
       return null
     }
-    const result = []
-    let i = 0
-    for (const addr of addresses) {
-      if (!addr) {
-        result.push(undefined)
-      } else {
-        result.push(balances[i])
-        ++i
-      }
-    }
-    return result
+    return new Map(addresses.map((addr, i) => [addr, balances[i]]))
   }, [network, addresses])
 
-  // TODO: cache
   const { data: balances1, error: error } = useQuery(
     [QueryService.ETH_BALANCE_CHECKER, network?.id, addresses],
     getBalances
@@ -111,43 +101,52 @@ export function useBalances(
     [network]
   )
 
-  // TODO: cache
-  const queriesResult = useQueries({
+  const balances2 = useQueries({
     queries: addresses.map((address) => {
       return {
         queryKey: [QueryService.PROVIDER, network?.id, address, 'getBalance'],
-        queryFn: async () => address && (await getBalance(address)),
+        queryFn: async () => await getBalance(address),
         enabled: balances1 === null
       }
     })
   })
 
-  const queriedBalances = useMemo(() => {
-    const balances2 = queriesResult.map(({ data, error }) => {
-      if (error) {
-        console.error(error)
-      }
-      return data
-    })
-    return balances1 || balances2
-  }, [balances1, queriesResult])
+  const balanceByAddr = useMemo(() => {
+    if (balances1) {
+      return balances1
+    }
+    return new Map(
+      addresses.map((addr, i) => {
+        const { data, error } = balances2[i]
+        if (error) {
+          console.error(error)
+        }
+        return [addr, data]
+      })
+    )
+  }, [addresses, balances1, balances2])
 
   const balanceMap = useCachesByKeys3(
     CacheCategory.PROVIDER,
     network?.id,
     'balance',
     addresses,
-    queriedBalances
+    balanceByAddr
   )
 
   return useMemo(() => {
-    if (!network || !balanceMap) {
+    if (!network || !accounts || !balanceMap) {
       return undefined
     }
     const info = getNetworkInfo(network)
-    return addresses.map((address) => {
-      const balance = balanceMap.get(address)
-      return {
+
+    const result = new Map()
+    for (const account of accounts) {
+      if (!account.address) continue
+
+      const balance = balanceMap.get(account.address)
+
+      result.set(account.id, {
         symbol: info.currencySymbol,
         amount: balance
           ? new Decimal(balance)
@@ -155,7 +154,9 @@ export function useBalances(
               .toString()
           : '0',
         amountParticle: balance || '0'
-      } as Balance
-    })
-  }, [network, addresses, balanceMap])
+      } as Balance)
+    }
+
+    return result
+  }, [network, accounts, balanceMap])
 }

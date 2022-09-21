@@ -70,10 +70,10 @@ export default function Assets({ onLoaded }: { onLoaded?: () => void }) {
   const { onOpen: onDepositOpen } = useDepositModal()
 
   return (
-    <Stack w="full" px={4} py={4} spacing={12}>
-      <Stack w="full" spacing={8}>
-        <Stack w="full" spacing={6}>
-          <Stack w="full" spacing={4}>
+    <Stack w="full" px={4} pt={2} pb={4} spacing={8}>
+      <Stack w="full" spacing={6}>
+        <Stack w="full" spacing={4}>
+          <Stack w="full" spacing={2}>
             <HStack justify="space-between" minH={16}>
               <Center w="24px">
                 {connected !== undefined && (
@@ -191,16 +191,23 @@ export default function Assets({ onLoaded }: { onLoaded?: () => void }) {
           <HStack justify="center" minH={16}>
             <Stack spacing={2} align="center">
               {price && (
-                <Center w="35px" h="35px" borderRadius="full" borderWidth="1px">
-                  <Image
-                    borderRadius="full"
-                    boxSize="30px"
-                    fit="cover"
-                    src={price.imageUrl}
-                    fallback={<Icon as={BiQuestionMark} fontSize="3xl" />}
-                    alt="Currency Logo"
-                  />
-                </Center>
+                <Image
+                  borderRadius="full"
+                  boxSize="30px"
+                  fit="cover"
+                  src={price.imageUrl}
+                  fallback={
+                    <Center
+                      w="30px"
+                      h="30px"
+                      borderRadius="full"
+                      borderWidth="1px"
+                      borderColor="gray.500">
+                      <Icon as={BiQuestionMark} fontSize="3xl" />
+                    </Center>
+                  }
+                  alt="Currency Logo"
+                />
               )}
 
               <Stack spacing={0} align="center">

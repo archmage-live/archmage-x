@@ -157,17 +157,27 @@ export function usePaginatedBalances(
       let changed = false
       for (let i = 0; i < accounts.length; i++) {
         const account = accounts[i]
-        const balance = balances[i]
+        const balance = balances.get(account.id)
         const existing = balanceMap.get(account.id)
+
+        if (!existing && !balance) {
+          continue
+        }
         if (
           existing &&
+          balance &&
           existing.symbol === balance.symbol &&
           existing.amount === balance.amount &&
           existing.amountParticle === balance.amountParticle
         ) {
           continue
         }
-        balanceMap.set(account.id, balance)
+
+        if (balance) {
+          balanceMap.set(account.id, balance)
+        } else {
+          balanceMap.delete(account.id)
+        }
         changed = true
       }
       return changed ? balanceMap : oldBalances
