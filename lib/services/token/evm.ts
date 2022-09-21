@@ -36,6 +36,7 @@ export function getEvmTokenBrief(token: IToken): TokenBrief {
     iconUrl: info.logoURI,
     balance: {
       symbol: info.symbol,
+      decimals: info.decimals,
       amount: new Decimal(balance)
         .div(new Decimal(10).pow(info.decimals))
         .toString(),

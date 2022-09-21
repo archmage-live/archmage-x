@@ -14,15 +14,20 @@ import {
 } from '@chakra-ui/react'
 import Decimal from 'decimal.js'
 import { atom } from 'jotai'
-import { useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import * as React from 'react'
 import { BiQuestionMark } from 'react-icons/bi'
 import { IoSwapVertical } from 'react-icons/io5'
 
+import { AlertBox } from '~components/AlertBox'
 import { useActive } from '~lib/active'
 import { formatNumber } from '~lib/formatNumber'
 import { useCryptoComparePrice } from '~lib/services/datasource/cryptocompare'
-import { useBalance } from '~lib/services/provider'
+import {
+  useBalance,
+  useEstimateGasFee,
+  useIsContract
+} from '~lib/services/provider'
 import { checkAddress } from '~lib/wallet'
 import { useModalBox } from '~pages/Popup/ModalBox'
 
@@ -32,8 +37,15 @@ export function useSendModal() {
   return useModalBox(isOpenAtom)
 }
 
-export const Send = ({ onClose }: { onClose: () => void }) => {
+export const Send = ({
+  isOpen,
+  onClose
+}: {
+  isOpen: boolean
+  onClose: () => void
+}) => {
   const { network, account } = useActive()
+
   const [address, setAddress] = useState('')
   const [amount, setAmount] = useState('')
 
@@ -41,6 +53,118 @@ export const Send = ({ onClose }: { onClose: () => void }) => {
   const price = useCryptoComparePrice(balance?.symbol)
 
   const tokenUrl = price?.imageUrl
+
+  const gasFee = useEstimateGasFee(network, account, isOpen ? 10000 : undefined)
+
+  const [addrAlert, setAddrAlert] = useState('')
+  const [amountAlert, setAmountAlert] = useState('')
+  const [ignoreContract, setIgnoreContract] = useState(false)
+  const [nextEnabled, setNextEnabled] = useState(false)
+
+  useEffect(() => {
+    setAddress('')
+    setAmount('')
+    setIgnoreContract(false)
+    setNextEnabled(false)
+  }, [isOpen, network, account])
+
+  useEffect(() => {
+    setAddrAlert('')
+  }, [address])
+
+  const isContract = useIsContract(
+    network,
+    (network && checkAddress(network.kind, address)) || undefined
+  )
+
+  const checkAddr = useCallback(() => {
+    if (!!address && !checkAddress(network!.kind, address)) {
+      setAddrAlert('Invalid address')
+      return false
+    } else {
+      setAddrAlert('')
+      return !!address
+    }
+  }, [network, address])
+
+  useEffect(() => {
+    setAmountAlert('')
+  }, [amount])
+
+  const checkPrecondition = useCallback(() => {
+    if (!gasFee) {
+      setAmountAlert('Gas price estimation failed due to network error')
+      return false
+    }
+    if (!balance) {
+      setAmountAlert('Get balance failed due to network error')
+      return false
+    }
+    return true
+  }, [balance, gasFee])
+
+  const checkAmount = useCallback(() => {
+    if (!amount) {
+      setAmountAlert('')
+      return false
+    }
+
+    if (Number.isNaN(+amount)) {
+      setAmountAlert('Invalid amount')
+      return false
+    }
+
+    if (!checkPrecondition()) {
+      return false
+    }
+
+    const amt = new Decimal(amount).mul(new Decimal(10).pow(balance!.decimals))
+    const value = amt.add(gasFee!)
+    if (amt.gt(balance!.amountParticle)) {
+      setAmountAlert('Insufficient balance')
+      return false
+    }
+    if (value.gt(balance!.amountParticle)) {
+      setAmountAlert('Insufficient funds for gas')
+      return false
+    }
+
+    setAmountAlert('')
+    return true
+  }, [amount, balance, gasFee, checkPrecondition])
+
+  const check = useCallback(
+    (ignore?: boolean) => {
+      const enabled = checkAddr() && checkAmount()
+      setNextEnabled(enabled && (!isContract || ignoreContract || !!ignore))
+      return enabled
+    },
+    [checkAddr, checkAmount, ignoreContract, isContract]
+  )
+
+  const setMaxAmount = useCallback(() => {
+    if (!checkPrecondition()) {
+      return false
+    }
+
+    const amount = new Decimal(balance!.amountParticle)
+      .sub(gasFee!)
+      .div(new Decimal(10).pow(balance!.decimals))
+      .toSignificantDigits(9)
+
+    if (amount.lte(0)) {
+      setAmountAlert('Insufficient funds for gas')
+      return
+    }
+
+    setAmount(amount.toString())
+  }, [balance, gasFee, checkPrecondition])
+
+  const onNext = useCallback(() => {
+    if (!check()) {
+      return
+    }
+  }, [check])
 
   if (!network) {
     return <></>
@@ -66,12 +190,13 @@ export const Send = ({ onClose }: { onClose: () => void }) => {
           <Box w={10}></Box>
         </HStack>
 
-        <Stack spacing={4}>
+        <Stack spacing={8}>
           <Input
             size="lg"
             placeholder="Recipient address"
             errorBorderColor="red.500"
-            isInvalid={!!address && !checkAddress(network?.kind, address)}
+            isInvalid={!!addrAlert}
+            onBlur={() => check()}
             value={address}
             onChange={(e) => {
               setAddress(e.target.value)
@@ -81,8 +206,11 @@ export const Send = ({ onClose }: { onClose: () => void }) => {
           <Stack>
             <InputGroup size="lg">
               <Input
+                type="number"
                 placeholder="0.0"
                 errorBorderColor="red.500"
+                isInvalid={!!amountAlert}
+                onBlur={() => check()}
                 value={amount}
                 onChange={(e) => {
                   setAmount(e.target.value)
@@ -125,10 +253,33 @@ export const Send = ({ onClose }: { onClose: () => void }) => {
 
                 <Icon as={IoSwapVertical} />
               </HStack>
-              <Text cursor="pointer" onClick={() => {}}>
+              <Text cursor="pointer" onClick={setMaxAmount}>
                 Balance: {formatNumber(balance?.amount)} {balance?.symbol}
               </Text>
             </HStack>
+          </Stack>
+
+          <Stack>
+            {isContract && !ignoreContract && (
+              <AlertBox nowrap>
+                <Text>
+                  Warning: you are about to send to a token contract which could
+                  result in a loss of funds.
+                </Text>
+                <Text
+                  color="purple.500"
+                  fontWeight="medium"
+                  cursor="pointer"
+                  onClick={() => {
+                    setIgnoreContract(true)
+                    check(true)
+                  }}>
+                  I understand
+                </Text>
+              </AlertBox>
+            )}
+            <AlertBox>{addrAlert}</AlertBox>
+            <AlertBox>{amountAlert}</AlertBox>
           </Stack>
         </Stack>
       </Stack>
@@ -141,9 +292,8 @@ export const Send = ({ onClose }: { onClose: () => void }) => {
           colorScheme="purple"
           size="lg"
           flex={1}
-          onClick={() => {
-            onClose()
-          }}>
+          isDisabled={!nextEnabled}
+          onClick={onNext}>
           Next
         </Button>
       </HStack>

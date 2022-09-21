@@ -338,6 +338,31 @@ export type GasFeeEstimation = {
   gasEstimateType: GasEstimateType
 }
 
+export function getEvmGasFeeBrief({
+  gasFeeEstimates,
+  gasEstimateType
+}: GasFeeEstimation): string {
+  let fee: string
+  switch (gasEstimateType) {
+    case GasEstimateType.FEE_MARKET: {
+      const estimates = gasFeeEstimates as GasFeeEstimates
+      fee = estimates.medium.suggestedMaxFeePerGas
+      break
+    }
+    case GasEstimateType.LEGACY: {
+      const estimates = gasFeeEstimates as LegacyGasPriceEstimate
+      fee = estimates.medium
+      break
+    }
+    case GasEstimateType.ETH_GAS_PRICE: {
+      const estimates = gasFeeEstimates as EthGasPriceEstimate
+      fee = estimates.gasPrice
+      break
+    }
+  }
+  return ethers.utils.parseUnits(fee, 'gwei').toString()
+}
+
 export async function fetchGasFeeEstimates(
   provider: EvmProvider
 ): Promise<GasFeeEstimation> {

@@ -99,6 +99,7 @@ export const ModalBoxRender = ({
   isOpen: boolean
   onClose: () => void
   child: ElementType<{
+    isOpen: boolean
     onClose: () => void
   }>
 }) => {
@@ -120,7 +121,7 @@ export const ModalBoxRender = ({
       w="full"
       h="full"
       bg={bg}>
-      {<Child onClose={onClose} />}
+      {<Child isOpen={isOpen} onClose={onClose} />}
     </Box>
   )
 }

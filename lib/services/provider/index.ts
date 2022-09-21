@@ -1,6 +1,8 @@
+import { AddressZero } from '@ethersproject/constants'
 import { useQueries, useQuery } from '@tanstack/react-query'
 import Decimal from 'decimal.js'
 import { useCallback, useMemo } from 'react'
+import { useAsync, useAsyncRetry, useInterval } from 'react-use'
 
 import { NetworkKind } from '~lib/network'
 import { QueryService } from '~lib/query'
@@ -12,8 +14,10 @@ import {
 } from '~lib/services/cacheService'
 import { getNetworkInfo } from '~lib/services/network'
 import { Balance } from '~lib/services/token'
+import { checkAddress } from '~lib/wallet'
 
 import { EvmProviderAdaptor } from './evm'
+import { getEvmGasFeeBrief } from './evm/gasFee'
 import { ProviderAdaptor } from './types'
 
 export async function getProvider(network: INetwork): Promise<ProviderAdaptor> {
@@ -24,6 +28,35 @@ export async function getProvider(network: INetwork): Promise<ProviderAdaptor> {
     case NetworkKind.SOL:
   }
   throw new Error(`provider for network ${network.kind} is not implemented`)
+}
+
+export function addressZero(network: INetwork): string {
+  switch (network.kind) {
+    case NetworkKind.EVM:
+      return AddressZero
+  }
+  throw new Error(`provider for network ${network.kind} is not implemented`)
+}
+
+export function getGasFeeBrief(network: INetwork, gasFee: any): string {
+  switch (network.kind) {
+    case NetworkKind.EVM:
+      return getEvmGasFeeBrief(gasFee)
+  }
+  throw new Error(`provider for network ${network.kind} is not implemented`)
+}
+
+export function useIsContract(network?: INetwork, address?: string) {
+  const provider = useProvider(network)
+
+  const { value } = useAsync(async () => {
+    if (!address || !provider) {
+      return
+    }
+    return provider.isContract(address)
+  }, [address, provider])
+
+  return value
 }
 
 export function useBalance(
@@ -52,6 +85,7 @@ export function useBalance(
     const info = getNetworkInfo(network)
     return {
       symbol: info.currencySymbol,
+      decimals: info.decimals,
       amount: balance
         ? new Decimal(balance)
             .div(new Decimal(10).pow(info.decimals))
@@ -148,6 +182,7 @@ export function useBalances(
 
       result.set(account.id, {
         symbol: info.currencySymbol,
+        decimals: info.decimals,
         amount: balance
           ? new Decimal(balance)
               .div(new Decimal(10).pow(info.decimals))
@@ -159,4 +194,79 @@ export function useBalances(
 
     return result
   }, [network, accounts, balanceMap])
+}
+
+export function useProvider(network?: INetwork) {
+  const { value } = useAsync(async () => {
+    if (!network) {
+      return
+    }
+    return getProvider(network)
+  }, [network])
+
+  return value
+}
+
+export function useEstimateGasPrice(
+  network?: INetwork,
+  retryInterval?: number
+) {
+  const provider = useProvider(network)
+
+  const { value, retry, loading } = useAsyncRetry(async () => {
+    if (!provider) {
+      return
+    }
+    return provider.estimateGasPrice()
+  }, [provider])
+
+  useInterval(retry, retryInterval && !loading ? retryInterval : null)
+
+  return value
+}
+
+export function useEstimateGas(
+  network?: INetwork,
+  account?: IChainAccount,
+  to?: string
+) {
+  const provider = useProvider(network)
+
+  const { value } = useAsync(async () => {
+    if (!network || !account?.address || !provider) {
+      return
+    }
+
+    let toAddr = to ? to : addressZero(network)
+
+    if (!checkAddress(network.kind, toAddr)) {
+      return
+    }
+
+    return provider.estimateSendGas(account, toAddr)
+  }, [network, account, to, provider])
+
+  return value
+}
+
+export function useEstimateGasFee(
+  network?: INetwork,
+  account?: IChainAccount,
+  retryInterval?: number,
+  to?: string
+) {
+  const gasPrice = useEstimateGasPrice(network, retryInterval)
+  const gas = useEstimateGas(network, account, to)
+
+  return useMemo(() => {
+    if (!network || !gasPrice || !gas) {
+      return
+    }
+
+    const gasFee = new Decimal(getGasFeeBrief(network, gasPrice))
+      .mul(gas)
+      .toString()
+    console.log('gasPrice:', gasPrice, 'gas:', gas, 'gasFee:', gasFee)
+    return gasFee
+  }, [network, gasPrice, gas])
 }

@@ -1,3 +1,4 @@
+import { VoidSigner } from '@ethersproject/abstract-signer'
 import { BigNumber } from '@ethersproject/bignumber'
 import { hexlify } from '@ethersproject/bytes'
 import { Logger } from '@ethersproject/logger'
@@ -17,6 +18,7 @@ import { IChainAccount, INetwork } from '~lib/schema'
 import { ETH_BALANCE_CHECKER_API } from '~lib/services/datasource/ethBalanceChecker'
 import { IPFS_GATEWAY_API } from '~lib/services/datasource/ipfsGateway'
 import { NETWORK_SERVICE } from '~lib/services/network'
+import { fetchGasFeeEstimates } from '~lib/services/provider/evm/gasFee'
 import { ProviderAdaptor } from '~lib/services/provider/types'
 import { getSigningWallet } from '~lib/wallet'
 
@@ -182,6 +184,14 @@ export class EvmProviderAdaptor implements ProviderAdaptor {
     return new EvmProviderAdaptor(provider)
   }
 
+  async isContract(address: string): Promise<boolean> {
+    try {
+      const code = await this.provider.getCode(address)
+      if (code && code !== '0x') return true
+    } catch {}
+    return false
+  }
+
   async getBalance(address: string): Promise<string> {
     const balance = await this.provider.getBalance(address)
     return balance.toString()
@@ -207,6 +217,16 @@ export class EvmProviderAdaptor implements ProviderAdaptor {
   async getTransactions(address: string): Promise<any> {
     // TODO
     return
+  }
+
+  async estimateGasPrice(): Promise<any> {
+    return fetchGasFeeEstimates(this.provider)
+  }
+
+  async estimateSendGas(account: IChainAccount, to: string): Promise<string> {
+    const voidSigner = new VoidSigner(account.address!, this.provider)
+    const gas = await voidSigner.estimateGas({ to, value: 0 })
+    return gas.toString()
   }
 
   async signTransaction(wallet: IChainAccount, transaction: any): Promise<any> {

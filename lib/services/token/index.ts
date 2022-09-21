@@ -23,6 +23,7 @@ import {
 
 export interface Balance {
   symbol: string
+  decimals: number
   amount: string // number
   amountParticle: string // number
 }
