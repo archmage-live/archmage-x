@@ -14,6 +14,7 @@ import * as React from 'react'
 
 import { CopyArea } from '~components/CopyIcon'
 import { useActive } from '~lib/active'
+import { getNetworkInfo } from '~lib/services/network'
 import { useModalBox } from '~pages/Popup/ModalBox'
 
 const isOpenAtom = atom<boolean>(false)
@@ -23,19 +24,19 @@ export function useDepositModal() {
 }
 
 export const Deposit = ({ onClose }: { onClose: () => void }) => {
-  const { account } = useActive()
+  const { network, account } = useActive()
 
   const qrCodeBg = useColorModeValue('white', 'black')
   const qrCodeFg = useColorModeValue('black', 'white')
 
-  if (!account?.address) {
+  if (!network || !account?.address) {
     return <></>
   }
 
   return (
     <Stack h="full" px={4} pt={2} pb={4} justify="space-between">
       <Stack>
-        <Stack spacing={24}>
+        <Stack spacing={20}>
           <HStack justify="space-between" minH={16}>
             <IconButton
               icon={<ChevronLeftIcon fontSize="2xl" />}
@@ -64,6 +65,11 @@ export const Deposit = ({ onClose }: { onClose: () => void }) => {
             />
 
             <CopyArea name="Address" copy={account.address} props={{ w: 64 }} />
+
+            <Text color="gray.500" textAlign="center">
+              This address can be used to receive tokens on&nbsp;
+              {getNetworkInfo(network).name}.
+            </Text>
           </Stack>
         </Stack>
       </Stack>

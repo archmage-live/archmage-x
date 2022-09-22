@@ -20,6 +20,8 @@ import { EvmProviderAdaptor } from './evm'
 import { getEvmGasFeeBrief } from './evm/gasFee'
 import { ProviderAdaptor } from './types'
 
+export * from './types'
+
 export async function getProvider(network: INetwork): Promise<ProviderAdaptor> {
   switch (network.kind) {
     case NetworkKind.EVM:

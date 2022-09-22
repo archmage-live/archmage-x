@@ -1,10 +1,3 @@
-import { VoidSigner } from '@ethersproject/abstract-signer'
-import { BigNumberish } from '@ethersproject/bignumber'
-import { BytesLike } from '@ethersproject/bytes'
-import { Logger } from '@ethersproject/logger'
-import { shallowCopy } from '@ethersproject/properties'
-import { version } from '@ethersproject/providers/lib/_version'
-import { AccessListish } from '@ethersproject/transactions'
 import assert from 'assert'
 import { ethErrors } from 'eth-rpc-errors'
 import { ethers } from 'ethers'
@@ -19,58 +12,12 @@ import {
   CONSENT_SERVICE,
   ConsentType,
   Permission,
-  RequestPermissionPayload,
-  TransactionPayload
+  RequestPermissionPayload
 } from '~lib/services/consentService'
 import { NETWORK_SERVICE } from '~lib/services/network'
 import { PASSWORD_SERVICE } from '~lib/services/passwordService'
 
-import { EvmProvider } from '.'
-
-const logger = new Logger(version)
-
-export type EvmTransactionParams = {
-  to?: string
-  from?: string
-  nonce?: BigNumberish // ignored
-
-  gas?: BigNumberish // gas limit
-  gasLimit?: BigNumberish // gas limit
-  gasPrice?: BigNumberish
-
-  data?: BytesLike
-  value?: BigNumberish
-  chainId?: number
-
-  type?: number
-  accessList?: AccessListish
-
-  maxPriorityFeePerGas?: BigNumberish
-  maxFeePerGas?: BigNumberish
-}
-
-export type EvmPopulatedParams = {
-  gasPrice?: BigNumberish
-  maxPriorityFeePerGas?: BigNumberish
-  maxFeePerGas?: BigNumberish
-  code?: string
-}
-
-export const allowedTransactionKeys: Array<string> = [
-  'accessList',
-  'chainId',
-  'data',
-  'from',
-  'gas',
-  'gasLimit',
-  'gasPrice',
-  'maxFeePerGas',
-  'maxPriorityFeePerGas',
-  'nonce',
-  'to',
-  'type',
-  'value'
-]
+import { EvmProvider, EvmProviderAdaptor } from '.'
 
 export class EvmPermissionedProvider {
   account?: IChainAccount
@@ -186,230 +133,16 @@ export class EvmPermissionedProvider {
       throw ethErrors.provider.unauthorized()
     }
 
-    const voidSigner = new VoidSigner(this.account.address, this.provider)
-
-    const [txParams, populatedParams] = await this.populateTransaction(
-      voidSigner,
-      params
-    )
+    const provider = new EvmProviderAdaptor(this.provider)
+    const txPayload = await provider.populateTransaction(this.account, params)
 
     return CONSENT_SERVICE.requestConsent(ctx, {
       networkId: this.network.id,
       accountId: this.account.id,
       type: ConsentType.TRANSACTION,
       origin: this.origin,
-      payload: {
-        txParams,
-        populatedParams
-      } as TransactionPayload
+      payload: txPayload
     })
-  }
-
-  private async populateTransaction(
-    signer: VoidSigner,
-    transaction: EvmTransactionParams
-  ): Promise<[EvmTransactionParams, EvmPopulatedParams]> {
-    for (const key in transaction) {
-      if (allowedTransactionKeys.indexOf(key) === -1) {
-        logger.throwArgumentError(
-          'invalid transaction key: ' + key,
-          'transaction',
-          transaction
-        )
-      }
-    }
-
-    const tx = shallowCopy(transaction)
-
-    const from = await signer.getAddress()
-    if (!tx.from) {
-      tx.from = from
-    } else {
-      // Make sure any provided address matches this signer
-      if (tx.from.toLowerCase() !== from.toLowerCase()) {
-        logger.throwArgumentError(
-          'from address mismatch',
-          'transaction',
-          transaction
-        )
-      }
-    }
-
-    if (tx.to) {
-      const to = await signer.resolveName(tx.to)
-      if (!to) {
-        logger.throwArgumentError(
-          'provided ENS name resolves to null',
-          'tx.to',
-          to
-        )
-      }
-      tx.to = to
-    }
-
-    // Do not allow mixing pre-eip-1559 and eip-1559 properties
-    const hasEip1559 =
-      tx.maxFeePerGas != null || tx.maxPriorityFeePerGas != null
-    if (tx.gasPrice != null && (tx.type === 2 || hasEip1559)) {
-      logger.throwArgumentError(
-        'eip-1559 transaction do not support gasPrice',
-        'transaction',
-        transaction
-      )
-    } else if ((tx.type === 0 || tx.type === 1) && hasEip1559) {
-      logger.throwArgumentError(
-        'pre-eip-1559 transaction do not support maxFeePerGas/maxPriorityFeePerGas',
-        'transaction',
-        transaction
-      )
-    }
-
-    const populatedParams: EvmPopulatedParams = {}
-
-    if (
-      (tx.type === 2 || tx.type == null) &&
-      tx.maxFeePerGas != null &&
-      tx.maxPriorityFeePerGas != null
-    ) {
-      // Fully-formed EIP-1559 transaction (skip getFeeData)
-      tx.type = 2
-    } else if (tx.type === 0 || tx.type === 1) {
-      // Explicit Legacy or EIP-2930 transaction
-
-      // Populate missing gasPrice
-      if (tx.gasPrice == null) {
-        populatedParams.gasPrice = await signer.getGasPrice()
-      }
-    } else {
-      // We need to get fee data to determine things
-      const feeData = await signer.getFeeData()
-
-      if (tx.type == null) {
-        // We need to auto-detect the intended type of this transaction...
-
-        if (
-          feeData.maxFeePerGas != null &&
-          feeData.maxPriorityFeePerGas != null
-        ) {
-          // The network supports EIP-1559!
-
-          // Upgrade transaction from null to eip-1559
-          tx.type = 2
-
-          if (tx.gasPrice != null) {
-            // Using legacy gasPrice property on an eip-1559 network,
-            // so use gasPrice as both fee properties
-            const gasPrice = tx.gasPrice
-            delete tx.gasPrice
-            tx.maxFeePerGas = gasPrice
-            tx.maxPriorityFeePerGas = gasPrice
-          } else {
-            // Populate missing fee data
-            if (tx.maxFeePerGas == null) {
-              populatedParams.maxFeePerGas = feeData.maxFeePerGas
-            }
-            if (tx.maxPriorityFeePerGas == null) {
-              populatedParams.maxPriorityFeePerGas =
-                feeData.maxPriorityFeePerGas
-            }
-          }
-        } else if (feeData.gasPrice != null) {
-          // Network doesn't support EIP-1559...
-
-          // ...but they are trying to use EIP-1559 properties
-          if (hasEip1559) {
-            logger.throwError(
-              'network does not support EIP-1559',
-              Logger.errors.UNSUPPORTED_OPERATION,
-              {
-                operation: 'populateTransaction'
-              }
-            )
-          }
-
-          // Populate missing fee data
-          if (tx.gasPrice == null) {
-            tx.gasPrice = populatedParams.gasPrice
-          }
-
-          // Explicitly set untyped transaction to legacy
-          tx.type = 0
-        } else {
-          // getFeeData has failed us.
-          logger.throwError(
-            'failed to get consistent fee data',
-            Logger.errors.UNSUPPORTED_OPERATION,
-            {
-              operation: 'signer.getFeeData'
-            }
-          )
-        }
-      } else if (tx.type === 2) {
-        // Explicitly using EIP-1559
-
-        // Populate missing fee data
-        if (tx.maxFeePerGas == null) {
-          populatedParams.maxFeePerGas = feeData.maxFeePerGas || undefined
-        }
-        if (tx.maxPriorityFeePerGas == null) {
-          populatedParams.maxPriorityFeePerGas =
-            feeData.maxPriorityFeePerGas || undefined
-        }
-      }
-    }
-
-    // TODO: nonce manager
-    tx.nonce = await signer.getTransactionCount('pending')
-
-    if (tx.gas != null) {
-      if (tx.gasLimit != null) {
-        logger.throwArgumentError(
-          'gas and gasLimit cannot be both specified',
-          'transaction',
-          transaction
-        )
-      }
-      tx.gasLimit = tx.gas
-      delete tx.gas
-    }
-
-    if (tx.gasLimit == null) {
-      try {
-        tx.gasLimit = await signer.estimateGas(tx).catch((error) => {
-          if (forwardErrors.indexOf(error.code) >= 0) {
-            throw error
-          }
-
-          return logger.throwError(
-            'cannot estimate gas; transaction may fail or may require manual gas limit',
-            Logger.errors.UNPREDICTABLE_GAS_LIMIT,
-            {
-              error: error,
-              tx: tx
-            }
-          )
-        })
-      } catch (error: any) {
-        if (error.code === Logger.errors.INSUFFICIENT_FUNDS) {
-          populatedParams.code = error.code
-        }
-      }
-    }
-
-    const chainId = +this.network.chainId
-    if (tx.chainId == null) {
-      tx.chainId = chainId
-    } else {
-      if (tx.chainId !== chainId) {
-        logger.throwArgumentError(
-          'chainId mismatch',
-          'transaction',
-          transaction
-        )
-      }
-    }
-
-    return [tx, populatedParams]
   }
 
   async legacySignMessage([params]: Array<any>) {
@@ -616,9 +349,3 @@ interface WatchAssetParameters {
     image?: string // A string url of the token logo
   }
 }
-
-const forwardErrors = [
-  Logger.errors.INSUFFICIENT_FUNDS,
-  Logger.errors.NONCE_EXPIRED,
-  Logger.errors.REPLACEMENT_UNDERPRICED
-]

@@ -1,4 +1,5 @@
 import { BigNumber } from '@ethersproject/bignumber'
+import Decimal from 'decimal.js'
 import { ethers } from 'ethers'
 
 import { CODEFI_GAS_API } from '~lib/services/datasource/codefi'
@@ -189,6 +190,12 @@ export type FallbackGasFeeEstimates = {
 
 export type GasFeeEstimates = SourcedGasFeeEstimates | FallbackGasFeeEstimates
 
+export function isSourcedGasFeeEstimates(
+  estimates: GasFeeEstimates
+): estimates is SourcedGasFeeEstimates {
+  return !!(estimates as SourcedGasFeeEstimates).estimatedBaseFee
+}
+
 function calculateGasFeeEstimatesForPriorityLevels(
   feeHistory: FeeHistoryBlock[]
 ): Pick<GasFeeEstimates, PriorityLevel> {
@@ -270,7 +277,7 @@ export type EstimatedGasFeeTimeBounds = {
   upperTimeBound?: number
 }
 
-function calculateTimeEstimate(
+export function calculateTimeEstimate(
   maxPriorityFeePerGas: string,
   maxFeePerGas: string,
   gasFeeEstimates: GasFeeEstimates
@@ -279,10 +286,9 @@ function calculateTimeEstimate(
   const estimatedBaseFee =
     (gasFeeEstimates as SourcedGasFeeEstimates).estimatedBaseFee || 0
 
-  let effectiveMaxPriorityFee =
-    BigNumber.from(maxFeePerGas).sub(estimatedBaseFee)
+  let effectiveMaxPriorityFee = new Decimal(maxFeePerGas).sub(estimatedBaseFee)
   if (effectiveMaxPriorityFee.gt(maxPriorityFeePerGas)) {
-    effectiveMaxPriorityFee = BigNumber.from(maxPriorityFeePerGas)
+    effectiveMaxPriorityFee = new Decimal(maxPriorityFeePerGas)
   }
 
   if (effectiveMaxPriorityFee.lt(low.suggestedMaxPriorityFeePerGas)) {
@@ -323,7 +329,7 @@ export type EthGasPriceEstimate = {
   gasPrice: string
 }
 
-enum GasEstimateType {
+export enum GasEstimateType {
   FEE_MARKET = 'fee_market',
   LEGACY = 'legacy',
   ETH_GAS_PRICE = 'eth_gasPrice'
@@ -375,7 +381,8 @@ export async function fetchGasFeeEstimates(
       let gasFeeEstimates: GasFeeEstimates
       try {
         gasFeeEstimates = await CODEFI_GAS_API.suggestedGasFees(network.chainId)
-      } catch {
+      } catch (err) {
+        console.warn('CODEFI_GAS_API.suggestedGasFees:', err)
         gasFeeEstimates = await fetchGasFeeEstimatesViaFeeHistory(provider)
       }
       const { suggestedMaxPriorityFeePerGas, suggestedMaxFeePerGas } =
@@ -398,7 +405,8 @@ export async function fetchGasFeeEstimates(
         gasEstimateType: GasEstimateType.LEGACY
       }
     }
-  } catch {
+  } catch (err) {
+    console.warn('fetchGasFeeEstimates:', err)
     // fallback as follows
   }
 

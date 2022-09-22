@@ -64,13 +64,11 @@ export const Send = ({
   useEffect(() => {
     setAddress('')
     setAmount('')
+    setAddrAlert('')
+    setAmountAlert('')
     setIgnoreContract(false)
     setNextEnabled(false)
   }, [isOpen, network, account])
-
-  useEffect(() => {
-    setAddrAlert('')
-  }, [address])
 
   const isContract = useIsContract(
     network,
@@ -78,18 +76,18 @@ export const Send = ({
   )
 
   const checkAddr = useCallback(() => {
-    if (!!address && !checkAddress(network!.kind, address)) {
+    const addr = address.trim()
+    if (addr !== address) {
+      setAddress(addr)
+    }
+    if (!!addr && !checkAddress(network!.kind, addr)) {
       setAddrAlert('Invalid address')
       return false
     } else {
       setAddrAlert('')
-      return !!address
+      return !!addr
     }
   }, [network, address])
-
-  useEffect(() => {
-    setAmountAlert('')
-  }, [amount])
 
   const checkPrecondition = useCallback(() => {
     if (!gasFee) {
@@ -199,6 +197,7 @@ export const Send = ({
             onBlur={() => check()}
             value={address}
             onChange={(e) => {
+              setAddrAlert('')
               setAddress(e.target.value)
             }}
           />
@@ -213,6 +212,7 @@ export const Send = ({
                 onBlur={() => check()}
                 value={amount}
                 onChange={(e) => {
+                  setAmountAlert('')
                   setAmount(e.target.value)
                 }}
               />

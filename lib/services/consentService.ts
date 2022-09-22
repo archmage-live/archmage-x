@@ -7,7 +7,11 @@ import { Context, SERVICE_WORKER_CLIENT, SERVICE_WORKER_SERVER } from '~lib/rpc'
 import { IChainAccount } from '~lib/schema'
 import { CONNECTED_SITE_SERVICE } from '~lib/services/connectedSiteService'
 import { NETWORK_SERVICE } from '~lib/services/network'
-import { getProvider } from '~lib/services/provider'
+import {
+  TransactionPayload,
+  formatTxParams,
+  getProvider
+} from '~lib/services/provider'
 import { WALLET_SERVICE } from '~lib/services/walletService'
 import { SESSION_STORE, StoreKey, useSessionStorage } from '~lib/store'
 import { createWindow } from '~lib/util'
@@ -19,11 +23,6 @@ export enum Permission {
 
 export type RequestPermissionPayload = {
   permissions: { permission: Permission; data?: any }[]
-}
-
-export type TransactionPayload = {
-  txParams: any
-  populatedParams: any
 }
 
 export enum ConsentType {
@@ -201,6 +200,8 @@ class ConsentService implements IConsentService {
           break
         case ConsentType.TRANSACTION:
           const payload = req.payload as TransactionPayload
+          formatTxParams(payload.txParams)
+
           const signedTx = await provider.signTransaction(
             accounts[0],
             payload.txParams
