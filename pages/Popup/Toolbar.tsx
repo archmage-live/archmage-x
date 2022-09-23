@@ -13,7 +13,7 @@ import {
   useColorModeValue,
   useDisclosure
 } from '@chakra-ui/react'
-import icon from 'data-base64:~assets/icon512.png'
+import icon from 'data-base64:~assets/archmage.svg'
 import { useCallback, useState } from 'react'
 
 import { AccountAvatar } from '~components/AccountAvatar'
@@ -72,9 +72,9 @@ export const Toolbar = () => {
 
   return (
     <Box width="full" p="4" bg={bg} boxShadow={useColorModeValue('sm', 'sm')}>
-      <Flex justify="space-between" align="center">
-        <Box w="40px">
-          <Image boxSize="24px" src={icon} alt="Logo" />
+      <HStack justify="space-between">
+        <Box w="48px">
+          <Image boxSize="48px" my="-4px" src={icon} alt="Logo" />
         </Box>
 
         <Button variant="outline" maxW={64} onClick={onNetworkToggle}>
@@ -93,18 +93,23 @@ export const Toolbar = () => {
           </HStack>
         </Button>
 
-        <Center w="40px" h="40px">
-          <Box
-            cursor="pointer"
-            onClick={onWalletToggle}
-            borderRadius="full"
-            borderWidth="2px"
-            borderColor="purple.500">
-            <Box borderRadius="full" borderWidth="2px" borderColor={blockieBg}>
-              <AccountAvatar text={account?.address || ''} />
+        <HStack w="48px" justify="end">
+          <Center w="40px" h="40px">
+            <Box
+              cursor="pointer"
+              onClick={onWalletToggle}
+              borderRadius="full"
+              borderWidth="2px"
+              borderColor="purple.500">
+              <Box
+                borderRadius="full"
+                borderWidth="2px"
+                borderColor={blockieBg}>
+                <AccountAvatar text={account?.address || ''} />
+              </Box>
             </Box>
-          </Box>
-        </Center>
+          </Center>
+        </HStack>
 
         <Drawer
           isOpen={isNetworkOpen || isWalletOpen}
@@ -129,7 +134,7 @@ export const Toolbar = () => {
             )}
           </DrawerContent>
         </Drawer>
-      </Flex>
+      </HStack>
 
       <WrappedDeleteSubWalletModal />
     </Box>

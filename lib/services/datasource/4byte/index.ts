@@ -29,10 +29,13 @@ class FourByteApi {
 
 export const FOURBYTE_API = new FourByteApi()
 
-export function useEvmSignature(fourBytes?: string): string | undefined {
+export function useEvmSignatureFrom4Bytes(
+  fourBytes?: string
+): string | undefined {
   const { data: result } = useQuery(
     [QueryService.FOUR_BYTE, fourBytes],
-    async () => fourBytes && FOURBYTE_API.getSignatures(fourBytes)
+    async () =>
+      fourBytes?.length === 10 && FOURBYTE_API.getSignatures(fourBytes)
   )
 
   return useMemo(() => {

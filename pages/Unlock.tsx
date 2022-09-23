@@ -1,4 +1,4 @@
-import { Button, HStack, Input, Stack, Text } from '@chakra-ui/react'
+import { Button, Input, Stack, Text } from '@chakra-ui/react'
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 
@@ -71,16 +71,19 @@ export default function Unlock() {
     <Overlay
       subtitle={
         locked && (
-          <HStack justify="center">
+          <Stack align="center" spacing={0}>
+            <Text fontSize="2xl" fontWeight="bold">
+              Archmage X
+            </Text>
             <Text fontSize="lg" color="gray.500">
               Use your password to unlock
             </Text>
-          </HStack>
+          </Stack>
         )
       }>
       {locked && (
         <form onSubmit={unlock}>
-          <Stack spacing="12" px={4}>
+          <Stack spacing="6" px={4}>
             <Input
               type="password"
               size="lg"

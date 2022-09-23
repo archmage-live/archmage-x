@@ -75,7 +75,7 @@ export default function Assets({ onLoaded }: { onLoaded?: () => void }) {
         <Stack w="full" spacing={4}>
           <Stack w="full" spacing={2}>
             <HStack justify="space-between" minH={16}>
-              <Center w="24px">
+              <Center w="48px">
                 {connected !== undefined && (
                   <Tooltip
                     label={
@@ -180,7 +180,7 @@ export default function Assets({ onLoaded }: { onLoaded?: () => void }) {
                 </Button>
               </Tooltip>
 
-              <HStack w="24px" justify="end">
+              <HStack w="48px" justify="end">
                 <AccountMenu />
               </HStack>
             </HStack>

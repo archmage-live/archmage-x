@@ -1,4 +1,5 @@
-import { Center, Stack, Text, useColorModeValue } from '@chakra-ui/react'
+import { Center, Image, Stack, useColorModeValue } from '@chakra-ui/react'
+import archmageImage from 'data-base64:~assets/archmage.svg'
 import { ReactNode } from 'react'
 import HashLoader from 'react-spinners/HashLoader'
 
@@ -17,7 +18,7 @@ export const Overlay = ({ isLoading, subtitle, children }: OverlayProps) => {
   return (
     <Stack
       p="4"
-      pt="40"
+      pt="32"
       spacing="12"
       position="absolute"
       top={0}
@@ -27,9 +28,7 @@ export const Overlay = ({ isLoading, subtitle, children }: OverlayProps) => {
       zIndex={9999}
       bg={useColorModeValue('purple.50', 'gray.800')}>
       <Stack align="center">
-        <Text fontSize="4xl" fontWeight="bold">
-          Archmage X
-        </Text>
+        <Image w="128px" h="128px" src={archmageImage} alt="Archmage Logo" />
 
         {subtitle}
       </Stack>

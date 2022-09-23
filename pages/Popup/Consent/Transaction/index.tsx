@@ -1,6 +1,7 @@
 import { NetworkKind } from '~lib/network'
 import { ConsentRequest } from '~lib/services/consentService'
 import { getNetworkInfo, useNetwork } from '~lib/services/network'
+import { useBalance } from '~lib/services/provider'
 import {
   useChainAccount,
   useSubWalletByIndex,
@@ -15,6 +16,7 @@ export const Transaction = ({ request }: { request: ConsentRequest }) => {
   const account = useChainAccount(request.accountId as number)
   const wallet = useWallet(account?.masterId)
   const subWallet = useSubWalletByIndex(account?.masterId, account?.index)
+  const balance = useBalance(network, account)
 
   if (!network || !networkInfo || !account || !wallet || !subWallet) {
     return <></>
@@ -31,6 +33,7 @@ export const Transaction = ({ request }: { request: ConsentRequest }) => {
           wallet={wallet}
           subWallet={subWallet}
           account={account}
+          balance={balance}
         />
       )
   }

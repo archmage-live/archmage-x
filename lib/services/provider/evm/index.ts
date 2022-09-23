@@ -1,6 +1,6 @@
 import { VoidSigner } from '@ethersproject/abstract-signer'
 import { BigNumber } from '@ethersproject/bignumber'
-import { hexlify } from '@ethersproject/bytes'
+import { BytesLike, hexlify } from '@ethersproject/bytes'
 import { Logger } from '@ethersproject/logger'
 import { Network } from '@ethersproject/networks'
 import { resolveProperties, shallowCopy } from '@ethersproject/properties'
@@ -11,10 +11,13 @@ import {
 import { version } from '@ethersproject/providers/lib/_version'
 import { ConnectionInfo } from '@ethersproject/web'
 import assert from 'assert'
+import { ethers } from 'ethers'
+import { useMemo } from 'react'
 
 import { NetworkKind } from '~lib/network'
 import { EvmChainInfo } from '~lib/network/evm'
 import { IChainAccount, INetwork } from '~lib/schema'
+import { useEvmSignatureFrom4Bytes } from '~lib/services/datasource/4byte'
 import { ETH_BALANCE_CHECKER_API } from '~lib/services/datasource/ethBalanceChecker'
 import { IPFS_GATEWAY_API } from '~lib/services/datasource/ipfsGateway'
 import { NETWORK_SERVICE } from '~lib/services/network'
@@ -497,3 +500,23 @@ const forwardErrors = [
   Logger.errors.NONCE_EXPIRED,
   Logger.errors.REPLACEMENT_UNDERPRICED
 ]
+
+export function useEvmFunctionSignature(
+  data?: BytesLike
+): ethers.utils.FunctionFragment | undefined {
+  const hex = data?.length ? ethers.utils.hexlify(data) : undefined
+
+  const sig = useEvmSignatureFrom4Bytes(hex?.slice(0, 10))
+
+  return useMemo(() => {
+    if (!sig) return
+
+    try {
+      return parseEvmFunctionSignature(sig)
+    } catch {}
+  }, [sig])
+}
+
+export function parseEvmFunctionSignature(sig: string) {
+  return ethers.utils.FunctionFragment.from(sig)
+}

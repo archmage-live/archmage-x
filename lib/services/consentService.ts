@@ -7,6 +7,7 @@ import { Context, SERVICE_WORKER_CLIENT, SERVICE_WORKER_SERVER } from '~lib/rpc'
 import { IChainAccount } from '~lib/schema'
 import { CONNECTED_SITE_SERVICE } from '~lib/services/connectedSiteService'
 import { NETWORK_SERVICE } from '~lib/services/network'
+import { PASSWORD_SERVICE } from '~lib/services/passwordService'
 import {
   TransactionPayload,
   formatTxParams,
@@ -26,6 +27,7 @@ export type RequestPermissionPayload = {
 }
 
 export enum ConsentType {
+  UNLOCK = 'unlock',
   REQUEST_PERMISSION = 'requestPermission',
   TRANSACTION = 'transaction',
   SIGN_MSG = 'signMessage',
@@ -148,7 +150,17 @@ class ConsentService implements IConsentService {
     await this.setBadge()
 
     // open popup
-    await createWindow(ctx, '/')
+    const window = await createWindow(ctx, '/')
+
+    if (request.type === ConsentType.UNLOCK) {
+      const listener = async (windowId: number) => {
+        if (windowId === window.id && (await PASSWORD_SERVICE.isLocked())) {
+          await this.processRequest(req, false)
+        }
+        browser.windows.onRemoved.removeListener(listener)
+      }
+      browser.windows.onRemoved.addListener(listener)
+    }
 
     return await promise
   }
@@ -177,6 +189,11 @@ class ConsentService implements IConsentService {
 
     if (!approve) {
       reject?.(ethErrors.provider.userRejectedRequest())
+      return
+    }
+
+    if (req.type === ConsentType.UNLOCK) {
+      resolve?.()
       return
     }
 

@@ -15,7 +15,7 @@ import { Transaction } from './Transaction'
 import { WatchAsset } from './WatchAsset'
 
 export default function Consent() {
-  useCheckUnlocked()
+  const { isUnlocked } = useCheckUnlocked()
 
   const navigate = useNavigate()
   const [requests, setRequests] = useState<ConsentRequest[]>()
@@ -37,6 +37,14 @@ export default function Consent() {
   }
   const req = requests[0]
   switch (req.type) {
+    case ConsentType.UNLOCK: {
+      if (isUnlocked) {
+        CONSENT_SERVICE.processRequest(req, true).finally(() => {
+          window.close()
+        })
+      }
+      return <></>
+    }
     case ConsentType.REQUEST_PERMISSION:
       return <RequestPermission request={req} />
     case ConsentType.TRANSACTION:

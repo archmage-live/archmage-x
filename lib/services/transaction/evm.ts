@@ -20,7 +20,10 @@ import {
   EtherscanTxResponse
 } from '~lib/services/datasource/etherscan'
 import { NETWORK_SERVICE } from '~lib/services/network'
-import { EvmProvider } from '~lib/services/provider/evm'
+import {
+  EvmProvider,
+  parseEvmFunctionSignature
+} from '~lib/services/provider/evm'
 
 import { TransactionInfo, TransactionStatus, TransactionType } from './'
 
@@ -48,7 +51,9 @@ export function getEvmTransactionInfo(
   } else {
     type = TransactionType.CallContract
     if (info.etherscanTx?.functionName) {
-      name = info.etherscanTx.functionName.split('(')[0]
+      try {
+        name = parseEvmFunctionSignature(info.etherscanTx.functionName).name
+      } catch {}
       if (name) {
         name = name[0].toUpperCase() + name.slice(1)
       }

@@ -22,14 +22,14 @@ import curveHigh from 'data-base64:~assets/curve-High.png'
 import curveLow from 'data-base64:~assets/curve-low.png'
 import curveMedium from 'data-base64:~assets/curve-medium.png'
 import Decimal from 'decimal.js'
-import { ethers } from 'ethers'
 import { useMemo } from 'react'
 
 import {
   Eip1559GasFee,
   GasFeeEstimates,
   calculateTimeEstimate,
-  isSourcedGasFeeEstimates
+  isSourcedGasFeeEstimates,
+  parseGwei
 } from '~lib/services/provider/evm'
 
 export const EvmGasFeeEditModal = ({
@@ -181,11 +181,7 @@ const GasFeeOption = ({
         <Text color={maxFeeColor(option)} w={32}>
           {gasFee ? (
             <>
-              {new Decimal(
-                ethers.utils
-                  .parseUnits(gasFee.suggestedMaxFeePerGas, 'gwei')
-                  .toString()
-              )
+              {parseGwei(gasFee.suggestedMaxFeePerGas)
                 .mul(gasLimit.toString())
                 .div(new Decimal(10).pow(18))
                 .toDecimalPlaces(8)

@@ -26,7 +26,6 @@ import {
 } from '@chakra-ui/react'
 import { BigNumber } from '@ethersproject/bignumber'
 import Decimal from 'decimal.js'
-import { ethers } from 'ethers'
 import { useScroll } from 'framer-motion'
 import { useEffect, useRef, useState } from 'react'
 import * as React from 'react'
@@ -53,8 +52,11 @@ import {
   GasFeeEstimates,
   GasFeeEstimation,
   LegacyGasPriceEstimate,
-  isSourcedGasFeeEstimates
+  isSourcedGasFeeEstimates,
+  parseGwei,
+  useEvmFunctionSignature
 } from '~lib/services/provider/evm'
+import { Balance } from '~lib/services/token'
 import { shortenAddress } from '~lib/utils'
 
 import {
@@ -73,7 +75,8 @@ export const EvmTransaction = ({
   networkInfo,
   wallet,
   subWallet,
-  account
+  account,
+  balance
 }: {
   origin: string
   request: ConsentRequest
@@ -82,6 +85,7 @@ export const EvmTransaction = ({
   wallet: IWallet
   subWallet: ISubWallet
   account: IChainAccount
+  balance?: Balance
 }) => {
   const payload = request.payload as TransactionPayload
   formatTxParams(network, payload.txParams, payload.populatedParams)
@@ -91,6 +95,8 @@ export const EvmTransaction = ({
   useEffect(() => {
     console.log('payload:', payload)
   }, [payload])
+
+  const functionSig = useEvmFunctionSignature(txParams.data)
 
   const [ignoreEstimateError, setIgnoreEstimateError] = useState(false)
 
@@ -154,6 +160,11 @@ export const EvmTransaction = ({
     (txParams.value as BigNumber) || 0,
     networkInfo.decimals
   )
+
+  const normalTotal = normalFee?.add(value)
+  const maxTotal = maxFee?.add(value)
+
+  const insufficientBalance = balance && normalTotal?.gt(balance.amount)
 
   const Details = () => {
     return (
@@ -274,7 +285,7 @@ export const EvmTransaction = ({
 
               <Stack align="end" spacing={0}>
                 <Text fontWeight="bold">
-                  {normalFee?.add(value).toDecimalPlaces(8).toString()}
+                  {normalTotal?.toDecimalPlaces(8).toString()}
                   &nbsp;
                   {networkInfo.currencySymbol}
                 </Text>
@@ -282,12 +293,10 @@ export const EvmTransaction = ({
                   {price ? (
                     <>
                       {price.currencySymbol}&nbsp;
-                      {formatNumber(
-                        normalFee?.add(value).mul(price.price || 0)
-                      )}
+                      {formatNumber(normalTotal?.mul(price.price || 0))}
                     </>
                   ) : (
-                    <>{normalFee?.add(value).toDecimalPlaces(8).toString()}</>
+                    <>{normalTotal?.toDecimalPlaces(8).toString()}</>
                   )}
                 </Text>
               </Stack>
@@ -300,7 +309,7 @@ export const EvmTransaction = ({
 
               <Text color="gray.500">
                 Max:&nbsp;
-                {maxFee?.add(value).toDecimalPlaces(8).toString()}
+                {maxTotal?.toDecimalPlaces(8).toString()}
                 &nbsp;
                 {networkInfo.currencySymbol}
               </Text>
@@ -378,7 +387,7 @@ export const EvmTransaction = ({
           <Stack px={6} py={6} spacing={4}>
             <Text>{origin}</Text>
 
-            <Box
+            <HStack
               w="min-content"
               px={2}
               py={1}
@@ -387,7 +396,16 @@ export const EvmTransaction = ({
               <Text fontSize="md" color="blue.500">
                 {shortenAddress(txParams.to)}
               </Text>
-            </Box>
+
+              {functionSig && (
+                <Text>
+                  : {functionSig.name.toUpperCase()}
+                  <Tooltip label="We cannot verify this contract. Make sure you trust this address.">
+                    <InfoIcon />
+                  </Tooltip>
+                </Text>
+              )}
+            </HStack>
 
             <Stack>
               <HStack>
@@ -454,11 +472,13 @@ export const EvmTransaction = ({
 
           <Divider />
 
-          <AlertBox level="error">
-            You do not have enough ETH in your account to pay for transaction
-            fees on Ethereum Mainnet network. Buy ETH or deposit from another
-            account.
-          </AlertBox>
+          {insufficientBalance && (
+            <AlertBox level="error">
+              You do not have enough {networkInfo.currencySymbol} in your
+              account to pay for transaction fees on Ethereum Mainnet network.
+              Buy {networkInfo.currencySymbol} or deposit from another account.
+            </AlertBox>
+          )}
 
           <HStack justify="center" spacing={12}>
             <Button
@@ -567,8 +587,4 @@ function computeFee(
 
 function computeValue(value: BigNumber | number, decimals: number) {
   return new Decimal(value.toString()).div(new Decimal(10).pow(decimals))
-}
-
-function parseGwei(value: string) {
-  return ethers.utils.parseUnits(value, 'gwei')
 }

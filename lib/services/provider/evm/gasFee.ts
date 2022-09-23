@@ -1,4 +1,4 @@
-import { BigNumber } from '@ethersproject/bignumber'
+import { BigNumber, BigNumberish } from '@ethersproject/bignumber'
 import Decimal from 'decimal.js'
 import { ethers } from 'ethers'
 
@@ -233,14 +233,8 @@ function calculateGasFeeEstimatesForPriorityLevels(
 
     gasFeeEstimates[priorityLevel] = {
       ...settings.estimatedWaitTimes,
-      suggestedMaxPriorityFeePerGas: ethers.utils.formatUnits(
-        suggestedMaxPriorityFeePerGas,
-        'gwei'
-      ),
-      suggestedMaxFeePerGas: ethers.utils.formatUnits(
-        suggestedMaxFeePerGas,
-        'gwei'
-      )
+      suggestedMaxPriorityFeePerGas: formatGwei(suggestedMaxPriorityFeePerGas),
+      suggestedMaxFeePerGas: formatGwei(suggestedMaxFeePerGas)
     }
   })
 
@@ -258,10 +252,7 @@ async function fetchGasFeeEstimatesViaFeeHistory(
     percentiles: PRIORITY_LEVEL_PERCENTILES
   })
 
-  const estimatedBaseFee = ethers.utils.formatUnits(
-    latestBlock.baseFeePerGas!,
-    'gwei'
-  )
+  const estimatedBaseFee = formatGwei(latestBlock.baseFeePerGas!)
 
   const gasFeeEstimatesForPriorityLevels =
     calculateGasFeeEstimatesForPriorityLevels(feeHistory)
@@ -366,7 +357,7 @@ export function getEvmGasFeeBrief({
       break
     }
   }
-  return ethers.utils.parseUnits(fee, 'gwei').toString()
+  return parseGwei(fee).toDecimalPlaces(0).toString()
 }
 
 export async function fetchGasFeeEstimates(
@@ -413,7 +404,7 @@ export async function fetchGasFeeEstimates(
   const gasPrice = await provider.getGasPrice()
   return {
     gasFeeEstimates: {
-      gasPrice: ethers.utils.formatUnits(gasPrice, 'gwei')
+      gasPrice: formatGwei(gasPrice)
     } as EthGasPriceEstimate,
     gasEstimateType: GasEstimateType.ETH_GAS_PRICE
   }
@@ -426,4 +417,12 @@ function medianOf(numbers: BigNumber[]): BigNumber {
   const len = sortedNumbers.length
   const index = Math.floor((len - 1) / 2)
   return sortedNumbers[index]
+}
+
+export function parseGwei(value: string) {
+  return new Decimal(10).pow(9).mul(value)
+}
+
+export function formatGwei(value: BigNumberish) {
+  return ethers.utils.formatUnits(value, 'gwei')
 }

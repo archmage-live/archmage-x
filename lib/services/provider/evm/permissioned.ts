@@ -10,6 +10,7 @@ import { IChainAccount, INetwork } from '~lib/schema'
 import { getConnectedAccountsBySite } from '~lib/services/connectedSiteService'
 import {
   CONSENT_SERVICE,
+  ConsentRequest,
   ConsentType,
   Permission,
   RequestPermissionPayload
@@ -157,13 +158,33 @@ export class EvmPermissionedProvider {
     // TODO: consent
   }
 
-  async getAccounts() {
+  getAccounts() {
     return this.account?.address ? [this.account.address] : []
   }
 
   // https://eips.ethereum.org/EIPS/eip-1102
   async requestAccounts(ctx: Context) {
-    await this.requestPermissions(ctx, [{ eth_accounts: {} }])
+    if (await PASSWORD_SERVICE.isLocked()) {
+      console.log('locked')
+      await CONSENT_SERVICE.requestConsent(ctx, {
+        networkId: undefined,
+        accountId: undefined,
+        type: ConsentType.UNLOCK,
+        origin: this.origin,
+        payload: {}
+      } as any as ConsentRequest)
+      console.log('unlocked')
+    }
+
+    console.log('getWallet')
+    await this.getWallet()
+
+    console.log('getAccounts')
+    if (!this.getAccounts().length) {
+      await this.requestPermissions(ctx, [{ eth_accounts: {} }])
+    }
+
+    console.log('getAccounts')
     return this.getAccounts()
   }
 
@@ -202,7 +223,6 @@ export class EvmPermissionedProvider {
       throw ethErrors.rpc.invalidParams()
     }
 
-    // TODO: requested overwrite old connected
     await CONSENT_SERVICE.requestConsent(ctx, {
       networkId: this.network.id!,
       accountId: [],

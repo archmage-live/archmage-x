@@ -132,7 +132,7 @@ export function usePassword(): {
 export function useCheckUnlocked() {
   const location = useLocation()
   const navigate = useNavigate()
-  const { isLocked } = usePassword()
+  const { exists, isLocked, isUnlocked } = usePassword()
 
   const walletCount = useSubWalletsCount()
 
@@ -141,4 +141,6 @@ export function useCheckUnlocked() {
       navigate(`/unlock?redirect=${location.pathname}`, { replace: true })
     }
   }, [location, navigate, isLocked, walletCount])
+
+  return { exists, isLocked, isUnlocked }
 }
