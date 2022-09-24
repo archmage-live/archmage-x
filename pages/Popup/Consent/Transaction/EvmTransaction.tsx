@@ -1,4 +1,4 @@
-import { ChevronRightIcon, InfoIcon } from '@chakra-ui/icons'
+import { ChevronRightIcon, EditIcon, InfoIcon } from '@chakra-ui/icons'
 import {
   Box,
   Button,
@@ -27,8 +27,8 @@ import {
 import { BigNumber } from '@ethersproject/bignumber'
 import Decimal from 'decimal.js'
 import { useScroll } from 'framer-motion'
-import { useEffect, useRef, useState } from 'react'
 import * as React from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { BiQuestionMark } from 'react-icons/bi'
 import HashLoader from 'react-spinners/HashLoader'
 
@@ -59,9 +59,12 @@ import {
 import { Balance } from '~lib/services/token'
 import { shortenAddress } from '~lib/utils'
 
+import { EvmAdvancedGasFeeModal } from './EvmAdvancedGasFeeModal'
 import {
   EvmGasFeeEditModal,
+  GasFeePerGas,
   GasOption,
+  NETWORK_CONGESTION_THRESHOLDS,
   optionGasFee,
   optionIcon,
   optionTitle
@@ -100,7 +103,9 @@ export const EvmTransaction = ({
 
   const [ignoreEstimateError, setIgnoreEstimateError] = useState(false)
 
-  const gasPrice = useEstimateGasPrice(network, 10000) as GasFeeEstimation
+  const gasPrice = useEstimateGasPrice(network, 10000) as
+    | GasFeeEstimation
+    | undefined
   useEffect(() => {
     console.log('gasPrice:', gasPrice)
   }, [gasPrice])
@@ -132,6 +137,10 @@ export const EvmTransaction = ({
 
   const price = useCryptoComparePrice(networkInfo.currencySymbol)
 
+  const [activeOption, setActiveOption] = useState<GasOption>(GasOption.MEDIUM)
+
+  const [customGasFeePerGas, setCustomGasFeePerGas] = useState<GasFeePerGas>()
+
   const {
     isOpen: isGasFeeEditOpen,
     onOpen: onGasFeeEditOpen,
@@ -139,12 +148,34 @@ export const EvmTransaction = ({
   } = useDisclosure()
 
   const {
-    isOpen: isGasFeeAdvancedEditOpen,
-    onOpen: onGasFeeAdvancedEditOpen,
-    onClose: onGasFeeAdvancedEditClose
+    isOpen: isAdvancedGasFeeOpen,
+    onOpen: _onAdvancedGasFeeOpen,
+    onClose: _onAdvancedGasFeeClose
   } = useDisclosure()
 
-  const [activeOption, setActiveOption] = useState<GasOption>(GasOption.MEDIUM)
+  const [confirmAdvancedGasFee, setConfirmAdvancedGasFee] = useState(false)
+
+  const onAdvancedGasFeeOpen = useCallback(
+    (confirm?: boolean) => {
+      setConfirmAdvancedGasFee(confirm ?? false)
+      _onAdvancedGasFeeOpen()
+    },
+    [_onAdvancedGasFeeOpen]
+  )
+
+  const onAdvancedGasFeeClose = useCallback(
+    (customGasFeePerGas?: GasFeePerGas) => {
+      if (customGasFeePerGas) {
+        setCustomGasFeePerGas(customGasFeePerGas)
+        if (confirmAdvancedGasFee) {
+          setActiveOption(GasOption.ADVANCED)
+          onGasFeeEditClose()
+        }
+      }
+      _onAdvancedGasFeeClose()
+    },
+    [_onAdvancedGasFeeClose, confirmAdvancedGasFee, onGasFeeEditClose]
+  )
 
   const [normalFee, maxFee] =
     (gasPrice &&
@@ -152,7 +183,9 @@ export const EvmTransaction = ({
         gasPrice,
         txParams.gasLimit as BigNumber,
         activeOption,
-        networkInfo.decimals
+        networkInfo.decimals,
+        customGasFeePerGas?.maxPriorityFeePerGas,
+        customGasFeePerGas?.maxFeePerGas
       )) ||
     []
 
@@ -170,6 +203,13 @@ export const EvmTransaction = ({
     return (
       <Stack spacing={16}>
         <Stack spacing={8}>
+          {isNetworkBusy(gasPrice) && (
+            <AlertBox>
+              Network is busy. Gas prices are high and estimates are less
+              accurate.
+            </AlertBox>
+          )}
+
           {populated.code && (
             <AlertBox level="error" nowrap>
               <Text>
@@ -192,6 +232,12 @@ export const EvmTransaction = ({
 
           {(!populated.code || ignoreEstimateError) && (
             <>
+              {activeOption === GasOption.LOW && (
+                <AlertBox>
+                  Future transactions will queue after this one.
+                </AlertBox>
+              )}
+
               <Stack spacing={2}>
                 <HStack justify="end" spacing={0}>
                   <Button
@@ -206,12 +252,12 @@ export const EvmTransaction = ({
 
                   {activeOption === GasOption.ADVANCED && (
                     <Button
-                      variant="ghost"
+                      variant="link"
                       colorScheme="blue"
                       size="sm"
                       px={2}
-                      onClick={onGasFeeAdvancedEditOpen}>
-                      Edit
+                      onClick={() => onAdvancedGasFeeOpen(false)}>
+                      <EditIcon />
                     </Button>
                   )}
                 </HStack>
@@ -387,24 +433,22 @@ export const EvmTransaction = ({
           <Stack px={6} py={6} spacing={4}>
             <Text>{origin}</Text>
 
-            <HStack
-              w="min-content"
-              px={2}
-              py={1}
-              borderRadius="4px"
-              borderWidth="1px">
-              <Text fontSize="md" color="blue.500">
-                {shortenAddress(txParams.to)}
-              </Text>
-
-              {functionSig && (
-                <Text>
-                  : {functionSig.name.toUpperCase()}
-                  <Tooltip label="We cannot verify this contract. Make sure you trust this address.">
-                    <InfoIcon />
-                  </Tooltip>
+            <HStack>
+              <HStack px={2} py={1} borderRadius="4px" borderWidth="1px">
+                <Text fontSize="md" color="blue.500">
+                  {shortenAddress(txParams.to)}
                 </Text>
-              )}
+
+                {functionSig && (
+                  <Text fontSize="md" color="gray.500">
+                    <span>: {functionSig.name.toUpperCase()}</span>
+                    &nbsp;
+                    <Tooltip label="We cannot verify this contract. Make sure you trust this address.">
+                      <InfoIcon />
+                    </Tooltip>
+                  </Text>
+                )}
+              </HStack>
             </HStack>
 
             <Stack>
@@ -495,6 +539,9 @@ export const EvmTransaction = ({
               size="lg"
               w={36}
               colorScheme="purple"
+              isDisabled={
+                (populated.code && !ignoreEstimateError) || insufficientBalance
+              }
               onClick={async () => {
                 setSpinning(true)
                 await CONSENT_SERVICE.processRequest(request, true)
@@ -518,17 +565,31 @@ export const EvmTransaction = ({
       )}
 
       {gasPrice?.gasEstimateType === GasEstimateType.FEE_MARKET ? (
-        <EvmGasFeeEditModal
-          isOpen={isGasFeeEditOpen}
-          onClose={onGasFeeEditClose}
-          activeOption={activeOption}
-          setActiveOption={setActiveOption}
-          currencySymbol={networkInfo.currencySymbol}
-          gasFeeEstimates={gasPrice.gasFeeEstimates as GasFeeEstimates}
-          gasLimit={txParams.gasLimit as BigNumber}
-          fromSite={false}
-          origin={origin}
-        />
+        <>
+          <EvmGasFeeEditModal
+            isOpen={isGasFeeEditOpen && !isAdvancedGasFeeOpen}
+            onClose={onGasFeeEditClose}
+            onAdvancedOpen={onAdvancedGasFeeOpen}
+            activeOption={activeOption}
+            setActiveOption={setActiveOption}
+            currencySymbol={networkInfo.currencySymbol}
+            gasFeeEstimates={gasPrice.gasFeeEstimates as GasFeeEstimates}
+            customGasFeePerGas={customGasFeePerGas}
+            gasLimit={txParams.gasLimit as BigNumber}
+            fromSite={false}
+            origin={origin}
+          />
+
+          <EvmAdvancedGasFeeModal
+            isOpen={isAdvancedGasFeeOpen}
+            onClose={onAdvancedGasFeeClose}
+            closeOnOverlayClick={!isGasFeeEditOpen}
+            gasFeeEstimates={gasPrice.gasFeeEstimates as GasFeeEstimates}
+            customGasFeePerGas={customGasFeePerGas}
+            gasLimit={txParams.gasLimit as BigNumber}
+            currencySymbol={networkInfo.currencySymbol}
+          />
+        </>
       ) : (
         <></>
       )}
@@ -540,13 +601,20 @@ function computeFee(
   gasPrice: GasFeeEstimation,
   gasLimit: BigNumber,
   option: GasOption,
-  decimals: number
+  decimals: number,
+  customMaxPriorityFeePerGas?: string,
+  customMaxFeePerGas?: string
 ) {
   let normalFee, maxFee
   switch (gasPrice.gasEstimateType) {
     case GasEstimateType.FEE_MARKET: {
       const estimates = gasPrice.gasFeeEstimates as GasFeeEstimates
-      const gasFee = optionGasFee(option, estimates)
+      const gasFee = optionGasFee(
+        option,
+        estimates,
+        customMaxPriorityFeePerGas,
+        customMaxFeePerGas
+      )
       if (!gasFee) {
         return
       }
@@ -587,4 +655,16 @@ function computeFee(
 
 function computeValue(value: BigNumber | number, decimals: number) {
   return new Decimal(value.toString()).div(new Decimal(10).pow(decimals))
+}
+
+function isNetworkBusy(gasPrice?: GasFeeEstimation) {
+  if (gasPrice?.gasEstimateType !== GasEstimateType.FEE_MARKET) {
+    return
+  }
+  const estimates = gasPrice.gasFeeEstimates as GasFeeEstimates
+  if (!isSourcedGasFeeEstimates(estimates)) {
+    return
+  }
+
+  return estimates.networkCongestion >= NETWORK_CONGESTION_THRESHOLDS.BUSY
 }

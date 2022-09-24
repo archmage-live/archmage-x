@@ -1,4 +1,4 @@
-import { InfoIcon } from '@chakra-ui/icons'
+import { EditIcon, InfoIcon } from '@chakra-ui/icons'
 import {
   Box,
   Button,
@@ -35,24 +35,24 @@ import {
 export const EvmGasFeeEditModal = ({
   isOpen,
   onClose,
+  onAdvancedOpen,
   activeOption,
   setActiveOption,
   currencySymbol,
   gasFeeEstimates,
-  customMaxPriorityFeePerGas,
-  customMaxFeePerGas,
+  customGasFeePerGas,
   gasLimit,
   fromSite,
   origin
 }: {
   isOpen: boolean
   onClose: () => void
+  onAdvancedOpen: (confirm?: boolean) => void
   activeOption: GasOption
   setActiveOption: (option: GasOption) => void
   currencySymbol: string
   gasFeeEstimates: GasFeeEstimates
-  customMaxPriorityFeePerGas?: string
-  customMaxFeePerGas?: string
+  customGasFeePerGas?: GasFeePerGas
   gasLimit: BigNumber
   fromSite: boolean
   origin: string
@@ -88,14 +88,14 @@ export const EvmGasFeeEditModal = ({
               <Divider />
 
               <HStack ps={2}>
-                <Text w={32}>Gas Option</Text>
-                <Text w={16}>Time</Text>
+                <Text w={28}>Gas Option</Text>
+                <Text w={14}>Time</Text>
                 <Text w={32}>Max Fee</Text>
               </HStack>
 
               {options.map((option) => {
                 if (!option) {
-                  return <Divider />
+                  return <Divider key="divider" />
                 }
 
                 return (
@@ -104,13 +104,20 @@ export const EvmGasFeeEditModal = ({
                     option={option}
                     isActive={option === activeOption}
                     onClick={() => {
-                      setActiveOption(option)
-                      onClose()
+                      if (
+                        option === GasOption.ADVANCED &&
+                        !customGasFeePerGas
+                      ) {
+                        onAdvancedOpen(true)
+                      } else {
+                        setActiveOption(option)
+                        onClose()
+                      }
                     }}
+                    onAdvancedOpen={onAdvancedOpen}
                     currencySymbol={currencySymbol}
                     gasFeeEstimates={gasFeeEstimates}
-                    customMaxPriorityFeePerGas={customMaxPriorityFeePerGas}
-                    customMaxFeePerGas={customMaxFeePerGas}
+                    customGasFeePerGas={customGasFeePerGas}
                     gasLimit={gasLimit}
                     origin={origin}
                   />
@@ -130,28 +137,28 @@ const GasFeeOption = ({
   option,
   isActive,
   onClick,
+  onAdvancedOpen,
   currencySymbol,
   gasFeeEstimates,
-  customMaxPriorityFeePerGas,
-  customMaxFeePerGas,
+  customGasFeePerGas,
   gasLimit,
   origin
 }: {
   option: GasOption
   isActive: boolean
   onClick: () => void
+  onAdvancedOpen: () => void
   currencySymbol: string
   gasFeeEstimates: GasFeeEstimates
-  customMaxPriorityFeePerGas?: string
-  customMaxFeePerGas?: string
+  customGasFeePerGas?: GasFeePerGas
   gasLimit: BigNumber
   origin: string
 }) => {
   const gasFee = optionGasFee(
     option,
     gasFeeEstimates,
-    customMaxPriorityFeePerGas,
-    customMaxFeePerGas
+    customGasFeePerGas?.maxPriorityFeePerGas,
+    customGasFeePerGas?.maxFeePerGas
   )
 
   return (
@@ -163,17 +170,17 @@ const GasFeeOption = ({
       isActive={isActive}
       onClick={onClick}>
       <HStack w="full" justify="space-between">
-        <Text fontWeight="medium" w={32}>
+        <Text fontWeight="medium" w={28}>
           {optionIcon(option)} {optionTitle(option)}
         </Text>
 
-        <Text color={minWaitTimeColor(option)} w={16}>
+        <Text color={minWaitTimeColor(option)} w={14}>
           {toHumanReadableTime(
             minWaitTime(
               option,
               gasFeeEstimates,
-              customMaxPriorityFeePerGas,
-              customMaxFeePerGas
+              customGasFeePerGas?.maxPriorityFeePerGas,
+              customGasFeePerGas?.maxFeePerGas
             )
           )}
         </Text>
@@ -194,17 +201,28 @@ const GasFeeOption = ({
           )}
         </Text>
 
-        <Tooltip
-          label={
-            <GasFeeOptionTooltip
-              option={option}
-              gasFee={gasFee}
-              gasLimit={gasLimit}
-              origin={origin}
+        <HStack w={10} justify="end">
+          {option === GasOption.ADVANCED && (
+            <EditIcon
+              onClick={(e) => {
+                e.stopPropagation()
+                onAdvancedOpen()
+              }}
             />
-          }>
-          <InfoIcon />
-        </Tooltip>
+          )}
+
+          <Tooltip
+            label={
+              <GasFeeOptionTooltip
+                option={option}
+                gasFee={gasFee}
+                gasLimit={gasLimit}
+                origin={origin}
+              />
+            }>
+            <InfoIcon />
+          </Tooltip>
+        </HStack>
       </HStack>
     </Button>
   )
@@ -608,7 +626,7 @@ const GRADIENT_COLORS = [
   '#D73A49'
 ]
 
-const NETWORK_CONGESTION_THRESHOLDS = {
+export const NETWORK_CONGESTION_THRESHOLDS = {
   NOT_BUSY: 0,
   STABLE: 0.33,
   BUSY: 0.66
@@ -650,4 +668,9 @@ const determineStatusInfo = (networkCongestion: number) => {
     color,
     sliderValue
   }
+}
+
+export type GasFeePerGas = {
+  maxPriorityFeePerGas: string
+  maxFeePerGas: string
 }
