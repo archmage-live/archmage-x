@@ -186,6 +186,7 @@ export type FallbackGasFeeEstimates = {
   low: Eip1559GasFee
   medium: Eip1559GasFee
   high: Eip1559GasFee
+  estimatedBaseFee: string
 }
 
 export type GasFeeEstimates = SourcedGasFeeEstimates | FallbackGasFeeEstimates
@@ -193,7 +194,15 @@ export type GasFeeEstimates = SourcedGasFeeEstimates | FallbackGasFeeEstimates
 export function isSourcedGasFeeEstimates(
   estimates: GasFeeEstimates
 ): estimates is SourcedGasFeeEstimates {
-  return !!(estimates as SourcedGasFeeEstimates).estimatedBaseFee
+  const sourced = estimates as SourcedGasFeeEstimates
+  return (
+    sourced.historicalBaseFeeRange?.length >= 2 &&
+    sourced.baseFeeTrend &&
+    sourced.latestPriorityFeeRange?.length >= 2 &&
+    sourced.historicalPriorityFeeRange?.length >= 2 &&
+    sourced.priorityFeeTrend &&
+    typeof sourced.networkCongestion === 'number'
+  )
 }
 
 function calculateGasFeeEstimatesForPriorityLevels(
@@ -322,7 +331,7 @@ export type EthGasPriceEstimate = {
 
 export enum GasEstimateType {
   FEE_MARKET = 'fee_market',
-  LEGACY = 'legacy',
+  // LEGACY = 'legacy',
   ETH_GAS_PRICE = 'eth_gasPrice'
 }
 
@@ -346,11 +355,11 @@ export function getEvmGasFeeBrief({
       fee = estimates.medium.suggestedMaxFeePerGas
       break
     }
-    case GasEstimateType.LEGACY: {
-      const estimates = gasFeeEstimates as LegacyGasPriceEstimate
-      fee = estimates.medium
-      break
-    }
+    // case GasEstimateType.LEGACY: {
+    //   const estimates = gasFeeEstimates as LegacyGasPriceEstimate
+    //   fee = estimates.medium
+    //   break
+    // }
     case GasEstimateType.ETH_GAS_PRICE: {
       const estimates = gasFeeEstimates as EthGasPriceEstimate
       fee = estimates.gasPrice
@@ -372,8 +381,16 @@ export async function fetchGasFeeEstimates(
       let gasFeeEstimates: GasFeeEstimates
       try {
         gasFeeEstimates = await CODEFI_GAS_API.suggestedGasFees(network.chainId)
-      } catch (err) {
-        console.warn('CODEFI_GAS_API.suggestedGasFees:', err)
+      } catch (err: any) {
+        if (
+          !err
+            .toString()
+            .includes(
+              "Cannot read properties of undefined (reading 'getBlock')"
+            )
+        ) {
+          console.warn('CODEFI_GAS_API.suggestedGasFees:', err)
+        }
         gasFeeEstimates = await fetchGasFeeEstimatesViaFeeHistory(provider)
       }
       const { suggestedMaxPriorityFeePerGas, suggestedMaxFeePerGas } =
@@ -390,11 +407,11 @@ export async function fetchGasFeeEstimates(
       }
     } else if (network.chainId === 1) {
       // legacy only for Ethereum mainnet
-      const gasFeeEstimates = await CODEFI_GAS_API.gasPrices(network.chainId)
-      return {
-        gasFeeEstimates,
-        gasEstimateType: GasEstimateType.LEGACY
-      }
+      // const gasFeeEstimates = await CODEFI_GAS_API.gasPrices(network.chainId)
+      // return {
+      //   gasFeeEstimates,
+      //   gasEstimateType: GasEstimateType.LEGACY
+      // }
     }
   } catch (err) {
     console.warn('fetchGasFeeEstimates:', err)

@@ -106,7 +106,7 @@ export const EvmTransaction = ({
 
   const [ignoreEstimateError, setIgnoreEstimateError] = useState(false)
 
-  const gasPrice = useEstimateGasPrice(network, 10000) as
+  const gasPrice = useEstimateGasPrice(network, 15000) as
     | GasFeeEstimation
     | undefined
   useEffect(() => {
@@ -258,9 +258,8 @@ export const EvmTransaction = ({
         maxFeePerGas = gasFee.suggestedMaxFeePerGas
         break
       }
-      case GasEstimateType.LEGACY:
-        // TODO
-        return
+      // case GasEstimateType.LEGACY:
+      //   return
       case GasEstimateType.ETH_GAS_PRICE:
         // TODO
         return
@@ -787,18 +786,15 @@ function computeFee(
         return
       }
       maxFee = parseGwei(gasFee.suggestedMaxFeePerGas)
-      if (isSourcedGasFeeEstimates(estimates)) {
-        normalFee = parseGwei(estimates.estimatedBaseFee).add(
-          parseGwei(gasFee.suggestedMaxPriorityFeePerGas)
-        )
-      }
+      normalFee = parseGwei(estimates.estimatedBaseFee).add(
+        parseGwei(gasFee.suggestedMaxPriorityFeePerGas)
+      )
       break
     }
-    case GasEstimateType.LEGACY: {
-      const estimates = gasPrice.gasFeeEstimates as LegacyGasPriceEstimate
-      // TODO
-      return
-    }
+    // case GasEstimateType.LEGACY: {
+    //   const estimates = gasPrice.gasFeeEstimates as LegacyGasPriceEstimate
+    //   return
+    // }
     case GasEstimateType.ETH_GAS_PRICE: {
       const estimates = gasPrice.gasFeeEstimates as EthGasPriceEstimate
       normalFee = parseGwei(estimates.gasPrice)

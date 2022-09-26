@@ -22,7 +22,6 @@ import {
   Tooltip,
   chakra
 } from '@chakra-ui/react'
-import { BigNumber } from '@ethersproject/bignumber'
 import Decimal from 'decimal.js'
 import * as React from 'react'
 import { useEffect, useMemo, useState } from 'react'
@@ -254,26 +253,27 @@ export const EvmAdvancedGasFeeModal = ({
 
                 <AlertBox level={baseFeeAlertLevel}>{baseFeeAlert}</AlertBox>
 
-                {isSourcedGasFeeEstimates(gasFeeEstimates) && (
-                  <HStack justify="space-between" fontSize="sm">
-                    <Text maxW="50%-7px">
-                      <chakra.span fontWeight="medium">Current:</chakra.span>
-                      &nbsp;
-                      <chakra.span>
-                        {new Decimal(gasFeeEstimates.estimatedBaseFee)
-                          .toDecimalPlaces(2)
-                          .toString()}
-                        &nbsp;Gwei
-                      </chakra.span>
-                      &nbsp;
-                      {gasFeeEstimates.baseFeeTrend === 'up' ? (
+                <HStack justify="space-between" fontSize="sm">
+                  <Text maxW="50%-7px">
+                    <chakra.span fontWeight="medium">Current:</chakra.span>
+                    &nbsp;
+                    <chakra.span>
+                      {new Decimal(gasFeeEstimates.estimatedBaseFee)
+                        .toDecimalPlaces(2)
+                        .toString()}
+                      &nbsp;Gwei
+                    </chakra.span>
+                    &nbsp;
+                    {isSourcedGasFeeEstimates(gasFeeEstimates) &&
+                      (gasFeeEstimates.baseFeeTrend === 'up' ? (
                         <ArrowUpIcon color="green.500" fontWeight="medium" />
                       ) : gasFeeEstimates.baseFeeTrend === 'down' ? (
                         <ArrowDownIcon color="red.500" fontWeight="medium" />
                       ) : (
                         <></>
-                      )}
-                    </Text>
+                      ))}
+                  </Text>
+                  {isSourcedGasFeeEstimates(gasFeeEstimates) && (
                     <Text maxW="50%-7px">
                       <chakra.span fontWeight="medium">12hr:</chakra.span>
                       &nbsp;
@@ -288,8 +288,8 @@ export const EvmAdvancedGasFeeModal = ({
                         &nbsp;Gwei
                       </chakra.span>
                     </Text>
-                  </HStack>
-                )}
+                  )}
+                </HStack>
               </Stack>
 
               <Stack>

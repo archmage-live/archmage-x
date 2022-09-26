@@ -1,7 +1,7 @@
 import { AddressZero } from '@ethersproject/constants'
 import { useQueries, useQuery } from '@tanstack/react-query'
 import Decimal from 'decimal.js'
-import { useCallback, useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useAsync, useAsyncRetry, useInterval } from 'react-use'
 
 import { NetworkKind } from '~lib/network'
@@ -224,7 +224,15 @@ export function useEstimateGasPrice(
 
   useInterval(retry, retryInterval && !loading ? retryInterval : null)
 
-  return value
+  const [gasPrice, setGasPrice] = useState<any>()
+  useEffect(() => {
+    if (value === undefined) {
+      return
+    }
+    setGasPrice(value)
+  }, [value])
+
+  return gasPrice
 }
 
 export function useEstimateGas(

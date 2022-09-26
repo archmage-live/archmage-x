@@ -1,6 +1,6 @@
 import { VoidSigner } from '@ethersproject/abstract-signer'
 import { BigNumber } from '@ethersproject/bignumber'
-import { BytesLike, hexlify } from '@ethersproject/bytes'
+import { BytesLike } from '@ethersproject/bytes'
 import { Logger } from '@ethersproject/logger'
 import { Network } from '@ethersproject/networks'
 import { resolveProperties, shallowCopy } from '@ethersproject/properties'
@@ -97,8 +97,8 @@ class UrlJsonRpcProvider extends BaseUrlJsonRpcProvider {
         return [
           'eth_feeHistory',
           [
-            hexlify(params.numberOfBlocks),
-            hexlify(params.endBlockNumber),
+            ethers.utils.hexValue(params.numberOfBlocks),
+            params.endBlockTag,
             params.percentiles
           ]
         ]

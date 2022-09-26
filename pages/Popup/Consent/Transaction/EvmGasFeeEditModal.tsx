@@ -12,6 +12,7 @@ import {
   ModalContent,
   ModalHeader,
   ModalOverlay,
+  PlacementWithLogical,
   Popover,
   PopoverArrow,
   PopoverBody,
@@ -21,10 +22,8 @@ import {
   Stack,
   Switch,
   Text,
-  Tooltip,
   chakra
 } from '@chakra-ui/react'
-import { BigNumber } from '@ethersproject/bignumber'
 import curveHigh from 'data-base64:~assets/curve-High.png'
 import curveLow from 'data-base64:~assets/curve-low.png'
 import curveMedium from 'data-base64:~assets/curve-medium.png'
@@ -411,61 +410,81 @@ const NetworkStatus = ({
 }: {
   gasFeeEstimates: GasFeeEstimates
 }) => {
+  const BaseFeeStatus = ({
+    placement
+  }: {
+    placement: PlacementWithLogical
+  }) => (
+    <Popover isLazy trigger="hover" placement={placement}>
+      <PopoverTrigger>
+        <Stack spacing={0}>
+          <Text h={6}>
+            {new Decimal(gasFeeEstimates.estimatedBaseFee)
+              .toDecimalPlaces(0)
+              .toString()}
+            &nbsp;Gwei
+          </Text>
+          <Text fontWeight="medium">Base fee</Text>
+        </Stack>
+      </PopoverTrigger>
+      <PopoverContent w="240px">
+        <PopoverArrow />
+        <PopoverBody>
+          The base fee is set by the network and changes every 13-14 seconds.
+          Our Market and Aggressive options account for sudden increases.
+        </PopoverBody>
+      </PopoverContent>
+    </Popover>
+  )
+
   return (
     <Stack spacing={4}>
       <Text>Network status</Text>
 
-      <HStack justify="space-evenly" h={16}>
-        <Tooltip
-          label="The base fee is set by the network and changes every 13-14 seconds. Our Market and Aggressive options account for sudden increases."
-          placement="top-start">
-          <Stack spacing={0} align="center">
-            {isSourcedGasFeeEstimates(gasFeeEstimates) ? (
-              <Text h={6}>
-                {new Decimal(gasFeeEstimates.estimatedBaseFee)
-                  .toDecimalPlaces(0)
-                  .toString()}
-                &nbsp;Gwei
-              </Text>
-            ) : (
-              <>--</>
-            )}
-            <Text fontWeight="medium">Base fee</Text>
-          </Stack>
-        </Tooltip>
+      {!isSourcedGasFeeEstimates(gasFeeEstimates) ? (
+        <Stack spacing={2}>
+          <Divider />
+          <Center>
+            <BaseFeeStatus placement="top" />
+          </Center>
+          <Divider />
+        </Stack>
+      ) : (
+        <HStack justify="space-evenly" h={16}>
+          <BaseFeeStatus placement="top-start" />
 
-        <Divider orientation="vertical" />
+          <Divider orientation="vertical" />
 
-        <Tooltip
-          label="Range of priority fees (aka “miner tip”). This goes to miners and incentivizes them to prioritize your transaction."
-          placement="top-start">
-          <Stack spacing={0} align="center">
-            {isSourcedGasFeeEstimates(gasFeeEstimates) ? (
-              <Text h={6}>
-                {new Decimal(gasFeeEstimates.latestPriorityFeeRange[0])
-                  .toDecimalPlaces(1)
-                  .toString()}
-                &nbsp;-&nbsp;
-                {new Decimal(gasFeeEstimates.latestPriorityFeeRange[1])
-                  .toDecimalPlaces(0)
-                  .toString()}
-                &nbsp;Gwei
-              </Text>
-            ) : (
-              <>--</>
-            )}
-            <Text fontWeight="medium">Priority fee</Text>
-          </Stack>
-        </Tooltip>
+          <Popover isLazy trigger="hover" placement="top">
+            <PopoverTrigger>
+              <Stack spacing={0} align="center">
+                <Text h={6}>
+                  {new Decimal(gasFeeEstimates.latestPriorityFeeRange[0])
+                    .toDecimalPlaces(1)
+                    .toString()}
+                  &nbsp;-&nbsp;
+                  {new Decimal(gasFeeEstimates.latestPriorityFeeRange[1])
+                    .toDecimalPlaces(0)
+                    .toString()}
+                  &nbsp;Gwei
+                </Text>
+                <Text fontWeight="medium">Priority fee</Text>
+              </Stack>
+            </PopoverTrigger>
+            <PopoverContent w="240px">
+              <PopoverArrow />
+              <PopoverBody>
+                Range of priority fees (aka “miner tip”). This goes to miners
+                and incentivizes them to prioritize your transaction.
+              </PopoverBody>
+            </PopoverContent>
+          </Popover>
 
-        <Divider orientation="vertical" />
+          <Divider orientation="vertical" />
 
-        {isSourcedGasFeeEstimates(gasFeeEstimates) ? (
           <StatusSlider networkCongestion={gasFeeEstimates.networkCongestion} />
-        ) : (
-          <>--</>
-        )}
-      </HStack>
+        </HStack>
+      )}
     </Stack>
   )
 }
@@ -475,47 +494,53 @@ const StatusSlider = ({ networkCongestion }: { networkCongestion: number }) => {
     determineStatusInfo(networkCongestion)
 
   return (
-    <Tooltip label={tooltip} placement="top-start">
-      <Stack w={16} spacing={0}>
-        <HStack h={6}>
-          <Box w="full">
-            <Box w="full" ms="-10px">
-              <Box
-                position="relative"
-                w={0}
-                h={0}
-                borderX="10px solid transparent"
-                borderTop="10px solid transparent"
-                mb="-2px"
-                ms={sliderValue + '%'}>
+    <Popover isLazy trigger="hover" placement="top-end">
+      <PopoverTrigger>
+        <Stack w={16} spacing={0}>
+          <HStack h={6}>
+            <Box w="full">
+              <Box w="full" ms="-10px">
                 <Box
-                  position="absolute"
+                  position="relative"
                   w={0}
                   h={0}
-                  borderX="5px solid transparent"
-                  borderTop="5px solid"
-                  borderTopColor={color}
-                  bottom="3px"
-                  left="-5px"
-                />
+                  borderX="10px solid transparent"
+                  borderTop="10px solid transparent"
+                  mb="-2px"
+                  ms={sliderValue + '%'}>
+                  <Box
+                    position="absolute"
+                    w={0}
+                    h={0}
+                    borderX="5px solid transparent"
+                    borderTop="5px solid"
+                    borderTopColor={color}
+                    bottom="3px"
+                    left="-5px"
+                  />
+                </Box>
               </Box>
+
+              <Box
+                w="full"
+                h="4px"
+                borderRadius="100px"
+                bgGradient={`linear-gradient(to right,${GRADIENT_COLORS[0]},${
+                  GRADIENT_COLORS[GRADIENT_COLORS.length - 1]
+                })`}></Box>
             </Box>
+          </HStack>
 
-            <Box
-              w="full"
-              h="4px"
-              borderRadius="100px"
-              bgGradient={`linear-gradient(to right,${GRADIENT_COLORS[0]},${
-                GRADIENT_COLORS[GRADIENT_COLORS.length - 1]
-              })`}></Box>
-          </Box>
-        </HStack>
-
-        <Text fontWeight="medium" color={color} textAlign="center">
-          {status}
-        </Text>
-      </Stack>
-    </Tooltip>
+          <Text fontWeight="medium" color={color} textAlign="center">
+            {status}
+          </Text>
+        </Stack>
+      </PopoverTrigger>
+      <PopoverContent w="240px">
+        <PopoverArrow />
+        <PopoverBody>{tooltip}</PopoverBody>
+      </PopoverContent>
+    </Popover>
   )
 }
 
