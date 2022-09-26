@@ -67,7 +67,7 @@ export const EvmGasFeeEditModal = ({
   currencySymbol: string
   gasFeeEstimates: GasFeeEstimates
   customGasFeePerGas?: MaxFeePerGas
-  gasLimit: BigNumber
+  gasLimit: number
   fromSite: boolean
   origin: string
 }) => {
@@ -172,7 +172,7 @@ const GasFeeOption = ({
   currencySymbol: string
   gasFeeEstimates: GasFeeEstimates
   customGasFeePerGas?: MaxFeePerGas
-  gasLimit: BigNumber
+  gasLimit: number
   origin: string
   containerRef: RefObject<HTMLElement | null>
 }) => {
@@ -217,7 +217,7 @@ const GasFeeOption = ({
           {gasFee ? (
             <>
               {parseGwei(gasFee.suggestedMaxFeePerGas)
-                .mul(gasLimit.toString())
+                .mul(gasLimit)
                 .div(new Decimal(10).pow(18))
                 .toDecimalPlaces(8)
                 .toString()}
@@ -279,7 +279,7 @@ const GasFeeOptionTooltip = ({
 }: {
   option: GasOption
   gasFee?: Eip1559GasFee
-  gasLimit: BigNumber
+  gasLimit: number
   origin: string
   defaultGasFeeOption?: GasOption
   setDefaultGasFeeOption: (option?: GasOption) => void
@@ -325,7 +325,7 @@ const GasFeeOptionTooltip = ({
                 .toDecimalPlaces(4)
                 .toString()}
             </Text>
-            <Text>{gasLimit.toString()}</Text>
+            <Text>{gasLimit}</Text>
           </Stack>
         </HStack>
       )}

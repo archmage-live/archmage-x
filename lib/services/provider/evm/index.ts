@@ -486,7 +486,7 @@ export class EvmProviderAdaptor implements ProviderAdaptor {
   }
 
   async sendTransaction(signedTransaction: any): Promise<any> {
-    return this.provider.sendTransaction(signedTransaction)
+    return (await this.provider.sendTransaction(signedTransaction)).hash
   }
 
   async signMessage(wallet: IChainAccount, message: any): Promise<any> {
@@ -537,10 +537,7 @@ type GasFeeSettings = {
 
 export function useDefaultGasFeeSettings(networkId: number) {
   const [gasFeeSettings, setGasFeeSettings, { remove: removeGasFeeSettings }] =
-    useLocalStorage<GasFeeSettings | undefined>(
-      gasFeeStoreKey(networkId),
-      null as any
-    )
+    useLocalStorage<GasFeeSettings | undefined>(gasFeeStoreKey(networkId))
 
   const setDefaultGasFeeOption = useCallback(
     (option?: GasOption) => {
@@ -572,10 +569,7 @@ export function useDefaultGasFeeSettings(networkId: number) {
   )
 
   return {
-    defaultGasFeeOption:
-      gasFeeSettings === null
-        ? undefined
-        : gasFeeSettings?.option || GasOption.MEDIUM,
+    defaultGasFeeOption: gasFeeSettings?.option,
     setDefaultGasFeeOption,
     defaultAdvancedGasFee: gasFeeSettings?.advanced,
     setDefaultAdvancedGasFee

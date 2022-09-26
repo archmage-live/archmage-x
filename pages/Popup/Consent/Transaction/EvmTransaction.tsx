@@ -156,13 +156,8 @@ export const EvmTransaction = ({
     setDefaultAdvancedGasFee
   } = useDefaultGasFeeSettings(network.id)
 
-  const [activeOption, setActiveOption] = useState<GasOption>()
-
-  useEffect(() => {
-    setActiveOption((activeOption) => {
-      return activeOption || defaultGasFeeOption
-    })
-  }, [defaultGasFeeOption])
+  const [_activeOption, setActiveOption] = useState<GasOption>()
+  const activeOption = _activeOption || defaultGasFeeOption || GasOption.MEDIUM
 
   const [customGasFeePerGas, setCustomGasFeePerGas] = useState<MaxFeePerGas>()
 
@@ -221,7 +216,7 @@ export const EvmTransaction = ({
       activeOption &&
       computeFee(
         gasPrice,
-        txParams.gasLimit as BigNumber,
+        gasLimit,
         activeOption,
         networkInfo.decimals,
         customGasFeePerGas?.maxPriorityFeePerGas,
@@ -238,6 +233,66 @@ export const EvmTransaction = ({
   const maxTotal = maxFee?.add(value)
 
   const insufficientBalance = balance && normalTotal?.gt(balance.amount)
+
+  const onConfirm = useCallback(async () => {
+    setSpinning(true)
+
+    if (!gasPrice || !activeOption) {
+      return
+    }
+
+    let maxPriorityFeePerGas, maxFeePerGas
+    switch (gasPrice.gasEstimateType) {
+      case GasEstimateType.FEE_MARKET: {
+        const estimates = gasPrice.gasFeeEstimates as GasFeeEstimates
+        const gasFee = optionGasFee(
+          activeOption,
+          estimates,
+          customGasFeePerGas?.maxPriorityFeePerGas,
+          customGasFeePerGas?.maxFeePerGas
+        )
+        if (!gasFee) {
+          return
+        }
+        maxPriorityFeePerGas = gasFee.suggestedMaxPriorityFeePerGas
+        maxFeePerGas = gasFee.suggestedMaxFeePerGas
+        break
+      }
+      case GasEstimateType.LEGACY:
+        // TODO
+        return
+      case GasEstimateType.ETH_GAS_PRICE:
+        // TODO
+        return
+    }
+
+    await CONSENT_SERVICE.processRequest(
+      {
+        ...request,
+        payload: {
+          ...request.payload,
+          txParams: {
+            ...payload.txParams,
+            nonce,
+            gasLimit,
+            maxPriorityFeePerGas: parseGwei(maxPriorityFeePerGas),
+            maxFeePerGas: parseGwei(maxFeePerGas)
+          } as EvmTxParams
+        } as TransactionPayload
+      },
+      true
+    )
+
+    window.close()
+  }, [
+    request,
+    payload,
+    activeOption,
+    nonce,
+    gasLimit,
+    gasPrice,
+    customGasFeePerGas
+  ])
 
   const Data = () => {
     return <></>
@@ -656,11 +711,7 @@ export const EvmTransaction = ({
                 insufficientBalance ||
                 !isGasLimitValid
               }
-              onClick={async () => {
-                setSpinning(true)
-                await CONSENT_SERVICE.processRequest(request, true)
-                window.close()
-              }}>
+              onClick={onConfirm}>
               Confirm
             </Button>
           </HStack>
@@ -691,7 +742,7 @@ export const EvmTransaction = ({
             currencySymbol={networkInfo.currencySymbol}
             gasFeeEstimates={gasPrice.gasFeeEstimates as GasFeeEstimates}
             customGasFeePerGas={customGasFeePerGas}
-            gasLimit={txParams.gasLimit as BigNumber}
+            gasLimit={gasLimit}
             fromSite={false}
             origin={origin}
           />
@@ -703,7 +754,7 @@ export const EvmTransaction = ({
             closeOnOverlayClick={!isGasFeeEditOpen}
             gasFeeEstimates={gasPrice.gasFeeEstimates as GasFeeEstimates}
             customGasFeePerGas={customGasFeePerGas}
-            gasLimit={txParams.gasLimit as BigNumber}
+            gasLimit={gasLimit}
             currencySymbol={networkInfo.currencySymbol}
           />
         </>
@@ -716,7 +767,7 @@ export const EvmTransaction = ({
 
 function computeFee(
   gasPrice: GasFeeEstimation,
-  gasLimit: BigNumber,
+  gasLimit: number,
   option: GasOption,
   decimals: number,
   customMaxPriorityFeePerGas?: string,
@@ -762,10 +813,10 @@ function computeFee(
 
   return [
     new Decimal(normalFee.toString())
-      .mul(gasLimit.toString())
+      .mul(gasLimit)
       .div(new Decimal(10).pow(decimals)),
     new Decimal(maxFee.toString())
-      .mul(gasLimit.toString())
+      .mul(gasLimit)
       .div(new Decimal(10).pow(decimals))
   ]
 }

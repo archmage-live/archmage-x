@@ -53,7 +53,7 @@ export const EvmAdvancedGasFeeModal = ({
   closeOnOverlayClick: boolean
   gasFeeEstimates: GasFeeEstimates
   customGasFeePerGas?: MaxFeePerGas
-  gasLimit: BigNumber
+  gasLimit: number
   currencySymbol: string
 }) => {
   const [maxBaseFeePerGas, setMaxBaseFeePerGas] = useState<string>('')
@@ -236,7 +236,7 @@ export const EvmAdvancedGasFeeModal = ({
                       <Text>
                         ≈&nbsp;
                         {new Decimal(maxBaseFeePerGas || 0)
-                          .mul(gasLimit.toString())
+                          .mul(gasLimit)
                           .div(new Decimal(10).pow(9))
                           .toDecimalPlaces(8)
                           .toString()}
@@ -332,7 +332,7 @@ export const EvmAdvancedGasFeeModal = ({
                       <Text>
                         ≈&nbsp;
                         {new Decimal(maxPriorityFeePerGas || 0)
-                          .mul(gasLimit.toString())
+                          .mul(gasLimit)
                           .div(new Decimal(10).pow(9))
                           .toDecimalPlaces(8)
                           .toString()}
