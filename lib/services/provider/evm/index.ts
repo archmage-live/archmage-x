@@ -12,7 +12,7 @@ import { version } from '@ethersproject/providers/lib/_version'
 import { ConnectionInfo } from '@ethersproject/web'
 import assert from 'assert'
 import { ethers } from 'ethers'
-import { useMemo } from 'react'
+import { useCallback, useMemo } from 'react'
 
 import { NetworkKind } from '~lib/network'
 import { EvmChainInfo } from '~lib/network/evm'
@@ -21,11 +21,16 @@ import { useEvmSignatureFrom4Bytes } from '~lib/services/datasource/4byte'
 import { ETH_BALANCE_CHECKER_API } from '~lib/services/datasource/ethBalanceChecker'
 import { IPFS_GATEWAY_API } from '~lib/services/datasource/ipfsGateway'
 import { NETWORK_SERVICE } from '~lib/services/network'
-import { fetchGasFeeEstimates } from '~lib/services/provider/evm/gasFee'
+import {
+  GasOption,
+  MaxFeePerGas,
+  fetchGasFeeEstimates
+} from '~lib/services/provider/evm/gasFee'
 import {
   ProviderAdaptor,
   TransactionPayload
 } from '~lib/services/provider/types'
+import { StoreKey, useLocalStorage } from '~lib/store'
 import { getSigningWallet } from '~lib/wallet'
 
 import {
@@ -519,4 +524,60 @@ export function useEvmFunctionSignature(
 
 export function parseEvmFunctionSignature(sig: string) {
   return ethers.utils.FunctionFragment.from(sig)
+}
+
+function gasFeeStoreKey(networkId: number): string {
+  return `${StoreKey.GAS_FEE_PREFIX}_${networkId}`
+}
+
+type GasFeeSettings = {
+  option: GasOption
+  advanced?: MaxFeePerGas
+}
+
+export function useDefaultGasFeeSettings(networkId: number) {
+  const [gasFeeSettings, setGasFeeSettings, { remove: removeGasFeeSettings }] =
+    useLocalStorage<GasFeeSettings | undefined>(
+      gasFeeStoreKey(networkId),
+      null as any
+    )
+
+  const setDefaultGasFeeOption = useCallback(
+    (option?: GasOption) => {
+      if (
+        option === GasOption.SITE_SUGGESTED ||
+        option === GasOption.ADVANCED
+      ) {
+        return
+      }
+      if (!option) {
+        removeGasFeeSettings()
+      } else {
+        setGasFeeSettings({
+          option
+        })
+      }
+    },
+    [setGasFeeSettings, removeGasFeeSettings]
+  )
+
+  const setDefaultAdvancedGasFee = useCallback(
+    (advanced: MaxFeePerGas) => {
+      setGasFeeSettings({
+        option: GasOption.ADVANCED,
+        advanced
+      })
+    },
+    [setGasFeeSettings]
+  )
+
+  return {
+    defaultGasFeeOption:
+      gasFeeSettings === null
+        ? undefined
+        : gasFeeSettings?.option || GasOption.MEDIUM,
+    setDefaultGasFeeOption,
+    defaultAdvancedGasFee: gasFeeSettings?.advanced,
+    setDefaultAdvancedGasFee
+  }
 }

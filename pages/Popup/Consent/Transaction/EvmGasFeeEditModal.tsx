@@ -12,7 +12,14 @@ import {
   ModalContent,
   ModalHeader,
   ModalOverlay,
+  Popover,
+  PopoverArrow,
+  PopoverBody,
+  PopoverContent,
+  PopoverTrigger,
+  Portal,
   Stack,
+  Switch,
   Text,
   Tooltip,
   chakra
@@ -22,17 +29,23 @@ import curveHigh from 'data-base64:~assets/curve-High.png'
 import curveLow from 'data-base64:~assets/curve-low.png'
 import curveMedium from 'data-base64:~assets/curve-medium.png'
 import Decimal from 'decimal.js'
-import { useMemo } from 'react'
+import * as React from 'react'
+import { RefObject, useMemo, useRef } from 'react'
 
+import { INetwork } from '~lib/schema'
 import {
   Eip1559GasFee,
   GasFeeEstimates,
+  GasOption,
+  MaxFeePerGas,
   calculateTimeEstimate,
   isSourcedGasFeeEstimates,
-  parseGwei
+  parseGwei,
+  useDefaultGasFeeSettings
 } from '~lib/services/provider/evm'
 
 export const EvmGasFeeEditModal = ({
+  network,
   isOpen,
   onClose,
   onAdvancedOpen,
@@ -45,6 +58,7 @@ export const EvmGasFeeEditModal = ({
   fromSite,
   origin
 }: {
+  network: INetwork
   isOpen: boolean
   onClose: () => void
   onAdvancedOpen: (confirm?: boolean) => void
@@ -52,7 +66,7 @@ export const EvmGasFeeEditModal = ({
   setActiveOption: (option: GasOption) => void
   currencySymbol: string
   gasFeeEstimates: GasFeeEstimates
-  customGasFeePerGas?: GasFeePerGas
+  customGasFeePerGas?: MaxFeePerGas
   gasLimit: BigNumber
   fromSite: boolean
   origin: string
@@ -65,11 +79,13 @@ export const EvmGasFeeEditModal = ({
     ]
     options.push(false)
     if (fromSite) {
-      options.push(GasOption.SITE)
+      options.push(GasOption.SITE_SUGGESTED)
     }
     options.push(GasOption.ADVANCED)
     return options
   }, [fromSite])
+
+  const ref = useRef(null)
 
   return (
     <Modal
@@ -82,7 +98,7 @@ export const EvmGasFeeEditModal = ({
       <ModalContent my={0}>
         <ModalHeader>Edit gas fee</ModalHeader>
         <ModalCloseButton />
-        <ModalBody p={0}>
+        <ModalBody p={0} ref={ref}>
           <Stack px={6} pb={6} spacing={12} fontSize="sm">
             <Stack>
               <Divider />
@@ -101,6 +117,7 @@ export const EvmGasFeeEditModal = ({
                 return (
                   <GasFeeOption
                     key={option}
+                    network={network}
                     option={option}
                     isActive={option === activeOption}
                     onClick={() => {
@@ -120,6 +137,7 @@ export const EvmGasFeeEditModal = ({
                     customGasFeePerGas={customGasFeePerGas}
                     gasLimit={gasLimit}
                     origin={origin}
+                    containerRef={ref}
                   />
                 )
               })}
@@ -134,6 +152,7 @@ export const EvmGasFeeEditModal = ({
 }
 
 const GasFeeOption = ({
+  network,
   option,
   isActive,
   onClick,
@@ -142,17 +161,20 @@ const GasFeeOption = ({
   gasFeeEstimates,
   customGasFeePerGas,
   gasLimit,
-  origin
+  origin,
+  containerRef
 }: {
+  network: INetwork
   option: GasOption
   isActive: boolean
   onClick: () => void
   onAdvancedOpen: () => void
   currencySymbol: string
   gasFeeEstimates: GasFeeEstimates
-  customGasFeePerGas?: GasFeePerGas
+  customGasFeePerGas?: MaxFeePerGas
   gasLimit: BigNumber
   origin: string
+  containerRef: RefObject<HTMLElement | null>
 }) => {
   const gasFee = optionGasFee(
     option,
@@ -160,6 +182,12 @@ const GasFeeOption = ({
     customGasFeePerGas?.maxPriorityFeePerGas,
     customGasFeePerGas?.maxFeePerGas
   )
+
+  const {
+    defaultGasFeeOption,
+    setDefaultGasFeeOption,
+    setDefaultAdvancedGasFee
+  } = useDefaultGasFeeSettings(network.id)
 
   return (
     <Button
@@ -211,17 +239,29 @@ const GasFeeOption = ({
             />
           )}
 
-          <Tooltip
-            label={
-              <GasFeeOptionTooltip
-                option={option}
-                gasFee={gasFee}
-                gasLimit={gasLimit}
-                origin={origin}
-              />
-            }>
-            <InfoIcon />
-          </Tooltip>
+          <Box onClick={(e) => e.stopPropagation()}>
+            <Popover isLazy trigger="hover" placement="left">
+              <PopoverTrigger>
+                <InfoIcon />
+              </PopoverTrigger>
+              <Portal containerRef={containerRef}>
+                <PopoverContent w="240px" whiteSpace="normal">
+                  <PopoverArrow />
+                  <PopoverBody p={0}>
+                    <GasFeeOptionTooltip
+                      option={option}
+                      gasFee={gasFee}
+                      gasLimit={gasLimit}
+                      origin={origin}
+                      defaultGasFeeOption={defaultGasFeeOption}
+                      setDefaultGasFeeOption={setDefaultGasFeeOption}
+                      setDefaultAdvancedGasFee={setDefaultAdvancedGasFee}
+                    />
+                  </PopoverBody>
+                </PopoverContent>
+              </Portal>
+            </Popover>
+          </Box>
         </HStack>
       </HStack>
     </Button>
@@ -232,17 +272,23 @@ const GasFeeOptionTooltip = ({
   option,
   gasFee,
   gasLimit,
-  origin
+  origin,
+  defaultGasFeeOption,
+  setDefaultGasFeeOption,
+  setDefaultAdvancedGasFee
 }: {
   option: GasOption
   gasFee?: Eip1559GasFee
   gasLimit: BigNumber
   origin: string
+  defaultGasFeeOption?: GasOption
+  setDefaultGasFeeOption: (option?: GasOption) => void
+  setDefaultAdvancedGasFee: (advanced: MaxFeePerGas) => void
 }) => {
   const image = optionImage(option)
 
   return (
-    <Stack p={4} spacing={4} w="200px" fontWeight="normal">
+    <Stack p={4} spacing={4} w="240px" fontWeight="normal">
       {image && (
         <Center>
           <Image
@@ -283,6 +329,34 @@ const GasFeeOptionTooltip = ({
           </Stack>
         </HStack>
       )}
+
+      {gasFee && option !== GasOption.SITE_SUGGESTED && (
+        <HStack>
+          <Switch
+            size="md"
+            colorScheme="purple"
+            isChecked={defaultGasFeeOption === option}
+            onChange={(e) => {
+              if (e.target.checked && defaultGasFeeOption !== option) {
+                if (option === GasOption.ADVANCED) {
+                  setDefaultAdvancedGasFee({
+                    maxFeePerGas: gasFee.suggestedMaxFeePerGas,
+                    maxPriorityFeePerGas: gasFee.suggestedMaxPriorityFeePerGas
+                  })
+                } else {
+                  setDefaultGasFeeOption(option)
+                }
+              }
+            }}
+          />
+
+          <Text>
+            Use&nbsp;
+            <chakra.span fontWeight="medium">{optionTitle(option)}</chakra.span>
+            &nbsp;as default gas fee option.
+          </Text>
+        </HStack>
+      )}
     </Stack>
   )
 }
@@ -319,7 +393,7 @@ const GasFeeOptionTooltipText = ({
           drops.
         </>
       )
-    case GasOption.SITE:
+    case GasOption.SITE_SUGGESTED:
       return (
         <>
           Use <chakra.span fontWeight="bold">Advanced</chakra.span> to customize
@@ -453,19 +527,11 @@ function optionImage(option: GasOption) {
       return curveMedium
     case GasOption.HIGH:
       return curveHigh
-    case GasOption.SITE:
+    case GasOption.SITE_SUGGESTED:
       return
     case GasOption.ADVANCED:
       return
   }
-}
-
-export enum GasOption {
-  LOW = 'low',
-  MEDIUM = 'medium',
-  HIGH = 'high',
-  SITE = 'site',
-  ADVANCED = 'advanced'
 }
 
 export function optionGasFee(
@@ -481,7 +547,7 @@ export function optionGasFee(
       return gasFeeEstimates.medium
     case GasOption.HIGH:
       return gasFeeEstimates.high
-    case GasOption.SITE:
+    case GasOption.SITE_SUGGESTED:
     // pass through
     case GasOption.ADVANCED:
       if (!customMaxPriorityFeePerGas || !customMaxFeePerGas) {
@@ -502,7 +568,7 @@ export function optionIcon(option: GasOption) {
       return '🦊'
     case GasOption.HIGH:
       return '🦍'
-    case GasOption.SITE:
+    case GasOption.SITE_SUGGESTED:
       return '🌐'
     case GasOption.ADVANCED:
       return '⚙'
@@ -517,7 +583,7 @@ export function optionTitle(option: GasOption) {
       return 'Market'
     case GasOption.HIGH:
       return 'Aggressive'
-    case GasOption.SITE:
+    case GasOption.SITE_SUGGESTED:
       return 'Site'
     case GasOption.ADVANCED:
       return 'Advanced'
@@ -537,7 +603,7 @@ function minWaitTime(
       return gasFeeEstimates.low.maxWaitTimeEstimate
     case GasOption.HIGH:
       return gasFeeEstimates.high.minWaitTimeEstimate
-    case GasOption.SITE:
+    case GasOption.SITE_SUGGESTED:
     // pass through
     case GasOption.ADVANCED: {
       if (!maxPriorityFeePerGas || !maxFeePerGas) {
@@ -571,7 +637,7 @@ function minWaitTime(
   }
 }
 
-function minWaitTimeColor(option: GasOption) {
+export function minWaitTimeColor(option: GasOption) {
   switch (option) {
     case GasOption.LOW:
       return 'red.500'
@@ -579,10 +645,58 @@ function minWaitTimeColor(option: GasOption) {
     // pass through
     case GasOption.HIGH:
       return 'green.500'
-    case GasOption.SITE:
+    case GasOption.SITE_SUGGESTED:
     // pass through
     case GasOption.ADVANCED:
       return undefined
+  }
+}
+
+export function minWaitTimeText(
+  option: GasOption,
+  gasFeeEstimates: GasFeeEstimates,
+  maxPriorityFeePerGas?: string,
+  maxFeePerGas?: string
+) {
+  const time = minWaitTime(
+    option,
+    gasFeeEstimates,
+    maxPriorityFeePerGas,
+    maxFeePerGas
+  )
+  if (time === undefined) {
+    return
+  }
+  const timeStr = toHumanReadableTime(time, true)
+
+  switch (option) {
+    case GasOption.LOW:
+      return `Maybe in ${timeStr}`
+    case GasOption.MEDIUM:
+      return `Likely in < ${timeStr}`
+    case GasOption.HIGH:
+      return `Very likely in < ${timeStr}`
+    case GasOption.SITE_SUGGESTED:
+    // pass through
+    case GasOption.ADVANCED:
+      if (!maxPriorityFeePerGas || !maxFeePerGas) {
+        return
+      }
+      if (
+        new Decimal(maxPriorityFeePerGas).gte(
+          gasFeeEstimates.high.suggestedMaxPriorityFeePerGas
+        )
+      ) {
+        return `Very likely in < ${timeStr}`
+      } else if (
+        new Decimal(maxPriorityFeePerGas).gte(
+          gasFeeEstimates.medium.suggestedMaxPriorityFeePerGas
+        )
+      ) {
+        return `Likely in < ${timeStr}`
+      } else {
+        return `Maybe in ${timeStr}`
+      }
   }
 }
 
@@ -598,18 +712,18 @@ function maxFeeColor(option: GasOption) {
 const MINUTE_CUTOFF = 90 * 60
 const SECOND_CUTOFF = 90
 
-function toHumanReadableTime(time?: number) {
+function toHumanReadableTime(time?: number, long = false) {
   if (time === undefined || time === null) {
     return '--'
   }
   const seconds = Math.ceil(time / 1000)
   if (seconds <= SECOND_CUTOFF) {
-    return seconds + 's'
+    return seconds + (long ? ' seconds' : 's')
   }
   if (seconds <= MINUTE_CUTOFF) {
-    return Math.ceil(seconds / 60) + 'm'
+    return Math.ceil(seconds / 60) + (long ? ' minutes' : 'm')
   }
-  return Math.ceil(seconds / 3600) + 'h'
+  return Math.ceil(seconds / 3600) + (long ? ' hours' : 'h')
 }
 
 const GRADIENT_COLORS = [
@@ -668,9 +782,4 @@ const determineStatusInfo = (networkCongestion: number) => {
     color,
     sliderValue
   }
-}
-
-export type GasFeePerGas = {
-  maxPriorityFeePerGas: string
-  maxFeePerGas: string
 }

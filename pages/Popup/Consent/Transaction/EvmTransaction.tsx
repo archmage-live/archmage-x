@@ -51,9 +51,12 @@ import {
   GasEstimateType,
   GasFeeEstimates,
   GasFeeEstimation,
+  GasOption,
   LegacyGasPriceEstimate,
+  MaxFeePerGas,
   isSourcedGasFeeEstimates,
   parseGwei,
+  useDefaultGasFeeSettings,
   useEvmFunctionSignature
 } from '~lib/services/provider/evm'
 import { Balance } from '~lib/services/token'
@@ -62,9 +65,9 @@ import { shortenAddress } from '~lib/utils'
 import { EvmAdvancedGasFeeModal } from './EvmAdvancedGasFeeModal'
 import {
   EvmGasFeeEditModal,
-  GasFeePerGas,
-  GasOption,
   NETWORK_CONGESTION_THRESHOLDS,
+  minWaitTimeColor,
+  minWaitTimeText,
   optionGasFee,
   optionIcon,
   optionTitle
@@ -111,6 +114,16 @@ export const EvmTransaction = ({
   }, [gasPrice])
 
   const [nonce, setNonce] = useState(BigNumber.from(txParams.nonce!).toNumber())
+  const [gasLimit, setGasLimit] = useState(
+    BigNumber.from(txParams.gasLimit!).toNumber()
+  )
+  const [editNonce, setEditNonce] = useState(false)
+  const [editGasLimit, setEditGasLimit] = useState(false)
+
+  const [isGasLimitValid, setIsGasLimitValid] = useState(false)
+  useEffect(() => {
+    setIsGasLimitValid(gasLimit >= GAS_LIMIT_MIN && gasLimit <= GAS_LIMIT_MAX)
+  }, [gasLimit])
 
   const bg = useColorModeValue('purple.50', 'gray.800')
   const bannerBg = useColorModeValue('white', 'black')
@@ -137,9 +150,27 @@ export const EvmTransaction = ({
 
   const price = useCryptoComparePrice(networkInfo.currencySymbol)
 
-  const [activeOption, setActiveOption] = useState<GasOption>(GasOption.MEDIUM)
+  const {
+    defaultGasFeeOption,
+    defaultAdvancedGasFee,
+    setDefaultAdvancedGasFee
+  } = useDefaultGasFeeSettings(network.id)
 
-  const [customGasFeePerGas, setCustomGasFeePerGas] = useState<GasFeePerGas>()
+  const [activeOption, setActiveOption] = useState<GasOption>()
+
+  useEffect(() => {
+    setActiveOption((activeOption) => {
+      return activeOption || defaultGasFeeOption
+    })
+  }, [defaultGasFeeOption])
+
+  const [customGasFeePerGas, setCustomGasFeePerGas] = useState<MaxFeePerGas>()
+
+  useEffect(() => {
+    setCustomGasFeePerGas((customGasFeePerGas) => {
+      return customGasFeePerGas || defaultAdvancedGasFee
+    })
+  }, [defaultAdvancedGasFee])
 
   const {
     isOpen: isGasFeeEditOpen,
@@ -164,9 +195,12 @@ export const EvmTransaction = ({
   )
 
   const onAdvancedGasFeeClose = useCallback(
-    (customGasFeePerGas?: GasFeePerGas) => {
+    (customGasFeePerGas?: MaxFeePerGas, enableDefault?: boolean) => {
       if (customGasFeePerGas) {
         setCustomGasFeePerGas(customGasFeePerGas)
+        if (enableDefault) {
+          setDefaultAdvancedGasFee(customGasFeePerGas)
+        }
         if (confirmAdvancedGasFee) {
           setActiveOption(GasOption.ADVANCED)
           onGasFeeEditClose()
@@ -174,11 +208,17 @@ export const EvmTransaction = ({
       }
       _onAdvancedGasFeeClose()
     },
-    [_onAdvancedGasFeeClose, confirmAdvancedGasFee, onGasFeeEditClose]
+    [
+      _onAdvancedGasFeeClose,
+      confirmAdvancedGasFee,
+      onGasFeeEditClose,
+      setDefaultAdvancedGasFee
+    ]
   )
 
   const [normalFee, maxFee] =
     (gasPrice &&
+      activeOption &&
       computeFee(
         gasPrice,
         txParams.gasLimit as BigNumber,
@@ -198,191 +238,6 @@ export const EvmTransaction = ({
   const maxTotal = maxFee?.add(value)
 
   const insufficientBalance = balance && normalTotal?.gt(balance.amount)
-
-  const Details = () => {
-    return (
-      <Stack spacing={16}>
-        <Stack spacing={8}>
-          {isNetworkBusy(gasPrice) && (
-            <AlertBox>
-              Network is busy. Gas prices are high and estimates are less
-              accurate.
-            </AlertBox>
-          )}
-
-          {populated.code && (
-            <AlertBox level="error" nowrap>
-              <Text>
-                We were not able to estimate gas. There might be an error in the
-                contract and this transaction may fail.
-              </Text>
-              {!ignoreEstimateError && (
-                <Text
-                  color="purple.500"
-                  fontWeight="medium"
-                  cursor="pointer"
-                  onClick={() => {
-                    setIgnoreEstimateError(true)
-                  }}>
-                  I want to proceed anyway
-                </Text>
-              )}
-            </AlertBox>
-          )}
-
-          {(!populated.code || ignoreEstimateError) && (
-            <>
-              {activeOption === GasOption.LOW && (
-                <AlertBox>
-                  Future transactions will queue after this one.
-                </AlertBox>
-              )}
-
-              <Stack spacing={2}>
-                <HStack justify="end" spacing={0}>
-                  <Button
-                    variant="ghost"
-                    colorScheme="blue"
-                    size="sm"
-                    px={2}
-                    rightIcon={<ChevronRightIcon fontSize="xl" />}
-                    onClick={onGasFeeEditOpen}>
-                    {optionIcon(activeOption)} {optionTitle(activeOption)}
-                  </Button>
-
-                  {activeOption === GasOption.ADVANCED && (
-                    <Button
-                      variant="link"
-                      colorScheme="blue"
-                      size="sm"
-                      px={2}
-                      onClick={() => onAdvancedGasFeeOpen(false)}>
-                      <EditIcon />
-                    </Button>
-                  )}
-                </HStack>
-
-                <HStack justify="space-between">
-                  <Text>
-                    <chakra.span fontWeight="bold">Gas</chakra.span>
-                    &nbsp;
-                    <chakra.span fontSize="md" fontStyle="italic">
-                      (estimated)
-                    </chakra.span>
-                    &nbsp;
-                    <Tooltip
-                      label={
-                        <Stack>
-                          <Text>
-                            Gas fee is paid to miners/validators who process
-                            transactions on the Ethereum network. Archmage does
-                            not profit from gas fees.
-                          </Text>
-                          <Text>
-                            Gas fee is set by the network and fluctuate based on
-                            network traffic and transaction complexity.
-                          </Text>
-                        </Stack>
-                      }>
-                      <InfoIcon verticalAlign="baseline" />
-                    </Tooltip>
-                  </Text>
-
-                  <Stack align="end" spacing={0}>
-                    <Text fontWeight="bold">
-                      {normalFee?.toDecimalPlaces(8).toString()}
-                      &nbsp;
-                      {networkInfo.currencySymbol}
-                    </Text>
-                    <Text>
-                      {price ? (
-                        <>
-                          {price.currencySymbol}&nbsp;
-                          {formatNumber(normalFee?.mul(price.price || 0))}
-                        </>
-                      ) : (
-                        <>{normalFee?.toDecimalPlaces(8).toString()}</>
-                      )}
-                    </Text>
-                  </Stack>
-                </HStack>
-
-                <HStack justify="space-between">
-                  <Text color="green.500" fontSize="sm" fontWeight="medium">
-                    Likely in {'< 30'} seconds
-                  </Text>
-
-                  <Text color="gray.500">
-                    Max:&nbsp;
-                    {maxFee?.toDecimalPlaces(8).toString()}
-                    &nbsp;
-                    {networkInfo.currencySymbol}
-                  </Text>
-                </HStack>
-              </Stack>
-
-              <Divider />
-            </>
-          )}
-
-          <Stack spacing={2}>
-            <HStack justify="space-between">
-              <Text fontWeight="bold">Total</Text>
-
-              <Stack align="end" spacing={0}>
-                <Text fontWeight="bold">
-                  {normalTotal?.toDecimalPlaces(8).toString()}
-                  &nbsp;
-                  {networkInfo.currencySymbol}
-                </Text>
-                <Text>
-                  {price ? (
-                    <>
-                      {price.currencySymbol}&nbsp;
-                      {formatNumber(normalTotal?.mul(price.price || 0))}
-                    </>
-                  ) : (
-                    <>{normalTotal?.toDecimalPlaces(8).toString()}</>
-                  )}
-                </Text>
-              </Stack>
-            </HStack>
-
-            <HStack justify="space-between">
-              <Text color="gray.500" fontSize="sm">
-                Amount + Gas Fee
-              </Text>
-
-              <Text color="gray.500">
-                Max:&nbsp;
-                {maxTotal?.toDecimalPlaces(8).toString()}
-                &nbsp;
-                {networkInfo.currencySymbol}
-              </Text>
-            </HStack>
-          </Stack>
-        </Stack>
-
-        <HStack justify="space-between">
-          <Text>Nonce</Text>
-
-          <NumberInput
-            min={0}
-            step={1}
-            keepWithinRange
-            precision={0}
-            value={nonce}
-            onChange={(_, val) => setNonce(val)}>
-            <NumberInputField />
-            <NumberInputStepper>
-              <NumberIncrementStepper />
-              <NumberDecrementStepper />
-            </NumberInputStepper>
-          </NumberInput>
-        </HStack>
-      </Stack>
-    )
-  }
 
   const Data = () => {
     return <></>
@@ -413,19 +268,20 @@ export const EvmTransaction = ({
           />
         </Box>
 
-        {true && (
-          <>
-            <Divider />
+        <Divider />
 
-            <Box px={6} py={2}>
-              <AlertBox level="info">
-                New address detected! Click here to add to your address book.
-              </AlertBox>
-            </Box>
+        {/*{true && (*/}
+        {/*  <>*/}
 
-            <Divider />
-          </>
-        )}
+        {/*    <Box px={6} py={2}>*/}
+        {/*      <AlertBox level="info">*/}
+        {/*        New address detected! Click here to add to your address book.*/}
+        {/*      </AlertBox>*/}
+        {/*    </Box>*/}
+
+        {/*    <Divider />*/}
+        {/*  </>*/}
+        {/*)}*/}
       </Stack>
 
       <Box ref={scrollRef} overflowY="auto" position="relative" pb={6}>
@@ -503,7 +359,257 @@ export const EvmTransaction = ({
           <Tabs>
             <TabPanels>
               <TabPanel p={0}>
-                <Details />
+                <Stack spacing={16}>
+                  <Stack spacing={8}>
+                    {isNetworkBusy(gasPrice) && (
+                      <AlertBox>
+                        Network is busy. Gas prices are high and estimates are
+                        less accurate.
+                      </AlertBox>
+                    )}
+
+                    {populated.code && (
+                      <AlertBox level="error" nowrap>
+                        <Text>
+                          We were not able to estimate gas. There might be an
+                          error in the contract and this transaction may fail.
+                        </Text>
+                        {!ignoreEstimateError && (
+                          <Text
+                            color="purple.500"
+                            fontWeight="medium"
+                            cursor="pointer"
+                            onClick={() => {
+                              setIgnoreEstimateError(true)
+                            }}>
+                            I want to proceed anyway
+                          </Text>
+                        )}
+                      </AlertBox>
+                    )}
+
+                    {(!populated.code || ignoreEstimateError) && (
+                      <>
+                        {activeOption === GasOption.LOW && (
+                          <AlertBox>
+                            Future transactions will queue after this one.
+                          </AlertBox>
+                        )}
+
+                        <Stack spacing={2}>
+                          <HStack justify="end">
+                            <Button
+                              variant="ghost"
+                              colorScheme="blue"
+                              size="sm"
+                              px={1}
+                              rightIcon={<ChevronRightIcon fontSize="xl" />}
+                              onClick={onGasFeeEditOpen}>
+                              {activeOption && optionIcon(activeOption)}
+                              &nbsp;
+                              {activeOption && optionTitle(activeOption)}
+                            </Button>
+
+                            {activeOption === GasOption.ADVANCED && (
+                              <Button
+                                variant="link"
+                                size="sm"
+                                minW={0}
+                                onClick={() => onAdvancedGasFeeOpen(false)}>
+                                <EditIcon />
+                              </Button>
+                            )}
+                          </HStack>
+
+                          <HStack justify="space-between">
+                            <Text>
+                              <chakra.span fontWeight="bold">Gas</chakra.span>
+                              &nbsp;
+                              <chakra.span fontSize="md" fontStyle="italic">
+                                (estimated)
+                              </chakra.span>
+                              &nbsp;
+                              <Tooltip
+                                label={
+                                  <Stack>
+                                    <Text>
+                                      Gas fee is paid to miners/validators who
+                                      process transactions on the Ethereum
+                                      network. Archmage does not profit from gas
+                                      fees.
+                                    </Text>
+                                    <Text>
+                                      Gas fee is set by the network and
+                                      fluctuate based on network traffic and
+                                      transaction complexity.
+                                    </Text>
+                                  </Stack>
+                                }>
+                                <InfoIcon verticalAlign="baseline" />
+                              </Tooltip>
+                            </Text>
+
+                            <Stack align="end" spacing={0}>
+                              <Text fontWeight="bold">
+                                {normalFee?.toDecimalPlaces(8).toString()}
+                                &nbsp;
+                                {networkInfo.currencySymbol}
+                              </Text>
+                              <Text>
+                                {price ? (
+                                  <>
+                                    {price.currencySymbol}&nbsp;
+                                    {formatNumber(
+                                      normalFee?.mul(price.price || 0)
+                                    )}
+                                  </>
+                                ) : (
+                                  <>
+                                    {normalFee?.toDecimalPlaces(8).toString()}
+                                  </>
+                                )}
+                              </Text>
+                            </Stack>
+                          </HStack>
+
+                          <HStack justify="space-between">
+                            <Text
+                              color={
+                                activeOption && minWaitTimeColor(activeOption)
+                              }
+                              fontSize="sm"
+                              fontWeight="medium">
+                              {gasPrice?.gasEstimateType ===
+                                GasEstimateType.FEE_MARKET &&
+                                activeOption &&
+                                minWaitTimeText(
+                                  activeOption,
+                                  gasPrice.gasFeeEstimates as GasFeeEstimates,
+                                  customGasFeePerGas?.maxPriorityFeePerGas,
+                                  customGasFeePerGas?.maxFeePerGas
+                                )}
+                            </Text>
+
+                            <Text color="gray.500">
+                              Max:&nbsp;
+                              {maxFee?.toDecimalPlaces(8).toString()}
+                              &nbsp;
+                              {networkInfo.currencySymbol}
+                            </Text>
+                          </HStack>
+                        </Stack>
+
+                        <Divider />
+                      </>
+                    )}
+
+                    <Stack spacing={2}>
+                      <HStack justify="space-between">
+                        <Text fontWeight="bold">Total</Text>
+
+                        <Stack align="end" spacing={0}>
+                          <Text fontWeight="bold">
+                            {normalTotal?.toDecimalPlaces(8).toString()}
+                            &nbsp;
+                            {networkInfo.currencySymbol}
+                          </Text>
+                          <Text>
+                            {price ? (
+                              <>
+                                {price.currencySymbol}&nbsp;
+                                {formatNumber(
+                                  normalTotal?.mul(price.price || 0)
+                                )}
+                              </>
+                            ) : (
+                              <>{normalTotal?.toDecimalPlaces(8).toString()}</>
+                            )}
+                          </Text>
+                        </Stack>
+                      </HStack>
+
+                      <HStack justify="space-between">
+                        <Text color="gray.500" fontSize="sm">
+                          Amount + Gas Fee
+                        </Text>
+
+                        <Text color="gray.500">
+                          Max:&nbsp;
+                          {maxTotal?.toDecimalPlaces(8).toString()}
+                          &nbsp;
+                          {networkInfo.currencySymbol}
+                        </Text>
+                      </HStack>
+                    </Stack>
+                  </Stack>
+
+                  <Stack spacing={6}>
+                    <HStack justify="space-between">
+                      <Text>Nonce</Text>
+
+                      {!editNonce ? (
+                        <HStack>
+                          <Text>{nonce}</Text>
+                          <Button
+                            variant="link"
+                            size="sm"
+                            minW={0}
+                            onClick={() => setEditNonce(true)}>
+                            <EditIcon />
+                          </Button>
+                        </HStack>
+                      ) : (
+                        <NumberInput
+                          min={0}
+                          step={1}
+                          keepWithinRange
+                          allowMouseWheel
+                          precision={0}
+                          value={nonce}
+                          onChange={(_, val) => setNonce(val)}>
+                          <NumberInputField />
+                          <NumberInputStepper>
+                            <NumberIncrementStepper />
+                            <NumberDecrementStepper />
+                          </NumberInputStepper>
+                        </NumberInput>
+                      )}
+                    </HStack>
+
+                    <HStack justify="space-between">
+                      <Text>Gas limit</Text>
+
+                      {!editGasLimit ? (
+                        <HStack>
+                          <Text>{gasLimit}</Text>
+                          <Button
+                            variant="link"
+                            size="sm"
+                            minW={0}
+                            onClick={() => setEditGasLimit(true)}>
+                            <EditIcon />
+                          </Button>
+                        </HStack>
+                      ) : (
+                        <NumberInput
+                          min={0}
+                          step={1}
+                          keepWithinRange
+                          allowMouseWheel
+                          precision={0}
+                          value={gasLimit}
+                          isInvalid={!isGasLimitValid}
+                          onChange={(_, val) => setGasLimit(val)}>
+                          <NumberInputField />
+                          <NumberInputStepper>
+                            <NumberIncrementStepper />
+                            <NumberDecrementStepper />
+                          </NumberInputStepper>
+                        </NumberInput>
+                      )}
+                    </HStack>
+                  </Stack>
+                </Stack>
               </TabPanel>
               <TabPanel p={0}>
                 <Data />
@@ -515,6 +621,12 @@ export const EvmTransaction = ({
           </Tabs>
 
           <Divider />
+
+          {!isGasLimitValid && (
+            <AlertBox level="error">
+              Gas limit must be &gt;= {GAS_LIMIT_MIN} and &lt;= {GAS_LIMIT_MAX}
+            </AlertBox>
+          )}
 
           {insufficientBalance && (
             <AlertBox level="error">
@@ -540,7 +652,9 @@ export const EvmTransaction = ({
               w={36}
               colorScheme="purple"
               isDisabled={
-                (populated.code && !ignoreEstimateError) || insufficientBalance
+                (populated.code && !ignoreEstimateError) ||
+                insufficientBalance ||
+                !isGasLimitValid
               }
               onClick={async () => {
                 setSpinning(true)
@@ -564,9 +678,11 @@ export const EvmTransaction = ({
         </Center>
       )}
 
-      {gasPrice?.gasEstimateType === GasEstimateType.FEE_MARKET ? (
+      {gasPrice?.gasEstimateType === GasEstimateType.FEE_MARKET &&
+      activeOption ? (
         <>
           <EvmGasFeeEditModal
+            network={network}
             isOpen={isGasFeeEditOpen && !isAdvancedGasFeeOpen}
             onClose={onGasFeeEditClose}
             onAdvancedOpen={onAdvancedGasFeeOpen}
@@ -581,6 +697,7 @@ export const EvmTransaction = ({
           />
 
           <EvmAdvancedGasFeeModal
+            network={network}
             isOpen={isAdvancedGasFeeOpen}
             onClose={onAdvancedGasFeeClose}
             closeOnOverlayClick={!isGasFeeEditOpen}
@@ -668,3 +785,6 @@ function isNetworkBusy(gasPrice?: GasFeeEstimation) {
 
   return estimates.networkCongestion >= NETWORK_CONGESTION_THRESHOLDS.BUSY
 }
+
+const GAS_LIMIT_MIN = 21000
+const GAS_LIMIT_MAX = 7920027

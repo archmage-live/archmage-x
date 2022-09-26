@@ -426,3 +426,16 @@ export function parseGwei(value: string) {
 export function formatGwei(value: BigNumberish) {
   return ethers.utils.formatUnits(value, 'gwei')
 }
+
+export enum GasOption {
+  LOW = 'low',
+  MEDIUM = 'medium',
+  HIGH = 'high',
+  SITE_SUGGESTED = 'siteSuggested',
+  ADVANCED = 'advanced'
+}
+
+export type MaxFeePerGas = {
+  maxPriorityFeePerGas: string
+  maxFeePerGas: string
+}

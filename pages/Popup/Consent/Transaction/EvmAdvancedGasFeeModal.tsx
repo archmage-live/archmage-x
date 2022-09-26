@@ -1,7 +1,7 @@
 import { ArrowDownIcon, ArrowUpIcon, InfoIcon } from '@chakra-ui/icons'
 import {
   Button,
-  Center,
+  Checkbox,
   Divider,
   FormControl,
   FormLabel,
@@ -25,17 +25,20 @@ import {
 import { BigNumber } from '@ethersproject/bignumber'
 import Decimal from 'decimal.js'
 import * as React from 'react'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 import { AlertBox, AlertLevel } from '~components/AlertBox'
+import { INetwork } from '~lib/schema'
 import {
   GasFeeEstimates,
-  isSourcedGasFeeEstimates
+  GasOption,
+  MaxFeePerGas,
+  isSourcedGasFeeEstimates,
+  useDefaultGasFeeSettings
 } from '~lib/services/provider/evm'
 
-import { GasFeePerGas } from './EvmGasFeeEditModal'
-
 export const EvmAdvancedGasFeeModal = ({
+  network,
   isOpen,
   onClose,
   closeOnOverlayClick,
@@ -44,11 +47,12 @@ export const EvmAdvancedGasFeeModal = ({
   gasLimit,
   currencySymbol
 }: {
+  network: INetwork
   isOpen: boolean
-  onClose: (customGasFeePerGas?: GasFeePerGas) => void
+  onClose: (customGasFeePerGas?: MaxFeePerGas, enableDefault?: boolean) => void
   closeOnOverlayClick: boolean
   gasFeeEstimates: GasFeeEstimates
-  customGasFeePerGas?: GasFeePerGas
+  customGasFeePerGas?: MaxFeePerGas
   gasLimit: BigNumber
   currencySymbol: string
 }) => {
@@ -85,6 +89,7 @@ export const EvmAdvancedGasFeeModal = ({
 
     if (!maxBaseFeePerGas) {
       setBaseFeeAlert('')
+      setBaseFeeAlertLevel('warning')
       confirmEnabled = false
     } else {
       if (baseFee.lt(maxPriorityFeePerGas || 0)) {
@@ -109,11 +114,13 @@ export const EvmAdvancedGasFeeModal = ({
         setBaseFeeAlertLevel('warning')
       } else {
         setBaseFeeAlert('')
+        setBaseFeeAlertLevel('warning')
       }
     }
 
     if (!maxPriorityFeePerGas) {
       setPriorityFeeAlert('')
+      setPriorityFeeAlertLevel('warning')
       confirmEnabled = false
     } else {
       if (!priorityFee.gt(0)) {
@@ -140,11 +147,39 @@ export const EvmAdvancedGasFeeModal = ({
         setPriorityFeeAlertLevel('warning')
       } else {
         setPriorityFeeAlert('')
+        setPriorityFeeAlertLevel('warning')
       }
     }
 
     setConfirmEnabled(confirmEnabled)
   }, [isOpen, gasFeeEstimates, maxBaseFeePerGas, maxPriorityFeePerGas])
+
+  const { defaultGasFeeOption, defaultAdvancedGasFee } =
+    useDefaultGasFeeSettings(network.id)
+
+  const [enabledDefaultAdvancedGasFee, setEnabledDefaultAdvancedGasFee] =
+    useState<boolean>()
+
+  useEffect(() => {
+    setEnabledDefaultAdvancedGasFee(undefined)
+  }, [isOpen])
+
+  const enabledDefaultAdvancedGasFeeDefault = useMemo(() => {
+    return (
+      defaultGasFeeOption === GasOption.ADVANCED &&
+      new Decimal(maxPriorityFeePerGas).equals(
+        defaultAdvancedGasFee!.maxPriorityFeePerGas
+      ) &&
+      new Decimal(maxBaseFeePerGas)
+        .add(maxPriorityFeePerGas)
+        .equals(defaultAdvancedGasFee!.maxFeePerGas)
+    )
+  }, [
+    defaultGasFeeOption,
+    defaultAdvancedGasFee,
+    maxBaseFeePerGas,
+    maxPriorityFeePerGas
+  ])
 
   return (
     <Modal
@@ -362,6 +397,20 @@ export const EvmAdvancedGasFeeModal = ({
                   </HStack>
                 )}
               </Stack>
+
+              <Checkbox
+                size="md"
+                colorScheme="purple"
+                isChecked={
+                  enabledDefaultAdvancedGasFee !== undefined
+                    ? enabledDefaultAdvancedGasFee
+                    : enabledDefaultAdvancedGasFeeDefault
+                }
+                onChange={(e) =>
+                  setEnabledDefaultAdvancedGasFee(e.target.checked)
+                }>
+                Always use these values and advanced setting as default.
+              </Checkbox>
             </Stack>
 
             <HStack justify="center" spacing={12}>
@@ -378,12 +427,17 @@ export const EvmAdvancedGasFeeModal = ({
                 colorScheme="purple"
                 isDisabled={!confirmEnabled}
                 onClick={() =>
-                  onClose({
-                    maxPriorityFeePerGas,
-                    maxFeePerGas: new Decimal(maxBaseFeePerGas)
-                      .add(maxPriorityFeePerGas)
-                      .toString()
-                  })
+                  onClose(
+                    {
+                      maxPriorityFeePerGas,
+                      maxFeePerGas: new Decimal(maxBaseFeePerGas)
+                        .add(maxPriorityFeePerGas)
+                        .toString()
+                    },
+                    enabledDefaultAdvancedGasFee !== undefined
+                      ? enabledDefaultAdvancedGasFee
+                      : enabledDefaultAdvancedGasFeeDefault
+                  )
                 }>
                 Confirm
               </Button>

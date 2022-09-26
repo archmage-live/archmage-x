@@ -16,10 +16,11 @@ export enum StoreKey {
   ACTIVE_NETWORK = 'activeNetwork',
   ACTIVE_WALLET = 'activeWallet',
   TOKEN_LISTS = 'tokenLists',
-  CONSENT_REQUESTS = 'consentRequests'
+  CONSENT_REQUESTS = 'consentRequests',
+  GAS_FEE_PREFIX = 'gasFee'
 }
 
-function isKeySecret(key: StoreKey) {
+function isKeySecret(key: StoreKey | string) {
   switch (key) {
     case StoreKey.PASSWORD_HASH:
     case StoreKey.PASSWORD:
@@ -41,7 +42,7 @@ export const SESSION_STORE = new Storage({
 })
 
 function _useStorage<T = any>(
-  key: StoreKey,
+  key: StoreKey | string,
   area: StorageAreaName,
   onInit?: T | ((v?: T) => T | Promise<T>)
 ) {
@@ -61,14 +62,14 @@ function _useStorage<T = any>(
 }
 
 export function useLocalStorage<T = any>(
-  key: StoreKey,
+  key: StoreKey | string,
   onInit?: T | ((v?: T) => T | Promise<T>)
 ) {
   return _useStorage(key, StoreArea.LOCAL, onInit)
 }
 
 export function useSessionStorage<T = any>(
-  key: StoreKey,
+  key: StoreKey | string,
   onInit?: T | ((v?: T) => T | Promise<T>)
 ) {
   return _useStorage(key, StoreArea.SESSION, onInit)
