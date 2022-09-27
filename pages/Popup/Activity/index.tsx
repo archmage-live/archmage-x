@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useActive } from '~lib/active'
 import { ITransaction } from '~lib/schema'
 import {
+  EvmTxType,
   useEvmTransactionCount,
   useEvmTransactions
 } from '~lib/services/transaction/evm'
@@ -17,7 +18,7 @@ export default function Activity() {
 
   const [count, setCount] = useState(0)
 
-  const totalCount = useEvmTransactionCount(account)
+  const totalCount = useEvmTransactionCount(EvmTxType.NORMAL, account)
   useEffect(() => {
     if (totalCount === undefined) {
       return
@@ -30,7 +31,12 @@ export default function Activity() {
     })
   }, [totalCount])
 
-  const transactions = useEvmTransactions(network, account, count)
+  const transactions = useEvmTransactions(
+    EvmTxType.NORMAL,
+    network,
+    account,
+    count
+  )
 
   const parentRef = useRef(null)
   const txVirtualizer = useVirtualizer({

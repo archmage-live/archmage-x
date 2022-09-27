@@ -13,6 +13,7 @@ import {
   formatTxParams,
   getProvider
 } from '~lib/services/provider'
+import { EVM_TRANSACTION_SERVICE } from '~lib/services/transaction/evm'
 import { WALLET_SERVICE } from '~lib/services/walletService'
 import { SESSION_STORE, StoreKey, useSessionStorage } from '~lib/store'
 import { createWindow } from '~lib/util'
@@ -215,16 +216,26 @@ class ConsentService implements IConsentService {
             req.payload
           )
           break
-        case ConsentType.TRANSACTION:
+        case ConsentType.TRANSACTION: {
           const payload = req.payload as TransactionPayload
           formatTxParams(network, payload.txParams, payload.populatedParams)
+
+          const account = accounts[0]
 
           const signedTx = await provider.signTransaction(
             accounts[0],
             payload.txParams
           )
-          response = await provider.sendTransaction(signedTx)
+          const txResponse = await provider.sendTransaction(signedTx)
+          await EVM_TRANSACTION_SERVICE.addPendingTx(
+            account,
+            payload.txParams,
+            txResponse,
+            req.origin
+          )
+          response = txResponse.hash
           break
+        }
         case ConsentType.SIGN_MSG:
           response = await provider.signMessage(accounts[0], req.payload)
           break

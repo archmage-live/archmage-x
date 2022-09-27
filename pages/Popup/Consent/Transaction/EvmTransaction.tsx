@@ -42,7 +42,8 @@ import { NetworkInfo } from '~lib/services/network'
 import {
   TransactionPayload,
   formatTxParams,
-  useEstimateGasPrice
+  useEstimateGasPrice,
+  useIsContract
 } from '~lib/services/provider'
 import {
   EthGasPriceEstimate,
@@ -52,7 +53,6 @@ import {
   GasFeeEstimates,
   GasFeeEstimation,
   GasOption,
-  LegacyGasPriceEstimate,
   MaxFeePerGas,
   isSourcedGasFeeEstimates,
   parseGwei,
@@ -102,16 +102,17 @@ export const EvmTransaction = ({
     console.log('payload:', payload)
   }, [payload])
 
+  const isContract = useIsContract(network, txParams.to)
   const functionSig = useEvmFunctionSignature(txParams.data)
 
   const [ignoreEstimateError, setIgnoreEstimateError] = useState(false)
 
-  const gasPrice = useEstimateGasPrice(network, 15000) as
+  const gasFeeEstimation = useEstimateGasPrice(network, 15000) as
     | GasFeeEstimation
     | undefined
   useEffect(() => {
-    console.log('gasPrice:', gasPrice)
-  }, [gasPrice])
+    console.log('gasFeeEstimation:', gasFeeEstimation)
+  }, [gasFeeEstimation])
 
   const [nonce, setNonce] = useState(BigNumber.from(txParams.nonce!).toNumber())
   const [gasLimit, setGasLimit] = useState(
@@ -212,10 +213,10 @@ export const EvmTransaction = ({
   )
 
   const [normalFee, maxFee] =
-    (gasPrice &&
+    (gasFeeEstimation &&
       activeOption &&
       computeFee(
-        gasPrice,
+        gasFeeEstimation,
         gasLimit,
         activeOption,
         networkInfo.decimals,
@@ -237,14 +238,14 @@ export const EvmTransaction = ({
   const onConfirm = useCallback(async () => {
     setSpinning(true)
 
-    if (!gasPrice || !activeOption) {
+    if (!gasFeeEstimation || !activeOption) {
       return
     }
 
-    let maxPriorityFeePerGas, maxFeePerGas
-    switch (gasPrice.gasEstimateType) {
+    let maxPriorityFeePerGas, maxFeePerGas, gasPrice
+    switch (gasFeeEstimation.gasEstimateType) {
       case GasEstimateType.FEE_MARKET: {
-        const estimates = gasPrice.gasFeeEstimates as GasFeeEstimates
+        const estimates = gasFeeEstimation.gasFeeEstimates as GasFeeEstimates
         const gasFee = optionGasFee(
           activeOption,
           estimates,
@@ -260,9 +261,12 @@ export const EvmTransaction = ({
       }
       // case GasEstimateType.LEGACY:
       //   return
-      case GasEstimateType.ETH_GAS_PRICE:
-        // TODO
-        return
+      case GasEstimateType.ETH_GAS_PRICE: {
+        const estimates =
+          gasFeeEstimation.gasFeeEstimates as EthGasPriceEstimate
+        gasPrice = estimates.gasPrice
+        break
+      }
     }
 
     await CONSENT_SERVICE.processRequest(
@@ -274,8 +278,14 @@ export const EvmTransaction = ({
             ...payload.txParams,
             nonce,
             gasLimit,
-            maxPriorityFeePerGas: parseGwei(maxPriorityFeePerGas),
-            maxFeePerGas: parseGwei(maxFeePerGas)
+            gasPrice:
+              gasPrice && parseGwei(gasPrice).toDecimalPlaces(0).toString(),
+            maxPriorityFeePerGas:
+              maxPriorityFeePerGas &&
+              parseGwei(maxPriorityFeePerGas).toDecimalPlaces(0).toString(),
+            maxFeePerGas:
+              maxFeePerGas &&
+              parseGwei(maxFeePerGas).toDecimalPlaces(0).toString()
           } as EvmTxParams
         } as TransactionPayload
       },
@@ -289,7 +299,7 @@ export const EvmTransaction = ({
     activeOption,
     nonce,
     gasLimit,
-    gasPrice,
+    gasFeeEstimation,
     customGasFeePerGas
   ])
 
@@ -343,22 +353,38 @@ export const EvmTransaction = ({
           <Stack px={6} py={6} spacing={4}>
             <Text>{origin}</Text>
 
-            <HStack>
-              <HStack px={2} py={1} borderRadius="4px" borderWidth="1px">
-                <Text fontSize="md" color="blue.500">
-                  {shortenAddress(txParams.to)}
-                </Text>
+            <HStack minH="30px">
+              {isContract !== undefined && (
+                <HStack px={2} py={1} borderRadius="4px" borderWidth="1px">
+                  {isContract ? (
+                    <>
+                      <Text fontSize="md" color="blue.500">
+                        {shortenAddress(txParams.to)}
+                      </Text>
 
-                {functionSig && (
-                  <Text fontSize="md" color="gray.500">
-                    <span>: {functionSig.name.toUpperCase()}</span>
-                    &nbsp;
-                    <Tooltip label="We cannot verify this contract. Make sure you trust this address.">
-                      <InfoIcon />
-                    </Tooltip>
-                  </Text>
-                )}
-              </HStack>
+                      <Text fontSize="md" color="gray.500">
+                        <span>
+                          :&nbsp;
+                          {functionSig?.name.toUpperCase() ||
+                            'Contract Interaction'.toUpperCase()}
+                        </span>
+                        &nbsp;
+                        <Tooltip label="We cannot verify this contract. Make sure you trust this address.">
+                          <InfoIcon />
+                        </Tooltip>
+                      </Text>
+                    </>
+                  ) : !txParams.to ? (
+                    <Text fontSize="md" color="gray.500">
+                      {'Deploy Contract'.toUpperCase()}
+                    </Text>
+                  ) : (
+                    <Text fontSize="md" color="gray.500">
+                      {`Send ${networkInfo.currencySymbol}`.toUpperCase()}
+                    </Text>
+                  )}
+                </HStack>
+              )}
             </HStack>
 
             <Stack>
@@ -415,7 +441,7 @@ export const EvmTransaction = ({
               <TabPanel p={0}>
                 <Stack spacing={16}>
                   <Stack spacing={8}>
-                    {isNetworkBusy(gasPrice) && (
+                    {isNetworkBusy(gasFeeEstimation) && (
                       <AlertBox>
                         Network is busy. Gas prices are high and estimates are
                         less accurate.
@@ -533,12 +559,12 @@ export const EvmTransaction = ({
                               }
                               fontSize="sm"
                               fontWeight="medium">
-                              {gasPrice?.gasEstimateType ===
+                              {gasFeeEstimation?.gasEstimateType ===
                                 GasEstimateType.FEE_MARKET &&
                                 activeOption &&
                                 minWaitTimeText(
                                   activeOption,
-                                  gasPrice.gasFeeEstimates as GasFeeEstimates,
+                                  gasFeeEstimation.gasFeeEstimates as GasFeeEstimates,
                                   customGasFeePerGas?.maxPriorityFeePerGas,
                                   customGasFeePerGas?.maxFeePerGas
                                 )}
@@ -682,7 +708,7 @@ export const EvmTransaction = ({
             </AlertBox>
           )}
 
-          {insufficientBalance && (
+          {insufficientBalance === true && (
             <AlertBox level="error">
               You do not have enough {networkInfo.currencySymbol} in your
               account to pay for transaction fees on Ethereum Mainnet network.
@@ -707,7 +733,7 @@ export const EvmTransaction = ({
               colorScheme="purple"
               isDisabled={
                 (populated.code && !ignoreEstimateError) ||
-                insufficientBalance ||
+                insufficientBalance !== false ||
                 !isGasLimitValid
               }
               onClick={onConfirm}>
@@ -728,7 +754,7 @@ export const EvmTransaction = ({
         </Center>
       )}
 
-      {gasPrice?.gasEstimateType === GasEstimateType.FEE_MARKET &&
+      {gasFeeEstimation?.gasEstimateType === GasEstimateType.FEE_MARKET &&
       activeOption ? (
         <>
           <EvmGasFeeEditModal
@@ -739,7 +765,9 @@ export const EvmTransaction = ({
             activeOption={activeOption}
             setActiveOption={setActiveOption}
             currencySymbol={networkInfo.currencySymbol}
-            gasFeeEstimates={gasPrice.gasFeeEstimates as GasFeeEstimates}
+            gasFeeEstimates={
+              gasFeeEstimation.gasFeeEstimates as GasFeeEstimates
+            }
             customGasFeePerGas={customGasFeePerGas}
             gasLimit={gasLimit}
             fromSite={false}
@@ -751,7 +779,9 @@ export const EvmTransaction = ({
             isOpen={isAdvancedGasFeeOpen}
             onClose={onAdvancedGasFeeClose}
             closeOnOverlayClick={!isGasFeeEditOpen}
-            gasFeeEstimates={gasPrice.gasFeeEstimates as GasFeeEstimates}
+            gasFeeEstimates={
+              gasFeeEstimation.gasFeeEstimates as GasFeeEstimates
+            }
             customGasFeePerGas={customGasFeePerGas}
             gasLimit={gasLimit}
             currencySymbol={networkInfo.currencySymbol}
@@ -765,7 +795,7 @@ export const EvmTransaction = ({
 }
 
 function computeFee(
-  gasPrice: GasFeeEstimation,
+  gasFeeEstimation: GasFeeEstimation,
   gasLimit: number,
   option: GasOption,
   decimals: number,
@@ -773,9 +803,9 @@ function computeFee(
   customMaxFeePerGas?: string
 ) {
   let normalFee, maxFee
-  switch (gasPrice.gasEstimateType) {
+  switch (gasFeeEstimation.gasEstimateType) {
     case GasEstimateType.FEE_MARKET: {
-      const estimates = gasPrice.gasFeeEstimates as GasFeeEstimates
+      const estimates = gasFeeEstimation.gasFeeEstimates as GasFeeEstimates
       const gasFee = optionGasFee(
         option,
         estimates,
@@ -792,11 +822,11 @@ function computeFee(
       break
     }
     // case GasEstimateType.LEGACY: {
-    //   const estimates = gasPrice.gasFeeEstimates as LegacyGasPriceEstimate
+    //   const estimates = gasFeeEstimation.gasFeeEstimates as LegacyGasPriceEstimate
     //   return
     // }
     case GasEstimateType.ETH_GAS_PRICE: {
-      const estimates = gasPrice.gasFeeEstimates as EthGasPriceEstimate
+      const estimates = gasFeeEstimation.gasFeeEstimates as EthGasPriceEstimate
       normalFee = parseGwei(estimates.gasPrice)
       maxFee = normalFee
       break
@@ -821,11 +851,11 @@ function computeValue(value: BigNumber | number, decimals: number) {
   return new Decimal(value.toString()).div(new Decimal(10).pow(decimals))
 }
 
-function isNetworkBusy(gasPrice?: GasFeeEstimation) {
-  if (gasPrice?.gasEstimateType !== GasEstimateType.FEE_MARKET) {
+function isNetworkBusy(gasFeeEstimation?: GasFeeEstimation) {
+  if (gasFeeEstimation?.gasEstimateType !== GasEstimateType.FEE_MARKET) {
     return
   }
-  const estimates = gasPrice.gasFeeEstimates as GasFeeEstimates
+  const estimates = gasFeeEstimation.gasFeeEstimates as GasFeeEstimates
   if (!isSourcedGasFeeEstimates(estimates)) {
     return
   }

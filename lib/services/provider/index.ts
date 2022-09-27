@@ -52,8 +52,11 @@ export function useIsContract(network?: INetwork, address?: string) {
   const provider = useProvider(network)
 
   const { value } = useAsync(async () => {
-    if (!address || !provider) {
+    if (!provider) {
       return
+    }
+    if (!address) {
+      return false
     }
     return provider.isContract(address)
   }, [address, provider])

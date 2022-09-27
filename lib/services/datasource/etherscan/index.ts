@@ -78,6 +78,8 @@ function getJsonResult(result: {
 }
 
 export interface EtherscanTxResponse {
+  blockNumber: number
+  transactionIndex: number
   txreceipt_status: string
   methodId: string
   functionName: string
@@ -183,20 +185,48 @@ class CachedEtherscanProvider extends EtherscanProvider {
 
     const result = await this.fetch('account', params)
 
-    return result.map((tx: any) => {
-      ;['contractAddress', 'to'].forEach(function (key) {
-        if (tx[key] == '') {
-          delete tx[key]
+    return (
+      result.map((tx: any) => {
+        ;['contractAddress', 'to'].forEach(function (key) {
+          if (tx[key] == '') {
+            delete tx[key]
+          }
+        })
+
+        if (tx.creates == null && tx.contractAddress != null) {
+          tx.creates = tx.contractAddress
         }
-      })
-      if (tx.creates == null && tx.contractAddress != null) {
-        tx.creates = tx.contractAddress
+
+        const item = this.formatter.transactionResponse(tx)
+        if (tx.timeStamp) {
+          item.timestamp = parseInt(tx.timeStamp)
+        }
+
+        tx.blockNumber = +tx.blockNumber
+
+        if (tx.transactionIndex) {
+          tx.transactionIndex = +tx.transactionIndex
+        } else {
+          // TODO: deduplicate
+          tx.transactionIndex = -1
+        }
+
+        return [item, tx]
+      }) as Array<[TransactionResponse, EtherscanTxResponse]>
+    ).sort((a, b) => {
+      const { blockNumber: aBlock, transactionIndex: aIndex } = a[1]
+      const { blockNumber: bBlock, transactionIndex: bIndex } = b[1]
+      if (aBlock > bBlock) {
+        return -1
+      } else if (aBlock < bBlock) {
+        return 1
+      } else if (aIndex > bIndex) {
+        return -1
+      } else if (aIndex < bIndex) {
+        return 1
+      } else {
+        return 0
       }
-      const item = this.formatter.transactionResponse(tx)
-      if (tx.timeStamp) {
-        item.timestamp = parseInt(tx.timeStamp)
-      }
-      return [item, tx]
     })
   }
 }

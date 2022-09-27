@@ -281,7 +281,7 @@ export class EvmProviderAdaptor implements ProviderAdaptor {
       }
     }
 
-    if (tx.to) {
+    if (tx.to != null) {
       const to = await signer.resolveName(tx.to)
       if (!to) {
         logger.throwArgumentError(
@@ -477,6 +477,10 @@ export class EvmProviderAdaptor implements ProviderAdaptor {
       }
     }
 
+    if (tx.data?.length === 0) {
+      tx.data = undefined
+    }
+
     return { txParams: tx, populatedParams } as TransactionPayload
   }
 
@@ -486,7 +490,7 @@ export class EvmProviderAdaptor implements ProviderAdaptor {
   }
 
   async sendTransaction(signedTransaction: any): Promise<any> {
-    return (await this.provider.sendTransaction(signedTransaction)).hash
+    return this.provider.sendTransaction(signedTransaction)
   }
 
   async signMessage(wallet: IChainAccount, message: any): Promise<any> {

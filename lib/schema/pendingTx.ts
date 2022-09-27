@@ -15,4 +15,4 @@ export interface IPendingTx {
 }
 
 export const pendingTxSchemaV1 =
-  '++id, &[masterId+index+networkKind+chainId+address+nonce]'
+  '++id, &[masterId+index+networkKind+chainId+address+nonce], &[networkKind+chainId+masterId+index+address+nonce]'
