@@ -1,5 +1,7 @@
+import { FunctionFragment } from '@ethersproject/abi'
 import { TransactionResponse } from '@ethersproject/abstract-provider'
 import { Logger } from '@ethersproject/logger'
+import { shallowCopy } from '@ethersproject/properties'
 import {
   Formatter,
   TransactionReceipt,
@@ -8,8 +10,8 @@ import {
 import assert from 'assert'
 import Dexie from 'dexie'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { ethers } from 'ethers'
-import { useEffect } from 'react'
+import { Signer, ethers } from 'ethers'
+import { useEffect, useMemo } from 'react'
 import { useAsyncRetry } from 'react-use'
 import browser from 'webextension-polyfill'
 
@@ -18,10 +20,17 @@ import { ENV } from '~lib/env'
 import { EXTENSION } from '~lib/extension'
 import { NetworkKind } from '~lib/network'
 import { SERVICE_WORKER_CLIENT, SERVICE_WORKER_SERVER } from '~lib/rpc'
-import { IChainAccount, INetwork, IPendingTx, ITransaction } from '~lib/schema'
+import {
+  ChainId,
+  IChainAccount,
+  INetwork,
+  IPendingTx,
+  ITransaction
+} from '~lib/schema'
 import {
   ETHERSCAN_API,
-  EtherscanTxResponse
+  EtherscanTxResponse,
+  EvmTxType
 } from '~lib/services/datasource/etherscan'
 import { NETWORK_SERVICE, getNetworkInfo } from '~lib/services/network'
 import {
@@ -31,12 +40,14 @@ import {
 
 import { TransactionInfo, TransactionStatus, TransactionType } from './'
 
-export enum EvmTxType {
-  NORMAL = 'normal',
-  INTERNAL = 'internal',
-  ERC20 = 'erc20',
-  ERC721 = 'erc721',
-  ERC1155 = 'erc1155'
+export function getEvmTransactionTypes() {
+  return [
+    [EvmTxType.NORMAL, 'Normal'],
+    [EvmTxType.INTERNAL, 'Internal'],
+    [EvmTxType.ERC20, 'ERC20'],
+    [EvmTxType.ERC721, 'ERC721'],
+    [EvmTxType.ERC1155, 'ERC1155']
+  ] as unknown as [[string, string]]
 }
 
 export interface EvmPendingTxInfo {
@@ -44,6 +55,8 @@ export interface EvmPendingTxInfo {
 
   request: TransactionRequest
   origin: string
+  functionSig?: FunctionFragment
+  startBlockNumber?: number
 }
 
 export interface EvmTransactionInfo {
@@ -55,40 +68,55 @@ export interface EvmTransactionInfo {
 
   request?: TransactionRequest // only exists for local sent transaction
   origin?: string // only exists for local sent transaction
+  functionSig?: FunctionFragment
 
   fetchedCursor?: boolean // indication of last Etherscan tx history fetch
 }
 
+export function isEvmPendingTxInfo(
+  info: EvmPendingTxInfo | EvmTransactionInfo
+): info is EvmPendingTxInfo {
+  const txInfo = info as EvmTransactionInfo
+  return !txInfo.receipt && !txInfo.etherscanTx
+}
+
 export function getEvmTransactionInfo(
-  transaction: ITransaction
+  transaction: IPendingTx | ITransaction
 ): TransactionInfo {
-  const info = transaction.info as EvmTransactionInfo
+  const info = transaction.info as EvmPendingTxInfo | EvmTransactionInfo
+  const isPending = isEvmPendingTxInfo(info)
 
   let type, name
   if ((info.tx as any).creates || !info.tx.to) {
     type = TransactionType.DeployContract
     name = 'Deploy Contract'
+  } else if (ethers.utils.getAddress(info.tx.from) !== transaction.address) {
+    type = TransactionType.Receive
+    name = 'Receive'
   } else if (!info.tx.data || info.tx.data.toLowerCase() === '0x') {
     type = TransactionType.Send
     name = 'Send'
   } else {
     type = TransactionType.CallContract
-    if (info.etherscanTx?.functionName) {
+    const etherscanTx = (info as EvmTransactionInfo).etherscanTx
+    if (info.functionSig) {
+      name = info.functionSig.name
+    } else if (etherscanTx?.functionName) {
       try {
-        name = parseEvmFunctionSignature(info.etherscanTx.functionName).name
+        name = parseEvmFunctionSignature(etherscanTx.functionName).name
       } catch {}
-      if (name) {
-        name = name[0].toUpperCase() + name.slice(1)
-      }
-    } else if (info.etherscanTx?.methodId) {
-      name = info.etherscanTx.methodId
+    }
+    if (name) {
+      name = name[0].toUpperCase() + name.slice(1)
+    } else if (etherscanTx?.methodId) {
+      name = etherscanTx.methodId
     } else {
       name = 'Contract Interaction'
     }
   }
 
   let status
-  if (!info.receipt && !info.etherscanTx) {
+  if (isPending) {
     status = TransactionStatus.PENDING
   } else if (
     info.receipt?.status === 0 ||
@@ -106,6 +134,7 @@ export function getEvmTransactionInfo(
 
   return {
     type,
+    isPending,
     name,
     to: info.tx.to,
     origin: info.origin,
@@ -139,11 +168,14 @@ function formatTransactions<T extends ITransaction | IPendingTx>(
 }
 
 interface IEvmTransactionService {
+  getNonce(account: IChainAccount, signer: Signer): Promise<number>
+
   addPendingTx(
     account: IChainAccount,
     request: TransactionRequest,
     tx: TransactionResponse,
     origin?: string,
+    functionSig?: FunctionFragment,
     replace?: boolean
   ): Promise<IPendingTx>
 
@@ -164,6 +196,7 @@ interface IEvmTransactionService {
   getPendingTxs(
     account: IChainAccount,
     limit?: number,
+    reverse?: boolean,
     lastNonce?: number
   ): Promise<IPendingTx[]>
 
@@ -218,12 +251,14 @@ class EvmTransactionServicePartial implements IEvmTransactionService {
     account,
     tx,
     request,
-    origin
+    origin,
+    functionSig
   }: {
     account: IChainAccount
     tx: TransactionResponse
     request?: TransactionRequest
     origin?: string
+    functionSig?: FunctionFragment
   }) {
     assert(account.address === ethers.utils.getAddress(tx.from))
 
@@ -236,7 +271,8 @@ class EvmTransactionServicePartial implements IEvmTransactionService {
       nonce: tx.nonce,
       info: {
         request,
-        origin
+        origin,
+        functionSig
       } as EvmPendingTxInfo
     } as IPendingTx
 
@@ -340,13 +376,14 @@ class EvmTransactionServicePartial implements IEvmTransactionService {
 
   async getPendingTxs(
     account: IChainAccount,
-    limit: number = 100,
+    limit?: number,
+    reverse = true,
     lastNonce?: number
   ): Promise<IPendingTx[]> {
     if (!account.address) {
       return []
     }
-    return DB.pendingTxs
+    let collection = DB.pendingTxs
       .where('[masterId+index+networkKind+chainId+address+nonce]')
       .between(
         [
@@ -368,9 +405,13 @@ class EvmTransactionServicePartial implements IEvmTransactionService {
             : Dexie.maxKey
         ]
       )
-      .reverse()
-      .limit(limit)
-      .toArray()
+
+    collection = reverse ? collection.reverse() : collection
+
+    collection =
+      typeof limit === 'number' ? collection.limit(limit) : collection
+
+    return collection.toArray()
   }
 
   async getTransactions(
@@ -418,8 +459,23 @@ class EvmTransactionServicePartial implements IEvmTransactionService {
 }
 
 export class EvmTransactionService extends EvmTransactionServicePartial {
-  private waits: Map<string, Promise<ITransaction>> = new Map()
+  private waits: Map<number, Promise<ITransaction>> = new Map()
   private inCheck: boolean = false
+
+  async getNonce(account: IChainAccount, signer: Signer) {
+    assert(account.address)
+
+    let nextNonce = await signer.getTransactionCount('pending')
+
+    const pendingTxs = await this.getPendingTxs(account, undefined, false)
+    for (const { nonce } of pendingTxs) {
+      if (nonce === nextNonce) {
+        ++nextNonce
+      }
+    }
+
+    return nextNonce
+  }
 
   constructor() {
     super()
@@ -452,11 +508,10 @@ export class EvmTransactionService extends EvmTransactionServicePartial {
         .equals(NetworkKind.EVM)
         .first()
       if (!pendingTx) {
-        break
+        return
       }
 
-      const info = pendingTx.info as EvmPendingTxInfo
-      const tx = await this.waitForTx(pendingTx, info.tx as TransactionResponse)
+      const tx = await this.waitForTx(pendingTx)
       if (!tx) {
         return
       }
@@ -468,11 +523,18 @@ export class EvmTransactionService extends EvmTransactionServicePartial {
     request: TransactionRequest,
     tx: TransactionResponse,
     origin?: string,
-    replace = false
+    functionSig?: FunctionFragment,
+    replace = true
   ): Promise<IPendingTx> {
     assert(account.address)
 
-    const pendingTx = this.newPendingTx({ account, tx, request, origin })
+    const pendingTx = this.newPendingTx({
+      account,
+      tx: shallowCopy(tx),
+      request,
+      origin,
+      functionSig
+    })
 
     await DB.transaction('rw', [DB.pendingTxs], async () => {
       if (replace) {
@@ -501,26 +563,30 @@ export class EvmTransactionService extends EvmTransactionServicePartial {
 
   async waitForTx(
     pendingTx: IPendingTx,
-    tx: TransactionResponse,
+    tx?: TransactionResponse,
     confirmations = 1
   ): Promise<ITransaction | undefined> {
-    const waitKey = `${pendingTx.masterId}-${pendingTx.index}-${pendingTx.networkKind}-${pendingTx.chainId}-${pendingTx.address}-${pendingTx.nonce}`
-    const wait = this.waits.get(waitKey)
+    const wait = this.waits.get(pendingTx.id)
     if (wait) {
       return wait
     }
 
     let resolve: any = undefined
     this.waits.set(
-      waitKey,
+      pendingTx.id,
       new Promise((r) => {
         resolve = r
       })
     )
 
-    const transaction = await this._waitForTx(pendingTx, tx, confirmations)
+    let transaction
+    try {
+      transaction = await this._waitForTx(pendingTx, tx, confirmations)
+    } catch (err) {
+      console.error(err)
+    }
 
-    this.waits.delete(waitKey)
+    this.waits.delete(pendingTx.id)
     resolve(transaction)
 
     return transaction
@@ -528,9 +594,15 @@ export class EvmTransactionService extends EvmTransactionServicePartial {
 
   async _waitForTx(
     pendingTx: IPendingTx,
-    tx: TransactionResponse,
+    tx?: TransactionResponse,
     confirmations = 1
   ): Promise<ITransaction | undefined> {
+    assert(confirmations >= 1)
+
+    if (!(await this.getPendingTx(pendingTx.id))) {
+      return
+    }
+
     const network = await NETWORK_SERVICE.getNetwork({
       kind: NetworkKind.EVM,
       chainId: pendingTx.chainId
@@ -541,28 +613,81 @@ export class EvmTransactionService extends EvmTransactionServicePartial {
     }
     const provider = await EvmProvider.from(network)
 
-    if (!tx.wait) {
-      tx = await provider.getTransaction(tx.hash)
-      if (!tx) {
-        return
-      }
+    const info = pendingTx.info as EvmPendingTxInfo
+    if (!tx) {
+      tx = info.tx as TransactionResponse
     }
 
-    console.log('wait for transaction:', tx.hash)
+    if ((tx as any).wait) {
+      // If `wait` exists, transaction is from the immediate `sendTransaction`.
+      // So we persist the start block number for later `_waitForTransaction`
+      info.startBlockNumber = await provider._getInternalBlockNumber(
+        500 + 2 * provider.pollingInterval
+      )
+      await DB.pendingTxs.update(pendingTx.id, { info })
+    }
 
-    let receipt
+    let receipt: TransactionReceipt | undefined = undefined
     try {
-      receipt = await tx.wait(confirmations)
+      if (tx.wait) {
+        receipt = await tx.wait(confirmations)
+      } else if (typeof info.startBlockNumber === 'number') {
+        const replacement = {
+          data: tx.data,
+          from: tx.from,
+          nonce: tx.nonce,
+          to: tx.to,
+          value: tx.value,
+          startBlock: info.startBlockNumber
+        }
+        receipt = await provider._waitForTransaction(
+          tx.hash,
+          confirmations,
+          1000 * 60 * 5, // timeout 5m
+          replacement as any
+        )
+      } else {
+        // We don't know how to wait for this transaction, so delete it.
+        // Should not happen.
+        await DB.pendingTxs.delete(pendingTx.id)
+        return
+      }
     } catch (err: any) {
       if (err.code === Logger.errors.CALL_EXCEPTION && err.receipt) {
         receipt = err.receipt
+      } else if (
+        err.code === Logger.errors.TRANSACTION_REPLACED &&
+        err.receipt
+      ) {
+        receipt = err.receipt
+      } else if (err.code === Logger.errors.TIMEOUT) {
+        info.startBlockNumber = await provider._getInternalBlockNumber(
+          500 + 2 * provider.pollingInterval
+        )
+        await DB.pendingTxs.update(pendingTx.id, { info })
+
+        const nonce = await provider.getTransactionCount(tx.from)
+        const isMined = nonce > tx.nonce
+
+        console.log(
+          `pending tx ${pendingTx.id} will later be waited from block ${
+            info.startBlockNumber
+          }. ${isMined ? "It was mined but hasn't been found." : ''}`
+        )
+
+        return
       } else {
         throw err
       }
     }
 
-    if (receipt.transactionHash !== tx.hash) {
+    assert(receipt)
+    if (
       // tx replacement occurred
+      receipt.transactionHash !== tx.hash ||
+      // tx mined
+      receipt.blockNumber !== tx.blockNumber
+    ) {
       tx = await provider.getTransaction(receipt.transactionHash)
     }
 
@@ -590,10 +715,14 @@ export class EvmTransactionService extends EvmTransactionServicePartial {
       transaction = this.normalizeTxAndReceipt(transaction, tx, receipt)
     }
 
-    const info = pendingTx.info as EvmPendingTxInfo
     const txInfo = transaction.info as EvmTransactionInfo
     txInfo.request = info.request
     txInfo.origin = info.origin
+    txInfo.functionSig = info.functionSig
+
+    if (!(await this.getPendingTx(pendingTx.id))) {
+      return
+    }
 
     await DB.transaction('rw', [DB.pendingTxs, DB.transactions], async () => {
       assert(transaction)
@@ -675,6 +804,7 @@ export class EvmTransactionService extends EvmTransactionServicePartial {
       : 0
 
     let transactions = await etherscanProvider.getTransactions(
+      type as EvmTxType,
       account.address,
       startBlock
     )
@@ -720,20 +850,46 @@ export class EvmTransactionService extends EvmTransactionServicePartial {
       existing.map((tx) => [`${tx.index1}-${tx.index2}`, tx])
     )
 
+    const pendingTxs = await this.getPendingTxs(account)
+    const existingPendingMap = new Map(
+      pendingTxs.map((pendingTx) => [pendingTx.nonce, pendingTx])
+    )
+
     const bulkAdd: ITransaction[] = []
     const bulkUpdate: ITransaction[] = []
+    const confirmedPending: [IPendingTx, TransactionResponse][] = []
     for (const [tx, etherscanTx] of transactions) {
+      let pendingTxInfo: EvmPendingTxInfo | undefined
+      if (tx.from === account.address) {
+        const pendingTx = existingPendingMap.get(tx.nonce)
+        if (pendingTx) {
+          pendingTxInfo = pendingTx.info
+          confirmedPending.push([pendingTx, tx])
+        }
+      }
+
       const existing = existingMap.get(
         `${etherscanTx.blockNumber}-${etherscanTx.transactionIndex}`
       )
       if (!existing) {
-        bulkAdd.push(this.newTransaction({ account, type, tx, etherscanTx }))
+        bulkAdd.push(
+          this.newTransaction({
+            account,
+            type,
+            tx,
+            etherscanTx,
+            request: pendingTxInfo?.request,
+            origin: pendingTxInfo?.origin
+          })
+        )
       } else {
         const info = existing.info as EvmTransactionInfo
         if (
+          info.tx.blockNumber == null ||
           !info.etherscanTx ||
           info.etherscanTx.txreceipt_status !== etherscanTx.txreceipt_status
         ) {
+          info.tx = tx
           info.etherscanTx = etherscanTx
           bulkUpdate.push(existing)
         }
@@ -777,6 +933,10 @@ export class EvmTransactionService extends EvmTransactionServicePartial {
         await DB.transactions.update(lastCursorTx.id, { info })
       }
     })
+
+    for (const [pendingTx, tx] of confirmedPending) {
+      await this.waitForTx(pendingTx, tx)
+    }
 
     return transactions.length
   }
@@ -883,4 +1043,55 @@ export function useEvmTransactions(
       await EVM_TRANSACTION_SERVICE.getTransactions(account, type, count)
     )
   }, [type, account, count])
+}
+
+export function useEvmTransactionsMixed(
+  type: string,
+  network?: INetwork,
+  account?: IChainAccount,
+  count?: number
+) {
+  const pendingTxTotal = useEvmPendingTxCount(account)
+  const historyTxTotal = useEvmTransactionCount(type, account)
+
+  const [pendingTxCount, historyTxCount] = useMemo(() => {
+    let pendingTxCount, historyTxCount
+
+    if (typeof count === 'number') {
+      if (typeof pendingTxTotal === 'number' && pendingTxTotal > 0) {
+        pendingTxCount = Math.min(pendingTxTotal, count)
+      }
+
+      if (
+        typeof historyTxTotal === 'number' &&
+        historyTxTotal > 0 &&
+        (pendingTxCount || 0) < count
+      ) {
+        historyTxCount = Math.min(historyTxTotal, count - (pendingTxCount || 0))
+      }
+    }
+
+    return [pendingTxCount, historyTxCount]
+  }, [count, pendingTxTotal, historyTxTotal])
+
+  const pendingTxs = useEvmPendingTxs(network, account, pendingTxCount)
+
+  const historyTxs = useEvmTransactions(type, network, account, historyTxCount)
+
+  const txs = useMemo(() => {
+    if (!pendingTxs && !historyTxs) {
+      return
+    }
+    return [...(pendingTxs || []), ...(historyTxs || [])]
+  }, [pendingTxs, historyTxs])
+
+  return {
+    txTotal:
+      pendingTxTotal !== undefined && historyTxTotal !== undefined
+        ? pendingTxTotal + historyTxTotal
+        : undefined,
+    pendingTxCount,
+    historyTxCount,
+    txs
+  }
 }

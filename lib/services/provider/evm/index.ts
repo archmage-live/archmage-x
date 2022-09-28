@@ -30,6 +30,7 @@ import {
   ProviderAdaptor,
   TransactionPayload
 } from '~lib/services/provider/types'
+import { EVM_TRANSACTION_SERVICE } from '~lib/services/transaction/evm'
 import { StoreKey, useLocalStorage } from '~lib/store'
 import { getSigningWallet } from '~lib/wallet'
 
@@ -404,8 +405,7 @@ export class EvmProviderAdaptor implements ProviderAdaptor {
       }
     }
 
-    // TODO: nonce manager
-    tx.nonce = await signer.getTransactionCount('pending')
+    tx.nonce = await EVM_TRANSACTION_SERVICE.getNonce(account, signer)
 
     if ((tx as any).gas != null) {
       if (tx.gasLimit != null) {

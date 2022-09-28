@@ -28,7 +28,7 @@ import { BigNumber } from '@ethersproject/bignumber'
 import Decimal from 'decimal.js'
 import { useScroll } from 'framer-motion'
 import * as React from 'react'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 import { BiQuestionMark } from 'react-icons/bi'
 import HashLoader from 'react-spinners/HashLoader'
 
@@ -82,7 +82,9 @@ export const EvmTransaction = ({
   wallet,
   subWallet,
   account,
-  balance
+  balance,
+  suffix,
+  onComplete
 }: {
   origin: string
   request: ConsentRequest
@@ -92,6 +94,8 @@ export const EvmTransaction = ({
   subWallet: ISubWallet
   account: IChainAccount
   balance?: Balance
+  suffix?: ReactNode
+  onComplete: () => void
 }) => {
   const payload = request.payload as TransactionPayload
   formatTxParams(network, payload.txParams, payload.populatedParams)
@@ -273,7 +277,6 @@ export const EvmTransaction = ({
       {
         ...request,
         payload: {
-          ...request.payload,
           txParams: {
             ...payload.txParams,
             nonce,
@@ -286,16 +289,22 @@ export const EvmTransaction = ({
             maxFeePerGas:
               maxFeePerGas &&
               parseGwei(maxFeePerGas).toDecimalPlaces(0).toString()
-          } as EvmTxParams
+          } as EvmTxParams,
+          populatedParams: {
+            ...payload.populatedParams,
+            functionSig
+          } as EvmTxPopulatedParams
         } as TransactionPayload
       },
       true
     )
 
-    window.close()
+    onComplete()
   }, [
+    onComplete,
     request,
     payload,
+    functionSig,
     activeOption,
     nonce,
     gasLimit,
@@ -312,9 +321,9 @@ export const EvmTransaction = ({
   }
 
   return (
-    <Stack w="full" h="full" spacing={0} position="relative">
+    <>
       <Stack>
-        <Center pt={4} px={6}>
+        <Center pt={2} px={6}>
           <Box px={2} py={1} borderRadius="8px" borderWidth="1px">
             <Text noOfLines={1} display="block" fontSize="sm">
               {networkInfo.name}
@@ -723,7 +732,7 @@ export const EvmTransaction = ({
               variant="outline"
               onClick={async () => {
                 await CONSENT_SERVICE.processRequest(request, false)
-                window.close()
+                onComplete()
               }}>
               Reject
             </Button>
@@ -740,6 +749,8 @@ export const EvmTransaction = ({
               Confirm
             </Button>
           </HStack>
+
+          {suffix}
         </Stack>
       </Box>
 
@@ -790,7 +801,7 @@ export const EvmTransaction = ({
       ) : (
         <></>
       )}
-    </Stack>
+    </>
   )
 }
 

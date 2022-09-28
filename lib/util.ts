@@ -29,6 +29,8 @@ export async function createTab(to: string) {
   })
 }
 
+let window: browser.Windows.Window | undefined
+
 export async function createWindow(ctx: Context, to: string) {
   if (!to.startsWith('#/')) {
     if (to.startsWith('/')) {
@@ -49,14 +51,46 @@ export async function createWindow(ctx: Context, to: string) {
     top = ctx.window.y
   }
 
-  return browser.windows.create({
-    url: `${origin}/${popupUrl}${to}?popup=window`,
-    type: 'popup',
-    width,
-    height,
-    left,
-    top
-  })
+  try {
+    if (window) {
+      window = await browser.windows.get(window.id!)
+    }
+  } catch (err) {
+    console.error(err)
+  }
+
+  if (window) {
+    if (
+      !window.focused ||
+      (window.state !== 'normal' &&
+        window.state !== 'maximized' &&
+        window.state !== 'fullscreen')
+    ) {
+      window = await browser.windows.update(window.id!, {
+        focused: true,
+        state: 'normal'
+      })
+    }
+  } else {
+    window = await browser.windows.create({
+      url: `${origin}/${popupUrl}${to}?popup=window`,
+      type: 'popup',
+      width,
+      height,
+      left,
+      top
+    })
+    const listener = async (windowId: number) => {
+      if (windowId !== window?.id) {
+        return
+      }
+      window = undefined
+      browser.windows.onRemoved.removeListener(listener)
+    }
+    browser.windows.onRemoved.addListener(listener)
+  }
+
+  return window
 }
 
 export async function getTab({

@@ -14,10 +14,12 @@ import { MdAutoFixHigh, MdCallReceived } from 'react-icons/md'
 
 import { dayjs } from '~lib/dayjs'
 import { formatNumber } from '~lib/formatNumber'
-import { INetwork, ITransaction } from '~lib/schema'
+import { INetwork, IPendingTx, ITransaction } from '~lib/schema'
 import { getNetworkInfo } from '~lib/services/network'
 import { TransactionType, getTransactionInfo } from '~lib/services/transaction'
 import { shortenAddress } from '~lib/utils'
+
+import { Status } from './ActivityDetail/evm'
 
 export const ActivityItem = ({
   network,
@@ -25,7 +27,7 @@ export const ActivityItem = ({
   onClick
 }: {
   network: INetwork
-  tx: ITransaction
+  tx: IPendingTx | ITransaction
   onClick: () => void
 }) => {
   const netInfo = getNetworkInfo(network)
@@ -54,9 +56,11 @@ export const ActivityItem = ({
 
   return (
     <Button
+      as="div"
+      cursor="pointer"
       size="lg"
       w="full"
-      h="63px"
+      h={!txInfo.isPending ? '63px' : '105px'}
       px={4}
       justifyContent="start"
       variant="solid-secondary"
@@ -72,18 +76,40 @@ export const ActivityItem = ({
         </Center>
 
         <HStack w="calc(100% - 42px)" justify="space-between" align="start">
-          <Stack align="start" maxW="65%">
-            <Text fontWeight="medium" noOfLines={1} display="block" maxW="full">
-              {txInfo.name}
-            </Text>
-            <HStack fontSize="sm" color="gray.500">
-              <Tooltip label={dayjs(txInfo.timestamp).toString()}>
-                <Text>{dayjs(txInfo.timestamp).fromNow()}</Text>
-              </Tooltip>
-              <Text>
-                {txInfo.origin || (txInfo.to && shortenAddress(txInfo.to))}
+          <Stack align="start" maxW="65%" spacing={4}>
+            <Stack>
+              <Text
+                fontWeight="medium"
+                noOfLines={1}
+                display="block"
+                maxW="full">
+                {txInfo.name}
               </Text>
-            </HStack>
+
+              <HStack fontSize="sm" color="gray.500">
+                {txInfo.isPending ? (
+                  <Status status={txInfo.status} />
+                ) : (
+                  <Tooltip label={dayjs(txInfo.timestamp).toString()}>
+                    <Text>{dayjs(txInfo.timestamp).fromNow()}</Text>
+                  </Tooltip>
+                )}
+                <Text>
+                  {txInfo.origin || (txInfo.to && shortenAddress(txInfo.to))}
+                </Text>
+              </HStack>
+            </Stack>
+
+            {txInfo.isPending && (
+              <HStack onClick={(e) => e.stopPropagation()}>
+                <Button size="xs" colorScheme="purple">
+                  Speed Up
+                </Button>
+                <Button size="xs" variant="outline">
+                  Cancel
+                </Button>
+              </HStack>
+            )}
           </Stack>
 
           <Stack>

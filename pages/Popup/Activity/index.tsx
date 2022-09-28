@@ -1,14 +1,11 @@
 import { Box, Text, useDisclosure } from '@chakra-ui/react'
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 import { useActive } from '~lib/active'
-import { ITransaction } from '~lib/schema'
-import {
-  EvmTxType,
-  useEvmTransactionCount,
-  useEvmTransactions
-} from '~lib/services/transaction/evm'
+import { IPendingTx, ITransaction } from '~lib/schema'
+import { EvmTxType } from '~lib/services/datasource/etherscan'
+import { useEvmTransactionsMixed } from '~lib/services/transaction/evm'
 
 import { ActivityDetailModal } from './ActivityDetail'
 import { ActivityItem } from './ActivityItem'
@@ -18,7 +15,13 @@ export default function Activity() {
 
   const [count, setCount] = useState(0)
 
-  const totalCount = useEvmTransactionCount(EvmTxType.NORMAL, account)
+  const { txTotal: totalCount, txs: transactions } = useEvmTransactionsMixed(
+    EvmTxType.NORMAL,
+    network,
+    account,
+    count
+  )
+
   useEffect(() => {
     if (totalCount === undefined) {
       return
@@ -30,13 +33,6 @@ export default function Activity() {
       return Math.min(count, totalCount)
     })
   }, [totalCount])
-
-  const transactions = useEvmTransactions(
-    EvmTxType.NORMAL,
-    network,
-    account,
-    count
-  )
 
   const parentRef = useRef(null)
   const txVirtualizer = useVirtualizer({
@@ -54,7 +50,7 @@ export default function Activity() {
       return
     }
     const lastItem = virtualItems[virtualItems.length - 1]
-    if (lastItem.index >= transactions!.length) {
+    if (lastItem.index >= transactions.length) {
       setCount((count) => {
         if (totalCount > count) {
           return Math.min(count + 20, totalCount)
@@ -66,7 +62,17 @@ export default function Activity() {
   }, [totalCount, transactions, txVirtualizer.getVirtualItems()])
 
   const { isOpen, onClose, onOpen } = useDisclosure()
-  const [tx, setTx] = useState<ITransaction>()
+
+  const [txId, setTxId] = useState<{ id: number; isPending: boolean }>()
+  const tx = useMemo(() => {
+    if (!txId) {
+      return
+    }
+    return transactions?.find((tx) => {
+      const isPending = typeof (tx as IPendingTx).nonce === 'number'
+      return tx.id === txId.id && isPending === txId.isPending
+    })
+  }, [transactions, txId])
 
   return (
     <Box px={4}>
@@ -115,9 +121,11 @@ export default function Activity() {
             }
 
             const tx = transactions[item.index - 1]
+            const isPending = typeof (tx as IPendingTx).nonce === 'number'
+
             return (
               <Box
-                key={tx.id}
+                key={!isPending ? tx.id : `${tx.id}-pending`}
                 position="absolute"
                 top={0}
                 left={0}
@@ -130,7 +138,10 @@ export default function Activity() {
                   network={network!}
                   tx={tx}
                   onClick={() => {
-                    setTx(tx)
+                    setTxId({
+                      id: tx.id,
+                      isPending
+                    })
                     onOpen()
                   }}
                 />

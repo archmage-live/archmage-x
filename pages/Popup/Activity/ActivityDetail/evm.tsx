@@ -18,14 +18,14 @@ import { TransactionReceipt } from '@ethersproject/abstract-provider'
 import { BigNumber } from '@ethersproject/bignumber'
 import Decimal from 'decimal.js'
 import { ethers } from 'ethers'
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
+import { useAsync } from 'react-use'
 import browser from 'webextension-polyfill'
 
 import { useTransparentize } from '~hooks/useColor'
 import { dayjs } from '~lib/dayjs'
 import { formatNumber } from '~lib/formatNumber'
-import { EvmChainInfo } from '~lib/network/evm'
-import { INetwork, ITransaction } from '~lib/schema'
+import { INetwork, IPendingTx, ITransaction } from '~lib/schema'
 import { getNetworkInfo } from '~lib/services/network'
 import { EvmProvider } from '~lib/services/provider/evm'
 import {
@@ -36,7 +36,7 @@ import { EvmTransactionInfo } from '~lib/services/transaction/evm'
 import { shortenAddress } from '~lib/utils'
 import { FromTo } from '~pages/Popup/Consent/Transaction/FromTo'
 
-const Status = ({ status }: { status: TransactionStatus }) => {
+export const Status = ({ status }: { status: TransactionStatus }) => {
   let bgColor, color, Icon, text
   switch (status) {
     case TransactionStatus.PENDING:
@@ -74,7 +74,7 @@ export const EvmActivityDetail = ({
   tx
 }: {
   network: INetwork
-  tx: ITransaction
+  tx: IPendingTx | ITransaction
 }) => {
   const netInfo = getNetworkInfo(network)
 
@@ -85,37 +85,44 @@ export const EvmActivityDetail = ({
   const [receipt, setReceipt] =
     useState<Omit<TransactionReceipt, 'confirmations'>>()
   const [baseFeePerGas, setBaseFeePerGas] = useState<BigNumber | null>()
-  useEffect(() => {
-    const effect = async () => {
-      const provider = await EvmProvider.from(network)
-      if (info.receipt) {
-        setReceipt(info.receipt)
-      } else {
-        const receipt = await provider.getTransactionReceipt(info.tx.hash)
-        setReceipt(receipt)
-      }
-      if (typeof info.tx.blockNumber === 'number') {
-        const block = await provider.getBlock(info.tx.blockNumber)
-        setBaseFeePerGas(block.baseFeePerGas)
-      }
+
+  useAsync(async () => {
+    const provider = await EvmProvider.from(network)
+    let receipt
+    if (info.receipt) {
+      receipt = info.receipt
+    } else {
+      receipt = await provider.getTransactionReceipt(info.tx.hash)
     }
-    effect()
+    setReceipt(receipt)
+
+    const block = await provider.getBlock(receipt.blockNumber)
+    setBaseFeePerGas(block.baseFeePerGas)
   }, [network, info])
 
-  const amount = new Decimal(txInfo.amount).div(
-    new Decimal(10).pow(netInfo.decimals)
+  const [amount, fee, total] = useMemo(() => {
+    const amount = new Decimal(txInfo.amount).div(
+      new Decimal(10).pow(netInfo.decimals)
+    )
+
+    const fee = receipt
+      ? new Decimal(
+          receipt.effectiveGasPrice.mul(receipt.gasUsed).toString()
+        ).div(new Decimal(10).pow(netInfo.decimals))
+      : 0
+
+    const total = amount.add(fee)
+
+    return [amount, fee, total]
+  }, [netInfo, txInfo, receipt])
+
+  const priorityFeePerGas = useMemo(
+    () =>
+      receipt && baseFeePerGas
+        ? receipt.effectiveGasPrice.sub(baseFeePerGas)
+        : 0,
+    [baseFeePerGas, receipt]
   )
-
-  const fee = receipt
-    ? new Decimal(
-        receipt.effectiveGasPrice.mul(receipt.gasUsed).toString()
-      ).div(new Decimal(10).pow(netInfo.decimals))
-    : 0
-
-  const total = amount.add(fee)
-
-  const priorityFeePerGas =
-    receipt && baseFeePerGas ? receipt.effectiveGasPrice.sub(baseFeePerGas) : 0
 
   const { hasCopied, onCopy } = useClipboard(info.tx.hash)
 

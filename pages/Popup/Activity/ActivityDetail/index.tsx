@@ -8,7 +8,7 @@ import {
 } from '@chakra-ui/react'
 
 import { NetworkKind } from '~lib/network'
-import { INetwork, ITransaction } from '~lib/schema'
+import { INetwork, IPendingTx, ITransaction } from '~lib/schema'
 import { getTransactionInfo } from '~lib/services/transaction'
 import { EvmActivityDetail } from '~pages/Popup/Activity/ActivityDetail/evm'
 
@@ -17,7 +17,7 @@ export const ActivityDetail = ({
   tx
 }: {
   network: INetwork
-  tx: ITransaction
+  tx: IPendingTx | ITransaction
 }) => {
   switch (network.kind) {
     case NetworkKind.EVM:
@@ -34,7 +34,7 @@ export const ActivityDetailModal = ({
   onClose
 }: {
   network: INetwork
-  tx: ITransaction
+  tx: IPendingTx | ITransaction
   isOpen: boolean
   onClose: () => void
 }) => {

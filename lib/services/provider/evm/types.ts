@@ -1,3 +1,4 @@
+import { FunctionFragment } from '@ethersproject/abi'
 import { BigNumber, BigNumberish } from '@ethersproject/bignumber'
 import { BytesLike } from '@ethersproject/bytes'
 import { AccessListish } from '@ethersproject/transactions'
@@ -5,7 +6,7 @@ import { AccessListish } from '@ethersproject/transactions'
 export type EvmTxParams = {
   to?: string
   from?: string
-  nonce?: BigNumberish // ignored
+  nonce?: BigNumberish // ignored from user
 
   gasLimit?: BigNumberish // gas limit
   gasPrice?: BigNumberish
@@ -22,6 +23,8 @@ export type EvmTxParams = {
 }
 
 export type EvmTxPopulatedParams = {
+  functionSig?: FunctionFragment
+
   gasPrice?: BigNumberish
   maxPriorityFeePerGas?: BigNumberish
   maxFeePerGas?: BigNumberish

@@ -1,11 +1,12 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { useCheckUnlocked } from '~lib/password'
 import {
   CONSENT_SERVICE,
   ConsentRequest,
-  ConsentType
+  ConsentType,
+  useConsentRequests
 } from '~lib/services/consentService'
 
 import { RequestPermission } from './RequestPermission'
@@ -18,25 +19,39 @@ export default function Consent() {
   const { isUnlocked } = useCheckUnlocked()
 
   const navigate = useNavigate()
-  const [requests, setRequests] = useState<ConsentRequest[]>()
 
+  const requests = useConsentRequests()
+
+  console.log(requests)
   useEffect(() => {
-    const effect = async () => {
-      const requests = await CONSENT_SERVICE.getRequests()
-      if (!requests.length) {
-        navigate('/', { replace: true })
-      } else {
-        setRequests(requests)
-      }
+    if (!requests) {
+      return
     }
-    effect()
-  }, [navigate])
+    if (!requests.length) {
+      navigate('/', { replace: true })
+    }
+  }, [navigate, requests])
 
-  if (!requests?.length) {
+  const [type, setType] = useState<ConsentType>()
+  useEffect(() => {
+    setType(!requests?.length ? undefined : requests[0].type)
+  }, [requests])
+
+  const filtered = useFilterRequests(requests, type)
+
+  const onComplete = useCallback(async () => {
+    const requests = await CONSENT_SERVICE.getRequests()
+    if (!requests.length) {
+      window.close()
+    }
+  }, [])
+
+  if (!requests?.length || !filtered?.length) {
     return <></>
   }
+
   const req = requests[0]
-  switch (req.type) {
+  switch (type) {
     case ConsentType.UNLOCK: {
       if (isUnlocked) {
         CONSENT_SERVICE.processRequest(req, true).finally(() => {
@@ -48,7 +63,7 @@ export default function Consent() {
     case ConsentType.REQUEST_PERMISSION:
       return <RequestPermission request={req} />
     case ConsentType.TRANSACTION:
-      return <Transaction request={req} />
+      return <Transaction requests={filtered} onComplete={onComplete} />
     case ConsentType.SIGN_MSG:
       return <SignMessage request={req} />
     case ConsentType.SIGN_TYPED_DATA:
@@ -58,4 +73,13 @@ export default function Consent() {
   }
 
   return <></>
+}
+
+function useFilterRequests(requests?: ConsentRequest[], type?: ConsentType) {
+  return useMemo(() => {
+    if (!requests?.length || !type) {
+      return
+    }
+    return requests.filter((request) => request.type === type)
+  }, [requests, type])
 }

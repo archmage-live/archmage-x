@@ -64,8 +64,11 @@ class ConsentService implements IConsentService {
   constructor() {
     this.initPromise = SESSION_STORE.get<ConsentRequest[]>(
       StoreKey.CONSENT_REQUESTS
-    ).then((consentRequests) => {
+    ).then(async (consentRequests) => {
       if (!consentRequests?.length) {
+        if (!consentRequests) {
+          await SESSION_STORE.set(StoreKey.CONSENT_REQUESTS, [])
+        }
         return
       }
       this.consentRequests = consentRequests
@@ -155,7 +158,10 @@ class ConsentService implements IConsentService {
 
     if (request.type === ConsentType.UNLOCK) {
       const listener = async (windowId: number) => {
-        if (windowId === window.id && (await PASSWORD_SERVICE.isLocked())) {
+        if (windowId !== window.id) {
+          return
+        }
+        if (await PASSWORD_SERVICE.isLocked()) {
           await this.processRequest(req, false)
         }
         browser.windows.onRemoved.removeListener(listener)
@@ -231,7 +237,8 @@ class ConsentService implements IConsentService {
             account,
             payload.txParams,
             txResponse,
-            req.origin
+            req.origin,
+            payload.populatedParams?.functionSig
           )
           response = txResponse.hash
           break
