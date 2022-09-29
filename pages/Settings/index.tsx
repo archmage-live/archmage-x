@@ -10,7 +10,7 @@ import {
   Stack,
   Text
 } from '@chakra-ui/react'
-import { FiSearch } from 'react-icons/all'
+import { FiSearch } from 'react-icons/fi'
 import { Navigate, Route, Routes } from 'react-router-dom'
 
 import { Card } from '~components/Card'

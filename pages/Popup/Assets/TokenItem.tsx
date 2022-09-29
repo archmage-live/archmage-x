@@ -18,7 +18,6 @@ import {
 } from '@chakra-ui/react'
 import Decimal from 'decimal.js'
 import { useCallback } from 'react'
-import { VscQuestion } from 'react-icons/all'
 import { BiQuestionMark } from 'react-icons/bi'
 import { FiCheckCircle } from 'react-icons/fi'
 import { IoMdSwap } from 'react-icons/io'
@@ -27,6 +26,7 @@ import {
   MdMoreVert,
   MdOutlineCheckCircle
 } from 'react-icons/md'
+import { VscQuestion } from 'react-icons/vsc'
 
 import { BtnBox } from '~components/BtnBox'
 import { formatNumber } from '~lib/formatNumber'

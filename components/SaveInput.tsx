@@ -10,7 +10,7 @@ import {
   NumberInputProps,
   NumberInputStepper
 } from '@chakra-ui/react'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useDebounce } from 'react-use'
 
 interface SaveInputProps {
@@ -65,25 +65,28 @@ export const SaveInput = ({
     [hideSaveIfNoChange, value, input]
   )
 
-  const onValidate = (val: string) => {
-    let v = validate(val)
-    switch (v) {
-      case false:
-        v = value
-        break
-      case true:
-        v = val
-        break
-      default:
-        break
-    }
-    setInput(v)
-    return v
-  }
+  const onValidate = useCallback(
+    (val: string) => {
+      let v = validate(val)
+      switch (v) {
+        case false:
+          v = value
+          break
+        case true:
+          v = val
+          break
+        default:
+          break
+      }
+      setInput(v)
+      return v
+    },
+    [validate, value]
+  )
 
   const [isLoading, setIsLoading] = useState(false)
 
-  const onSave = async () => {
+  const onSave = useCallback(async () => {
     const save = onValidate(input)
     if (save !== value) {
       let willChange = true
@@ -98,7 +101,7 @@ export const SaveInput = ({
         onInvalid?.(true)
       }
     }
-  }
+  }, [asyncValidate, input, onChange, onInvalid, onValidate, value])
 
   return (
     <HStack spacing={8}>

@@ -15,7 +15,7 @@ import {
 } from '~lib/schema'
 import { IConnectedSite } from '~lib/schema/connectedSite'
 import { WALLET_SERVICE, useChainAccounts } from '~lib/services/walletService'
-import { getCurrentTab, getTab } from '~lib/util'
+import { getCurrentTab, getTab, isUrlSupported } from '~lib/util'
 
 interface IConnectedSiteService {
   connectSite(
@@ -293,7 +293,7 @@ export function useConnectedSite(account?: IChainAccount, href?: string) {
     if (!href) {
       href = (await Promise.resolve(getCurrentTab()))?.url
     }
-    if (!href) {
+    if (!href || !isUrlSupported(href)) {
       return
     }
     const conn = await CONNECTED_SITE_SERVICE.getConnectedSite(account, href)

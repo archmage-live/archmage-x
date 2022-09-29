@@ -290,11 +290,14 @@ class WalletServicePartial implements IWalletService {
       value: id
     })
     const subWallets = [...Array(num).keys()].map((n) => {
+      // TODO: check name conflict
+      const name = getDefaultSubName(nextIndex + n)
+
       return {
         masterId: id,
         sortId: nextSortId + n,
         index: nextIndex + n,
-        name: getDefaultSubName(nextIndex + n)
+        name
       } as ISubWallet
     })
     const ids = await DB.subWallets.bulkAdd(subWallets, { allKeys: true })

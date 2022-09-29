@@ -162,9 +162,9 @@ export function useActiveNetworkBuild() {
     if (networkId !== undefined) {
       const network = await NETWORK_SERVICE.getNetwork(networkId)
       setNetwork((oldNetwork) => {
-        if (network && oldNetwork && isSameNetwork(network, oldNetwork)) {
-          return oldNetwork
-        }
+        // if (network && oldNetwork && isSameNetwork(network, oldNetwork)) {
+        //   return oldNetwork
+        // }
         return network
       })
       return
@@ -219,15 +219,15 @@ export function useActiveWalletBuild() {
     }
 
     setWallet((oldWallet) => {
-      if (oldWallet && isSameWallet(wallet, oldWallet)) {
-        return oldWallet
-      }
+      // if (oldWallet && isSameWallet(wallet, oldWallet)) {
+      //   return oldWallet
+      // }
       return wallet
     })
     setSubWallet((oldSubWallet) => {
-      if (oldSubWallet && isSameSubWallet(subWallet, oldSubWallet)) {
-        return oldSubWallet
-      }
+      // if (oldSubWallet && isSameSubWallet(subWallet, oldSubWallet)) {
+      //   return oldSubWallet
+      // }
       return subWallet
     })
   }, [walletId])
@@ -281,9 +281,9 @@ export function useActiveBuild() {
       index: subWallet.index
     })
     setAccount((oldAccount) => {
-      if (account && oldAccount && isSameAccount(account, oldAccount)) {
-        return oldAccount
-      }
+      // if (account && oldAccount && isSameAccount(account, oldAccount)) {
+      //   return oldAccount
+      // }
       return account
     })
   }, [network, wallet, subWallet])

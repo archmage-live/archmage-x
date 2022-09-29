@@ -23,3 +23,8 @@ const namePrefix = 'Account '
 export function getDefaultSubName(index: number) {
   return namePrefix + (index + 1)
 }
+
+export function isSubNameInvalid(name: string, index: number) {
+  const re = /^Account\s+\d+$/
+  return re.test(name) && name !== getDefaultSubName(index)
+}

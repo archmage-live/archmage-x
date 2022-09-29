@@ -15,6 +15,17 @@ export function getRootHref() {
   )
 }
 
+export function isUrlSupported(url?: string) {
+  return (
+    url &&
+    !(
+      url.startsWith('chrome://') ||
+      url.startsWith('chrome-extension://') ||
+      url.startsWith('https://chrome.google.com/webstore')
+    )
+  )
+}
+
 export async function createTab(to: string) {
   if (!to.startsWith('#/')) {
     if (to.startsWith('/')) {
@@ -129,7 +140,7 @@ export function useCurrentSiteUrl(): URL | undefined {
 
   const tab = useCurrentTab()
   useEffect(() => {
-    setUrl(tab?.url ? new URL(tab.url) : undefined)
+    setUrl(isUrlSupported(tab?.url) ? new URL(tab!.url!) : undefined)
   }, [tab])
 
   return url

@@ -15,7 +15,7 @@ import { useEffect, useState } from 'react'
 import { HdPathInput } from '~components/HdPathInput'
 import { SaveInput } from '~components/SaveInput'
 import { DB } from '~lib/db'
-import { INetwork, ISubWallet, IWallet } from '~lib/schema'
+import { INetwork, ISubWallet, IWallet, isSubNameInvalid } from '~lib/schema'
 import { useChainAccountByIndex, useHdPaths } from '~lib/services/walletService'
 import { ExportPrivateKeyModal } from '~pages/Settings/SettingsWallets/ExportPrivateKeyModal'
 
@@ -122,23 +122,31 @@ export const SubWalletNameEdit = ({
   subWallet: ISubWallet
 }) => {
   const [isNameExists, setIsNameExists] = useState(false)
+  const [isNameInvalid, setIsNameInvalid] = useState(false)
 
   return (
-    <FormControl isInvalid={isNameExists}>
+    <FormControl isInvalid={isNameExists || isNameInvalid}>
       <FormLabel>Account Name</FormLabel>
       <SaveInput
         hideSaveIfNoChange
         stretchInput
         value={subWallet.name}
-        validate={(value: string) => value.trim().slice(0, 64) || false}
+        validate={(value: string) => {
+          value = value.trim().slice(0, 64)
+          if (!value || isSubNameInvalid(value, subWallet.index)) {
+            return false
+          } else {
+            return value
+          }
+        }}
         asyncValidate={async (value: string) => {
           return !(await DB.subWallets
             .where('[masterId+name]')
             .equals([wallet.id, value])
             .first())
         }}
-        onChange={(value: string) => {
-          DB.subWallets.update(subWallet, { name: value })
+        onChange={async (value: string) => {
+          await DB.subWallets.update(subWallet, { name: value })
         }}
         onInvalid={setIsNameExists}
       />
