@@ -66,7 +66,7 @@ export const NetworkItem = ({
                 displayValue={info.name ? info.name[0] : undefined}
               />
             }
-            alt="Currency Logo"
+            alt="Network Logo"
           />
           <Text fontSize="lg" noOfLines={1}>
             {info.name}

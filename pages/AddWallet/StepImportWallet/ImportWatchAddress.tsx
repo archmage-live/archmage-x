@@ -15,7 +15,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useWizard } from 'react-use-wizard'
 
 import { AlertBox } from '~components/AlertBox'
-import { NETWORK_KIND_SCOPES, NetworkKind, getNetworkKind } from '~lib/network'
+import { NETWORK_SCOPES, NetworkKind, getNetworkKind } from '~lib/network'
 import { checkAddress } from '~lib/wallet'
 
 import { NameInput } from '../NameInput'
@@ -90,7 +90,7 @@ export const ImportWatchAddress = () => {
             w={48}
             value={networkKind}
             onChange={(e) => setNetworkKind(e.target.value as any)}>
-            {NETWORK_KIND_SCOPES.map((scope) => {
+            {NETWORK_SCOPES.map((scope) => {
               return (
                 <option key={scope} value={getNetworkKind(scope)}>
                   {scope}

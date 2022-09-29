@@ -2,10 +2,10 @@ import { Button, HStack, Select, SimpleGrid, Stack } from '@chakra-ui/react'
 import { useEffect, useState } from 'react'
 
 import {
-  NETWORK_KIND_SCOPES,
-  NETWORK_KIND_SCOPE_ANY,
+  NETWORK_SCOPES,
+  NETWORK_SCOPE_ANY,
   NetworkKind,
-  NetworkKindScope,
+  NetworkScope,
   getNetworkKind
 } from '~lib/network'
 import { getNetworkInfo, useNetwork, useNetworks } from '~lib/services/network'
@@ -18,14 +18,14 @@ import { useSelectedWallet } from './select'
 
 export const SettingsWallets = () => {
   const [networkScope, setNetworkScope] = useState<
-    NetworkKindScope | undefined
-  >(NETWORK_KIND_SCOPES[0])
+    NetworkScope | undefined
+  >(NETWORK_SCOPES[0])
   const [networkKind, setNetworkKind] = useState<NetworkKind>()
   useEffect(() => {
     setNetworkKind(getNetworkKind(networkScope))
   }, [networkScope])
 
-  const networksOfKind = useNetworks(undefined, networkKind)
+  const networksOfKind = useNetworks(networkKind)
   const [networkId, setNetworkId] = useState<number>()
   const network = useNetwork(networkId)
 
@@ -52,15 +52,15 @@ export const SettingsWallets = () => {
         <Stack spacing={6}>
           <HStack justify="space-around" spacing={8}>
             <Select
-              value={networkScope || NETWORK_KIND_SCOPE_ANY}
+              value={networkScope || NETWORK_SCOPE_ANY}
               onChange={(e) => {
                 setNetworkScope(
-                  e.target.value === NETWORK_KIND_SCOPE_ANY
+                  e.target.value === NETWORK_SCOPE_ANY
                     ? undefined
                     : e.target.value
                 )
               }}>
-              {[NETWORK_KIND_SCOPE_ANY, ...NETWORK_KIND_SCOPES].map((scope) => {
+              {[NETWORK_SCOPE_ANY, ...NETWORK_SCOPES].map((scope) => {
                 return (
                   <option key={scope} value={scope}>
                     {scope}
@@ -71,7 +71,7 @@ export const SettingsWallets = () => {
 
             <Select
               placeholder={
-                !networksOfKind?.length
+                networksOfKind && !networksOfKind.length
                   ? `No ${networkScope ? `${networkScope} ` : ''}Network`
                   : undefined
               }

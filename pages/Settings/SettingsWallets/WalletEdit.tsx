@@ -16,7 +16,7 @@ import { useDebounce } from 'react-use'
 import { HdPathInput } from '~components/HdPathInput'
 import { SaveInput } from '~components/SaveInput'
 import { DB } from '~lib/db'
-import { NETWORK_KIND_SCOPES, getNetworkKind } from '~lib/network'
+import { NETWORK_SCOPES, getNetworkKind } from '~lib/network'
 import { IWallet } from '~lib/schema/wallet'
 import {
   WALLET_SERVICE,
@@ -35,7 +35,7 @@ export const WalletEdit = ({ wallet }: WalletEditProps) => {
   const hdPaths = useHdPaths(wallet.id)
   const subWallets = useSubWallets(wallet.id)
 
-  const [networkScope, setNetworkScope] = useState(NETWORK_KIND_SCOPES[0])
+  const [networkScope, setNetworkScope] = useState(NETWORK_SCOPES[0])
   const [hdPath, setHdPath] = useState('')
   useEffect(() => {
     const networkKind = getNetworkKind(networkScope)
@@ -103,7 +103,7 @@ export const WalletEdit = ({ wallet }: WalletEditProps) => {
               w={32}
               value={networkScope}
               onChange={(e) => setNetworkScope(e.target.value)}>
-              {NETWORK_KIND_SCOPES.map((scope) => {
+              {NETWORK_SCOPES.map((scope) => {
                 return (
                   <option key={scope} value={scope}>
                     {scope}

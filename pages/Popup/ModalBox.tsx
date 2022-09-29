@@ -129,11 +129,15 @@ export const ModalBoxRender = ({
 const modalVariants = {
   hidden: {
     top: '100vh',
-    opacity: 0
+    opacity: 0,
+    transitionEnd: {
+      display: 'none'
+    }
   },
   visible: {
     top: '0px',
-    opacity: 1
+    opacity: 1,
+    display: 'block'
   }
 }
 

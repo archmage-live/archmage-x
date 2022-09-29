@@ -9,12 +9,11 @@ import { useState } from 'react'
 
 import { SaveInput } from '~components/SaveInput'
 import { DB } from '~lib/db'
-import { NetworkType } from '~lib/network'
-import { AppChainInfo as CosmChainInfo } from '~lib/network/cosm'
+import { NetworkKind } from '~lib/network'
 import { EvmChainInfo } from '~lib/network/evm'
-import { INetwork } from '~lib/schema/network'
+import { INetwork } from '~lib/schema'
 
-const EvmNetworkEdit = ({
+export const EvmNetworkEdit = ({
   network,
   info
 }: {
@@ -57,7 +56,7 @@ const EvmNetworkEdit = ({
           }}
           asyncValidate={async (value: string) => {
             return !(await DB.networks
-              .where({ type: NetworkType.EVM, chainId: +value })
+              .where({ kind: NetworkKind.EVM, chainId: +value })
               .first())
           }}
           onChange={(value: string) => {
@@ -96,59 +95,4 @@ const EvmNetworkEdit = ({
       </FormControl>
     </Stack>
   )
-}
-
-const CosmNetworkEdit = ({
-  network,
-  info
-}: {
-  network: INetwork
-  info: CosmChainInfo
-}) => {
-  return (
-    <Stack spacing="12">
-      <FormControl>
-        <FormLabel>Network Name</FormLabel>
-        <Input size="lg" value={info.chainName} />
-      </FormControl>
-
-      <FormControl>
-        <FormLabel>Chain ID</FormLabel>
-        <Input size="lg" value={info.chainId} />
-      </FormControl>
-
-      <FormControl>
-        <FormLabel>Currency symbol</FormLabel>
-        <Input size="lg" value={info.feeCurrencies[0].coinDenom} />
-      </FormControl>
-
-      <FormControl>
-        <FormLabel>RPC URL</FormLabel>
-        <Input size="lg" value={info.rpc} />
-      </FormControl>
-
-      <FormControl>
-        <FormLabel>LCD URL</FormLabel>
-        <Input size="lg" value={info.rest} />
-      </FormControl>
-
-      <FormControl>
-        <FormLabel>Block Explorer URL</FormLabel>
-        <Input size="lg" value={info.txExplorer?.txUrl} />
-      </FormControl>
-    </Stack>
-  )
-}
-
-export const NetworkEdit = ({ network }: { network?: INetwork }) => {
-  switch (network?.type) {
-    case NetworkType.EVM:
-      return <EvmNetworkEdit network={network} info={network.info} />
-    case NetworkType.COSM:
-      return <CosmNetworkEdit network={network} info={network.info} />
-    case NetworkType.OTHER:
-      return <></>
-    default:
-      return <></>
-  }
 }

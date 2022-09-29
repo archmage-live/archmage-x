@@ -1,25 +1,45 @@
-import { Button, HStack, SimpleGrid, Stack } from '@chakra-ui/react'
+import {
+  Button,
+  HStack,
+  Select,
+  SimpleGrid,
+  Stack,
+  Text
+} from '@chakra-ui/react'
 import { useEffect, useState } from 'react'
 
-import { SwitchBar } from '~components/SwitchBar'
-import { NETWORK_SCOPES, NetworkScope, getNetworkType } from '~lib/network'
+import { AlertBox } from '~components/AlertBox'
+import {
+  NETWORK_SCOPES,
+  NETWORK_SCOPE_ANY,
+  NetworkKind,
+  NetworkScope,
+  getNetworkKind
+} from '~lib/network'
 import { INetwork } from '~lib/schema/network'
-import { useNetworks } from '~lib/services/network'
+import { NETWORK_SERVICE, useNetworks } from '~lib/services/network'
+import { NetworkAdd } from '~pages/Settings/SettingsNetworks/NetworkAdd'
 
 import { NetworkEdit } from './NetworkEdit'
 import { NetworkList } from './NetworkList'
 
 export const SettingsNetworks = () => {
-  const [networkScope, setNetworkScope] = useState<NetworkScope>(
+  const [networkScope, setNetworkScope] = useState<NetworkScope | undefined>(
     NETWORK_SCOPES[0]
   )
 
-  const networks = useNetworks(getNetworkType(networkScope))
+  // const networkKind = networkScope ? getNetworkKind(networkScope) : undefined
+
+  const [networkKind, setNetworkKind] = useState<NetworkKind>()
+  const networks = useNetworks(networkKind)
   const [selectedId, setSelectedId] = useState<number>()
   const [editNetwork, setEditNetwork] = useState<INetwork>()
+  const [addNetwork, setAddNetwork] = useState<boolean>()
 
   useEffect(() => {
+    setNetworkKind(networkScope ? getNetworkKind(networkScope) : undefined)
     setSelectedId(undefined)
+    setAddNetwork(false)
   }, [networkScope])
 
   useEffect(() => {
@@ -34,31 +54,86 @@ export const SettingsNetworks = () => {
     <Stack spacing={12} h="full">
       <SimpleGrid columns={2} spacing={16} h="full">
         <Stack spacing={6}>
-          <HStack justify="center">
-            <SwitchBar
-              targets={NETWORK_SCOPES}
-              value={networkScope}
-              onChange={setNetworkScope}
-            />
+          <HStack h={10}>
+            <Select
+              w="calc(50% - 14px)"
+              value={networkScope || NETWORK_SCOPE_ANY}
+              onChange={(e) => {
+                setNetworkScope(
+                  e.target.value === NETWORK_SCOPE_ANY
+                    ? undefined
+                    : e.target.value
+                )
+              }}>
+              {[NETWORK_SCOPE_ANY, ...NETWORK_SCOPES].map((scope) => {
+                return (
+                  <option key={scope} value={scope}>
+                    {scope}
+                  </option>
+                )
+              })}
+            </Select>
           </HStack>
 
           {networks?.length && (
             <NetworkList
               networks={networks}
               selectedId={selectedId}
-              onSelectedId={setSelectedId}
+              onSelectedId={(selectedId: number) => {
+                setAddNetwork(false)
+                setSelectedId(selectedId)
+              }}
             />
           )}
         </Stack>
 
         <Stack spacing={6}>
-          <HStack justify="end">
-            <Button size="md" colorScheme="purple">
-              Add Network
-            </Button>
+          <HStack h={10} justify={!addNetwork ? 'end' : 'center'}>
+            {networkKind &&
+              networkScope &&
+              (!addNetwork ? (
+                <Button
+                  size="md"
+                  colorScheme="purple"
+                  onClick={() => {
+                    setSelectedId(undefined)
+                    setAddNetwork(true)
+                  }}>
+                  Add {networkScope} Network
+                </Button>
+              ) : (
+                <Text fontSize="lg" fontWeight="medium">
+                  New {networkScope} Network
+                </Text>
+              ))}
           </HStack>
 
-          <NetworkEdit network={editNetwork} />
+          {editNetwork && !addNetwork && <NetworkEdit network={editNetwork} />}
+
+          {networkKind && !editNetwork && addNetwork && (
+            <Stack spacing={12}>
+              <AlertBox>
+                A malicious network provider can lie about the state of the
+                blockchain and record your network activity. Only add custom
+                networks you trust.
+              </AlertBox>
+
+              <NetworkAdd
+                networkKind={networkKind}
+                onCancel={() => {
+                  setAddNetwork(false)
+                }}
+                onConfirm={async (network: INetwork) => {
+                  await NETWORK_SERVICE.addNetwork(
+                    network.kind,
+                    network.chainId,
+                    network.info
+                  )
+                  setAddNetwork(false)
+                }}
+              />
+            </Stack>
+          )}
         </Stack>
       </SimpleGrid>
     </Stack>

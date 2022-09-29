@@ -1,17 +1,15 @@
-import { NetworkKind, NetworkType } from '~lib/network'
+import { NetworkKind } from '~lib/network'
 
 export interface INetwork {
   id: number
   sortId: number
-  type: NetworkType
   kind: NetworkKind
   chainId: ChainId
   info: any
   search: string
 }
 
-export const networkSchemaV1 =
-  '++id, sortId, &[type+chainId], &[kind+chainId], search'
+export const networkSchemaV1 = '++id, sortId, &[kind+chainId], search'
 
 export type ChainId = number | string
 

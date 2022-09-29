@@ -1,11 +1,11 @@
 import { DB, getNextField } from '~lib/db'
-import { NetworkKind, NetworkType } from '~lib/network'
+import { NetworkKind } from '~lib/network'
 import { EmbedChainInfos as CosmChainInfos } from '~lib/network/cosm'
 import { INetwork, createSearchString } from '~lib/schema/network'
 
 export class CosmNetworkService {
   static async init() {
-    if (await DB.networks.where('type').equals(NetworkType.COSM).count()) {
+    if (await DB.networks.where('kind').equals(NetworkKind.COSM).count()) {
       return
     }
 
@@ -18,7 +18,6 @@ export class CosmNetworkService {
     const nets = COSM_NETWORKS_PRESET.map((net, index) => {
       return {
         sortId: nextSortId + index,
-        type: NetworkType.COSM,
         kind: NetworkKind.COSM,
         chainId: net.chainId,
         info: net,

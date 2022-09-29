@@ -1,7 +1,7 @@
 import assert from 'assert'
 
 import { DB, getNextField } from '~lib/db'
-import { NetworkKind, NetworkType } from '~lib/network'
+import { NetworkKind } from '~lib/network'
 import { EVM_NETWORKS_PRESET, EvmChainInfo } from '~lib/network/evm'
 import { INetwork, createSearchString } from '~lib/schema/network'
 
@@ -9,7 +9,7 @@ export interface IEvmNetworkService {}
 
 export class EvmNetworkService implements IEvmNetworkService {
   static async init() {
-    if (await DB.networks.where('type').equals(NetworkType.EVM).count()) {
+    if (await DB.networks.where('kind').equals(NetworkKind.EVM).count()) {
       return
     }
 
@@ -37,7 +37,6 @@ export class EvmNetworkService implements IEvmNetworkService {
 
   private static buildNetwork(info: EvmChainInfo): INetwork {
     return {
-      type: NetworkType.EVM,
       kind: NetworkKind.EVM,
       chainId: info.chainId,
       info: info,

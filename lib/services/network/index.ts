@@ -1,10 +1,9 @@
-import assert from 'assert'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useMemo } from 'react'
 
 import { DB } from '~lib/db'
 import { ENV } from '~lib/env'
-import { NetworkKind, NetworkType } from '~lib/network'
+import { NetworkKind } from '~lib/network'
 import { AppChainInfo as CosmChainInfo } from '~lib/network/cosm'
 import { EvmChainInfo } from '~lib/network/evm'
 import { IChainAccount, INetwork } from '~lib/schema'
@@ -23,8 +22,8 @@ export interface NetworkInfo {
 }
 
 export function getNetworkInfo(network: INetwork): NetworkInfo {
-  switch (network.type) {
-    case NetworkType.EVM: {
+  switch (network.kind) {
+    case NetworkKind.EVM: {
       const info = network.info as EvmChainInfo
       return {
         name: info.name,
@@ -36,7 +35,7 @@ export function getNetworkInfo(network: INetwork): NetworkInfo {
         explorerUrl: info.explorers.at(0)?.url
       }
     }
-    case NetworkType.COSM: {
+    case NetworkKind.COSM: {
       const info = network.info as CosmChainInfo
       return {
         name: info.chainName,
@@ -114,17 +113,14 @@ export class NetworkService {
 
 export const NETWORK_SERVICE = new NetworkService()
 
-export function useNetworks(type?: NetworkType, kind?: NetworkKind) {
-  assert(!(type && kind))
+export function useNetworks(kind?: NetworkKind) {
   return useLiveQuery(() => {
-    if (type) {
-      return DB.networks.where('type').equals(type).sortBy('sortId')
-    } else if (kind) {
+    if (kind) {
       return DB.networks.where('kind').equals(kind).sortBy('sortId')
     } else {
       return DB.networks.orderBy('sortId').toArray()
     }
-  }, [type, kind])
+  }, [kind])
 }
 
 export function useNetworksInfo(networks?: INetwork[]) {

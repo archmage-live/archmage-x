@@ -1,4 +1,4 @@
-import { Index } from "./subWallet";
+import { Index } from './subWallet'
 
 export interface IKeystore {
   id: number

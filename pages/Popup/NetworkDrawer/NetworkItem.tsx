@@ -43,7 +43,7 @@ export const NetworkItem = ({
               displayValue={info.name ? info.name[0] : undefined}
             />
           }
-          alt="Currency Logo"
+          alt="Network Logo"
         />
       }>
       <HStack w="calc(100% - 39px)" justify="space-between">
