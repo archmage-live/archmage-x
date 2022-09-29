@@ -32,21 +32,19 @@ export const NetworkItem = ({
       justifyContent="start"
       onClick={onSelected}
       leftIcon={
-        networkLogoUrl ? (
-          <Image
-            borderRadius="full"
-            boxSize="32px"
-            fit="cover"
-            src={networkLogoUrl}
-            fallback={<></>}
-            alt="Currency Logo"
-          />
-        ) : (
-          <Avvvatars
-            value={info.name}
-            displayValue={info.name ? info.name[0] : undefined}
-          />
-        )
+        <Image
+          borderRadius="full"
+          boxSize="32px"
+          fit="cover"
+          src={networkLogoUrl}
+          fallback={
+            <Avvvatars
+              value={info.name}
+              displayValue={info.name ? info.name[0] : undefined}
+            />
+          }
+          alt="Currency Logo"
+        />
       }>
       <HStack w="calc(100% - 39px)" justify="space-between">
         {/* here zIndex solves the weird incomplete display issue of the last rendered item*/}

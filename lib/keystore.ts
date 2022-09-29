@@ -7,6 +7,7 @@ import { Storage } from '@plasmohq/storage'
 import { DB } from '~lib/db'
 import { ENV } from '~lib/env'
 import { PASSWORD } from '~lib/password'
+import { IKeystore, PSEUDO_INDEX } from '~lib/schema'
 import { IWallet } from '~lib/schema/wallet'
 import { SESSION_STORE, StoreKey } from '~lib/store'
 import { hasWalletKeystore } from '~lib/wallet'
@@ -96,7 +97,7 @@ export class Keystore {
             continue
           }
 
-          if (!wallet.keystore) {
+          if (!(await this.getKeystore(wallet))) {
             promises.push(this.persist(wallet))
           }
 
@@ -130,14 +131,21 @@ export class Keystore {
     return await this.fetch(id)
   }
 
+  async remove(id: number) {
+    await this.accounts.remove(id)
+    this.resolveReady(id, true)
+  }
+
   async persist(wallet: IWallet) {
     if (!hasWalletKeystore(wallet.type)) {
       return
     }
-    if (wallet.keystore) {
+
+    if (await this.getKeystore(wallet)) {
       // has persisted
       return
     }
+
     const account = await this.accounts.get(wallet.id)
     const password = await PASSWORD.get()
     if (!account) {
@@ -151,14 +159,26 @@ export class Keystore {
       // maybe locked, so it will be recovered next time
       return
     }
+
     // time-consuming encrypting
-    wallet.keystore = await encryptKeystore(account, password, {
+    const keystore = await encryptKeystore(account, password, {
       scrypt: {
         N: undefined
         // N: 1 << 14 // fast
       }
     })
-    await DB.wallets.update(wallet.id, { keystore: wallet.keystore })
+
+    await DB.transaction('rw', [DB.keystores], async () => {
+      if (await this.getKeystore(wallet)) {
+        return
+      }
+
+      await DB.keystores.add({
+        masterId: wallet.id,
+        index: PSEUDO_INDEX,
+        keystore
+      } as IKeystore)
+    })
     console.log(`keystore for wallet ${wallet.id} is persistent`)
   }
 
@@ -182,13 +202,18 @@ export class Keystore {
         return undefined
       }
 
+      const encrypt = await this.getKeystore(wallet)
+      if (!encrypt) {
+        this.resolveReady(id, true)
+        return undefined
+      }
+
       // time-consuming decrypting
-      const keystore = await decryptKeystore(wallet.keystore!, password)
+      const keystore = await decryptKeystore(encrypt.keystore, password)
       await this.accounts.set(id, keystore)
 
       if (await PASSWORD.isLocked()) {
-        await this.accounts.remove(id)
-        this.resolveReady(id, true)
+        await this.remove(id)
         return undefined
       }
 
@@ -228,6 +253,15 @@ export class Keystore {
     if (remove) {
       this.ready.delete(id)
     }
+  }
+
+  private async getKeystore(wallet: IWallet) {
+    return DB.keystores
+      .where({
+        masterId: wallet.id,
+        index: PSEUDO_INDEX
+      })
+      .first()
   }
 }
 

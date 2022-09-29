@@ -55,21 +55,19 @@ export const NetworkItem = ({
         onClick={onClick}
         data-group>
         <HStack spacing={4}>
-          {networkLogoUrl ? (
-            <Image
-              borderRadius="full"
-              boxSize="32px"
-              fit="cover"
-              src={networkLogoUrl}
-              fallback={<></>}
-              alt="Currency Logo"
-            />
-          ) : (
-            <Avvvatars
-              value={info.name}
-              displayValue={info.name ? info.name[0] : undefined}
-            />
-          )}
+          <Image
+            borderRadius="full"
+            boxSize="32px"
+            fit="cover"
+            src={networkLogoUrl}
+            fallback={
+              <Avvvatars
+                value={info.name}
+                displayValue={info.name ? info.name[0] : undefined}
+              />
+            }
+            alt="Currency Logo"
+          />
           <Text fontSize="lg" noOfLines={1}>
             {info.name}
           </Text>

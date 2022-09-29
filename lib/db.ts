@@ -8,6 +8,7 @@ import {
   IChainAccountAux,
   IConnectedSite,
   IHdPath,
+  IKeystore,
   INetwork,
   IPendingTx,
   ISubWallet,
@@ -21,6 +22,7 @@ import {
   chainAccountSchemaV1,
   connectedSiteSchemaV1,
   hdPathSchemaV1,
+  keystoreSchemaV1,
   networkSchemaV1,
   pendingTxSchemaV1,
   subWalletSchemaV1,
@@ -32,6 +34,7 @@ import {
 
 export class Database extends Dexie {
   wallets!: Dexie.Table<IWallet, number>
+  keystores!: Dexie.Table<IKeystore, number>
   networks!: Dexie.Table<INetwork, number>
   hdPaths!: Dexie.Table<IHdPath, number>
   subWallets!: Dexie.Table<ISubWallet, number>
@@ -49,6 +52,7 @@ export class Database extends Dexie {
     super('database')
     this.version(1).stores({
       wallets: walletSchemaV1,
+      keystores: keystoreSchemaV1,
       networks: networkSchemaV1,
       hdPaths: hdPathSchemaV1,
       subWallets: subWalletSchemaV1,

@@ -503,7 +503,7 @@ class WalletService extends WalletServicePartial {
     )
 
     if (decrypted) {
-      await KEYSTORE.set(wallet.id!, new KeystoreAccount(decrypted))
+      await KEYSTORE.set(wallet.id, new KeystoreAccount(decrypted))
       // time-consuming, so do not wait for it
       KEYSTORE.persist(wallet)
     }
@@ -535,6 +535,7 @@ class WalletService extends WalletServicePartial {
         'rw',
         [
           DB.wallets,
+          DB.keystores,
           DB.hdPaths,
           DB.subWallets,
           DB.chainAccounts,
@@ -555,6 +556,9 @@ class WalletService extends WalletServicePartial {
           await DB.pendingTxs.where('masterId').equals(id).delete()
 
           await DB.wallets.delete(id)
+          await DB.keystores.where('masterId').equals(id).delete()
+
+          await KEYSTORE.remove(id)
         }
       )
     } finally {

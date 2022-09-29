@@ -2,6 +2,7 @@ import { SubIndex } from '~lib/schema/subWallet'
 
 export * from './network'
 export * from './wallet'
+export * from './keystore'
 export * from './hdPath'
 export * from './subWallet'
 export * from './chainAccount'
