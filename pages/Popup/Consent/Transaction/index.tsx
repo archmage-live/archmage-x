@@ -4,7 +4,21 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon
 } from '@chakra-ui/icons'
-import { Button, Divider, HStack, Stack, Text } from '@chakra-ui/react'
+import {
+  Button,
+  Divider,
+  HStack,
+  Modal,
+  ModalBody,
+  ModalCloseButton,
+  ModalContent,
+  ModalHeader,
+  ModalOverlay,
+  Stack,
+  Text,
+  useDisclosure
+} from '@chakra-ui/react'
+import Decimal from 'decimal.js'
 import * as React from 'react'
 import { useMemo, useState } from 'react'
 
@@ -44,6 +58,12 @@ export const Transaction = ({
   const wallet = useWallet(account?.masterId)
   const subWallet = useSubWalletByIndex(account?.masterId, account?.index)
   const balance = useBalance(network, account)
+
+  const {
+    isOpen: isRejectOpen,
+    onOpen: onRejectOpen,
+    onClose: onRejectClose
+  } = useDisclosure()
 
   if (
     !request ||
@@ -135,18 +155,55 @@ export const Transaction = ({
                     maxW={48}
                     variant="ghost"
                     color="gray.500"
-                    onClick={async () => {
-                      await CONSENT_SERVICE.clearRequests(
-                        ConsentType.TRANSACTION
-                      )
-                      onComplete()
-                    }}>
+                    onClick={onRejectOpen}>
                     Reject {requests.length} requests
                   </Button>
                 </HStack>
               )
             }
           />
+
+          {requests.length > 1 && (
+            <Modal
+              isOpen={isRejectOpen}
+              onClose={onRejectClose}
+              isCentered
+              size="lg">
+              <ModalOverlay />
+              <ModalContent my={0}>
+                <ModalHeader>Reject {requests.length} transactions</ModalHeader>
+                <ModalCloseButton />
+                <ModalBody pb={6}>
+                  <Stack align="center" spacing={8}>
+                    <Text fontSize="md">
+                      You are about to reject {requests.length} transactions.
+                    </Text>
+
+                    <HStack justify="center" spacing={12}>
+                      <Button
+                        size="md"
+                        variant="outline"
+                        onClick={onRejectClose}>
+                        Cancel
+                      </Button>
+                      <Button
+                        size="md"
+                        colorScheme="purple"
+                        onClick={async () => {
+                          await CONSENT_SERVICE.clearRequests(
+                            ConsentType.TRANSACTION
+                          )
+                          onRejectClose()
+                          onComplete()
+                        }}>
+                        Reject All
+                      </Button>
+                    </HStack>
+                  </Stack>
+                </ModalBody>
+              </ModalContent>
+            </Modal>
+          )}
         </Stack>
       )
   }

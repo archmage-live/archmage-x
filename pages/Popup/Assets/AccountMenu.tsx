@@ -37,6 +37,7 @@ import { CopyArea } from '~components/CopyIcon'
 import { useActive } from '~lib/active'
 import { IChainAccount, ISubWallet, IWallet, PSEUDO_INDEX } from '~lib/schema'
 import { getAccountUrl } from '~lib/services/network'
+import { WalletInfo } from '~lib/services/walletService'
 import { createTab } from '~lib/util'
 import { WalletType, hasWalletKeystore } from '~lib/wallet'
 import { DeleteSubWalletModal } from '~pages/Settings/SettingsWallets/DeleteSubWalletModal'
@@ -169,6 +170,8 @@ const AccountDetailModal = ({
   const qrCodeBg = useColorModeValue('white', 'black')
   const qrCodeFg = useColorModeValue('black', 'white')
 
+  const notBackedUp = (wallet.info as WalletInfo)?.notBackedUp
+
   if (!account.address) {
     return <></>
   }
@@ -282,7 +285,9 @@ const AccountDetailModal = ({
                       onClose()
                       onExportMnemonicOpen()
                     }}>
-                    Export Secret Phrase
+                    {!notBackedUp
+                      ? 'Export Secret Phrase'
+                      : 'Back up Secret Phrase'}
                   </Button>
                 )}
               </Stack>
@@ -302,6 +307,7 @@ const AccountDetailModal = ({
 
       <ExportMnemonicModal
         walletId={wallet.id}
+        notBackedUp={notBackedUp}
         isOpen={isExportMnemonicOpen}
         onClose={() => {
           onExportMnemonicClose()

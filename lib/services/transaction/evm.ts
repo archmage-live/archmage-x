@@ -1,5 +1,6 @@
 import { FunctionFragment } from '@ethersproject/abi'
 import { TransactionResponse } from '@ethersproject/abstract-provider'
+import { VoidSigner } from '@ethersproject/abstract-signer'
 import { Logger } from '@ethersproject/logger'
 import { shallowCopy } from '@ethersproject/properties'
 import {
@@ -35,7 +36,8 @@ import {
 import { NETWORK_SERVICE, getNetworkInfo } from '~lib/services/network'
 import {
   EvmProvider,
-  parseEvmFunctionSignature
+  parseEvmFunctionSignature,
+  useEvmProvider
 } from '~lib/services/provider/evm'
 
 import { TransactionInfo, TransactionStatus, TransactionType } from './'
@@ -221,6 +223,21 @@ interface IEvmTransactionService {
 
 // @ts-ignore
 class EvmTransactionServicePartial implements IEvmTransactionService {
+  async getNonce(account: IChainAccount, signer: Signer) {
+    assert(account.address)
+
+    let nextNonce = await Promise.resolve(signer.getTransactionCount('pending'))
+
+    const pendingTxs = await this.getPendingTxs(account, undefined, false)
+    for (const { nonce } of pendingTxs) {
+      if (nonce === nextNonce) {
+        ++nextNonce
+      }
+    }
+
+    return nextNonce
+  }
+
   protected normalizeTx<T extends ITransaction | IPendingTx>(
     transaction: T,
     tx: TransactionResponse
@@ -461,21 +478,6 @@ class EvmTransactionServicePartial implements IEvmTransactionService {
 export class EvmTransactionService extends EvmTransactionServicePartial {
   private waits: Map<number, Promise<ITransaction>> = new Map()
   private inCheck: boolean = false
-
-  async getNonce(account: IChainAccount, signer: Signer) {
-    assert(account.address)
-
-    let nextNonce = await signer.getTransactionCount('pending')
-
-    const pendingTxs = await this.getPendingTxs(account, undefined, false)
-    for (const { nonce } of pendingTxs) {
-      if (nonce === nextNonce) {
-        ++nextNonce
-      }
-    }
-
-    return nextNonce
-  }
 
   constructor() {
     super()
@@ -1094,4 +1096,16 @@ export function useEvmTransactionsMixed(
     historyTxCount,
     txs
   }
+}
+
+export function useNonce(account?: IChainAccount, network?: INetwork) {
+  const provider = useEvmProvider(network)
+
+  return useLiveQuery(async () => {
+    if (!account?.address || !provider) {
+      return
+    }
+    const signer = new VoidSigner(account.address, provider)
+    return EVM_TRANSACTION_SERVICE.getNonce(account, signer)
+  }, [account, provider])
 }

@@ -13,6 +13,7 @@ import { ConnectionInfo } from '@ethersproject/web'
 import assert from 'assert'
 import { ethers } from 'ethers'
 import { useCallback, useMemo } from 'react'
+import { useAsync } from 'react-use'
 
 import { NetworkKind } from '~lib/network'
 import { EvmChainInfo } from '~lib/network/evm'
@@ -203,6 +204,16 @@ export class EvmProviderAdaptor implements ProviderAdaptor {
   static async from(network: INetwork): Promise<EvmProviderAdaptor> {
     const provider = await EvmProvider.from(network)
     return new EvmProviderAdaptor(provider)
+  }
+
+  async isOk(): Promise<boolean> {
+    try {
+      await this.provider.getBlockNumber()
+      return true
+    } catch (err) {
+      console.error(err)
+      return false
+    }
   }
 
   async isContract(address: string): Promise<boolean> {
@@ -509,6 +520,16 @@ const forwardErrors = [
   Logger.errors.NONCE_EXPIRED,
   Logger.errors.REPLACEMENT_UNDERPRICED
 ]
+
+export function useEvmProvider(network?: INetwork) {
+  const { value } = useAsync(async () => {
+    if (!network) {
+      return
+    }
+    return EvmProvider.from(network)
+  }, [network])
+  return value
+}
 
 export function useEvmFunctionSignature(
   data?: BytesLike

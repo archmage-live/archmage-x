@@ -1,4 +1,6 @@
+import { WarningTwoIcon } from '@chakra-ui/icons'
 import {
+  Box,
   Button,
   Center,
   Divider,
@@ -17,25 +19,40 @@ import Decimal from 'decimal.js'
 import { useEffect } from 'react'
 import { BiQuestionMark } from 'react-icons/bi'
 import { FiCheckCircle, FiCopy } from 'react-icons/fi'
+import { MdOutlineSignalCellularConnectedNoInternet4Bar } from 'react-icons/md'
+import { useNetworkState } from 'react-use'
 
 import { useActive } from '~lib/active'
 import { formatNumber } from '~lib/formatNumber'
 import { useConnectedSiteAccess } from '~lib/services/connectedSiteService'
 import { useCryptoComparePrice } from '~lib/services/datasource/cryptocompare'
 import { getNetworkInfo } from '~lib/services/network'
-import { useBalance } from '~lib/services/provider'
-import { useCurrentSiteUrl } from '~lib/util'
+import { useBalance, useNetworkStatus } from '~lib/services/provider'
+import { WalletInfo } from '~lib/services/walletService'
+import { createTab, useCurrentSiteUrl } from '~lib/util'
 import { shortenAddress } from '~lib/utils'
 import { useDepositModal } from '~pages/Popup/Assets/Deposit'
 import { useSendModal } from '~pages/Popup/Assets/Send'
 import { SiteConnsModal } from '~pages/Popup/Assets/SiteConns'
+import { ExportMnemonicModal } from '~pages/Settings/SettingsWallets/ExportMnemonicModal'
 
 import { AccountMenu } from './AccountMenu'
 import { TokenListSection } from './TokenList'
 
 export default function Assets({ onLoaded }: { onLoaded?: () => void }) {
   const { network, account, wallet, subWallet } = useActive()
+
+  const notBackedUp = (wallet?.info as WalletInfo)?.notBackedUp
+  const {
+    isOpen: isExportMnemonicOpen,
+    onOpen: onExportMnemonicOpen,
+    onClose: onExportMnemonicClose
+  } = useDisclosure()
+
   const networkInfo = network && getNetworkInfo(network)
+
+  const { online: isInternetOk } = useNetworkState()
+  const isNetworkOk = useNetworkStatus(network, 15000)
 
   const origin = useCurrentSiteUrl()?.origin
 
@@ -74,47 +91,87 @@ export default function Assets({ onLoaded }: { onLoaded?: () => void }) {
       <Stack w="full" spacing={6}>
         <Stack w="full" spacing={4}>
           <Stack w="full" spacing={2}>
-            <HStack justify="space-between" minH={16}>
-              <HStack w="48px" ps="17px">
-                {connected !== undefined && (
-                  <Tooltip
-                    label={
-                      origin && !origin.startsWith('chrome')
-                        ? (connected ? 'Connected to ' : 'Not connected to ') +
-                          origin
-                        : ''
-                    }
-                    placement="top-start">
-                    <IconButton
-                      variant="link"
-                      minW={4}
-                      aria-label="Show accounts connected to this site"
-                      icon={
-                        connected ? (
-                          <Center
-                            w="4"
-                            h="4"
-                            borderRadius="50%"
-                            bg={'green.500'}
-                            _hover={{ bg: 'green.600' }}
-                            transition="background 0.2s ease-out"
-                          />
-                        ) : (
-                          <Center
-                            w="4"
-                            h="4"
-                            borderRadius="50%"
-                            borderWidth="2px"
-                            borderColor="red.500"
-                            _hover={{ borderColor: 'red.600' }}
-                            transition="border-color 0.2s ease-out"
-                          />
-                        )
+            <HStack justify="space-between" minH={16} position="relative">
+              <HStack w={16} spacing={2} left="-4px" position="relative">
+                <Box w={4}>
+                  {(isInternetOk === false || isNetworkOk === false) && (
+                    <Tooltip
+                      label={
+                        !isInternetOk
+                          ? 'Network is offline'
+                          : `Network ${networkInfo?.name} is unavailable`
                       }
-                      onClick={onConnsOpen}
-                    />
-                  </Tooltip>
-                )}
+                      placement="top-start">
+                      <Box>
+                        <Icon
+                          as={MdOutlineSignalCellularConnectedNoInternet4Bar}
+                          w="4"
+                          h="4"
+                          color="yellow.500"
+                        />
+                      </Box>
+                    </Tooltip>
+                  )}
+                </Box>
+
+                <Box w={4}>
+                  {connected !== undefined && (
+                    <Tooltip
+                      label={
+                        origin && !origin.startsWith('chrome')
+                          ? (connected
+                              ? 'Connected to '
+                              : 'Not connected to ') + origin
+                          : ''
+                      }
+                      placement="top-start">
+                      <IconButton
+                        variant="link"
+                        minW={4}
+                        aria-label="Show accounts connected to this site"
+                        icon={
+                          connected ? (
+                            <Center
+                              w="4"
+                              h="4"
+                              borderRadius="50%"
+                              bg={'green.500'}
+                              _hover={{ bg: 'green.600' }}
+                              transition="background 0.2s ease-out"
+                            />
+                          ) : (
+                            <Center
+                              w="4"
+                              h="4"
+                              borderRadius="50%"
+                              borderWidth="2px"
+                              borderColor="red.500"
+                              _hover={{ borderColor: 'red.600' }}
+                              transition="border-color 0.2s ease-out"
+                            />
+                          )
+                        }
+                        onClick={onConnsOpen}
+                      />
+                    </Tooltip>
+                  )}
+                </Box>
+
+                <Box w={4}>
+                  {notBackedUp && (
+                    <Tooltip
+                      label={`${wallet?.name} has not been backed up`}
+                      placement="top-start">
+                      <IconButton
+                        variant="link"
+                        minW={4}
+                        aria-label="Back up secret recovery phrase"
+                        icon={<WarningTwoIcon w="4" h="4" color="yellow.500" />}
+                        onClick={onExportMnemonicOpen}
+                      />
+                    </Tooltip>
+                  )}
+                </Box>
               </HStack>
 
               <Tooltip
@@ -141,7 +198,7 @@ export default function Assets({ onLoaded }: { onLoaded?: () => void }) {
                   variant="ghost"
                   size="lg"
                   h="70px"
-                  maxW={64}
+                  maxW={56}
                   px={2}
                   colorScheme="purple"
                   onClick={onCopy}>
@@ -180,7 +237,7 @@ export default function Assets({ onLoaded }: { onLoaded?: () => void }) {
                 </Button>
               </Tooltip>
 
-              <HStack w="48px" justify="end">
+              <HStack w="56px" justify="end">
                 <AccountMenu />
               </HStack>
             </HStack>
@@ -269,6 +326,16 @@ export default function Assets({ onLoaded }: { onLoaded?: () => void }) {
       <TokenListSection />
 
       <SiteConnsModal isOpen={isConnsOpen} onClose={onConnsClose} />
+
+      {wallet && notBackedUp && (
+        <ExportMnemonicModal
+          walletId={wallet.id}
+          notBackedUp={notBackedUp}
+          isOpen={isExportMnemonicOpen}
+          onClose={onExportMnemonicClose}
+          size="full"
+        />
+      )}
     </Stack>
   )
 }

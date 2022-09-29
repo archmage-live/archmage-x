@@ -3,6 +3,8 @@ import { IChainAccount, INetwork } from '~lib/schema'
 import { formatEvmTxParams } from '~lib/services/provider/evm/types'
 
 export interface ProviderAdaptor {
+  isOk(): Promise<boolean>
+
   isContract(address: string): Promise<boolean>
 
   getBalance(address: string): Promise<string>

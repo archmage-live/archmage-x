@@ -48,6 +48,18 @@ export function getGasFeeBrief(network: INetwork, gasFee: any): string {
   throw new Error(`provider for network ${network.kind} is not implemented`)
 }
 
+export function useNetworkStatus(network?: INetwork, retryInterval?: number) {
+  const provider = useProvider(network)
+
+  const { value, loading, retry } = useAsyncRetry(async () => {
+    return provider?.isOk()
+  }, [provider])
+
+  useInterval(retry, retryInterval && !loading ? retryInterval : null)
+
+  return value
+}
+
 export function useIsContract(network?: INetwork, address?: string) {
   const provider = useProvider(network)
 

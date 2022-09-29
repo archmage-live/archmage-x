@@ -319,7 +319,12 @@ export function isSameNetwork(a: INetwork, b: INetwork) {
 }
 
 export function isSameWallet(a: IWallet, b: IWallet) {
-  return a.id === b.id && a.sortId === b.sortId && a.name === b.name
+  return (
+    a.id === b.id &&
+    a.sortId === b.sortId &&
+    a.name === b.name &&
+    stableHash(a.info) === stableHash(b.info)
+  )
 }
 
 export function isSameSubWallet(a: ISubWallet, b: ISubWallet) {

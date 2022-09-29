@@ -13,11 +13,13 @@ import {
 import { useEffect, useState } from 'react'
 
 import { MnemonicDisplay } from '~components/MnemonicDisplay'
+import { MnemonicRemember } from '~components/MnemonicRemember'
 import { ValidatedAction } from '~components/ValidatedAction'
 import { WALLET_SERVICE } from '~lib/services/walletService'
 
 interface ExportMnemonicModalProps {
   walletId: number
+  notBackedUp?: boolean
   isOpen: boolean
   onClose: () => void
   size?: ModalProps['size']
@@ -25,6 +27,7 @@ interface ExportMnemonicModalProps {
 
 export const ExportMnemonicModal = ({
   walletId,
+  notBackedUp,
   isOpen,
   onClose,
   size
@@ -45,6 +48,7 @@ export const ExportMnemonicModal = ({
             <ValidatedAction onClose={onClose}>
               <ExportMnemonic
                 walletId={walletId}
+                notBackedUp={notBackedUp}
                 isOpen={isOpen}
                 onClose={onClose}
               />
@@ -56,7 +60,11 @@ export const ExportMnemonicModal = ({
   )
 }
 
-const ExportMnemonic = ({ walletId, onClose }: ExportMnemonicModalProps) => {
+const ExportMnemonic = ({
+  walletId,
+  notBackedUp,
+  onClose
+}: ExportMnemonicModalProps) => {
   const [mnemonic, setMnemonic] = useState<string[]>([])
   useEffect(() => {
     WALLET_SERVICE.getKeystore(walletId).then((keystore) => {
@@ -66,33 +74,75 @@ const ExportMnemonic = ({ walletId, onClose }: ExportMnemonicModalProps) => {
     })
   }, [walletId])
 
+  const [inConfirm, setInConfirm] = useState(false)
+  const [remembered, setRemembered] = useState(false)
+
   return (
     <Stack px="4" py="12" spacing="12">
       <Stack>
         <HStack justify="center">
           <Text fontSize="2xl" fontWeight="bold">
-            Do not share your secret phrase!
+            {!notBackedUp
+              ? 'Do not share your secret phrase!'
+              : 'Back up your secret phrase'}
           </Text>
         </HStack>
         <HStack justify="center">
           <Text fontSize="lg" color="gray.500">
-            If someone has your secret phrase, they will have full control of
-            your wallet.
+            {!notBackedUp
+              ? 'If someone has your secret phrase, they will have full control of your wallet.'
+              : !inConfirm
+              ? 'This phrase is the ONLY way to recover your wallet. Do NOT share it with anyone!'
+              : 'Please confirm your secret recovery phrase.'}
           </Text>
         </HStack>
       </Stack>
 
-      <MnemonicDisplay mnemonic={mnemonic} />
+      {!inConfirm ? (
+        <MnemonicDisplay mnemonic={mnemonic} />
+      ) : (
+        <MnemonicRemember mnemonic={mnemonic} setRemembered={setRemembered} />
+      )}
 
-      <Button
-        variant="outline"
-        colorScheme="purple"
-        onClick={() => {
-          onClose()
-          setMnemonic([])
-        }}>
-        Done
-      </Button>
+      {!inConfirm ? (
+        <Button
+          variant="outline"
+          colorScheme="purple"
+          onClick={() => {
+            if (!notBackedUp) {
+              onClose()
+              setMnemonic([])
+            } else {
+              setInConfirm(true)
+            }
+          }}>
+          {!notBackedUp ? 'Done' : 'Continue'}
+        </Button>
+      ) : (
+        <HStack spacing={8}>
+          <Button
+            flex={1}
+            variant="outline"
+            colorScheme="purple"
+            onClick={() => {
+              setInConfirm(false)
+            }}>
+            Back
+          </Button>
+
+          <Button
+            flex={1}
+            colorScheme="purple"
+            isDisabled={!remembered}
+            onClick={async () => {
+              await WALLET_SERVICE.backUpWallet(walletId)
+              onClose()
+              setMnemonic([])
+            }}>
+            Done
+          </Button>
+        </HStack>
+      )}
     </Stack>
   )
 }

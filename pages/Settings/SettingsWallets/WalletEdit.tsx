@@ -20,6 +20,7 @@ import { NETWORK_KIND_SCOPES, getNetworkKind } from '~lib/network'
 import { IWallet } from '~lib/schema/wallet'
 import {
   WALLET_SERVICE,
+  WalletInfo,
   useHdPaths,
   useSubWallets
 } from '~lib/services/walletService'
@@ -86,6 +87,8 @@ export const WalletEdit = ({ wallet }: WalletEditProps) => {
     onOpen: onExportOpen,
     onClose: onExportClose
   } = useDisclosure()
+
+  const notBackedUp = (wallet.info as WalletInfo)?.notBackedUp
 
   return (
     <Stack spacing="12">
@@ -173,13 +176,14 @@ export const WalletEdit = ({ wallet }: WalletEditProps) => {
 
       <HStack justify="end">
         <Button variant="outline" colorScheme="purple" onClick={onExportOpen}>
-          Export Secret Phrase
+          {!notBackedUp ? 'Export Secret Phrase' : 'Back up Secret Phrase'}
         </Button>
         <Button colorScheme="red">Delete Wallet</Button>
       </HStack>
 
       <ExportMnemonicModal
         walletId={wallet.id}
+        notBackedUp={notBackedUp}
         isOpen={isExportOpen}
         onClose={onExportClose}
       />

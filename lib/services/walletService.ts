@@ -53,6 +53,11 @@ export type CreateWalletOpts = {
   decrypted?: _KeystoreAccount
   networkKind?: NetworkKind
   addresses?: string[]
+  notBackedUp?: boolean
+}
+
+export interface WalletInfo {
+  notBackedUp?: boolean
 }
 
 function checkAddresses(
@@ -78,7 +83,7 @@ export interface IWalletService {
 
   createWallet(opts: CreateWalletOpts): Promise<void>
 
-  updateWallet(): Promise<void>
+  backUpWallet(id: number): Promise<void>
 
   deleteWallet(id: number): Promise<void>
 
@@ -424,12 +429,18 @@ class WalletService extends WalletServicePartial {
     wallet,
     decrypted,
     networkKind,
-    addresses
+    addresses,
+    notBackedUp
   }: CreateWalletOpts) {
     await DB.transaction(
       'rw',
       [DB.wallets, DB.subWallets, DB.hdPaths, DB.chainAccountsAux],
       async () => {
+        if (notBackedUp) {
+          assert(wallet.type === WalletType.HD)
+          wallet.info = { notBackedUp } as WalletInfo
+        }
+
         wallet.id = await DB.wallets.add(wallet)
 
         switch (wallet.type) {
@@ -495,8 +506,17 @@ class WalletService extends WalletServicePartial {
     }
   }
 
-  async updateWallet() {
-    // TODO
+  async backUpWallet(id: number) {
+    const wallet = await this.getWallet(id)
+    if (!wallet) {
+      return
+    }
+    const info = wallet.info as WalletInfo
+    if (!info) {
+      return
+    }
+    delete info.notBackedUp
+    await DB.wallets.update(wallet.id, { info })
   }
 
   async deleteWallet(id: number) {

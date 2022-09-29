@@ -18,6 +18,7 @@ export enum AddWalletKind {
 const addWalletKindAtom = atom<AddWalletKind>(AddWalletKind.NEW_HD)
 const nameAtom = atom('')
 const mnemonicAtom = atom<string[]>([])
+const mnemonicNotBackedUpAtom = atom<boolean>(false)
 const hdPathAtom = atom('')
 const privateKeyAtom = atom('')
 const networkKindAtom = atom<NetworkKind>(NetworkKind.EVM)
@@ -34,6 +35,10 @@ export function useName() {
 
 export function useMnemonic() {
   return useAtom(mnemonicAtom)
+}
+
+export function useMnemonicNotBackedUp() {
+  return useAtom(mnemonicNotBackedUpAtom)
 }
 
 export function useHdPath() {
@@ -58,6 +63,7 @@ export function useCreated() {
 
 export function useClear() {
   const [, setMnemonic] = useMnemonic()
+  const [, setMnemonicNotBackedUp] = useMnemonicNotBackedUp()
   const [, setHdPath] = useHdPath()
   const [, setPrivateKey] = usePrivateKey()
   const [, setName] = useName()
@@ -66,6 +72,7 @@ export function useClear() {
   const [, setCreated] = useCreated()
   return useCallback(() => {
     setMnemonic([])
+    setMnemonicNotBackedUp(false)
     setHdPath('')
     setPrivateKey('')
     setName('')
@@ -79,6 +86,7 @@ export function useClear() {
 export function useAddWallet() {
   const [addWalletKind] = useAddWalletKind()
   const [mnemonic] = useMnemonic()
+  const [notBackedUp] = useMnemonicNotBackedUp()
   const [hdPath] = useHdPath()
   const [privateKey] = usePrivateKey()
   const [name] = useName()
@@ -132,7 +140,8 @@ export function useAddWallet() {
       wallet,
       decrypted,
       networkKind,
-      addresses
+      addresses,
+      notBackedUp
     }).finally(() => {
       setCreated(true)
     })
@@ -145,6 +154,7 @@ export function useAddWallet() {
     mnemonic,
     name,
     networkKind,
+    notBackedUp,
     privateKey,
     setCreated
   ])

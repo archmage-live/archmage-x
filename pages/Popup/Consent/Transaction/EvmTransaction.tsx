@@ -60,6 +60,7 @@ import {
   useEvmFunctionSignature
 } from '~lib/services/provider/evm'
 import { Balance } from '~lib/services/token'
+import { useNonce } from '~lib/services/transaction/evm'
 import { shortenAddress } from '~lib/utils'
 
 import { EvmAdvancedGasFeeModal } from './EvmAdvancedGasFeeModal'
@@ -124,6 +125,14 @@ export const EvmTransaction = ({
   )
   const [editNonce, setEditNonce] = useState(false)
   const [editGasLimit, setEditGasLimit] = useState(false)
+
+  const managedNonce = useNonce(account, network)
+  useEffect(() => {
+    if (editNonce || managedNonce === undefined) {
+      return
+    }
+    setNonce(managedNonce)
+  }, [editNonce, managedNonce])
 
   const [isGasLimitValid, setIsGasLimitValid] = useState(false)
   useEffect(() => {
@@ -240,11 +249,11 @@ export const EvmTransaction = ({
   const insufficientBalance = balance && normalTotal?.gt(balance.amount)
 
   const onConfirm = useCallback(async () => {
-    setSpinning(true)
-
     if (!gasFeeEstimation || !activeOption) {
       return
     }
+
+    setSpinning(true)
 
     let maxPriorityFeePerGas, maxFeePerGas, gasPrice
     switch (gasFeeEstimation.gasEstimateType) {
@@ -257,6 +266,7 @@ export const EvmTransaction = ({
           customGasFeePerGas?.maxFeePerGas
         )
         if (!gasFee) {
+          setSpinning(false)
           return
         }
         maxPriorityFeePerGas = gasFee.suggestedMaxPriorityFeePerGas
@@ -300,6 +310,7 @@ export const EvmTransaction = ({
     )
 
     onComplete()
+    setSpinning(false)
   }, [
     onComplete,
     request,
