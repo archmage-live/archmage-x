@@ -28,7 +28,7 @@ export default function Settings() {
   const inputColor = 'purple.500'
 
   return (
-    <Stack w="100vw" h="100vh">
+    <Stack w="100vw" minH="100vh">
       <TitleBar />
 
       <Container centerContent maxW="100%" pb="16" flex="1">

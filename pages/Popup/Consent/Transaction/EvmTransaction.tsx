@@ -30,10 +30,9 @@ import { useScroll } from 'framer-motion'
 import * as React from 'react'
 import { ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 import { BiQuestionMark } from 'react-icons/bi'
-import HashLoader from 'react-spinners/HashLoader'
 
 import { AlertBox } from '~components/AlertBox'
-import { useColor } from '~hooks/useColor'
+import { SpinningOverlay } from '~components/SpinningOverlay'
 import { formatNumber } from '~lib/formatNumber'
 import { IChainAccount, INetwork, ISubWallet, IWallet } from '~lib/schema'
 import { CONSENT_SERVICE, ConsentRequest } from '~lib/services/consentService'
@@ -160,7 +159,6 @@ export const EvmTransaction = ({
   }, [])
 
   const [spinning, setSpinning] = useState(false)
-  const spinnerColor = useColor('purple.500', 'purple.500')
 
   const price = useCryptoComparePrice(networkInfo.currencySymbol)
 
@@ -765,16 +763,7 @@ export const EvmTransaction = ({
         </Stack>
       </Box>
 
-      {spinning && (
-        <Center
-          position="absolute"
-          w="full"
-          h="full"
-          bg="blackAlpha.600"
-          zIndex={1}>
-          <HashLoader color={spinnerColor.toHexString()} speedMultiplier={3} />
-        </Center>
-      )}
+      <SpinningOverlay loading={spinning} />
 
       {gasFeeEstimation?.gasEstimateType === GasEstimateType.FEE_MARKET &&
       activeOption ? (

@@ -266,6 +266,7 @@ export class EvmPermissionedProvider {
     if (!name?.length || !symbol?.length || typeof decimals !== 'number') {
       throw ethErrors.rpc.invalidParams('Invalid nativeCurrency')
     }
+    params.nativeCurrency.symbol = params.nativeCurrency.symbol.toUpperCase()
 
     const existing = await NETWORK_SERVICE.getNetwork({
       kind: NetworkKind.EVM,

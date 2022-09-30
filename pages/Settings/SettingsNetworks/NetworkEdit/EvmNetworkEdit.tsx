@@ -5,22 +5,44 @@ import {
   Input,
   Stack
 } from '@chakra-ui/react'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import { SaveInput } from '~components/SaveInput'
 import { DB } from '~lib/db'
 import { NetworkKind } from '~lib/network'
 import { EvmChainInfo } from '~lib/network/evm'
 import { INetwork } from '~lib/schema'
+import {
+  getBlockNumber,
+  getChainId
+} from '~pages/Settings/SettingsNetworks/NetworkAdd/EvmNetworkAdd'
+import {
+  RpcUrlInputGroup,
+  UrlInputGroup
+} from '~pages/Settings/SettingsNetworks/NetworkAdd/UrlInputGroup'
 
 export const EvmNetworkEdit = ({
   network,
-  info
+  info,
+  setLoading
 }: {
   network: INetwork
   info: EvmChainInfo
+  setLoading: (loading: boolean) => void
 }) => {
   const [isChainIdInvalid, setIsChainIdInvalid] = useState(false)
+
+  const [rpcUrls, setRpcUrls] = useState<string[]>([])
+  const [explorerUrls, setExplorerUrls] = useState<string[]>([])
+
+  useEffect(() => {
+    setRpcUrls(info.rpc)
+    setExplorerUrls(info.explorers.map(({ url }) => url))
+  }, [info])
+
+  const [allowInvalidRpcUrl, setAllowInvalidRpcUrl] = useState(false)
+
+  const checkUrls = useRef<() => Promise<string[] | undefined>>()
 
   return (
     <Stack spacing="12">
@@ -84,14 +106,21 @@ export const EvmNetworkEdit = ({
         />
       </FormControl>
 
-      <FormControl>
-        <FormLabel>RPC URL</FormLabel>
-        <Input size="lg" value={info.rpc[0]} />
-      </FormControl>
+      <RpcUrlInputGroup
+        urls={rpcUrls}
+        setUrls={setRpcUrls}
+        testUrl={getBlockNumber}
+        chainId={network.chainId}
+        getChainId={getChainId}
+        checkUrls={checkUrls}
+        allowInvalidRpcUrl={allowInvalidRpcUrl}
+        setAllowInvalidRpcUrl={setAllowInvalidRpcUrl}
+        setLoading={setLoading}
+      />
 
       <FormControl>
-        <FormLabel>Block Explorer URL</FormLabel>
-        <Input size="lg" value={info.explorers[0].url} />
+        <FormLabel>Block Explorer Url(s)</FormLabel>
+        <UrlInputGroup urls={explorerUrls} setUrls={setExplorerUrls} />
       </FormControl>
     </Stack>
   )

@@ -1,4 +1,5 @@
 import {
+  Box,
   Button,
   HStack,
   Select,
@@ -9,6 +10,7 @@ import {
 import { useEffect, useState } from 'react'
 
 import { AlertBox } from '~components/AlertBox'
+import { SpinningOverlay } from '~components/SpinningOverlay'
 import {
   NETWORK_SCOPES,
   NETWORK_SCOPE_ANY,
@@ -16,7 +18,7 @@ import {
   NetworkScope,
   getNetworkKind
 } from '~lib/network'
-import { INetwork } from '~lib/schema/network'
+import { ChainId, INetwork } from '~lib/schema/network'
 import { NETWORK_SERVICE, useNetworks } from '~lib/services/network'
 import { NetworkAdd } from '~pages/Settings/SettingsNetworks/NetworkAdd'
 
@@ -50,92 +52,101 @@ export const SettingsNetworks = () => {
     }
   }, [networks, selectedId])
 
+  const [loading, setLoading] = useState(false)
+
   return (
-    <Stack spacing={12} h="full">
-      <SimpleGrid columns={2} spacing={16} h="full">
-        <Stack spacing={6}>
-          <HStack h={10}>
-            <Select
-              w="calc(50% - 14px)"
-              value={networkScope || NETWORK_SCOPE_ANY}
-              onChange={(e) => {
-                setNetworkScope(
-                  e.target.value === NETWORK_SCOPE_ANY
-                    ? undefined
-                    : e.target.value
-                )
-              }}>
-              {[NETWORK_SCOPE_ANY, ...NETWORK_SCOPES].map((scope) => {
-                return (
-                  <option key={scope} value={scope}>
-                    {scope}
-                  </option>
-                )
-              })}
-            </Select>
-          </HStack>
-
-          {networks?.length && (
-            <NetworkList
-              networks={networks}
-              selectedId={selectedId}
-              onSelectedId={(selectedId: number) => {
-                setAddNetwork(false)
-                setSelectedId(selectedId)
-              }}
-            />
-          )}
-        </Stack>
-
-        <Stack spacing={6}>
-          <HStack h={10} justify={!addNetwork ? 'end' : 'center'}>
-            {networkKind &&
-              networkScope &&
-              (!addNetwork ? (
-                <Button
-                  size="md"
-                  colorScheme="purple"
-                  onClick={() => {
-                    setSelectedId(undefined)
-                    setAddNetwork(true)
-                  }}>
-                  Add {networkScope} Network
-                </Button>
-              ) : (
-                <Text fontSize="lg" fontWeight="medium">
-                  New {networkScope} Network
-                </Text>
-              ))}
-          </HStack>
-
-          {editNetwork && !addNetwork && <NetworkEdit network={editNetwork} />}
-
-          {networkKind && !editNetwork && addNetwork && (
-            <Stack spacing={12}>
-              <AlertBox>
-                A malicious network provider can lie about the state of the
-                blockchain and record your network activity. Only add custom
-                networks you trust.
-              </AlertBox>
-
-              <NetworkAdd
-                networkKind={networkKind}
-                onCancel={() => {
-                  setAddNetwork(false)
-                }}
-                onConfirm={async (network: INetwork) => {
-                  await NETWORK_SERVICE.addNetwork(
-                    network.kind,
-                    network.chainId,
-                    network.info
+    <Box h="full">
+      <Stack spacing={12} h="full">
+        <SimpleGrid columns={2} spacing={16} h="full">
+          <Stack spacing={6}>
+            <HStack h={10}>
+              <Select
+                w="calc(50% - 14px)"
+                value={networkScope || NETWORK_SCOPE_ANY}
+                onChange={(e) => {
+                  setNetworkScope(
+                    e.target.value === NETWORK_SCOPE_ANY
+                      ? undefined
+                      : e.target.value
                   )
+                }}>
+                {[NETWORK_SCOPE_ANY, ...NETWORK_SCOPES].map((scope) => {
+                  return (
+                    <option key={scope} value={scope}>
+                      {scope}
+                    </option>
+                  )
+                })}
+              </Select>
+            </HStack>
+
+            {networks?.length && (
+              <NetworkList
+                networks={networks}
+                selectedId={selectedId}
+                onSelectedId={(selectedId: number) => {
                   setAddNetwork(false)
+                  setSelectedId(selectedId)
                 }}
               />
-            </Stack>
-          )}
-        </Stack>
-      </SimpleGrid>
-    </Stack>
+            )}
+          </Stack>
+
+          <Stack spacing={6}>
+            <HStack h={10} justify={!addNetwork ? 'end' : 'center'}>
+              {networkKind &&
+                networkScope &&
+                (!addNetwork ? (
+                  <Button
+                    size="md"
+                    colorScheme="purple"
+                    onClick={() => {
+                      setSelectedId(undefined)
+                      setAddNetwork(true)
+                    }}>
+                    Add {networkScope} Network
+                  </Button>
+                ) : (
+                  <Text fontSize="lg" fontWeight="medium">
+                    New {networkScope} Network
+                  </Text>
+                ))}
+            </HStack>
+
+            {editNetwork && !addNetwork && (
+              <NetworkEdit network={editNetwork} setLoading={setLoading} />
+            )}
+
+            {networkKind && !editNetwork && addNetwork && (
+              <Stack spacing={12}>
+                <AlertBox>
+                  A malicious network provider can lie about the state of the
+                  blockchain and record your network activity. Only add custom
+                  networks you trust.
+                </AlertBox>
+
+                <NetworkAdd
+                  networkKind={networkKind}
+                  onCancel={() => {
+                    setAddNetwork(false)
+                  }}
+                  onConfirm={async (
+                    networkKind: NetworkKind,
+                    chainId: ChainId,
+                    info: any
+                  ) => {
+                    await NETWORK_SERVICE.addNetwork(networkKind, chainId, info)
+                    setAddNetwork(false)
+                  }}
+                  setLoading={setLoading}
+                />
+              </Stack>
+            )}
+          </Stack>
+        </SimpleGrid>
+      </Stack>
+
+      <SpinningOverlay loading={loading} />
+    </Box>
   )
 }

@@ -4,6 +4,12 @@ import browser from 'webextension-polyfill'
 
 import { Context } from '~lib/rpc'
 
+export function stall(duration: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, duration)
+  })
+}
+
 export function getRootHref() {
   let href = globalThis.location.href
   const url = new URL(href)

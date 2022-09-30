@@ -17,9 +17,9 @@ import { WalletList } from './WalletList'
 import { useSelectedWallet } from './select'
 
 export const SettingsWallets = () => {
-  const [networkScope, setNetworkScope] = useState<
-    NetworkScope | undefined
-  >(NETWORK_SCOPES[0])
+  const [networkScope, setNetworkScope] = useState<NetworkScope | undefined>(
+    NETWORK_SCOPES[0]
+  )
   const [networkKind, setNetworkKind] = useState<NetworkKind>()
   useEffect(() => {
     setNetworkKind(getNetworkKind(networkScope))

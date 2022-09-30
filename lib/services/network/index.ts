@@ -6,7 +6,7 @@ import { ENV } from '~lib/env'
 import { NetworkKind } from '~lib/network'
 import { AppChainInfo as CosmChainInfo } from '~lib/network/cosm'
 import { EvmChainInfo } from '~lib/network/evm'
-import { IChainAccount, INetwork } from '~lib/schema'
+import { ChainId, IChainAccount, INetwork } from '~lib/schema'
 
 import { CosmNetworkService } from './cosmService'
 import { EvmNetworkService } from './evmService'
@@ -95,7 +95,7 @@ export class NetworkService {
 
   async addNetwork(
     kind: NetworkKind,
-    chainId: number | string,
+    chainId: ChainId,
     info: any
   ): Promise<INetwork> {
     switch (kind) {
