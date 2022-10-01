@@ -24,7 +24,7 @@ import { INetwork } from '~lib/schema'
 import { Balance } from '~lib/services/token'
 import { shortenAddress } from '~lib/utils'
 import { SubWalletEntry } from '~pages/Popup/WalletDrawer/tree'
-import { DeleteWalletOpts } from '~pages/Settings/SettingsWallets/DeleteSubWalletModal'
+import { DeleteWalletOpts } from '~pages/Settings/SettingsWallets/DeleteWalletModal'
 
 export const SubWalletItem = ({
   network,

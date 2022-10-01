@@ -118,10 +118,18 @@ export const SettingsWallets = () => {
                   network={network}
                   wallet={selectedWallet}
                   subWallet={selectedSubWallet}
+                  onDelete={() => {
+                    setSelectedSubId(undefined)
+                  }}
                 />
               )
             ) : (
-              <WalletEdit wallet={selectedWallet} />
+              <WalletEdit
+                wallet={selectedWallet}
+                onDelete={() => {
+                  setSelectedId(undefined)
+                }}
+              />
             ))}
         </Stack>
       </SimpleGrid>

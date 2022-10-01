@@ -9,7 +9,7 @@ import { useBalances } from '~lib/services/provider'
 import { Balance } from '~lib/services/token'
 import { isWalletGroup } from '~lib/wallet'
 import { SubWalletEntry, WalletEntry } from '~pages/Popup/WalletDrawer/tree'
-import { DeleteWalletOpts } from '~pages/Settings/SettingsWallets/DeleteSubWalletModal'
+import { DeleteWalletOpts } from '~pages/Settings/SettingsWallets/DeleteWalletModal'
 
 import { SubWalletItem } from './SubWalletItem'
 

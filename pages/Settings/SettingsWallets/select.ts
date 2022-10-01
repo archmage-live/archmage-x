@@ -16,7 +16,7 @@ export function useSelectedWallet() {
   }, [subWallet])
 
   const setSelectedId = useCallback(
-    (id: number) => {
+    (id?: number) => {
       setId(id)
       setSubId(undefined)
     },

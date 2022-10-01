@@ -114,7 +114,13 @@ export const SettingsNetworks = () => {
             </HStack>
 
             {editNetwork && !addNetwork && (
-              <NetworkEdit network={editNetwork} setLoading={setLoading} />
+              <NetworkEdit
+                network={editNetwork}
+                setLoading={setLoading}
+                onDelete={() => {
+                  setSelectedId(undefined)
+                }}
+              />
             )}
 
             {networkKind && !editNetwork && addNetwork && (

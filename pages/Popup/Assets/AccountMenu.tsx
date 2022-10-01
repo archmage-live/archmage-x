@@ -40,7 +40,7 @@ import { getAccountUrl } from '~lib/services/network'
 import { WalletInfo } from '~lib/services/walletService'
 import { createTab } from '~lib/util'
 import { WalletType, hasWalletKeystore } from '~lib/wallet'
-import { DeleteSubWalletModal } from '~pages/Settings/SettingsWallets/DeleteSubWalletModal'
+import { DeleteWalletModal } from '~pages/Settings/SettingsWallets/DeleteWalletModal'
 import { ExportMnemonicModal } from '~pages/Settings/SettingsWallets/ExportMnemonicModal'
 import { ExportPrivateKeyModal } from '~pages/Settings/SettingsWallets/ExportPrivateKeyModal'
 import { SubWalletNameEdit } from '~pages/Settings/SettingsWallets/SubWalletEdit'
@@ -128,7 +128,7 @@ export const AccountMenu = () => {
         accountUrl={accountUrl}
       />
 
-      <DeleteSubWalletModal
+      <DeleteWalletModal
         wallet={wallet}
         subWallet={subWallet}
         isOpen={isDeleteOpen}

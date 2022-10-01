@@ -25,7 +25,7 @@ import {
   filterWalletTreeBySearch,
   useWalletTree
 } from '~pages/Popup/WalletDrawer/tree'
-import { WrappedDeleteSubWalletModal } from '~pages/Settings/SettingsWallets/DeleteSubWalletModal'
+import { WrappedDeleteWalletModal } from '~pages/Settings/SettingsWallets/DeleteWalletModal'
 
 import { NetworkDrawer } from './NetworkDrawer'
 import { WalletDrawer } from './WalletDrawer'
@@ -136,7 +136,7 @@ export const Toolbar = () => {
         </Drawer>
       </HStack>
 
-      <WrappedDeleteSubWalletModal />
+      <WrappedDeleteWalletModal />
     </Box>
   )
 }

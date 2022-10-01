@@ -17,18 +17,25 @@ import { SaveInput } from '~components/SaveInput'
 import { DB } from '~lib/db'
 import { INetwork, ISubWallet, IWallet, isSubNameInvalid } from '~lib/schema'
 import { useChainAccountByIndex, useHdPaths } from '~lib/services/walletService'
-import { ExportPrivateKeyModal } from '~pages/Settings/SettingsWallets/ExportPrivateKeyModal'
+
+import {
+  WrappedDeleteWalletModal,
+  useDeleteWalletModal
+} from './DeleteWalletModal'
+import { ExportPrivateKeyModal } from './ExportPrivateKeyModal'
 
 interface SubWalletEditProps {
   network: INetwork
   wallet: IWallet
   subWallet: ISubWallet
+  onDelete: () => void
 }
 
 export const SubWalletEdit = ({
   network,
   wallet,
-  subWallet
+  subWallet,
+  onDelete
 }: SubWalletEditProps) => {
   const account = useChainAccountByIndex(
     wallet.id,
@@ -56,6 +63,8 @@ export const SubWalletEdit = ({
     onOpen: onExportOpen,
     onClose: onExportClose
   } = useDisclosure()
+
+  const { onOpen: onOpenDeleteWallet } = useDeleteWalletModal()
 
   return (
     <Stack spacing="12">
@@ -100,7 +109,13 @@ export const SubWalletEdit = ({
         <Button variant="outline" colorScheme="purple" onClick={onExportOpen}>
           Export Private Key
         </Button>
-        <Button colorScheme="red">Delete Account</Button>
+        <Button
+          colorScheme="red"
+          onClick={() => {
+            onOpenDeleteWallet({ subWallet })
+          }}>
+          Delete Account
+        </Button>
       </HStack>
 
       {account && (
@@ -110,6 +125,8 @@ export const SubWalletEdit = ({
           onClose={onExportClose}
         />
       )}
+
+      <WrappedDeleteWalletModal onDelete={onDelete} />
     </Stack>
   )
 }

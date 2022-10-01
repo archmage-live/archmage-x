@@ -5,6 +5,7 @@ import {
   TriangleUpIcon
 } from '@chakra-ui/icons'
 import {
+  Button,
   Center,
   Checkbox,
   FormControl,
@@ -32,7 +33,7 @@ import {
   useState
 } from 'react'
 import * as React from 'react'
-import { useAsyncRetry, useInterval } from 'react-use'
+import { useAsyncRetry, useDebounce, useInterval } from 'react-use'
 // @ts-ignore
 import stableHash from 'stable-hash'
 
@@ -74,7 +75,10 @@ export const RpcUrlInputGroup = ({
   checkUrls,
   allowInvalidRpcUrl,
   setAllowInvalidRpcUrl,
-  setLoading
+  setLoading,
+  onSaveUrls,
+  isSaveDisabled,
+  isUrlsChanged
 }: {
   urls: string[]
   setUrls: (urls: string[]) => void
@@ -85,6 +89,9 @@ export const RpcUrlInputGroup = ({
   allowInvalidRpcUrl: boolean
   setAllowInvalidRpcUrl: (value: boolean) => void
   setLoading: (loading: boolean) => void
+  onSaveUrls?: () => Promise<void>
+  isSaveDisabled?: boolean
+  isUrlsChanged?: boolean
 }) => {
   const [alert, setAlert] = useState('')
   useEffect(() => {
@@ -148,6 +155,15 @@ export const RpcUrlInputGroup = ({
     checkUrls.current = _checkUrls
   }, [checkUrls, _checkUrls])
 
+  const [saveColorScheme, setSaveColorScheme] = useState('gray')
+  useDebounce(
+    () => {
+      setSaveColorScheme(isUrlsChanged ? 'purple' : 'gray')
+    },
+    200,
+    [isUrlsChanged]
+  )
+
   return (
     <Stack spacing={6}>
       <Stack>
@@ -190,14 +206,113 @@ export const RpcUrlInputGroup = ({
 
       <AlertBox>{alert}</AlertBox>
 
-      {showInvalidRpcUrlCheckbox && (
-        <Checkbox
-          size="lg"
-          colorScheme="purple"
-          isChecked={allowInvalidRpcUrl}
-          onChange={(e) => setAllowInvalidRpcUrl(e.target.checked)}>
-          Allow unavailable RPC url
-        </Checkbox>
+      {(showInvalidRpcUrlCheckbox || isUrlsChanged) && (
+        <HStack justify="space-between">
+          <Checkbox
+            visibility={showInvalidRpcUrlCheckbox ? 'visible' : 'hidden'}
+            size="lg"
+            colorScheme="purple"
+            isChecked={allowInvalidRpcUrl}
+            onChange={(e) => setAllowInvalidRpcUrl(e.target.checked)}>
+            Allow unavailable RPC url
+          </Checkbox>
+
+          <Button
+            visibility={isUrlsChanged ? 'visible' : 'hidden'}
+            colorScheme={saveColorScheme}
+            transition="all 0.2s"
+            isDisabled={isSaveDisabled}
+            onClick={async () => {
+              await onSaveUrls?.()
+            }}>
+            Save
+          </Button>
+        </HStack>
+      )}
+    </Stack>
+  )
+}
+
+export const ExplorerUrlInputGroup = ({
+  urls,
+  setUrls,
+  checkUrls,
+  onSaveUrls,
+  isSaveDisabled,
+  isUrlsChanged
+}: {
+  urls: string[]
+  setUrls: (urls: string[]) => void
+  checkUrls: MutableRefObject<(() => string[] | undefined) | undefined>
+  onSaveUrls?: () => Promise<void>
+  isSaveDisabled?: boolean
+  isUrlsChanged?: boolean
+}) => {
+  const [alert, setAlert] = useState('')
+  useEffect(() => {
+    setAlert('')
+  }, [urls])
+
+  const _checkUrls = useCallback(() => {
+    const checkedExplorerUrls = urls.map(checkUrl) as string[]
+    if (checkedExplorerUrls.some((url) => !url)) {
+      setAlert('Invalid explorer url(s)')
+      return
+    }
+    if (new Set(checkedExplorerUrls).size !== checkedExplorerUrls.length) {
+      setAlert('Duplicate explorer url(s)')
+      return
+    }
+
+    return checkedExplorerUrls
+  }, [urls])
+
+  useEffect(() => {
+    checkUrls.current = _checkUrls
+  }, [checkUrls, _checkUrls])
+
+  const [saveColorScheme, setSaveColorScheme] = useState('gray')
+  useDebounce(
+    () => {
+      setSaveColorScheme(isUrlsChanged ? 'purple' : 'gray')
+    },
+    200,
+    [isUrlsChanged]
+  )
+
+  return (
+    <Stack spacing={6}>
+      <FormControl>
+        <FormLabel>Block Explorer Url(s)</FormLabel>
+        <UrlInputGroup urls={urls} setUrls={setUrls} allowNoUrls />
+        {!urls.length && (
+          <HStack h={12} spacing={8}>
+            <Text color="gray.500">No explorer urls.</Text>
+            <IconButton
+              size="xs"
+              aria-label="Add url"
+              icon={<AddIcon />}
+              onClick={() => setUrls([''])}
+            />
+          </HStack>
+        )}
+      </FormControl>
+
+      <AlertBox>{alert}</AlertBox>
+
+      {isUrlsChanged && (
+        <HStack justify="end">
+          <Button
+            visibility={isUrlsChanged ? 'visible' : 'hidden'}
+            colorScheme={saveColorScheme}
+            transition="all 0.2s"
+            isDisabled={isSaveDisabled}
+            onClick={async () => {
+              await onSaveUrls?.()
+            }}>
+            Save
+          </Button>
+        </HStack>
       )}
     </Stack>
   )
@@ -206,12 +321,14 @@ export const RpcUrlInputGroup = ({
 export const UrlInputGroup = ({
   urls,
   setUrls,
+  allowNoUrls,
   isTest,
   isSort,
   test
 }: {
   urls: string[]
   setUrls: (urls: string[]) => void
+  allowNoUrls?: boolean
   isTest?: boolean
   isSort?: boolean
   test?: (url: string) => Promise<number>
@@ -326,6 +443,7 @@ export const UrlInputGroup = ({
             key={index}
             index={index}
             urls={urls}
+            allowNoUrls={allowNoUrls}
             setUrls={setUrls}
             isSort={isSort}
             testStatus={testStatuses.get(url)}
@@ -341,6 +459,7 @@ const UrlInput = ({
   index,
   urls,
   setUrls,
+  allowNoUrls,
   isSort,
   testStatus,
   maxHeight
@@ -348,6 +467,7 @@ const UrlInput = ({
   index: number
   urls: string[]
   setUrls: (urls: string[]) => void
+  allowNoUrls?: boolean
   isSort?: boolean
   testStatus: TestStatus | undefined
   maxHeight: number
@@ -487,7 +607,7 @@ const UrlInput = ({
         size="xs"
         aria-label="Remove url"
         icon={<MinusIcon />}
-        visibility={urls.length > 1 ? 'visible' : 'hidden'}
+        visibility={urls.length > 1 || allowNoUrls ? 'visible' : 'hidden'}
         onClick={() =>
           setUrls([...urls.slice(0, index), ...urls.slice(index + 1)])
         }

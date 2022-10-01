@@ -6,10 +6,12 @@ import { EvmNetworkEdit } from './EvmNetworkEdit'
 
 export const NetworkEdit = ({
   network,
-  setLoading
+  setLoading,
+  onDelete
 }: {
   network?: INetwork
   setLoading: (loading: boolean) => void
+  onDelete: () => void
 }) => {
   switch (network?.kind) {
     case NetworkKind.EVM:
@@ -18,6 +20,7 @@ export const NetworkEdit = ({
           network={network}
           info={network.info}
           setLoading={setLoading}
+          onDelete={onDelete}
         />
       )
     case NetworkKind.COSM:

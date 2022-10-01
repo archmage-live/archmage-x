@@ -25,13 +25,19 @@ import {
   useSubWallets
 } from '~lib/services/walletService'
 import { getDefaultPathPrefix } from '~lib/wallet'
-import { ExportMnemonicModal } from '~pages/Settings/SettingsWallets/ExportMnemonicModal'
+
+import {
+  WrappedDeleteWalletModal,
+  useDeleteWalletModal
+} from './DeleteWalletModal'
+import { ExportMnemonicModal } from './ExportMnemonicModal'
 
 interface WalletEditProps {
   wallet: IWallet
+  onDelete: () => void
 }
 
-export const WalletEdit = ({ wallet }: WalletEditProps) => {
+export const WalletEdit = ({ wallet, onDelete }: WalletEditProps) => {
   const hdPaths = useHdPaths(wallet.id)
   const subWallets = useSubWallets(wallet.id)
 
@@ -89,6 +95,8 @@ export const WalletEdit = ({ wallet }: WalletEditProps) => {
   } = useDisclosure()
 
   const notBackedUp = (wallet.info as WalletInfo)?.notBackedUp
+
+  const { onOpen: onOpenDeleteWallet } = useDeleteWalletModal()
 
   return (
     <Stack spacing="12">
@@ -174,11 +182,17 @@ export const WalletEdit = ({ wallet }: WalletEditProps) => {
         </FormControl>
       </Stack>
 
-      <HStack justify="end">
+      <HStack justify="end" spacing={6}>
         <Button variant="outline" colorScheme="purple" onClick={onExportOpen}>
           {!notBackedUp ? 'Export Secret Phrase' : 'Back up Secret Phrase'}
         </Button>
-        <Button colorScheme="red">Delete Wallet</Button>
+        <Button
+          colorScheme="red"
+          onClick={() => {
+            onOpenDeleteWallet({ all: true, wallet })
+          }}>
+          Delete Wallet
+        </Button>
       </HStack>
 
       <ExportMnemonicModal
@@ -187,6 +201,8 @@ export const WalletEdit = ({ wallet }: WalletEditProps) => {
         isOpen={isExportOpen}
         onClose={onExportClose}
       />
+
+      <WrappedDeleteWalletModal onDelete={onDelete} />
     </Stack>
   )
 }

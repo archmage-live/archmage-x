@@ -23,7 +23,7 @@ import { WALLET_SERVICE } from '~lib/services/walletService'
 import { shortenAddress } from '~lib/utils'
 import { WalletType, getWalletTypeIdentifier, isWalletGroup } from '~lib/wallet'
 import { WalletEntry } from '~pages/Popup/WalletDrawer/tree'
-import { useDeleteWalletModal } from '~pages/Settings/SettingsWallets/DeleteSubWalletModal'
+import { useDeleteWalletModal } from '~pages/Settings/SettingsWallets/DeleteWalletModal'
 
 import { MenuBtn } from './SubWalletItem'
 import { SubWalletList } from './SubWalletList'

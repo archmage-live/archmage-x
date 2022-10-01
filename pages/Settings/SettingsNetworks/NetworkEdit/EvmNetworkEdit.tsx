@@ -1,48 +1,126 @@
 import {
+  Button,
   FormControl,
   FormErrorMessage,
   FormLabel,
-  Input,
-  Stack
+  HStack,
+  Stack,
+  useDisclosure
 } from '@chakra-ui/react'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { SaveInput } from '~components/SaveInput'
 import { DB } from '~lib/db'
 import { NetworkKind } from '~lib/network'
 import { EvmChainInfo } from '~lib/network/evm'
 import { INetwork } from '~lib/schema'
+import { DeleteNetworkModal } from '~pages/Settings/SettingsNetworks/DeleteNetworkModal'
 import {
   getBlockNumber,
   getChainId
 } from '~pages/Settings/SettingsNetworks/NetworkAdd/EvmNetworkAdd'
 import {
-  RpcUrlInputGroup,
-  UrlInputGroup
+  ExplorerUrlInputGroup,
+  RpcUrlInputGroup
 } from '~pages/Settings/SettingsNetworks/NetworkAdd/UrlInputGroup'
 
 export const EvmNetworkEdit = ({
   network,
   info,
-  setLoading
+  setLoading,
+  onDelete
 }: {
   network: INetwork
   info: EvmChainInfo
   setLoading: (loading: boolean) => void
+  onDelete: () => void
 }) => {
   const [isChainIdInvalid, setIsChainIdInvalid] = useState(false)
 
-  const [rpcUrls, setRpcUrls] = useState<string[]>([])
-  const [explorerUrls, setExplorerUrls] = useState<string[]>([])
+  const [rpcUrls, _setRpcUrls] = useState<string[]>([])
+  const [explorerUrls, _setExplorerUrls] = useState<string[]>([])
+
+  const [isRpcUrlsChanged, setIsRpcUrlsChanged] = useState(false)
+  const [isExplorerUrlsChanged, setIsExplorerUrlsChanged] = useState(false)
+
+  const setRpcUrls = useCallback(
+    (urls: string[]) => {
+      setIsRpcUrlsChanged(
+        !(
+          urls.length === info.rpc.length &&
+          urls.every((url, i) => url === info.rpc[i])
+        )
+      )
+      _setRpcUrls(urls)
+    },
+    [info]
+  )
+
+  const setExplorerUrls = useCallback(
+    (urls: string[]) => {
+      setIsExplorerUrlsChanged(
+        !(
+          urls.length === info.explorers.length &&
+          urls.every((url, i) => url === info.explorers[i].url)
+        )
+      )
+      _setExplorerUrls(urls)
+    },
+    [info]
+  )
 
   useEffect(() => {
     setRpcUrls(info.rpc)
     setExplorerUrls(info.explorers.map(({ url }) => url))
-  }, [info])
+  }, [info, setRpcUrls, setExplorerUrls])
 
   const [allowInvalidRpcUrl, setAllowInvalidRpcUrl] = useState(false)
 
-  const checkUrls = useRef<() => Promise<string[] | undefined>>()
+  const checkRpcUrls = useRef<() => Promise<string[] | undefined>>()
+  const checkExplorerUrls = useRef<() => string[] | undefined>()
+
+  const [isSaveRpcUrlsDisabled, setIsSaveRpcUrlsDisabled] = useState(false)
+  const [isSaveExplorerUrlsDisabled, setIsSaveExplorerUrlsDisabled] =
+    useState(false)
+
+  useEffect(() => {
+    setIsSaveRpcUrlsDisabled(false)
+  }, [rpcUrls, allowInvalidRpcUrl])
+
+  useEffect(() => {
+    setIsSaveExplorerUrlsDisabled(false)
+  }, [explorerUrls])
+
+  const onSaveRpcUrls = useCallback(async () => {
+    const checkedRpcUrls = await checkRpcUrls.current?.()
+    if (!checkedRpcUrls) {
+      setIsSaveRpcUrlsDisabled(true)
+    } else {
+      info.rpc = checkedRpcUrls
+      await DB.networks.update(network, { info })
+    }
+    setLoading(false)
+  }, [network, info, setLoading])
+
+  const onSaveExplorerUrls = useCallback(async () => {
+    const checkedExplorerUrls = checkExplorerUrls.current?.()
+    if (!checkedExplorerUrls) {
+      setIsSaveExplorerUrlsDisabled(true)
+    } else {
+      info.explorers = checkedExplorerUrls.map((url) => ({
+        name: '',
+        url,
+        standard: 'EIP3091'
+      }))
+      await DB.networks.update(network, { info })
+    }
+  }, [network, info])
+
+  const {
+    isOpen: isDeleteOpen,
+    onOpen: onDeleteOpen,
+    onClose: onDeleteClose
+  } = useDisclosure()
 
   return (
     <Stack spacing="12">
@@ -74,7 +152,7 @@ export const EvmNetworkEdit = ({
           }}
           value={network.chainId + ''}
           validate={(value: string) => {
-            return !isNaN(+value) && +value >= 0
+            return !!value && !isNaN(+value) && +value >= 0
           }}
           asyncValidate={async (value: string) => {
             return !(await DB.networks
@@ -112,16 +190,36 @@ export const EvmNetworkEdit = ({
         testUrl={getBlockNumber}
         chainId={network.chainId}
         getChainId={getChainId}
-        checkUrls={checkUrls}
+        checkUrls={checkRpcUrls}
         allowInvalidRpcUrl={allowInvalidRpcUrl}
         setAllowInvalidRpcUrl={setAllowInvalidRpcUrl}
         setLoading={setLoading}
+        onSaveUrls={onSaveRpcUrls}
+        isSaveDisabled={isSaveRpcUrlsDisabled}
+        isUrlsChanged={isRpcUrlsChanged}
       />
 
-      <FormControl>
-        <FormLabel>Block Explorer Url(s)</FormLabel>
-        <UrlInputGroup urls={explorerUrls} setUrls={setExplorerUrls} />
-      </FormControl>
+      <ExplorerUrlInputGroup
+        urls={explorerUrls}
+        setUrls={setExplorerUrls}
+        checkUrls={checkExplorerUrls}
+        onSaveUrls={onSaveExplorerUrls}
+        isSaveDisabled={isSaveExplorerUrlsDisabled}
+        isUrlsChanged={isExplorerUrlsChanged}
+      />
+
+      <HStack justify="end">
+        <Button colorScheme="red" onClick={onDeleteOpen}>
+          Delete Network
+        </Button>
+      </HStack>
+
+      <DeleteNetworkModal
+        network={network}
+        isOpen={isDeleteOpen}
+        onClose={onDeleteClose}
+        onDelete={onDelete}
+      />
     </Stack>
   )
 }

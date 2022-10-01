@@ -34,23 +34,25 @@ import {
 import { shortenAddress } from '~lib/utils'
 import { WalletType } from '~lib/wallet'
 
-interface DeleteSubWalletModalProps {
+interface DeleteWalletModalProps {
   all?: boolean
   wallet?: IWallet
   subWallet?: ISubWallet
   isOpen: boolean
   onClose: () => void
+  onDelete?: () => void
   size?: ModalProps['size']
 }
 
-export const DeleteSubWalletModal = ({
+export const DeleteWalletModal = ({
   all,
   wallet,
   subWallet,
   isOpen,
   onClose,
+  onDelete,
   size
-}: DeleteSubWalletModalProps) => {
+}: DeleteWalletModalProps) => {
   const network = useActiveNetwork()
   const account = useChainAccountByIndex(
     subWallet?.masterId,
@@ -116,8 +118,8 @@ export const DeleteSubWalletModal = ({
                     variant="link"
                     aria-label="View account on block explorer"
                     icon={<ExternalLinkIcon />}
-                    onClick={() => {
-                      browser.tabs.create({ url: accountUrl })
+                    onClick={async () => {
+                      await browser.tabs.create({ url: accountUrl })
                     }}
                   />
                 )}
@@ -203,6 +205,7 @@ export const DeleteSubWalletModal = ({
                   await getActiveWallet()
                   setIsLoading(false)
                   onClose()
+                  onDelete?.()
                 }}>
                 Delete
               </Button>
@@ -245,18 +248,23 @@ export function useDeleteWalletModal() {
   }
 }
 
-export const WrappedDeleteSubWalletModal = () => {
+export const WrappedDeleteWalletModal = ({
+  onDelete
+}: {
+  onDelete?: () => void
+}) => {
   const { deleteOpts, isOpen, onClose } = useDeleteWalletModal()
 
   const wallet = useWallet(deleteOpts?.subWallet?.masterId)
 
   return (
-    <DeleteSubWalletModal
+    <DeleteWalletModal
       all={deleteOpts?.all}
       wallet={deleteOpts?.wallet || wallet}
       subWallet={deleteOpts?.subWallet}
       isOpen={isOpen}
       onClose={onClose}
+      onDelete={onDelete}
     />
   )
 }

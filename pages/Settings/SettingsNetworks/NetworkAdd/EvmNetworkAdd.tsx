@@ -21,7 +21,7 @@ import { ChainId } from '~lib/schema'
 import { NETWORK_SERVICE } from '~lib/services/network'
 import { stall } from '~lib/util'
 
-import { RpcUrlInputGroup, UrlInputGroup, checkUrl } from './UrlInputGroup'
+import { ExplorerUrlInputGroup, RpcUrlInputGroup } from './UrlInputGroup'
 
 export const EvmNetworkAdd = ({
   onCancel,
@@ -58,7 +58,8 @@ export const EvmNetworkAdd = ({
     allowInvalidRpcUrl
   ])
 
-  const checkUrls = useRef<() => Promise<string[] | undefined>>()
+  const checkRpcUrls = useRef<() => Promise<string[] | undefined>>()
+  const checkExplorerUrls = useRef<() => string[] | undefined>()
 
   const onClick = useCallback(async () => {
     const confirm = async () => {
@@ -87,17 +88,12 @@ export const EvmNetworkAdd = ({
         return
       }
 
-      const checkedExplorerUrls = explorerUrls.map(checkUrl)
-      if (checkedExplorerUrls.some((url) => !url)) {
-        setAlert('Invalid explorer url(s)')
-        return
-      }
-      if (new Set(checkedExplorerUrls).size !== checkedExplorerUrls.length) {
-        setAlert('Duplicate explorer url(s)')
+      const checkedExplorerUrls = checkExplorerUrls.current?.()
+      if (!checkedExplorerUrls) {
         return
       }
 
-      const checkedRpcUrls = await checkUrls.current?.()
+      const checkedRpcUrls = await checkRpcUrls.current?.()
       if (!checkedRpcUrls) {
         setIsDisabled(true)
         return
@@ -113,7 +109,7 @@ export const EvmNetworkAdd = ({
         explorers: checkedExplorerUrls.map((url) => ({
           name: '',
           url,
-          standard: 'none'
+          standard: 'EIP3091'
         })),
         infoURL: '',
         nativeCurrency: {
@@ -186,16 +182,17 @@ export const EvmNetworkAdd = ({
         testUrl={getBlockNumber}
         chainId={chainIdStr ? +chainIdStr : undefined}
         getChainId={getChainId}
-        checkUrls={checkUrls}
+        checkUrls={checkRpcUrls}
         allowInvalidRpcUrl={allowInvalidRpcUrl}
         setAllowInvalidRpcUrl={setAllowInvalidRpcUrl}
         setLoading={setLoading}
       />
 
-      <FormControl>
-        <FormLabel>Block Explorer Url(s)</FormLabel>
-        <UrlInputGroup urls={explorerUrls} setUrls={setExplorerUrls} />
-      </FormControl>
+      <ExplorerUrlInputGroup
+        urls={explorerUrls}
+        setUrls={setExplorerUrls}
+        checkUrls={checkExplorerUrls}
+      />
 
       <AlertBox>{alert}</AlertBox>
 
