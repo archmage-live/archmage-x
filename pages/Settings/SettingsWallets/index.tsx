@@ -6,11 +6,11 @@ import {
   Select,
   SimpleGrid,
   Stack,
-  Text,
   UnorderedList
 } from '@chakra-ui/react'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { MdDragIndicator } from 'react-icons/md'
+import { useTimeout } from 'react-use'
 
 import {
   NETWORK_SCOPES,
@@ -21,11 +21,11 @@ import {
 } from '~lib/network'
 import { getNetworkInfo, useNetwork, useNetworks } from '~lib/services/network'
 import { createTab } from '~lib/util'
+import { useWalletTree } from '~pages/Popup/WalletDrawer/tree'
 import { SubWalletEdit } from '~pages/Settings/SettingsWallets/SubWalletEdit'
 import { WalletEdit } from '~pages/Settings/SettingsWallets/WalletEdit'
 
 import { WalletList } from './WalletList'
-import { useSelectedWallet } from './select'
 
 export const SettingsWallets = () => {
   const [networkScope, setNetworkScope] = useState<NetworkScope | undefined>(
@@ -48,14 +48,32 @@ export const SettingsWallets = () => {
     }
   }, [networksOfKind])
 
-  const {
-    selectedId,
-    selectedSubId,
-    selectedWallet,
-    selectedSubWallet,
-    setSelectedId,
-    setSelectedSubId
-  } = useSelectedWallet()
+  const { wallets, toggleOpen, setSelected } = useWalletTree(network)
+
+  const [selectedWallet, selectedSubWallet] = useMemo(() => {
+    if (!wallets?.length) {
+      return []
+    }
+    let selectedWallet, selectedSubWallet
+    for (const { wallet, isSelected, subWallets } of wallets) {
+      if (isSelected) {
+        selectedWallet = wallet
+
+        selectedSubWallet = subWallets.find(
+          ({ isSelected }) => isSelected
+        )?.subWallet
+
+        break
+      }
+    }
+    return [selectedWallet, selectedSubWallet]
+  }, [wallets])
+
+  const [isReady] = useTimeout(50)
+
+  if (!wallets) {
+    return <></>
+  }
 
   return (
     <Stack spacing={12} h="full">
@@ -101,35 +119,35 @@ export const SettingsWallets = () => {
             </Select>
           </HStack>
 
-          <WalletList
-            network={network}
-            selectedId={selectedId}
-            selectedSubId={selectedSubId}
-            onSelectedId={setSelectedId}
-            onSelectedSubId={setSelectedSubId}
-          />
+          <Stack spacing={6} visibility={isReady() ? 'visible' : 'hidden'}>
+            <WalletList
+              walletEntries={wallets}
+              onToggleOpen={toggleOpen}
+              onSelected={setSelected}
+            />
 
-          <UnorderedList
-            fontSize="sm"
-            color="gray.500"
-            ps={4}
-            sx={{ listStyle: "'* ' outside" }}>
-            <ListItem>
-              Double-click any wallet entry to expand or collapse its account
-              list.
-            </ListItem>
-            <ListItem>
-              Press icon&nbsp;
-              <Icon
-                as={MdDragIndicator}
-                fontSize="lg"
-                fontWeight="medium"
-                verticalAlign="sub"
-              />
-              &nbsp;on the right side of any entry and drag to the desired
-              position to specify its order in the list.
-            </ListItem>
-          </UnorderedList>
+            <UnorderedList
+              fontSize="sm"
+              color="gray.500"
+              ps={4}
+              sx={{ listStyle: "'* ' outside" }}>
+              <ListItem>
+                Double-click any wallet entry to expand or collapse its account
+                list.
+              </ListItem>
+              <ListItem>
+                Press icon&nbsp;
+                <Icon
+                  as={MdDragIndicator}
+                  fontSize="lg"
+                  fontWeight="medium"
+                  verticalAlign="sub"
+                />
+                &nbsp;at the right side of any entry and drag to the desired
+                position to specify its order in the list.
+              </ListItem>
+            </UnorderedList>
+          </Stack>
         </Stack>
 
         <Stack spacing={6}>
@@ -137,8 +155,8 @@ export const SettingsWallets = () => {
             <Button
               size="md"
               colorScheme="purple"
-              onClick={() => {
-                createTab('#/tab/add-wallet')
+              onClick={async () => {
+                await createTab('#/tab/add-wallet')
               }}>
               Add Wallet
             </Button>
@@ -152,7 +170,7 @@ export const SettingsWallets = () => {
                   wallet={selectedWallet}
                   subWallet={selectedSubWallet}
                   onDelete={() => {
-                    setSelectedSubId(undefined)
+                    setSelected(undefined)
                   }}
                 />
               )
@@ -160,7 +178,7 @@ export const SettingsWallets = () => {
               <WalletEdit
                 wallet={selectedWallet}
                 onDelete={() => {
-                  setSelectedId(undefined)
+                  setSelected(undefined)
                 }}
               />
             ))}

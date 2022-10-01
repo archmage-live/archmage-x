@@ -106,7 +106,10 @@ export const WalletItem = ({
                 </Text>
 
                 {account && (
-                  <Text sx={{ fontFeatureSettings: '"tnum"' }} fontSize="sm" color="gray.500">
+                  <Text
+                    sx={{ fontFeatureSettings: '"tnum"' }}
+                    fontSize="sm"
+                    color="gray.500">
                     {shortenAddress(account.address)}
                   </Text>
                 )}

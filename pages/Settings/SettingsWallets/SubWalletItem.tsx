@@ -6,10 +6,10 @@ import { MdDragIndicator } from 'react-icons/md'
 import { AccountAvatar } from '~components/AccountAvatar'
 import { IChainAccount, ISubWallet } from '~lib/schema'
 import { shortenAddress } from '~lib/utils'
+import { SubWalletEntry } from '~pages/Popup/WalletDrawer/tree'
 
 export const SubWalletItem = ({
-  wallet,
-  account,
+  subWallet,
   bg,
   hoverBg,
   borderColor,
@@ -17,8 +17,7 @@ export const SubWalletItem = ({
   onClick,
   dragHandleProps = {} as DraggableProvidedDragHandleProps
 }: {
-  wallet: ISubWallet
-  account?: IChainAccount
+  subWallet: SubWalletEntry
   bg?: string
   hoverBg?: string
   borderColor?: string
@@ -26,6 +25,8 @@ export const SubWalletItem = ({
   onClick?: () => void
   dragHandleProps?: DraggableProvidedDragHandleProps
 }) => {
+  const { subWallet: wallet, account } = subWallet
+
   const infoVisibility = infoVisible
     ? 'visible'
     : infoVisible === false
@@ -44,6 +45,7 @@ export const SubWalletItem = ({
   return (
     <Box py={1}>
       <HStack
+        h="57px"
         px={4}
         py={2}
         spacing={8}
@@ -69,7 +71,7 @@ export const SubWalletItem = ({
           spacing={4}
           visibility={infoVisibility || 'hidden'}
           _groupHover={{ visibility: infoVisibility || 'visible' }}>
-          <Stack fontSize="sm" color="gray.500">
+          <Stack fontSize="sm" color="gray.500" spacing={1}>
             <Text noOfLines={1}>
               {shortenAddress(account?.address, {
                 prefixChars: 6,

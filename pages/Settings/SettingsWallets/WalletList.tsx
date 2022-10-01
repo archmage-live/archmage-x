@@ -10,41 +10,46 @@ import {
   DroppableProvided
 } from 'react-beautiful-dnd'
 
-import { INetwork, IWallet } from '~lib/schema'
-import { reorderWallets, useWallets } from '~lib/services/walletService'
+import { reorderWallets } from '~lib/services/walletService'
+import { isWalletGroup } from '~lib/wallet'
+import { SelectedWalletId, WalletEntry } from '~pages/Popup/WalletDrawer/tree'
 
 import { WalletItem } from './WalletItem'
 
 interface WalletListProps {
-  network?: INetwork
+  walletEntries: WalletEntry[]
 
-  selectedId?: number
-  selectedSubId?: number
-
-  onSelectedId(selectedId: number): void
-
-  onSelectedSubId(selectedSubId: number): void
+  onToggleOpen: (id: number) => void
+  onSelected: (selected: SelectedWalletId) => void
 }
 
 export const WalletList = ({
-  network,
-  selectedId,
-  selectedSubId,
-  onSelectedId,
-  onSelectedSubId
+  walletEntries,
+  onToggleOpen,
+  onSelected
 }: WalletListProps) => {
-  const queriedWallets = useWallets()
-  const [wallets, setWallets] = useState<IWallet[]>([])
+  const [wallets, setWallets] = useState<WalletEntry[]>([])
   useEffect(() => {
-    if (queriedWallets) setWallets(queriedWallets)
-  }, [queriedWallets])
+    setWallets(walletEntries)
+  }, [walletEntries])
+
+  const itemSize = 64
 
   const parentRef = useRef(null)
   const walletsVirtualizer = useVirtualizer({
     count: wallets.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 64,
-    getItemKey: (index) => wallets[index].id
+    estimateSize: (index) => {
+      const wallet = wallets[index]
+      if (!wallet.isOpen || !isWalletGroup(wallet.wallet.type)) {
+        return itemSize
+      } else {
+        return (
+          itemSize + (itemSize * Math.min(wallet.subWallets.length, 8) + 35)
+        )
+      }
+    },
+    getItemKey: (index) => wallets[index].wallet.id
   })
 
   const hoverBg = useColorModeValue('purple.100', 'gray.800')
@@ -67,19 +72,19 @@ export const WalletList = ({
       }
 
       const [startSortId, endSortId] = [
-        wallets[source.index].sortId,
-        wallets[destination.index].sortId
+        wallets[source.index].wallet.sortId,
+        wallets[destination.index].wallet.sortId
       ]
       const ws = wallets.slice()
       const [lower, upper] = [
         Math.min(source.index, destination.index),
         Math.max(source.index, destination.index)
       ]
-      const sortIds = ws.slice(lower, upper + 1).map((w) => w.sortId)
+      const sortIds = ws.slice(lower, upper + 1).map((w) => w.wallet.sortId)
       const [removed] = ws.splice(source.index, 1)
       ws.splice(destination.index, 0, removed)
       for (let index = lower; index <= upper; ++index) {
-        ws[index].sortId = sortIds[index - lower]
+        ws[index].wallet.sortId = sortIds[index - lower]
       }
       setWallets(ws)
 
@@ -109,11 +114,9 @@ export const WalletList = ({
                 {...provided.dragHandleProps}
                 {...provided.draggableProps}>
                 <WalletItem
-                  wallet={wallet}
+                  walletEntry={wallet}
                   bg={hoverBg}
-                  borderColor={
-                    wallet.id === selectedId ? 'purple.500' : undefined
-                  }
+                  borderColor={wallet.isSelected ? 'purple.500' : undefined}
                   infoVisible={
                     dragIndex !== undefined
                       ? dragIndex === rubric.source.index
@@ -130,10 +133,15 @@ export const WalletList = ({
                 position="relative">
                 {walletsVirtualizer.getVirtualItems().map((item) => {
                   const wallet = wallets[item.index]
+                  const {
+                    wallet: { id },
+                    isSelected
+                  } = wallet
+
                   return (
                     <Draggable
-                      key={wallet.id}
-                      draggableId={wallet.id + ''}
+                      key={id}
+                      draggableId={id + ''}
                       index={item.index}>
                       {(provided) => (
                         <Box
@@ -147,27 +155,24 @@ export const WalletList = ({
                             ref={provided.innerRef}
                             {...provided.draggableProps}>
                             <WalletItem
-                              network={network}
-                              wallet={wallet}
-                              bg={
-                                wallet.id === selectedId ? hoverBg : undefined
-                              }
+                              walletEntry={wallet}
+                              onToggleOpen={onToggleOpen}
+                              onSelected={onSelected}
+                              bg={isSelected ? hoverBg : undefined}
                               hoverBg={hoverBg}
                               borderColor={
-                                wallet.id === selectedId
-                                  ? 'purple.500'
-                                  : undefined
+                                isSelected ? 'purple.500' : undefined
                               }
                               infoVisible={
                                 dragIndex !== undefined
                                   ? dragIndex === item.index
                                   : undefined
                               }
-                              onClick={() => onSelectedId(wallet.id)}
                               dragHandleProps={provided.dragHandleProps}
-                              measureElement={item.measureElement}
-                              selectedSubId={selectedSubId}
-                              onSelectedSubId={onSelectedSubId}
+                              measureElement={(el: unknown) => {
+                                item.measureElement(el)
+                                ;(walletsVirtualizer as any).calculateRange()
+                              }}
                             />
                           </Box>
                         </Box>

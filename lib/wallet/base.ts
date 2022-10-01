@@ -53,6 +53,23 @@ export function getWalletTypeIdentifier(type: WalletType) {
   }
 }
 
+export function getWalletTypeTitle(type: WalletType) {
+  switch (type) {
+    case WalletType.HD:
+      return 'Hierarchical Deterministic (HD)'
+    case WalletType.PRIVATE_KEY:
+      return 'Controlled by Private Key'
+    case WalletType.WATCH:
+      return 'Watch Address'
+    case WalletType.WATCH_GROUP:
+      return 'Watch Address Group'
+    case WalletType.HW:
+      return 'Connected Hardware'
+    case WalletType.HW_GROUP:
+      return 'Connected Hardware Group'
+  }
+}
+
 export interface WalletOpts {
   id: number // wallet id in db
   type: WalletType

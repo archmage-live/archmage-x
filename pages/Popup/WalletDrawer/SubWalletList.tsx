@@ -15,7 +15,7 @@ import { SubWalletItem } from './SubWalletItem'
 
 interface SubWalletListProps {
   network: INetwork
-  subWallets?: SubWalletEntry[]
+  subWallets: SubWalletEntry[]
   scrollIndex?: number
   setScrollIndex?: (scrollIndex?: number) => void
   onSelectedId: (selected: WalletId) => void
@@ -36,10 +36,10 @@ export const SubWalletList = ({
 
   const parentRef = useRef(null)
   const walletsVirtualizer = useVirtualizer({
-    count: subWallets?.length || 0,
+    count: subWallets.length || 0,
     getScrollElement: () => parentRef.current,
     estimateSize: () => 56,
-    getItemKey: (index) => subWallets![index].subWallet.id
+    getItemKey: (index) => subWallets[index].subWallet.id
   })
 
   const virtualItems = walletsVirtualizer.getVirtualItems()
@@ -62,7 +62,7 @@ export const SubWalletList = ({
     [scrollIndex, setScrollIndex]
   )
 
-  if (!subWallets?.length) {
+  if (!subWallets.length) {
     return <></>
   }
 

@@ -6,7 +6,6 @@ import {
   HStack,
   Stack,
   Text,
-  chakra,
   useDisclosure
 } from '@chakra-ui/react'
 import { Slip10RawIndex, pathToString, stringToPath } from '@cosmjs/crypto'
@@ -18,10 +17,22 @@ import { HdPathInput } from '~components/HdPathInput'
 import { SaveInput } from '~components/SaveInput'
 import { DB } from '~lib/db'
 import { formatNumber } from '~lib/formatNumber'
-import { INetwork, ISubWallet, IWallet, isSubNameInvalid } from '~lib/schema'
+import {
+  INetwork,
+  ISubWallet,
+  IWallet,
+  PSEUDO_INDEX,
+  isSubNameInvalid
+} from '~lib/schema'
 import { getAccountUrl } from '~lib/services/network'
 import { useBalance } from '~lib/services/provider'
 import { useChainAccountByIndex, useHdPaths } from '~lib/services/walletService'
+import {
+  getWalletTypeTitle,
+  hasWalletKeystore,
+  isWalletGroup
+} from '~lib/wallet'
+import { WalletNameEdit } from '~pages/Settings/SettingsWallets/WalletEdit'
 
 import {
   WrappedDeleteWalletModal,
@@ -57,6 +68,11 @@ export const SubWalletEdit = ({
   useEffect(() => {
     const hdPath = hdPaths?.get(network.kind)
     if (!hdPath) {
+      setHdPath('')
+      return
+    }
+    if (subWallet.index === PSEUDO_INDEX) {
+      setHdPath('')
       return
     }
     const fullHdPath = stringToPath(hdPath).concat(
@@ -76,24 +92,28 @@ export const SubWalletEdit = ({
 
   return (
     <Stack spacing="12">
-      <SubWalletNameEdit wallet={wallet} subWallet={subWallet} />
+      {isWalletGroup(wallet.type) ? (
+        <>
+          <SubWalletNameEdit wallet={wallet} subWallet={subWallet} />
+
+          <Stack>
+            <Text fontWeight="medium">Master Wallet: {wallet.name}</Text>
+
+            <Text fontWeight="medium">Index: {subWallet.index}</Text>
+          </Stack>
+        </>
+      ) : (
+        <>
+          <WalletNameEdit wallet={wallet} />
+
+          <Text fontWeight="medium">
+            Type: {getWalletTypeTitle(wallet.type)}
+          </Text>
+        </>
+      )}
 
       <Stack>
-        <Text fontSize="md" fontWeight="medium">
-          <chakra.span color="gray.500">Master Wallet:&nbsp;</chakra.span>
-          {wallet.name}
-        </Text>
-
-        <Text fontSize="md" fontWeight="medium">
-          <chakra.span color="gray.500">Index:&nbsp;</chakra.span>
-          {subWallet.index}
-        </Text>
-      </Stack>
-
-      <Stack>
-        <Text fontSize="md" fontWeight="medium">
-          Address
-        </Text>
+        <Text fontWeight="medium">Address</Text>
 
         {account?.address ? (
           <CopyArea
@@ -101,10 +121,7 @@ export const SubWalletEdit = ({
             copy={account.address}
             noWrap
             props={{
-              width: 'fit-content',
-              fontSize: 'lg',
-              fontWeight: 'medium',
-              color: 'gray.500'
+              width: 'fit-content'
             }}
           />
         ) : (
@@ -113,7 +130,7 @@ export const SubWalletEdit = ({
       </Stack>
 
       <Text fontSize="md" fontWeight="medium">
-        <chakra.span color="gray.500">Balance:&nbsp;</chakra.span>
+        Balance:&nbsp;
         {formatNumber(balance?.amount)} {balance?.symbol}
       </Text>
 
@@ -142,16 +159,18 @@ export const SubWalletEdit = ({
           </Button>
         )}
 
-        <Button variant="outline" colorScheme="purple" onClick={onExportOpen}>
-          Export Private Key
-        </Button>
+        {hasWalletKeystore(wallet.type) && (
+          <Button variant="outline" colorScheme="purple" onClick={onExportOpen}>
+            Export Private Key
+          </Button>
+        )}
 
         <Button
           colorScheme="red"
           onClick={() => {
             onOpenDeleteWallet({ subWallet })
           }}>
-          Delete Account
+          Delete {isWalletGroup(wallet.type) ? 'Account' : 'Wallet'}
         </Button>
       </HStack>
 

@@ -28,11 +28,11 @@ export default function Settings() {
   const inputColor = 'purple.500'
 
   return (
-    <Stack w="100vw" minH="100vh">
+    <Stack w="100vw" minH="100vh" spacing={0}>
       <TitleBar />
 
-      <Container centerContent maxW="100%" pb="16" flex="1">
-        <Card w="96rem" h="100%" pt={8}>
+      <Container centerContent maxW="100%" pb="24" flex="1">
+        <Card w="96rem" minH="calc(100vh - 168px)" pt={8}>
           <Stack px={4} h="100%">
             <HStack justify={'space-between'} pb={4}>
               <Text fontSize="3xl">Settings</Text>

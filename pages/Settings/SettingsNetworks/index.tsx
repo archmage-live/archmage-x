@@ -8,6 +8,7 @@ import {
   Text
 } from '@chakra-ui/react'
 import { useEffect, useState } from 'react'
+import { useTimeout } from 'react-use'
 
 import { AlertBox } from '~components/AlertBox'
 import { SpinningOverlay } from '~components/SpinningOverlay'
@@ -30,8 +31,6 @@ export const SettingsNetworks = () => {
     NETWORK_SCOPES[0]
   )
 
-  // const networkKind = networkScope ? getNetworkKind(networkScope) : undefined
-
   const [networkKind, setNetworkKind] = useState<NetworkKind>()
   const networks = useNetworks(networkKind)
   const [selectedId, setSelectedId] = useState<number>()
@@ -53,6 +52,8 @@ export const SettingsNetworks = () => {
   }, [networks, selectedId])
 
   const [loading, setLoading] = useState(false)
+
+  const [isReady] = useTimeout(50)
 
   return (
     <Box h="full">
@@ -80,16 +81,18 @@ export const SettingsNetworks = () => {
               </Select>
             </HStack>
 
-            {networks?.length && (
-              <NetworkList
-                networks={networks}
-                selectedId={selectedId}
-                onSelectedId={(selectedId: number) => {
-                  setAddNetwork(false)
-                  setSelectedId(selectedId)
-                }}
-              />
-            )}
+            <Stack spacing={6} visibility={isReady() ? 'visible' : 'hidden'}>
+              {networks?.length && (
+                <NetworkList
+                  networks={networks}
+                  selectedId={selectedId}
+                  onSelectedId={(selectedId: number) => {
+                    setAddNetwork(false)
+                    setSelectedId(selectedId)
+                  }}
+                />
+              )}
+            </Stack>
           </Stack>
 
           <Stack spacing={6}>

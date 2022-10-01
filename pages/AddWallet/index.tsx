@@ -21,7 +21,7 @@ export default function AddWallet() {
 
   useEffect(() => {
     if (passwordExists && isLocked) {
-      navigate(`/?redirect=/tab/add-wallet`, { replace: true })
+      navigate(`/unlock?redirect=/tab/add-wallet`, { replace: true })
     }
   }, [passwordExists, isLocked, navigate])
 

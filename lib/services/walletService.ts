@@ -279,7 +279,7 @@ class WalletServicePartial implements IWalletService {
 
   async deriveSubWallets(id: number, num: number) {
     const wallet = await this.getWallet(id)
-    assert(wallet?.type === WalletType.HD)
+    assert(wallet && isWalletGroup(wallet.type))
 
     const nextSortId = await getNextField(DB.subWallets, 'sortId', {
       key: 'masterId',
@@ -684,6 +684,7 @@ class WalletService extends WalletServicePartial {
   }
 
   private async createHdPaths(id: number) {
+    // TODO
     for (const networkKind of Object.values(NetworkKind) as NetworkKind[]) {
       await DB.hdPaths.add({
         masterId: id,

@@ -6,7 +6,6 @@ import {
   DrawerCloseButton,
   DrawerContent,
   DrawerOverlay,
-  Flex,
   HStack,
   Image,
   Text,
@@ -17,7 +16,7 @@ import icon from 'data-base64:~assets/archmage.svg'
 import { useCallback, useState } from 'react'
 
 import { AccountAvatar } from '~components/AccountAvatar'
-import { useActive } from '~lib/active'
+import { WalletId, useActive } from '~lib/active'
 import { useEvmChainLogoUrl } from '~lib/services/datasource/chainlist'
 import { getNetworkInfo } from '~lib/services/network'
 import {
@@ -64,7 +63,7 @@ export const Toolbar = () => {
     [search]
   )
 
-  const { wallets, toggleOpen, setSelected } = useWalletTree(
+  const { wallets, toggleOpen, setSelected } = useWalletTree<WalletId>(
     network,
     filter,
     true

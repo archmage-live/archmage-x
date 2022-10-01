@@ -11,6 +11,7 @@ import { WALLET_SERVICE } from '~lib/services/walletService'
 
 export interface WalletEntry {
   wallet: IWallet
+  isSelected: boolean
   isOpen: boolean
   subWallets: SubWalletEntry[]
 }
@@ -29,17 +30,25 @@ export function useReadonlyWalletTree() {
   return walletEntries
 }
 
+export interface SelectedWalletId {
+  id: number
+  subId?: number
+}
+
 function useWalletSelected(
   activeAsSelected = false
-): [WalletId | undefined, (selected: WalletId | undefined) => void] {
-  const [selected, setSelected] = useState<WalletId>()
+): [
+  SelectedWalletId | undefined,
+  (selected: SelectedWalletId | undefined) => void
+] {
+  const [selected, setSelected] = useState<SelectedWalletId>()
 
   const { walletId: activeWallet, setWalletId: setActiveWallet } =
     useActiveWalletId()
 
   return [
-    activeAsSelected ? activeWallet : selected,
-    activeAsSelected ? setActiveWallet : setSelected
+    activeAsSelected ? activeWallet : (selected as any),
+    activeAsSelected ? setActiveWallet : (setSelected as any)
   ]
 }
 
@@ -77,6 +86,7 @@ async function fetchWalletTree(network: INetwork): Promise<WalletEntry[]> {
       const accounts = accountMap.get(wallet.id)
       return {
         wallet,
+        isSelected: false,
         isOpen: false,
         subWallets:
           subWallets &&
@@ -145,7 +155,9 @@ export function filterWalletTreeBySearch(
   return isFiltered ? filtered : entries
 }
 
-export function useWalletTree(
+export function useWalletTree<
+  Selected extends SelectedWalletId = SelectedWalletId
+>(
   network?: INetwork,
   filter?: (entries: WalletEntry[]) => WalletEntry[],
   activeAsSelected = false
@@ -158,7 +170,7 @@ export function useWalletTree(
     if (filter && walletEntries) {
       setFiltered(filter(walletEntries))
     } else {
-      setFiltered(walletEntries)
+      setFiltered(undefined)
     }
   }, [filter, walletEntries])
 
@@ -256,44 +268,70 @@ export function useWalletTree(
 
   const [selected, _setSelected] = useWalletSelected(activeAsSelected)
 
+  // set `isSelected` status of wallet tree, according to `selected`
   useEffect(() => {
-    if (!selected || !walletEntries) {
+    if (!walletEntries) {
       return
     }
 
-    const notChanged = walletEntries.find((entry) => {
-      if (entry.wallet.id !== selected.id) {
-        return false
-      }
-      return entry.subWallets.find(
-        (subEntry) =>
-          subEntry.subWallet.id === selected.subId && subEntry.isSelected
+    if (selected !== undefined) {
+      const notChanged = walletEntries.find(
+        ({ wallet, isSelected, subWallets }) => {
+          if (wallet.id !== selected.id) {
+            return false
+          }
+          if (!isSelected) {
+            return false
+          }
+          if (selected.subId !== undefined) {
+            return subWallets.find(
+              (subEntry) =>
+                subEntry.subWallet.id === selected.subId && subEntry.isSelected
+            )
+          } else {
+            return subWallets.every((subEntry) => !subEntry.isSelected)
+          }
+        }
       )
-    })
-    if (notChanged) {
-      return
-    }
+      if (notChanged) {
+        return
+      }
 
-    const found = walletEntries.find(({ wallet }) => wallet.id === selected.id)
-    if (!found) {
-      return
+      const found = walletEntries.find(
+        ({ wallet }) => wallet.id === selected.id
+      )
+      if (!found) {
+        return
+      }
+    } else {
+      if (
+        walletEntries.every(
+          ({ isSelected, subWallets }) =>
+            !isSelected && subWallets.every(({ isSelected }) => !isSelected)
+        )
+      ) {
+        return
+      }
     }
 
     let changed = false
     const entries = walletEntries.map((entry) => {
-      let subChanged = false
+      const isSelected = entry.wallet.id === selected?.id
+      const isChanged = isSelected !== entry.isSelected
+
+      let isSubChanged = false
       let isOpen = undefined
       const subWallets = entry.subWallets.map((subEntry) => {
-        if (subEntry.subWallet.id === selected.subId) {
+        if (subEntry.subWallet.id === selected?.subId) {
           assert(entry.wallet.id === selected.id)
-          subChanged = true
+          isSubChanged = true
           isOpen = true
           return {
             ...subEntry,
             isSelected: true
           }
         } else if (subEntry.isSelected) {
-          subChanged = true
+          isSubChanged = true
           return {
             ...subEntry,
             isSelected: false
@@ -301,15 +339,18 @@ export function useWalletTree(
         }
         return subEntry
       })
-      if (!subChanged) {
+
+      if (!isChanged && !isSubChanged) {
         return entry
       }
+
       changed = true
       return {
         ...entry,
+        isSelected,
         isOpen: isOpen !== undefined ? isOpen : entry.isOpen,
         subWallets
-      }
+      } as WalletEntry
     })
 
     if (changed) {
@@ -318,11 +359,16 @@ export function useWalletTree(
   }, [selected, setWalletEntries, walletEntries])
 
   const setSelected = useCallback(
-    (newSelected: WalletId) => {
-      if (!walletEntries) {
+    (newSelected: SelectedWalletId | undefined) => {
+      if (!walletEntries || !newSelected) {
+        _setSelected(undefined)
         return
       }
-      if (selected && newSelected.subId === selected.subId) {
+      if (
+        selected &&
+        newSelected.id === selected.id &&
+        newSelected.subId === selected.subId
+      ) {
         return
       }
 
@@ -331,6 +377,7 @@ export function useWalletTree(
     [_setSelected, selected, walletEntries]
   )
 
+  // AccountId => WalletId
   const [checked, _setChecked] = useState<Map<number, WalletId>>(new Map())
 
   const setChecked = useCallback(
@@ -386,10 +433,10 @@ export function useWalletTree(
   )
 
   return {
-    wallets: filtered,
+    wallets: filter ? filtered : walletEntries,
     toggleOpen,
-    selected,
-    setSelected,
+    selected: selected as Selected | undefined,
+    setSelected: setSelected as (newSelected: Selected | undefined) => void,
     checked,
     setChecked
   }

@@ -24,7 +24,11 @@ import {
   useHdPaths,
   useSubWallets
 } from '~lib/services/walletService'
-import { getDefaultPathPrefix } from '~lib/wallet'
+import {
+  WalletType,
+  getDefaultPathPrefix,
+  getWalletTypeTitle
+} from '~lib/wallet'
 
 import {
   WrappedDeleteWalletModal,
@@ -102,48 +106,56 @@ export const WalletEdit = ({ wallet, onDelete }: WalletEditProps) => {
     <Stack spacing="12">
       <WalletNameEdit wallet={wallet} />
 
-      <Stack spacing={6}>
-        <FormControl>
-          <FormLabel>Network Type</FormLabel>
+      <Text fontWeight="medium">Type: {getWalletTypeTitle(wallet.type)}</Text>
 
-          <HStack spacing={6}>
-            <Select
-              w={32}
-              value={networkScope}
-              onChange={(e) => setNetworkScope(e.target.value)}>
-              {NETWORK_SCOPES.map((scope) => {
-                return (
-                  <option key={scope} value={scope}>
-                    {scope}
-                  </option>
-                )
-              })}
-            </Select>
-
-            <Button
-              visibility={saveVisibility}
-              colorScheme={saveColorScheme}
-              transition="all 0.2s"
-              onClick={onSaveHdPath}>
-              {hdPathAction}
-            </Button>
-          </HStack>
-        </FormControl>
-
-        {hdPath && (
+      {wallet.type === WalletType.HD && (
+        <Stack spacing={6}>
           <FormControl>
-            <FormLabel>HD Path</FormLabel>
+            <FormLabel>Network Type</FormLabel>
 
-            <HdPathInput forcePrefix="m" value={hdPath} onChange={setHdPath} />
+            <HStack spacing={6}>
+              <Select
+                w={32}
+                value={networkScope}
+                onChange={(e) => setNetworkScope(e.target.value)}>
+                {NETWORK_SCOPES.map((scope) => {
+                  return (
+                    <option key={scope} value={scope}>
+                      {scope}
+                    </option>
+                  )
+                })}
+              </Select>
 
-            <FormHelperText>
-              You can set HD path for any specific network type. Please be
-              careful that changing the default HD path will cause the addresses
-              of all derived wallets to change.
-            </FormHelperText>
+              <Button
+                visibility={saveVisibility}
+                colorScheme={saveColorScheme}
+                transition="all 0.2s"
+                onClick={onSaveHdPath}>
+                {hdPathAction}
+              </Button>
+            </HStack>
           </FormControl>
-        )}
-      </Stack>
+
+          {hdPath && (
+            <FormControl>
+              <FormLabel>HD Path</FormLabel>
+
+              <HdPathInput
+                forcePrefix="m"
+                value={hdPath}
+                onChange={setHdPath}
+              />
+
+              <FormHelperText>
+                You can set HD path for any specific network type. Please be
+                careful that changing the default HD path will cause the
+                addresses of all derived wallets to change.
+              </FormHelperText>
+            </FormControl>
+          )}
+        </Stack>
+      )}
 
       <Stack spacing={6}>
         <FormControl>
@@ -152,9 +164,10 @@ export const WalletEdit = ({ wallet, onDelete }: WalletEditProps) => {
               Accounts: {subWallets?.length}
             </Text>
 
-            <Button variant="outline" colorScheme="purple">
-              Reset Order
-            </Button>
+            {/* TODO */}
+            {/*<Button variant="outline" colorScheme="purple">*/}
+            {/*  Reset Order*/}
+            {/*</Button>*/}
           </HStack>
         </FormControl>
 
@@ -183,9 +196,11 @@ export const WalletEdit = ({ wallet, onDelete }: WalletEditProps) => {
       </Stack>
 
       <HStack justify="end" spacing={6}>
-        <Button variant="outline" colorScheme="purple" onClick={onExportOpen}>
-          {!notBackedUp ? 'Export Secret Phrase' : 'Back up Secret Phrase'}
-        </Button>
+        {wallet.type === WalletType.HD && (
+          <Button variant="outline" colorScheme="purple" onClick={onExportOpen}>
+            {!notBackedUp ? 'Export Secret Phrase' : 'Back up Secret Phrase'}
+          </Button>
+        )}
         <Button
           colorScheme="red"
           onClick={() => {
