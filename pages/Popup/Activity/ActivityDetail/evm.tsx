@@ -8,6 +8,7 @@ import {
 import {
   Divider,
   HStack,
+  Icon,
   IconButton,
   Stack,
   Text,
@@ -19,6 +20,7 @@ import { BigNumber } from '@ethersproject/bignumber'
 import Decimal from 'decimal.js'
 import { ethers } from 'ethers'
 import { useMemo, useState } from 'react'
+import { FiCheckCircle, FiCopy } from 'react-icons/fi'
 import { useAsync } from 'react-use'
 import browser from 'webextension-polyfill'
 
@@ -147,12 +149,13 @@ export const EvmActivityDetail = ({
           <Text>{shortenAddress(info.tx.hash, { prefixChars: 4 })}</Text>
           <Tooltip
             label={!hasCopied ? 'Copy Tx Hash' : 'Copied'}
-            placement="top">
+            placement="top"
+            closeOnClick={false}>
             <IconButton
               variant="ghost"
               aria-label="Copy Tx Hash"
               size="xs"
-              icon={<CopyIcon />}
+              icon={<Icon as={!hasCopied ? FiCopy : FiCheckCircle} />}
               onClick={onCopy}
             />
           </Tooltip>

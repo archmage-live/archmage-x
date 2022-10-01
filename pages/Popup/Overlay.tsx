@@ -2,6 +2,7 @@ import { Center, Image, Stack, useColorModeValue } from '@chakra-ui/react'
 import archmageImage from 'data-base64:~assets/archmage.svg'
 import { ReactNode } from 'react'
 import HashLoader from 'react-spinners/HashLoader'
+import { useTimeout } from 'react-use'
 
 import { useColor } from '~hooks/useColor'
 import { useCheckUnlocked } from '~lib/password'
@@ -47,9 +48,11 @@ export const Overlay = ({ isLoading, subtitle, children }: OverlayProps) => {
 export const OverlayCheckUnlocked = ({ isLoading }: OverlayProps) => {
   useCheckUnlocked()
 
+  const [isReady] = useTimeout(50)
+
   if (isLoading === false) {
     return <></>
   }
 
-  return <Overlay isLoading={isLoading} />
+  return <Overlay isLoading={isLoading && !!isReady()} />
 }

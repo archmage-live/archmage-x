@@ -1,4 +1,4 @@
-import { Button, Input, Stack, Text } from '@chakra-ui/react'
+import { Button, Center, Input, Stack, Text } from '@chakra-ui/react'
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 
@@ -83,28 +83,30 @@ export default function Unlock() {
       }>
       {locked && (
         <form onSubmit={unlock}>
-          <Stack spacing="6" px={4}>
-            <Input
-              type="password"
-              size="lg"
-              placeholder="Password"
-              autoFocus
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-            />
+          <Center w="full">
+            <Stack spacing="6" px={4} w="full" maxW="360px">
+              <Input
+                type="password"
+                size="lg"
+                placeholder="Password"
+                autoFocus
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+              />
 
-            <AlertBox>{alert}</AlertBox>
+              <AlertBox>{alert}</AlertBox>
 
-            <Button
-              type="submit"
-              h="14"
-              size="lg"
-              colorScheme="purple"
-              borderRadius="8px"
-              disabled={!password}>
-              Unlock
-            </Button>
-          </Stack>
+              <Button
+                type="submit"
+                h="14"
+                size="lg"
+                colorScheme="purple"
+                borderRadius="8px"
+                isDisabled={!password}>
+                Unlock
+              </Button>
+            </Stack>
+          </Center>
         </form>
       )}
     </Overlay>

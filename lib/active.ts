@@ -69,11 +69,23 @@ export async function getActiveNetwork(): Promise<INetwork | undefined> {
   if (networkId === undefined) {
     return undefined
   }
-  return DB.networks.get(networkId)
+
+  const network = await NETWORK_SERVICE.getNetwork(networkId)
+
+  if (!network) {
+    await resetActiveNetwork()
+  }
+
+  return network
 }
 
 export async function setActiveNetwork(networkId: number) {
   await LOCAL_STORE.set(StoreKey.ACTIVE_NETWORK, networkId)
+}
+
+export async function resetActiveNetwork() {
+  await LOCAL_STORE.remove(StoreKey.ACTIVE_NETWORK)
+  await getActiveNetwork()
 }
 
 export async function getActiveWallet(): Promise<{
@@ -159,19 +171,22 @@ export function useActiveNetworkBuild() {
   const [network, setNetwork] = useAtom(networkAtom)
 
   useLiveQuery(async () => {
-    if (networkId !== undefined) {
-      const network = await NETWORK_SERVICE.getNetwork(networkId)
-      setNetwork((oldNetwork) => {
-        // if (network && oldNetwork && isSameNetwork(network, oldNetwork)) {
-        //   return oldNetwork
-        // }
-        return network
-      })
+    if (networkId === undefined) {
       return
     }
-    if ((await Promise.resolve(getDefaultActiveNetwork())) === undefined) {
-      setNetwork(undefined)
+    const network = await NETWORK_SERVICE.getNetwork(networkId)
+
+    if (!network) {
+      await Promise.resolve(resetActiveNetwork())
+      return
     }
+
+    setNetwork((oldNetwork) => {
+      // if (network && oldNetwork && isSameNetwork(network, oldNetwork)) {
+      //   return oldNetwork
+      // }
+      return network
+    })
   }, [networkId])
 
   return network

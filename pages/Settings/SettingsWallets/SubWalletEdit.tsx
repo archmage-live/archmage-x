@@ -11,11 +11,16 @@ import {
 } from '@chakra-ui/react'
 import { Slip10RawIndex, pathToString, stringToPath } from '@cosmjs/crypto'
 import { useEffect, useState } from 'react'
+import browser from 'webextension-polyfill'
 
+import { CopyArea } from '~components/CopyIcon'
 import { HdPathInput } from '~components/HdPathInput'
 import { SaveInput } from '~components/SaveInput'
 import { DB } from '~lib/db'
+import { formatNumber } from '~lib/formatNumber'
 import { INetwork, ISubWallet, IWallet, isSubNameInvalid } from '~lib/schema'
+import { getAccountUrl } from '~lib/services/network'
+import { useBalance } from '~lib/services/provider'
 import { useChainAccountByIndex, useHdPaths } from '~lib/services/walletService'
 
 import {
@@ -43,6 +48,9 @@ export const SubWalletEdit = ({
     network.chainId,
     subWallet.index
   )
+
+  const balance = useBalance(network, account)
+  const accountUrl = account && getAccountUrl(network, account)
 
   const hdPaths = useHdPaths(wallet.id)
   const [hdPath, setHdPath] = useState('')
@@ -72,16 +80,6 @@ export const SubWalletEdit = ({
 
       <Stack>
         <Text fontSize="md" fontWeight="medium">
-          Address
-        </Text>
-
-        <Text fontSize="lg" fontWeight="medium" color="gray.500">
-          {account?.address}
-        </Text>
-      </Stack>
-
-      <Stack>
-        <Text fontSize="md" fontWeight="medium">
           <chakra.span color="gray.500">Master Wallet:&nbsp;</chakra.span>
           {wallet.name}
         </Text>
@@ -91,6 +89,33 @@ export const SubWalletEdit = ({
           {subWallet.index}
         </Text>
       </Stack>
+
+      <Stack>
+        <Text fontSize="md" fontWeight="medium">
+          Address
+        </Text>
+
+        {account?.address ? (
+          <CopyArea
+            name="Address"
+            copy={account.address}
+            noWrap
+            props={{
+              width: 'fit-content',
+              fontSize: 'lg',
+              fontWeight: 'medium',
+              color: 'gray.500'
+            }}
+          />
+        ) : (
+          'Not Available'
+        )}
+      </Stack>
+
+      <Text fontSize="md" fontWeight="medium">
+        <chakra.span color="gray.500">Balance:&nbsp;</chakra.span>
+        {formatNumber(balance?.amount)} {balance?.symbol}
+      </Text>
 
       {hdPath && (
         <FormControl>
@@ -106,9 +131,21 @@ export const SubWalletEdit = ({
       )}
 
       <HStack justify="end">
+        {accountUrl && (
+          <Button
+            variant="outline"
+            colorScheme="purple"
+            onClick={async () => {
+              await browser.tabs.create({ url: accountUrl })
+            }}>
+            View account on block explorer
+          </Button>
+        )}
+
         <Button variant="outline" colorScheme="purple" onClick={onExportOpen}>
           Export Private Key
         </Button>
+
         <Button
           colorScheme="red"
           onClick={() => {
@@ -139,10 +176,9 @@ export const SubWalletNameEdit = ({
   subWallet: ISubWallet
 }) => {
   const [isNameExists, setIsNameExists] = useState(false)
-  const [isNameInvalid, setIsNameInvalid] = useState(false)
 
   return (
-    <FormControl isInvalid={isNameExists || isNameInvalid}>
+    <FormControl isInvalid={isNameExists}>
       <FormLabel>Account Name</FormLabel>
       <SaveInput
         hideSaveIfNoChange

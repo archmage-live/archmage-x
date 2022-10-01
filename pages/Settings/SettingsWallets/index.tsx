@@ -1,5 +1,16 @@
-import { Button, HStack, Select, SimpleGrid, Stack } from '@chakra-ui/react'
+import {
+  Button,
+  HStack,
+  Icon,
+  ListItem,
+  Select,
+  SimpleGrid,
+  Stack,
+  Text,
+  UnorderedList
+} from '@chakra-ui/react'
 import { useEffect, useState } from 'react'
+import { MdDragIndicator } from 'react-icons/md'
 
 import {
   NETWORK_SCOPES,
@@ -97,6 +108,28 @@ export const SettingsWallets = () => {
             onSelectedId={setSelectedId}
             onSelectedSubId={setSelectedSubId}
           />
+
+          <UnorderedList
+            fontSize="sm"
+            color="gray.500"
+            ps={4}
+            sx={{ listStyle: "'* ' outside" }}>
+            <ListItem>
+              Double-click any wallet entry to expand or collapse its account
+              list.
+            </ListItem>
+            <ListItem>
+              Press icon&nbsp;
+              <Icon
+                as={MdDragIndicator}
+                fontSize="lg"
+                fontWeight="medium"
+                verticalAlign="sub"
+              />
+              &nbsp;on the right side of any entry and drag to the desired
+              position to specify its order in the list.
+            </ListItem>
+          </UnorderedList>
         </Stack>
 
         <Stack spacing={6}>

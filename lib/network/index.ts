@@ -4,7 +4,11 @@ export enum NetworkKind {
   SOL = 'sol'
 }
 
-export const NETWORK_SCOPES = ['EVM', 'Cosmos', 'Solana']
+export const NETWORK_SCOPES = [
+  'EVM'
+  // 'Cosmos',
+  // 'Solana'
+]
 export const NETWORK_SCOPE_ANY = 'Any Network Kind'
 
 export type NetworkScope = typeof NETWORK_SCOPES[number]

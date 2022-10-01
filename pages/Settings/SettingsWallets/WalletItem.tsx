@@ -9,7 +9,7 @@ import { Badge } from '~components/Badge'
 import { dayjs } from '~lib/dayjs'
 import { INetwork } from '~lib/schema/network'
 import { IWallet } from '~lib/schema/wallet'
-import { WalletType, getWalletTypeIdentifier, isWalletGroup } from '~lib/wallet'
+import { getWalletTypeIdentifier, isWalletGroup } from '~lib/wallet'
 
 import { SubWalletList } from './SubWalletList'
 

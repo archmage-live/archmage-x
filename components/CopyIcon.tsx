@@ -4,6 +4,7 @@ import {
   Icon,
   IconButton,
   StackProps,
+  Text,
   Tooltip,
   chakra,
   useClipboard,
@@ -49,29 +50,49 @@ export const CopyArea = ({
   name,
   copy,
   area,
+  noWrap,
   props
-}: CopyProps & { area?: string; props?: StackProps }) => {
+}: CopyProps & { area?: string; noWrap?: boolean; props?: StackProps }) => {
   const { hasCopied, onCopy } = useClipboard(copy)
   const label = !hasCopied ? `Copy ${name}` : 'Copied'
+
+  const color = useColorModeValue('gray.600', 'gray.300')
+  const bg = useColorModeValue('blackAlpha.50', 'blackAlpha.500')
+  const hoverBg = useColorModeValue('blackAlpha.100', 'blackAlpha.400')
+
+  const content = (
+    <>
+      <chakra.span fontWeight="medium" sx={{ fontFeatureSettings: '"tnum"' }}>
+        {area || copy}
+      </chakra.span>
+      <Icon as={!hasCopied ? FiCopy : FiCheckCircle} />
+    </>
+  )
+
+  const onClick = !hasCopied ? onCopy : undefined
+
   return (
-    <Tooltip label={label} placement="top">
-      <HStack
-        px={4}
-        py={2}
-        color={useColorModeValue('gray.600', 'gray.300')}
-        bg={useColorModeValue('blackAlpha.50', 'blackAlpha.500')}
-        _hover={{ bg: useColorModeValue('blackAlpha.100', 'blackAlpha.400') }}
-        transition="bg 0.2s"
-        borderRadius="4px"
-        cursor="pointer"
-        noOfLines={10}
-        {...props}
-        onClick={!hasCopied ? onCopy : () => {}}>
-        <chakra.span fontFamily="monospace" fontWeight="medium">
-          {area || copy}
-        </chakra.span>
-        <Icon as={!hasCopied ? FiCopy : FiCheckCircle} />
-      </HStack>
+    <Tooltip label={label} placement="top" closeOnClick={false}>
+      {!noWrap ? (
+        <HStack
+          px={4}
+          py={2}
+          color={color}
+          bg={bg}
+          _hover={{ bg: hoverBg }}
+          transition="bg 0.2s"
+          borderRadius="4px"
+          cursor="pointer"
+          noOfLines={10}
+          {...props}
+          onClick={onClick}>
+          {content}
+        </HStack>
+      ) : (
+        <HStack cursor="pointer" {...props} onClick={onClick}>
+          {content}
+        </HStack>
+      )}
     </Tooltip>
   )
 }

@@ -10,6 +10,7 @@ import { PASSWORD } from '~lib/password'
 import { IKeystore, PSEUDO_INDEX } from '~lib/schema'
 import { IWallet } from '~lib/schema/wallet'
 import { SESSION_STORE, StoreKey } from '~lib/store'
+import { stall } from '~lib/util'
 import { hasWalletKeystore } from '~lib/wallet'
 
 function keystoreKey(id: number): string {
@@ -127,8 +128,21 @@ export class Keystore {
     await this.accounts.set(id, keystore)
   }
 
-  async get(id: number): Promise<KeystoreAccount | undefined> {
-    return await this.fetch(id)
+  async get(
+    id: number,
+    waitForUnlock = false
+  ): Promise<KeystoreAccount | undefined> {
+    // TODO
+    while (true) {
+      const account = await this.fetch(id)
+      if (!account && waitForUnlock) {
+        if (await PASSWORD.isLocked()) {
+          await stall(1000)
+          continue
+        }
+      }
+      return account
+    }
   }
 
   async remove(id: number) {

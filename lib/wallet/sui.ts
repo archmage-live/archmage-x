@@ -18,7 +18,7 @@ export class SuiWallet {
   wallet!: HDNode | Ed25519Keypair
 
   static async from({ id, type, path }: WalletOpts): Promise<SuiWallet> {
-    const ks = await KEYSTORE.get(id)
+    const ks = await KEYSTORE.get(id, true)
     assert(ks)
     const mnemonic = ks.mnemonic
 

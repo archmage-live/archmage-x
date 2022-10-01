@@ -149,17 +149,17 @@ export const WalletEdit = ({ wallet, onDelete }: WalletEditProps) => {
         <FormControl>
           <HStack spacing={8}>
             <Text fontSize="md" fontWeight="medium">
-              Derived Wallets: {subWallets?.length}
+              Accounts: {subWallets?.length}
             </Text>
 
             <Button variant="outline" colorScheme="purple">
-              Reset Sorting
+              Reset Order
             </Button>
           </HStack>
         </FormControl>
 
         <FormControl>
-          <FormLabel>Derive New Wallets</FormLabel>
+          <FormLabel>Derive New Accounts</FormLabel>
           <SaveInput
             isNumber
             hideSaveIfNoChange

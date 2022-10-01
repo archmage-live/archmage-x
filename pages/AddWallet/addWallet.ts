@@ -133,7 +133,9 @@ export function useAddWallet() {
     const { wallet, decrypted } = await WALLET_SERVICE.newWallet(opts)
 
     if (await WALLET_SERVICE.existsSecret(wallet)) {
-      return { error: 'There exists wallet with the same secret' }
+      return {
+        error: 'There exists wallet with the same secret or unique identifier'
+      }
     }
 
     WALLET_SERVICE.createWallet({
