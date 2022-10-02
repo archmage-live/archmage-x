@@ -69,6 +69,8 @@ function compareScore(aStatus?: TestStatus, bStatus?: TestStatus) {
 export const RpcUrlInputGroup = ({
   urls,
   setUrls,
+  noAdd,
+  noEdit,
   testUrl,
   chainId,
   getChainId,
@@ -82,13 +84,17 @@ export const RpcUrlInputGroup = ({
 }: {
   urls: string[]
   setUrls: (urls: string[]) => void
+  noAdd?: boolean
+  noEdit?: boolean
   testUrl: (url: string) => Promise<number>
   chainId?: ChainId
-  getChainId: (url: string) => Promise<ChainId>
-  checkUrls: MutableRefObject<(() => Promise<string[] | undefined>) | undefined>
-  allowInvalidRpcUrl: boolean
-  setAllowInvalidRpcUrl: (value: boolean) => void
-  setLoading: (loading: boolean) => void
+  getChainId?: (url: string) => Promise<ChainId>
+  checkUrls?: MutableRefObject<
+    (() => Promise<string[] | undefined>) | undefined
+  >
+  allowInvalidRpcUrl?: boolean
+  setAllowInvalidRpcUrl?: (value: boolean) => void
+  setLoading?: (loading: boolean) => void
   onSaveUrls?: () => Promise<void>
   isSaveDisabled?: boolean
   isUrlsChanged?: boolean
@@ -110,7 +116,7 @@ export const RpcUrlInputGroup = ({
     useState(false)
   useEffect(() => {
     setShowInvalidRpcUrlCheckbox(false)
-    setAllowInvalidRpcUrl(false)
+    setAllowInvalidRpcUrl?.(false)
   }, [urls, setAllowInvalidRpcUrl])
 
   const _checkUrls = useCallback(async () => {
@@ -124,10 +130,10 @@ export const RpcUrlInputGroup = ({
       return
     }
 
-    setLoading(true)
+    setLoading?.(true)
 
     try {
-      const networkChainId = await getChainId(checkedRpcUrls[0])
+      const networkChainId = await getChainId?.(checkedRpcUrls[0])
       if (chainId !== undefined && chainId !== networkChainId) {
         setAlert(`Mismatched chain ID ${networkChainId} gotten from RPC server`)
         return
@@ -152,7 +158,9 @@ export const RpcUrlInputGroup = ({
   }, [urls, chainId, getChainId, setLoading, allowInvalidRpcUrl])
 
   useEffect(() => {
-    checkUrls.current = _checkUrls
+    if (checkUrls) {
+      checkUrls.current = _checkUrls
+    }
   }, [checkUrls, _checkUrls])
 
   const [saveColorScheme, setSaveColorScheme] = useState('gray')
@@ -198,6 +206,8 @@ export const RpcUrlInputGroup = ({
         <UrlInputGroup
           urls={urls}
           setUrls={setUrls}
+          noAdd={noAdd}
+          noEdit={noEdit}
           isTest={isTestRpcUrls}
           isSort={isSortRpcUrls}
           test={testUrl}
@@ -213,7 +223,7 @@ export const RpcUrlInputGroup = ({
             size="lg"
             colorScheme="purple"
             isChecked={allowInvalidRpcUrl}
-            onChange={(e) => setAllowInvalidRpcUrl(e.target.checked)}>
+            onChange={(e) => setAllowInvalidRpcUrl?.(e.target.checked)}>
             Allow unavailable RPC url
           </Checkbox>
 
@@ -236,6 +246,9 @@ export const RpcUrlInputGroup = ({
 export const ExplorerUrlInputGroup = ({
   urls,
   setUrls,
+  noAdd,
+  noEdit,
+  allowNoUrls = true,
   checkUrls,
   onSaveUrls,
   isSaveDisabled,
@@ -243,7 +256,10 @@ export const ExplorerUrlInputGroup = ({
 }: {
   urls: string[]
   setUrls: (urls: string[]) => void
-  checkUrls: MutableRefObject<(() => string[] | undefined) | undefined>
+  noAdd?: boolean
+  noEdit?: boolean
+  allowNoUrls?: boolean
+  checkUrls?: MutableRefObject<(() => string[] | undefined) | undefined>
   onSaveUrls?: () => Promise<void>
   isSaveDisabled?: boolean
   isUrlsChanged?: boolean
@@ -268,7 +284,9 @@ export const ExplorerUrlInputGroup = ({
   }, [urls])
 
   useEffect(() => {
-    checkUrls.current = _checkUrls
+    if (checkUrls) {
+      checkUrls.current = _checkUrls
+    }
   }, [checkUrls, _checkUrls])
 
   const [saveColorScheme, setSaveColorScheme] = useState('gray')
@@ -284,8 +302,14 @@ export const ExplorerUrlInputGroup = ({
     <Stack spacing={6}>
       <FormControl>
         <FormLabel>Block Explorer Url(s)</FormLabel>
-        <UrlInputGroup urls={urls} setUrls={setUrls} allowNoUrls />
-        {!urls.length && (
+        <UrlInputGroup
+          urls={urls}
+          setUrls={setUrls}
+          allowNoUrls={allowNoUrls}
+          noAdd={noAdd}
+          noEdit={noEdit}
+        />
+        {!urls.length && !noAdd && (
           <HStack h={12} spacing={8}>
             <Text color="gray.500">No explorer urls.</Text>
             <IconButton
@@ -322,6 +346,8 @@ export const UrlInputGroup = ({
   urls,
   setUrls,
   allowNoUrls,
+  noAdd,
+  noEdit,
   isTest,
   isSort,
   test
@@ -329,6 +355,8 @@ export const UrlInputGroup = ({
   urls: string[]
   setUrls: (urls: string[]) => void
   allowNoUrls?: boolean
+  noAdd?: boolean
+  noEdit?: boolean
   isTest?: boolean
   isSort?: boolean
   test?: (url: string) => Promise<number>
@@ -444,6 +472,8 @@ export const UrlInputGroup = ({
             index={index}
             urls={urls}
             allowNoUrls={allowNoUrls}
+            noAdd={noAdd}
+            noEdit={noEdit}
             setUrls={setUrls}
             isSort={isSort}
             testStatus={testStatuses.get(url)}
@@ -460,6 +490,8 @@ const UrlInput = ({
   urls,
   setUrls,
   allowNoUrls,
+  noAdd,
+  noEdit,
   isSort,
   testStatus,
   maxHeight
@@ -468,6 +500,8 @@ const UrlInput = ({
   urls: string[]
   setUrls: (urls: string[]) => void
   allowNoUrls?: boolean
+  noAdd?: boolean
+  noEdit?: boolean
   isSort?: boolean
   testStatus: TestStatus | undefined
   maxHeight: number
@@ -476,13 +510,16 @@ const UrlInput = ({
 
   return (
     <HStack>
-      <InputGroup size="lg">
+      <InputGroup size={!noEdit ? 'lg' : 'md'}>
         <Input
           sx={{ paddingInlineEnd: '56px' }}
           errorBorderColor="red.500"
           isInvalid={!!url && !checkUrl(url)}
           value={url}
           onChange={(e) => {
+            if (noEdit) {
+              return
+            }
             setUrls([
               ...urls.slice(0, index),
               e.target.value.trim(),
@@ -613,13 +650,15 @@ const UrlInput = ({
         }
       />
 
-      <IconButton
-        size="xs"
-        aria-label="Add url"
-        icon={<AddIcon />}
-        visibility={index === urls.length - 1 ? 'visible' : 'hidden'}
-        onClick={() => setUrls([...urls, ''])}
-      />
+      {!noAdd && (
+        <IconButton
+          size="xs"
+          aria-label="Add url"
+          icon={<AddIcon />}
+          visibility={index === urls.length - 1 ? 'visible' : 'hidden'}
+          onClick={() => setUrls([...urls, ''])}
+        />
+      )}
     </HStack>
   )
 }

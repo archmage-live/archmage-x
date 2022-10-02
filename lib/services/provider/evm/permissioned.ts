@@ -9,6 +9,7 @@ import { Context } from '~lib/rpc'
 import { IChainAccount, INetwork } from '~lib/schema'
 import { getConnectedAccountsBySite } from '~lib/services/connectedSiteService'
 import {
+  AddNetworkPayload,
   CONSENT_SERVICE,
   ConsentRequest,
   ConsentType,
@@ -17,6 +18,7 @@ import {
 } from '~lib/services/consentService'
 import { NETWORK_SERVICE } from '~lib/services/network'
 import { PASSWORD_SERVICE } from '~lib/services/passwordService'
+import { getEvmChainId } from '~pages/Settings/SettingsNetworks/NetworkAdd/EvmNetworkAdd'
 
 import { EvmProvider, EvmProviderAdaptor } from '.'
 
@@ -85,9 +87,9 @@ export class EvmPermissionedProvider {
         case 'wallet_requestPermissions':
           return await this.requestPermissions(ctx, params)
         case 'wallet_addEthereumChain':
-          return await this.addEthereumChain(params)
+          return await this.addEthereumChain(ctx, params)
         case 'wallet_switchEthereumChain':
-          return await this.switchEthereumChain(params)
+          return await this.switchEthereumChain(ctx, params)
         case 'wallet_watchAsset':
           return await this.watchAsset(params)
         case 'eth_sendTransaction':
@@ -165,7 +167,6 @@ export class EvmPermissionedProvider {
   // https://eips.ethereum.org/EIPS/eip-1102
   async requestAccounts(ctx: Context) {
     if (await PASSWORD_SERVICE.isLocked()) {
-      console.log('locked')
       await CONSENT_SERVICE.requestConsent(ctx, {
         networkId: undefined,
         accountId: undefined,
@@ -173,18 +174,14 @@ export class EvmPermissionedProvider {
         origin: this.origin,
         payload: {}
       } as any as ConsentRequest)
-      console.log('unlocked')
     }
 
-    console.log('getWallet')
     await this.getWallet()
 
-    console.log('getAccounts')
     if (!this.getAccounts().length) {
       await this.requestPermissions(ctx, [{ eth_accounts: {} }])
     }
 
-    console.log('getAccounts')
     return this.getAccounts()
   }
 
@@ -239,7 +236,10 @@ export class EvmPermissionedProvider {
   }
 
   // https://eips.ethereum.org/EIPS/eip-3085
-  async addEthereumChain([params]: Array<AddEthereumChainParameter>) {
+  async addEthereumChain(
+    ctx: Context,
+    [params]: Array<AddEthereumChainParameter>
+  ) {
     const chainId = this.checkChainId(params.chainId)
 
     let rpcUrls, explorerUrls
@@ -263,10 +263,14 @@ export class EvmPermissionedProvider {
     }
 
     const { name, symbol, decimals } = params.nativeCurrency
-    if (!name?.length || !symbol?.length || typeof decimals !== 'number') {
+    if (
+      !name?.length ||
+      !symbol?.length ||
+      typeof decimals !== 'number' ||
+      decimals <= 0
+    ) {
       throw ethErrors.rpc.invalidParams('Invalid nativeCurrency')
     }
-    params.nativeCurrency.symbol = params.nativeCurrency.symbol.toUpperCase()
 
     const existing = await NETWORK_SERVICE.getNetwork({
       kind: NetworkKind.EVM,
@@ -274,7 +278,7 @@ export class EvmPermissionedProvider {
     })
     if (existing) {
       throw ethErrors.rpc.invalidRequest(
-        'Chain with the specified chainId has existed'
+        'Chain with the specified chainId already exists'
       )
     }
 
@@ -290,26 +294,30 @@ export class EvmPermissionedProvider {
       nativeCurrency: params.nativeCurrency
     } as EvmChainInfo
 
-    if (
-      chainId !==
-      (
-        await (
-          await EvmProvider.from({ chainId, info } as INetwork)
-        ).getNetwork()
-      ).chainId
-    ) {
+    if (chainId !== (await getEvmChainId(rpcUrls[0]))) {
       throw ethErrors.rpc.invalidParams('Mismatched chainId')
     }
 
-    // TODO: consent
-
-    await NETWORK_SERVICE.addNetwork(NetworkKind.EVM, chainId, info)
+    await CONSENT_SERVICE.requestConsent(ctx, {
+      networkId: undefined,
+      accountId: undefined,
+      type: ConsentType.ADD_NETWORK,
+      origin: this.origin,
+      payload: {
+        networkKind: NetworkKind.EVM,
+        chainId,
+        info
+      } as AddNetworkPayload
+    } as any as ConsentRequest)
 
     return null
   }
 
   // https://eips.ethereum.org/EIPS/eip-3326
-  async switchEthereumChain([params]: Array<SwitchEthereumChainParameter>) {
+  async switchEthereumChain(
+    ctx: Context,
+    [params]: Array<SwitchEthereumChainParameter>
+  ) {
     const chainId = this.checkChainId(params.chainId)
     const network = await NETWORK_SERVICE.getNetwork({
       kind: NetworkKind.EVM,

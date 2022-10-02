@@ -3,12 +3,14 @@ import { ethErrors } from 'eth-rpc-errors'
 import browser from 'webextension-polyfill'
 
 import { ENV } from '~lib/env'
+import { NetworkKind } from '~lib/network'
 import { Context, SERVICE_WORKER_CLIENT, SERVICE_WORKER_SERVER } from '~lib/rpc'
-import { IChainAccount } from '~lib/schema'
+import { ChainId, IChainAccount, INetwork } from '~lib/schema'
 import { CONNECTED_SITE_SERVICE } from '~lib/services/connectedSiteService'
 import { NETWORK_SERVICE } from '~lib/services/network'
 import { PASSWORD_SERVICE } from '~lib/services/passwordService'
 import {
+  ProviderAdaptor,
   TransactionPayload,
   formatTxParams,
   getProvider
@@ -27,13 +29,21 @@ export type RequestPermissionPayload = {
   permissions: { permission: Permission; data?: any }[]
 }
 
+export type AddNetworkPayload = {
+  networkKind: NetworkKind
+  chainId: ChainId
+  info: any
+}
+
 export enum ConsentType {
   UNLOCK = 'unlock',
   REQUEST_PERMISSION = 'requestPermission',
   TRANSACTION = 'transaction',
   SIGN_MSG = 'signMessage',
   SIGN_TYPED_DATA = 'signTypedData',
-  WATCH_ASSET = 'watchAsset'
+  WATCH_ASSET = 'watchAsset',
+  ADD_NETWORK = 'addNetwork',
+  SWITCH_NETWORK = 'switchNetwork'
 }
 
 export type ConsentRequest = {
@@ -109,6 +119,27 @@ class ConsentService implements IConsentService {
     await this.setBadge()
   }
 
+  private async addRequest(request: ConsentRequest) {
+    let index = 0
+    if (this.consentRequests.length) {
+      for (let i = this.consentRequests.length - 1; i >= 0; --i) {
+        if (this.consentRequests[i].type === request.type) {
+          index = i + 1
+          break
+        }
+      }
+    }
+
+    if (index) {
+      this.consentRequests.splice(index, 0, request)
+    } else {
+      this.consentRequests.push(request)
+    }
+
+    // cache
+    await SESSION_STORE.set(StoreKey.CONSENT_REQUESTS, this.consentRequests)
+  }
+
   // be called by content script
   async requestConsent(
     ctx: Context,
@@ -139,10 +170,7 @@ class ConsentService implements IConsentService {
       ...request,
       id: this.nextId++
     }
-    this.consentRequests.push(req)
-
-    // cache
-    await SESSION_STORE.set(StoreKey.CONSENT_REQUESTS, this.consentRequests)
+    await this.addRequest(req)
 
     let resolve, reject
     const promise = new Promise((res, rej) => {
@@ -205,34 +233,41 @@ class ConsentService implements IConsentService {
     }
 
     try {
-      const network = await NETWORK_SERVICE.getNetwork(req.networkId)
-      assert(network)
-      const provider = await getProvider(network)
-      const accounts = await WALLET_SERVICE.getChainAccounts(
-        Array.isArray(req.accountId) ? req.accountId : [req.accountId]
-      )
-      assert(accounts)
+      let network: INetwork | undefined
+      let accounts: IChainAccount[] | undefined
+      let provider: ProviderAdaptor | undefined
+      if (req.networkId != null) {
+        network = await NETWORK_SERVICE.getNetwork(req.networkId)
+        assert(network)
+        provider = await getProvider(network)
+      }
+      if (req.accountId != null) {
+        accounts = await WALLET_SERVICE.getChainAccounts(
+          Array.isArray(req.accountId) ? req.accountId : [req.accountId]
+        )
+        assert(accounts)
+      }
 
       let response
       switch (req.type) {
         case ConsentType.REQUEST_PERMISSION:
           response = await this.requestPermission(
-            accounts,
+            accounts!,
             req.origin,
             req.payload
           )
           break
         case ConsentType.TRANSACTION: {
           const payload = req.payload as TransactionPayload
-          formatTxParams(network, payload.txParams, payload.populatedParams)
+          formatTxParams(network!, payload.txParams, payload.populatedParams)
 
-          const account = accounts[0]
+          const account = accounts![0]
 
-          const signedTx = await provider.signTransaction(
-            accounts[0],
+          const signedTx = await provider!.signTransaction(
+            account,
             payload.txParams
           )
-          const txResponse = await provider.sendTransaction(signedTx)
+          const txResponse = await provider!.sendTransaction(signedTx)
           await EVM_TRANSACTION_SERVICE.addPendingTx(
             account,
             payload.txParams,
@@ -244,13 +279,21 @@ class ConsentService implements IConsentService {
           break
         }
         case ConsentType.SIGN_MSG:
-          response = await provider.signMessage(accounts[0], req.payload)
+          response = await provider!.signMessage(accounts![0], req.payload)
           break
         case ConsentType.SIGN_TYPED_DATA:
-          response = await provider.signTypedData(accounts[0], req.payload)
+          response = await provider!.signTypedData(accounts![0], req.payload)
           break
         case ConsentType.WATCH_ASSET:
           // TODO
+          break
+        case ConsentType.ADD_NETWORK: {
+          const { networkKind, chainId, info } =
+            req.payload as AddNetworkPayload
+          await NETWORK_SERVICE.addNetwork(networkKind, chainId, info)
+          break
+        }
+        case ConsentType.SWITCH_NETWORK:
           break
       }
 

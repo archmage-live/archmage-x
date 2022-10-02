@@ -8,8 +8,9 @@ import {
   Text,
   chakra
 } from '@chakra-ui/react'
-import { useEffect, useState } from 'react'
+import { ReactNode, useEffect, useState } from 'react'
 import { FaGlobeAmericas } from 'react-icons/fa'
+import { useAsync } from 'react-use'
 
 import { useActiveNetwork } from '~lib/active'
 import { CONSENT_SERVICE, ConsentRequest } from '~lib/services/consentService'
@@ -20,46 +21,52 @@ import { useWalletTree } from '~pages/Popup/WalletDrawer/tree'
 
 import { WalletList } from './WalletList'
 
-export const RequestPermission = ({ request }: { request: ConsentRequest }) => {
+export const RequestPermission = ({
+  request,
+  onComplete,
+  rejectAllButton
+}: {
+  request: ConsentRequest
+  onComplete: () => void
+  rejectAllButton: ReactNode
+}) => {
   const iconUrl = useSiteIconUrl(request.origin)
 
   const network = useActiveNetwork()
+  const { wallets, toggleOpen, checked, setChecked, clearChecked } =
+    useWalletTree(network)
 
-  const { wallets, toggleOpen, checked, setChecked } = useWalletTree(network)
+  useEffect(() => {
+    clearChecked()
+  }, [request, clearChecked])
 
   const [flatChecked, setFlatChecked] = useState<number[]>()
-
   const [info, setInfo] = useState<any>()
-  useEffect(() => {
-    const effect = async () => {
-      const flatChecked = Array.from(checked.keys())
-      setFlatChecked(flatChecked)
 
-      if (flatChecked.length !== 1) {
-        return
-      }
+  useAsync(async () => {
+    const flatChecked = Array.from(checked.keys())
+    setFlatChecked(flatChecked)
 
-      const account = await WALLET_SERVICE.getChainAccount(flatChecked[0])
-      if (!account) {
-        return
-      }
-      const wallet = await WALLET_SERVICE.getWallet(account.masterId)
-      const subWallet = await WALLET_SERVICE.getSubWallet({
-        masterId: account.masterId,
-        index: account.index
-      })
-
-      setInfo({
-        name:
-          wallet &&
-          (subWallet?.name
-            ? `${wallet.name} / ${subWallet.name}`
-            : wallet.name),
-        address: account?.address
-      })
+    if (flatChecked.length !== 1) {
+      return
     }
 
-    effect()
+    const account = await WALLET_SERVICE.getChainAccount(flatChecked[0])
+    if (!account) {
+      return
+    }
+    const wallet = await WALLET_SERVICE.getWallet(account.masterId)
+    const subWallet = await WALLET_SERVICE.getSubWallet({
+      masterId: account.masterId,
+      index: account.index
+    })
+
+    setInfo({
+      name:
+        wallet &&
+        (subWallet?.name ? `${wallet.name} / ${subWallet.name}` : wallet.name),
+      address: account?.address
+    })
   }, [checked])
 
   const [isLoading, setIsLoading] = useState(false)
@@ -144,7 +151,7 @@ export const RequestPermission = ({ request }: { request: ConsentRequest }) => {
             w={36}
             onClick={async () => {
               await CONSENT_SERVICE.processRequest(request, false)
-              window.close()
+              onComplete()
             }}>
             Cancel
           </Button>
@@ -162,11 +169,14 @@ export const RequestPermission = ({ request }: { request: ConsentRequest }) => {
               request.accountId = flatChecked!
               setIsLoading(true)
               await CONSENT_SERVICE.processRequest(request, true)
-              window.close()
+              setIsLoading(false)
+              onComplete()
             }}>
             Connect
           </Button>
         </HStack>
+
+        {rejectAllButton}
       </Stack>
     </Box>
   )

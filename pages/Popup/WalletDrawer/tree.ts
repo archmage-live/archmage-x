@@ -432,13 +432,56 @@ export function useWalletTree<
     [setWalletEntries, walletEntries]
   )
 
+  const clearChecked = useCallback(() => {
+    _setChecked((oldChecked) => {
+      if (!oldChecked.size) {
+        return oldChecked
+      }
+      return new Map()
+    })
+
+    setWalletEntries((oldEntries) => {
+      if (!oldEntries) {
+        return oldEntries
+      }
+
+      let isChanged = false
+      const entries = oldEntries.map((entry) => {
+        let isSubChanged = false
+        const subWallets = entry.subWallets.map((subWallet) => {
+          if (!subWallet.isChecked) {
+            return subWallet
+          }
+          isSubChanged = true
+          return {
+            ...subWallet,
+            isChecked: false
+          }
+        })
+
+        if (!isSubChanged) {
+          return entry
+        }
+
+        isChanged = true
+        return {
+          ...entry,
+          subWallets
+        }
+      })
+
+      return isChanged ? entries : oldEntries
+    })
+  }, [setWalletEntries])
+
   return {
     wallets: filter ? filtered : walletEntries,
     toggleOpen,
     selected: selected as Selected | undefined,
     setSelected: setSelected as (newSelected: Selected | undefined) => void,
     checked,
-    setChecked
+    setChecked,
+    clearChecked
   }
 }
 

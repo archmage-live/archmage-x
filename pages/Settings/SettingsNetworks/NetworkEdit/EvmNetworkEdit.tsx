@@ -16,8 +16,8 @@ import { EvmChainInfo } from '~lib/network/evm'
 import { INetwork } from '~lib/schema'
 import { DeleteNetworkModal } from '~pages/Settings/SettingsNetworks/DeleteNetworkModal'
 import {
-  getBlockNumber,
-  getChainId
+  getEvmBlockNumber,
+  getEvmChainId
 } from '~pages/Settings/SettingsNetworks/NetworkAdd/EvmNetworkAdd'
 import {
   ExplorerUrlInputGroup,
@@ -187,9 +187,9 @@ export const EvmNetworkEdit = ({
       <RpcUrlInputGroup
         urls={rpcUrls}
         setUrls={setRpcUrls}
-        testUrl={getBlockNumber}
+        testUrl={getEvmBlockNumber}
         chainId={network.chainId}
-        getChainId={getChainId}
+        getChainId={getEvmChainId}
         checkUrls={checkRpcUrls}
         allowInvalidRpcUrl={allowInvalidRpcUrl}
         setAllowInvalidRpcUrl={setAllowInvalidRpcUrl}

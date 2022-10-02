@@ -179,9 +179,9 @@ export const EvmNetworkAdd = ({
       <RpcUrlInputGroup
         urls={rpcUrls}
         setUrls={setRpcUrls}
-        testUrl={getBlockNumber}
+        testUrl={getEvmBlockNumber}
         chainId={chainIdStr ? +chainIdStr : undefined}
-        getChainId={getChainId}
+        getChainId={getEvmChainId}
         checkUrls={checkRpcUrls}
         allowInvalidRpcUrl={allowInvalidRpcUrl}
         setAllowInvalidRpcUrl={setAllowInvalidRpcUrl}
@@ -213,7 +213,7 @@ export const EvmNetworkAdd = ({
   )
 }
 
-export async function getBlockNumber(url: string) {
+export async function getEvmBlockNumber(url: string) {
   const provider = new JsonRpcProvider({
     url,
     throttleLimit: 1,
@@ -222,7 +222,7 @@ export async function getBlockNumber(url: string) {
   return await provider.getBlockNumber()
 }
 
-export async function getChainId(url: string) {
+export async function getEvmChainId(url: string) {
   return (
     await new JsonRpcProvider({
       url,
