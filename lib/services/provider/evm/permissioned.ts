@@ -2,7 +2,7 @@ import assert from 'assert'
 import { ethErrors } from 'eth-rpc-errors'
 import { ethers } from 'ethers'
 
-import { getActiveNetworkByKind, setActiveNetwork } from '~lib/active'
+import { getActiveNetwork, getActiveNetworkByKind } from '~lib/active'
 import { NetworkKind } from '~lib/network'
 import { EvmChainInfo, EvmExplorer, NativeCurrency } from '~lib/network/evm'
 import { Context } from '~lib/rpc'
@@ -242,6 +242,24 @@ export class EvmPermissionedProvider {
   ) {
     const chainId = this.checkChainId(params.chainId)
 
+    const existing = await NETWORK_SERVICE.getNetwork({
+      kind: NetworkKind.EVM,
+      chainId
+    })
+    if (existing) {
+      const activeNetwork = await getActiveNetwork()
+      if (
+        activeNetwork?.kind === NetworkKind.EVM &&
+        existing.chainId === activeNetwork.chainId
+      ) {
+        return null
+      }
+
+      return this.switchEthereumChain(ctx, [
+        { chainId: params.chainId } as SwitchEthereumChainParameter
+      ])
+    }
+
     let rpcUrls, explorerUrls
     try {
       rpcUrls = params.rpcUrls.map((url) => new URL(url).toString())
@@ -272,16 +290,6 @@ export class EvmPermissionedProvider {
       throw ethErrors.rpc.invalidParams('Invalid nativeCurrency')
     }
 
-    const existing = await NETWORK_SERVICE.getNetwork({
-      kind: NetworkKind.EVM,
-      chainId
-    })
-    if (existing) {
-      throw ethErrors.rpc.invalidRequest(
-        'Chain with the specified chainId already exists'
-      )
-    }
-
     const info = {
       name: params.chainName,
       shortName: params.nativeCurrency?.symbol.toLowerCase(),
@@ -310,7 +318,9 @@ export class EvmPermissionedProvider {
       } as AddNetworkPayload
     } as any as ConsentRequest)
 
-    return null
+    return this.switchEthereumChain(ctx, [
+      { chainId: params.chainId } as SwitchEthereumChainParameter
+    ])
   }
 
   // https://eips.ethereum.org/EIPS/eip-3326
@@ -329,9 +339,13 @@ export class EvmPermissionedProvider {
       )
     }
 
-    // TODO: consent
-
-    await setActiveNetwork(network.id!)
+    await CONSENT_SERVICE.requestConsent(ctx, {
+      networkId: network.id,
+      accountId: undefined,
+      type: ConsentType.SWITCH_NETWORK,
+      origin: this.origin,
+      payload: {}
+    } as any as ConsentRequest)
 
     return null
   }

@@ -84,7 +84,7 @@ export const Toolbar = () => {
               fit="cover"
               src={networkLogoUrl}
               fallback={<></>}
-              alt="Currency Logo"
+              alt="Network Logo"
             />
             <Text noOfLines={1} display="block">
               {networkInfo?.name}

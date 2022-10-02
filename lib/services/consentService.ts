@@ -2,6 +2,7 @@ import assert from 'assert'
 import { ethErrors } from 'eth-rpc-errors'
 import browser from 'webextension-polyfill'
 
+import { setActiveNetwork } from '~lib/active'
 import { ENV } from '~lib/env'
 import { NetworkKind } from '~lib/network'
 import { Context, SERVICE_WORKER_CLIENT, SERVICE_WORKER_SERVER } from '~lib/rpc'
@@ -294,6 +295,7 @@ class ConsentService implements IConsentService {
           break
         }
         case ConsentType.SWITCH_NETWORK:
+          await setActiveNetwork(network!.id)
           break
       }
 

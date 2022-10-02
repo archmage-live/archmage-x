@@ -86,7 +86,7 @@ export default function Consent() {
     <HStack justify="center">
       <Button
         size="sm"
-        maxW={48}
+        w="auto"
         variant="ghost"
         color="gray.500"
         onClick={onRejectOpen}>
@@ -252,7 +252,13 @@ const ConsentByType = ({
         />
       )
     case ConsentType.SWITCH_NETWORK:
-      return <SwitchNetwork request={request} />
+      return (
+        <SwitchNetwork
+          request={request}
+          onComplete={onComplete}
+          rejectAllButton={rejectAllButton}
+        />
+      )
   }
 
   return <></>

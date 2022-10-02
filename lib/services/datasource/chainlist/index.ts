@@ -62,7 +62,7 @@ export function useEvmChainLogoUrl(chainId?: ChainId): string | undefined {
 
   return useMemo(() => {
     if (typeof chainId !== 'number' || !chainNames) {
-      return undefined
+      return 'https://github.com/DefiLlama/chainlist/raw/main/public/unknown-logo.png'
     }
     return CHAINLIST_API._getEvmChainLogoUrl(chainId, chainNames)
   }, [chainId, chainNames])
