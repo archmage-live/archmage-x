@@ -1,6 +1,7 @@
 import { VoidSigner } from '@ethersproject/abstract-signer'
 import { BigNumber } from '@ethersproject/bignumber'
 import { BytesLike } from '@ethersproject/bytes'
+import { _TypedDataEncoder } from '@ethersproject/hash'
 import { Logger } from '@ethersproject/logger'
 import { Network } from '@ethersproject/networks'
 import { resolveProperties, shallowCopy } from '@ethersproject/properties'
@@ -11,6 +12,7 @@ import {
 import { version } from '@ethersproject/providers/lib/_version'
 import { ConnectionInfo } from '@ethersproject/web'
 import assert from 'assert'
+import { ethErrors } from 'eth-rpc-errors'
 import { ethers } from 'ethers'
 import { useCallback, useMemo } from 'react'
 import { useAsync } from 'react-use'
@@ -35,6 +37,7 @@ import { EVM_TRANSACTION_SERVICE } from '~lib/services/transaction/evm'
 import { StoreKey, useLocalStorage } from '~lib/store'
 import { getSigningWallet } from '~lib/wallet'
 
+import { reduceTypes } from './typedData'
 import {
   EvmTxParams,
   EvmTxPopulatedParams,
@@ -507,6 +510,29 @@ export class EvmProviderAdaptor implements ProviderAdaptor {
   async signMessage(wallet: IChainAccount, message: any): Promise<any> {
     const signer = await getSigningWallet(wallet)
     return signer.signMessage(message)
+  }
+
+  async getTypedData(typedData: any): Promise<any> {
+    const { domain, types: originalTypes, primaryType, message } = typedData
+    const types = reduceTypes(originalTypes, primaryType)
+    const populated = await _TypedDataEncoder.resolveNames(
+      domain,
+      types,
+      message,
+      (name: string) => {
+        return this.provider.resolveName(name) as Promise<string>
+      }
+    )
+    typedData = _TypedDataEncoder.getPayload(
+      populated.domain,
+      types,
+      populated.value
+    )
+    delete typedData.types.EIP712Domain
+    if (primaryType != null && primaryType !== typedData.primaryType) {
+      throw ethErrors.rpc.invalidParams('Invalid primaryType')
+    }
+    return typedData
   }
 
   async signTypedData(wallet: IChainAccount, typedData: any): Promise<any> {

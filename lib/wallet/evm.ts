@@ -1,3 +1,5 @@
+import { joinSignature } from '@ethersproject/bytes'
+import { _TypedDataEncoder } from '@ethersproject/hash'
 import { TransactionRequest } from '@ethersproject/providers'
 import assert from 'assert'
 import { ethers } from 'ethers'
@@ -67,8 +69,12 @@ export class EvmWallet implements SigningWallet {
     return this.signingWallet.signMessage(message)
   }
 
-  signTypedData({ domain, types, value }: any): Promise<string> {
-    return this.signingWallet._signTypedData(domain, types, value)
+  async signTypedData({ domain, types, message }: any): Promise<string> {
+    return joinSignature(
+      this.signingWallet
+        ._signingKey()
+        .signDigest(_TypedDataEncoder.hash(domain, types, message))
+    )
   }
 
   static checkAddress(address: string): string | false {

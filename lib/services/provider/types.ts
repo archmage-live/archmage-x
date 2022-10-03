@@ -28,6 +28,8 @@ export interface ProviderAdaptor {
 
   signMessage(account: IChainAccount, message: any): Promise<any>
 
+  getTypedData(typedData: any): Promise<any>
+
   signTypedData(account: IChainAccount, typedData: any): Promise<any>
 }
 

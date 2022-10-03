@@ -17,11 +17,13 @@ import {
   ConsentType,
   Permission,
   RequestPermissionPayload,
+  SignTypedDataPayload,
   WatchAssetPayload
 } from '~lib/services/consentService'
 import { NETWORK_SERVICE } from '~lib/services/network'
 import { PASSWORD_SERVICE } from '~lib/services/passwordService'
 import { TOKEN_SERVICE } from '~lib/services/token'
+import { checkAddress } from '~lib/wallet'
 import { getEvmChainId } from '~pages/Settings/SettingsNetworks/NetworkAdd/EvmNetworkAdd'
 
 import { EvmProvider, EvmProviderAdaptor } from '.'
@@ -111,7 +113,7 @@ export class EvmPermissionedProvider {
             'Please use eth_signTypedData_v4 instead.'
           )
         case 'eth_signTypedData_v4':
-          return await this.signTypedData(params)
+          return await this.signTypedData(ctx, params as any)
       }
 
       // always allow readonly calls to provider, regardless of whether locked
@@ -160,8 +162,37 @@ export class EvmPermissionedProvider {
     // TODO: consent
   }
 
-  async signTypedData([params]: Array<any>) {
-    // TODO: consent
+  async signTypedData(ctx: Context, [from, typedData]: [string, any]) {
+    if (
+      !this.account?.address ||
+      this.account.address !== checkAddress(NetworkKind.EVM, from)
+    ) {
+      throw ethErrors.provider.unauthorized()
+    }
+
+    const provider = new EvmProviderAdaptor(this.provider)
+    typedData = await provider.getTypedData(JSON.parse(typedData))
+
+    const { chainId, name, version, verifyingContract } = typedData.domain
+
+    if (!chainId || +chainId !== this.network.chainId) {
+      throw ethErrors.rpc.invalidParams('Mismatched chainId')
+    }
+
+    return await CONSENT_SERVICE.requestConsent(ctx, {
+      networkId: this.network.id,
+      accountId: this.account.id,
+      type: ConsentType.SIGN_TYPED_DATA,
+      origin: this.origin,
+      payload: {
+        metadata: [
+          ['Name', name],
+          ['Version', version],
+          ['Contract', verifyingContract]
+        ],
+        typedData
+      } as SignTypedDataPayload
+    } as any as ConsentRequest)
   }
 
   getAccounts() {

@@ -240,7 +240,13 @@ const ConsentByType = ({
     case ConsentType.SIGN_MSG:
       return <SignMessage request={request} />
     case ConsentType.SIGN_TYPED_DATA:
-      return <SignTypedData request={request} />
+      return (
+        <SignTypedData
+          request={request}
+          onComplete={onComplete}
+          rejectAllButton={rejectAllButton}
+        />
+      )
     case ConsentType.WATCH_ASSET:
       return (
         <WatchAsset

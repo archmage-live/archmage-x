@@ -43,6 +43,11 @@ export type WatchAssetPayload = {
   balance: string
 }
 
+export type SignTypedDataPayload = {
+  metadata: [string, string][]
+  typedData: any
+}
+
 export enum ConsentType {
   UNLOCK = 'unlock',
   REQUEST_PERMISSION = 'requestPermission',
@@ -217,120 +222,126 @@ class ConsentService implements IConsentService {
       throw new Error(`transaction request with id ${req.id} not found`)
     }
 
-    // delete cache
-    this.consentRequests.splice(index, 1)
-    await SESSION_STORE.set(StoreKey.CONSENT_REQUESTS, this.consentRequests)
-
-    await this.setBadge()
-
-    let resolve, reject
+    let resolve: any, reject: any
     const wait = this.waits.get(req.id)
     if (wait) {
       ;[resolve, reject] = wait
       this.waits.delete(req.id)
     }
 
-    if (!approve) {
-      reject?.(ethErrors.provider.userRejectedRequest())
-      return
-    }
-
-    if (req.type === ConsentType.UNLOCK) {
-      resolve?.()
-      return
-    }
-
-    try {
-      let network: INetwork | undefined
-      let accounts: IChainAccount[] | undefined
-      let account: IChainAccount | undefined
-      let provider: ProviderAdaptor | undefined
-      if (req.networkId != null) {
-        network = await NETWORK_SERVICE.getNetwork(req.networkId)
-        assert(network)
-        provider = await getProvider(network)
-      }
-      if (req.accountId != null) {
-        accounts = await WALLET_SERVICE.getChainAccounts(
-          Array.isArray(req.accountId) ? req.accountId : [req.accountId]
-        )
-        assert(accounts.length)
-        account = accounts[0]
+    const process = async () => {
+      if (!approve) {
+        reject?.(ethErrors.provider.userRejectedRequest())
+        return
       }
 
-      let response
-      switch (req.type) {
-        case ConsentType.REQUEST_PERMISSION:
-          response = await this.requestPermission(
-            accounts!,
-            req.origin,
-            req.payload
-          )
-          break
-        case ConsentType.TRANSACTION: {
-          const payload = req.payload as TransactionPayload
-          formatTxParams(network!, payload.txParams, payload.populatedParams)
+      if (req.type === ConsentType.UNLOCK) {
+        resolve?.()
+        return
+      }
 
-          const signedTx = await provider!.signTransaction(
-            account!,
-            payload.txParams
-          )
-          const txResponse = await provider!.sendTransaction(signedTx)
-          await EVM_TRANSACTION_SERVICE.addPendingTx(
-            account!,
-            payload.txParams,
-            txResponse,
-            req.origin,
-            payload.populatedParams?.functionSig
-          )
-          response = txResponse.hash
-          break
+      try {
+        let network: INetwork | undefined
+        let accounts: IChainAccount[] | undefined
+        let account: IChainAccount | undefined
+        let provider: ProviderAdaptor | undefined
+        if (req.networkId != null) {
+          network = await NETWORK_SERVICE.getNetwork(req.networkId)
+          assert(network)
+          provider = await getProvider(network)
         }
-        case ConsentType.SIGN_MSG:
-          response = await provider!.signMessage(account!, req.payload)
-          break
-        case ConsentType.SIGN_TYPED_DATA:
-          response = await provider!.signTypedData(account!, req.payload)
-          break
-        case ConsentType.WATCH_ASSET: {
-          const { token, info, balance } = req.payload as WatchAssetPayload
-          const existing = await TOKEN_SERVICE.getToken({
-            account: account!,
-            token
-          })
-          if (existing) {
-            if (existing.visible === TokenVisibility.SHOW) {
-              reject?.(ethErrors.rpc.invalidRequest('Token already exists'))
-              return
-            }
-            await TOKEN_SERVICE.setTokenVisibility(
-              existing.id,
-              TokenVisibility.SHOW
+        if (req.accountId != null) {
+          accounts = await WALLET_SERVICE.getChainAccounts(
+            Array.isArray(req.accountId) ? req.accountId : [req.accountId]
+          )
+          assert(accounts.length)
+          account = accounts[0]
+        }
+
+        let response
+        switch (req.type) {
+          case ConsentType.REQUEST_PERMISSION:
+            response = await this.requestPermission(
+              accounts!,
+              req.origin,
+              req.payload
             )
-          } else {
-            await TOKEN_SERVICE.addToken({
-              account: account!,
-              token,
-              info: { info, balance }
-            })
-          }
-          break
-        }
-        case ConsentType.ADD_NETWORK: {
-          const { networkKind, chainId, info } =
-            req.payload as AddNetworkPayload
-          await NETWORK_SERVICE.addNetwork(networkKind, chainId, info)
-          break
-        }
-        case ConsentType.SWITCH_NETWORK:
-          await setActiveNetwork(network!.id)
-          break
-      }
+            break
+          case ConsentType.TRANSACTION: {
+            const payload = req.payload as TransactionPayload
+            formatTxParams(network!, payload.txParams, payload.populatedParams)
 
-      resolve?.(response)
-    } catch (err) {
-      reject?.(err)
+            const signedTx = await provider!.signTransaction(
+              account!,
+              payload.txParams
+            )
+            const txResponse = await provider!.sendTransaction(signedTx)
+            await EVM_TRANSACTION_SERVICE.addPendingTx(
+              account!,
+              payload.txParams,
+              txResponse,
+              req.origin,
+              payload.populatedParams?.functionSig
+            )
+            response = txResponse.hash
+            break
+          }
+          case ConsentType.SIGN_MSG:
+            response = await provider!.signMessage(account!, req.payload)
+            break
+          case ConsentType.SIGN_TYPED_DATA: {
+            const { typedData } = req.payload as SignTypedDataPayload
+            response = await provider!.signTypedData(account!, typedData)
+            break
+          }
+          case ConsentType.WATCH_ASSET: {
+            const { token, info, balance } = req.payload as WatchAssetPayload
+            const existing = await TOKEN_SERVICE.getToken({
+              account: account!,
+              token
+            })
+            if (existing) {
+              if (existing.visible === TokenVisibility.SHOW) {
+                reject?.(ethErrors.rpc.invalidRequest('Token already exists'))
+                return
+              }
+              await TOKEN_SERVICE.setTokenVisibility(
+                existing.id,
+                TokenVisibility.SHOW
+              )
+            } else {
+              await TOKEN_SERVICE.addToken({
+                account: account!,
+                token,
+                info: { info, balance }
+              })
+            }
+            break
+          }
+          case ConsentType.ADD_NETWORK: {
+            const { networkKind, chainId, info } =
+              req.payload as AddNetworkPayload
+            await NETWORK_SERVICE.addNetwork(networkKind, chainId, info)
+            break
+          }
+          case ConsentType.SWITCH_NETWORK:
+            await setActiveNetwork(network!.id)
+            break
+        }
+
+        resolve?.(response)
+      } catch (err) {
+        reject?.(err)
+      }
     }
+
+    await process()
+
+    // delete cache
+    this.consentRequests.splice(index, 1)
+    await SESSION_STORE.set(StoreKey.CONSENT_REQUESTS, this.consentRequests)
+
+    await this.setBadge()
   }
 
   private async requestPermission(
