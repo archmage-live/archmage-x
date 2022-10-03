@@ -242,7 +242,13 @@ const ConsentByType = ({
     case ConsentType.SIGN_TYPED_DATA:
       return <SignTypedData request={request} />
     case ConsentType.WATCH_ASSET:
-      return <WatchAsset request={request} />
+      return (
+        <WatchAsset
+          request={request}
+          onComplete={onComplete}
+          rejectAllButton={rejectAllButton}
+        />
+      )
     case ConsentType.ADD_NETWORK:
       return (
         <AddNetwork

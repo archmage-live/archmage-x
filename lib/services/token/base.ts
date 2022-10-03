@@ -91,7 +91,31 @@ export class BaseTokenService {
     }
   }
 
-  async addToken(token: IToken): Promise<IToken> {
+  async addToken(
+    args: IToken | { account: IChainAccount; token: string; info: any }
+  ): Promise<IToken> {
+    const isToken = (token: any): token is IToken => {
+      return !!(token as IToken).address
+    }
+
+    let token
+    if (!isToken(args)) {
+      const { account, token: tokenAddr, info } = args
+      token = {
+        masterId: account.masterId,
+        index: account.index,
+        networkKind: account.networkKind,
+        chainId: account.chainId,
+        address: account.address,
+        sortId: 0, // TODO
+        token: tokenAddr,
+        visible: TokenVisibility.SHOW,
+        info
+      } as IToken
+    } else {
+      token = args
+    }
+
     token.id = await DB.tokens.add(token)
     return token
   }

@@ -43,7 +43,7 @@ export const ImportToken = ({
         colorScheme="purple"
         onClick={async () => {
           token.visible = TokenVisibility.SHOW
-          TOKEN_SERVICE.addToken(token)
+          await TOKEN_SERVICE.addToken(token)
           await previousStep()
         }}>
         Import

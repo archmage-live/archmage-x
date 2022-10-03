@@ -1,3 +1,4 @@
+import { TokenInfo } from '@uniswap/token-lists'
 import assert from 'assert'
 import { ethErrors } from 'eth-rpc-errors'
 import { ethers } from 'ethers'
@@ -5,8 +6,9 @@ import { ethers } from 'ethers'
 import { getActiveNetwork, getActiveNetworkByKind } from '~lib/active'
 import { NetworkKind } from '~lib/network'
 import { EvmChainInfo, EvmExplorer, NativeCurrency } from '~lib/network/evm'
+import { ERC20__factory } from '~lib/network/evm/abi'
 import { Context } from '~lib/rpc'
-import { IChainAccount, INetwork } from '~lib/schema'
+import { IChainAccount, INetwork, TokenVisibility } from '~lib/schema'
 import { getConnectedAccountsBySite } from '~lib/services/connectedSiteService'
 import {
   AddNetworkPayload,
@@ -14,10 +16,12 @@ import {
   ConsentRequest,
   ConsentType,
   Permission,
-  RequestPermissionPayload
+  RequestPermissionPayload,
+  WatchAssetPayload
 } from '~lib/services/consentService'
 import { NETWORK_SERVICE } from '~lib/services/network'
 import { PASSWORD_SERVICE } from '~lib/services/passwordService'
+import { TOKEN_SERVICE } from '~lib/services/token'
 import { getEvmChainId } from '~pages/Settings/SettingsNetworks/NetworkAdd/EvmNetworkAdd'
 
 import { EvmProvider, EvmProviderAdaptor } from '.'
@@ -91,7 +95,7 @@ export class EvmPermissionedProvider {
         case 'wallet_switchEthereumChain':
           return await this.switchEthereumChain(ctx, params)
         case 'wallet_watchAsset':
-          return await this.watchAsset(params)
+          return await this.watchAsset(ctx, params as any)
         case 'eth_sendTransaction':
           return await this.sendTransaction(ctx, params)
         case 'eth_sign':
@@ -351,8 +355,68 @@ export class EvmPermissionedProvider {
   }
 
   // https://eips.ethereum.org/EIPS/eip-747
-  async watchAsset([params]: Array<any>) {
-    // TODO: consent
+  async watchAsset(ctx: Context, params: WatchAssetParameters) {
+    if (!this.account?.address) {
+      throw ethErrors.provider.unauthorized()
+    }
+
+    if (params.type !== 'ERC20') {
+      throw ethErrors.rpc.invalidRequest(
+        'Currently only ERC20 token is supported'
+      )
+    }
+
+    const {
+      address,
+      symbol: symbolMayEmpty,
+      decimals: decimalsMayEmpty,
+      image
+    } = params.options
+
+    const token = ethers.utils.getAddress(address)
+    const tokenContract = ERC20__factory.connect(token, this.provider)
+    const name = await tokenContract.name()
+    const symbol = await tokenContract.symbol()
+    const decimals = await tokenContract.decimals()
+    const balance = (
+      await tokenContract.balanceOf(this.account.address)
+    ).toString()
+
+    if (symbolMayEmpty != null && symbolMayEmpty !== symbol) {
+      throw ethErrors.rpc.invalidParams(
+        'Symbol is different form on-chain symbol'
+      )
+    }
+    if (decimalsMayEmpty != null && +decimalsMayEmpty !== decimals) {
+      throw ethErrors.rpc.invalidParams(
+        'Decimals is different form on-chain decimals'
+      )
+    }
+
+    const existing = await TOKEN_SERVICE.getToken({
+      account: this.account,
+      token
+    })
+    if (existing && existing.visible === TokenVisibility.SHOW) {
+      return true
+    }
+
+    const info = {
+      chainId: this.network.chainId,
+      address: token,
+      name,
+      decimals,
+      symbol,
+      logoURI: image
+    } as TokenInfo
+
+    await CONSENT_SERVICE.requestConsent(ctx, {
+      networkId: this.network.id,
+      accountId: this.account.id,
+      type: ConsentType.WATCH_ASSET,
+      origin: this.origin,
+      payload: { token, info, balance } as WatchAssetPayload
+    } as any as ConsentRequest)
 
     return true
   }
@@ -388,7 +452,7 @@ interface WatchAssetParameters {
   options: {
     address: string // The hexadecimal Ethereum address of the token contract
     symbol?: string // A ticker symbol or shorthand, up to 5 alphanumerical characters
-    decimals?: number // The number of asset decimals
+    decimals?: number | string // The number of asset decimals
     image?: string // A string url of the token logo
   }
 }

@@ -158,10 +158,10 @@ export const ManageTokens = ({
           network={network}
           tokenList={newTokenList}
           undetermined="import"
-          onImport={() => {
+          onImport={async () => {
             setTokenList(newTokenList)
             setToken(undefined)
-            nextStep()
+            await nextStep()
           }}
         />
       )}
@@ -171,7 +171,7 @@ export const ManageTokens = ({
           token={newToken.token}
           tokenList={newToken.tokenList}
           undetermined="import"
-          onClick={() => {
+          onClick={async () => {
             if (
               (newToken.existing || newToken.tokenList) &&
               newToken.token.visible === TokenVisibility.UNSPECIFIED
@@ -189,7 +189,7 @@ export const ManageTokens = ({
             }
             setToken(newToken)
             setTokenList(undefined)
-            nextStep()
+            await nextStep()
           }}
         />
       )}
@@ -212,7 +212,7 @@ export const ManageTokens = ({
               <TokenList
                 visible={
                   showBlacklisted
-                    ? TokenVisible.WHTIELIST_AND_BLACKLIST
+                    ? TokenVisible.WHITELIST_AND_BLACKLIST
                     : TokenVisible.ONLY_WHITELIST
                 }
                 onChange={onTokenChange}

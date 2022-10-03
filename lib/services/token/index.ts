@@ -101,7 +101,9 @@ interface ITokenService {
     id: number | { account: IChainAccount; token: string }
   ): Promise<IToken | undefined>
 
-  addToken(token: IToken): Promise<IToken>
+  addToken(
+    token: IToken | { account: IChainAccount; token: string; info: any }
+  ): Promise<IToken>
 
   setTokenVisibility(id: number, visible: TokenVisibility): Promise<void>
 
@@ -319,9 +321,16 @@ export function useTokens(account?: IChainAccount): {
   return { tokens, fetchTokens }
 }
 
-export function useToken(id?: number) {
+export function useTokenById(id?: number) {
   return useLiveQuery(async () => {
     if (id === undefined) return
     return TOKEN_SERVICE.getToken(id)
-  })
+  }, [id])
+}
+
+export function useToken(account?: IChainAccount, token?: string) {
+  return useLiveQuery(async () => {
+    if (!account || !token) return
+    return TOKEN_SERVICE.getToken({ account, token })
+  }, [account, token])
 }

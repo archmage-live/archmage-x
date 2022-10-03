@@ -49,7 +49,7 @@ export const TokenItem = ({
 }: {
   token: IToken
   tokenList?: ITokenList
-  undetermined?: 'import' | 'display'
+  undetermined?: 'import' | 'display' | 'displayWithPrice'
   currencySymbol?: string
   price?: number
   change24Hour?: number | null
@@ -178,7 +178,7 @@ export const TokenItem = ({
             </Text>
           </Stack>
 
-          {!undetermined && (
+          {(!undetermined || undetermined === 'displayWithPrice') && (
             <Stack maxW="50%" align="end">
               <Text
                 fontWeight="medium"

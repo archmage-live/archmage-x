@@ -6,7 +6,7 @@ import { setActiveNetwork } from '~lib/active'
 import { ENV } from '~lib/env'
 import { NetworkKind } from '~lib/network'
 import { Context, SERVICE_WORKER_CLIENT, SERVICE_WORKER_SERVER } from '~lib/rpc'
-import { ChainId, IChainAccount, INetwork } from '~lib/schema'
+import { ChainId, IChainAccount, INetwork, TokenVisibility } from '~lib/schema'
 import { CONNECTED_SITE_SERVICE } from '~lib/services/connectedSiteService'
 import { NETWORK_SERVICE } from '~lib/services/network'
 import { PASSWORD_SERVICE } from '~lib/services/passwordService'
@@ -16,6 +16,7 @@ import {
   formatTxParams,
   getProvider
 } from '~lib/services/provider'
+import { TOKEN_SERVICE } from '~lib/services/token'
 import { EVM_TRANSACTION_SERVICE } from '~lib/services/transaction/evm'
 import { WALLET_SERVICE } from '~lib/services/walletService'
 import { SESSION_STORE, StoreKey, useSessionStorage } from '~lib/store'
@@ -34,6 +35,12 @@ export type AddNetworkPayload = {
   networkKind: NetworkKind
   chainId: ChainId
   info: any
+}
+
+export type WatchAssetPayload = {
+  token: string
+  info: any
+  balance: string
 }
 
 export enum ConsentType {
@@ -236,6 +243,7 @@ class ConsentService implements IConsentService {
     try {
       let network: INetwork | undefined
       let accounts: IChainAccount[] | undefined
+      let account: IChainAccount | undefined
       let provider: ProviderAdaptor | undefined
       if (req.networkId != null) {
         network = await NETWORK_SERVICE.getNetwork(req.networkId)
@@ -246,7 +254,8 @@ class ConsentService implements IConsentService {
         accounts = await WALLET_SERVICE.getChainAccounts(
           Array.isArray(req.accountId) ? req.accountId : [req.accountId]
         )
-        assert(accounts)
+        assert(accounts.length)
+        account = accounts[0]
       }
 
       let response
@@ -262,15 +271,13 @@ class ConsentService implements IConsentService {
           const payload = req.payload as TransactionPayload
           formatTxParams(network!, payload.txParams, payload.populatedParams)
 
-          const account = accounts![0]
-
           const signedTx = await provider!.signTransaction(
-            account,
+            account!,
             payload.txParams
           )
           const txResponse = await provider!.sendTransaction(signedTx)
           await EVM_TRANSACTION_SERVICE.addPendingTx(
-            account,
+            account!,
             payload.txParams,
             txResponse,
             req.origin,
@@ -280,14 +287,35 @@ class ConsentService implements IConsentService {
           break
         }
         case ConsentType.SIGN_MSG:
-          response = await provider!.signMessage(accounts![0], req.payload)
+          response = await provider!.signMessage(account!, req.payload)
           break
         case ConsentType.SIGN_TYPED_DATA:
-          response = await provider!.signTypedData(accounts![0], req.payload)
+          response = await provider!.signTypedData(account!, req.payload)
           break
-        case ConsentType.WATCH_ASSET:
-          // TODO
+        case ConsentType.WATCH_ASSET: {
+          const { token, info, balance } = req.payload as WatchAssetPayload
+          const existing = await TOKEN_SERVICE.getToken({
+            account: account!,
+            token
+          })
+          if (existing) {
+            if (existing.visible === TokenVisibility.SHOW) {
+              reject?.(ethErrors.rpc.invalidRequest('Token already exists'))
+              return
+            }
+            await TOKEN_SERVICE.setTokenVisibility(
+              existing.id,
+              TokenVisibility.SHOW
+            )
+          } else {
+            await TOKEN_SERVICE.addToken({
+              account: account!,
+              token,
+              info: { info, balance }
+            })
+          }
           break
+        }
         case ConsentType.ADD_NETWORK: {
           const { networkKind, chainId, info } =
             req.payload as AddNetworkPayload

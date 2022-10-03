@@ -13,7 +13,7 @@ import { TokenItem } from './TokenItem'
 export enum TokenVisible {
   ONLY_WHITELIST,
   ONLY_BLACKLIST,
-  WHTIELIST_AND_BLACKLIST,
+  WHITELIST_AND_BLACKLIST,
   INCLUDES_WHITELIST,
   ALL
 }
@@ -45,7 +45,7 @@ export const TokenList = ({
               return token.visible === TokenVisibility.SHOW
             case TokenVisible.ONLY_BLACKLIST:
               return token.visible === TokenVisibility.HIDE
-            case TokenVisible.WHTIELIST_AND_BLACKLIST:
+            case TokenVisible.WHITELIST_AND_BLACKLIST:
               return token.visible !== TokenVisibility.UNSPECIFIED
             case TokenVisible.INCLUDES_WHITELIST:
               return token.visible !== TokenVisibility.HIDE
