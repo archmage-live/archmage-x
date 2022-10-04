@@ -15,6 +15,7 @@ export interface NetworkInfo {
   name: string
   description?: string
   chainId: number | string
+  currencyName: string
   currencySymbol: string
   decimals: number
   rpcUrl?: string
@@ -29,6 +30,7 @@ export function getNetworkInfo(network: INetwork): NetworkInfo {
         name: info.name,
         description: info.title || info.name,
         chainId: info.chainId,
+        currencyName: info.nativeCurrency.name,
         currencySymbol: info.nativeCurrency.symbol,
         decimals: info.nativeCurrency.decimals,
         rpcUrl: info.rpc.at(0),
@@ -41,6 +43,7 @@ export function getNetworkInfo(network: INetwork): NetworkInfo {
         name: info.chainName,
         description: info.chainName,
         chainId: info.chainId,
+        currencyName: info.feeCurrencies?.[0].coinDenom,
         currencySymbol: info.feeCurrencies?.[0].coinDenom,
         decimals: info.feeCurrencies?.[0].coinDecimals
       }

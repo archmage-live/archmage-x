@@ -392,7 +392,7 @@ const GasFeeOptionTooltipText = ({
           drops.
         </>
       )
-    case GasOption.SITE_SUGGESTED:
+    case GasOption.ADVANCED:
       return (
         <>
           Use <chakra.span fontWeight="bold">Advanced</chakra.span> to customize
@@ -400,7 +400,7 @@ const GasFeeOptionTooltipText = ({
           Interact at your own risk.
         </>
       )
-    case GasOption.ADVANCED:
+    case GasOption.SITE_SUGGESTED:
       return <>{origin} has suggested this price.</>
   }
 }

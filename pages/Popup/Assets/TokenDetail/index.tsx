@@ -24,7 +24,7 @@ import { useBalance } from '~lib/services/provider'
 import { getTokenBrief } from '~lib/services/token'
 import { AccountMenu } from '~pages/Popup/Assets/AccountMenu'
 import { useDepositModal } from '~pages/Popup/Assets/Deposit'
-import { useSendModal } from '~pages/Popup/Assets/Send'
+import { useSendModal, useSendTokenId } from '~pages/Popup/Assets/Send'
 import { useModalBox } from '~pages/Popup/ModalBox'
 
 const isOpenAtom = atom<boolean>(false)
@@ -49,6 +49,8 @@ export default function TokenDetail({ onClose }: { onClose: () => void }) {
 
   const { onOpen: onSendOpen } = useSendModal()
   const { onOpen: onDepositOpen } = useDepositModal()
+
+  const [, setSendTokenId] = useSendTokenId()
 
   const btnColorScheme = useColorModeValue('purple', undefined)
 
@@ -128,7 +130,12 @@ export default function TokenDetail({ onClose }: { onClose: () => void }) {
           size="md"
           w={36}
           colorScheme={btnColorScheme}
-          onClick={onSendOpen}>
+          onClick={() => {
+            if (token) {
+              setSendTokenId(token.id)
+              onSendOpen()
+            }
+          }}>
           Send
         </Button>
       </HStack>

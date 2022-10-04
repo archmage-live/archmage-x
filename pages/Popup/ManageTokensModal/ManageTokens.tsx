@@ -25,22 +25,22 @@ import {
   TOKEN_SERVICE,
   useTokenLists
 } from '~lib/services/token'
-import { TokenItem } from '~pages/Popup/Assets/TokenItem'
+import { TokenItem, TokenItemStyle } from '~pages/Popup/Assets/TokenItem'
 import { TokenList, TokenVisible } from '~pages/Popup/Assets/TokenList'
 
+import { useManageTokensTitleAtom } from '.'
 import { TokenListItem } from './TokenListItem'
 
 const TABS = ['Lists', 'Tokens'] as const
 
 export const ManageTokens = ({
-  setTitle,
   setTokenList,
   setToken
 }: {
-  setTitle: (title: string) => void
   setTokenList: (tokenList: ITokenList | undefined) => void
   setToken: (token: SearchedToken | undefined) => void
 }) => {
+  const [, setTitle] = useManageTokensTitleAtom()
   useEffect(() => {
     setTitle('Manage Token Lists')
   }, [setTitle])
@@ -120,9 +120,9 @@ export const ManageTokens = ({
   useDebounce(fetch, 1000, [fetch])
 
   const onTokenChange = useCallback(
-    (token: IToken) => {
+    async (token: IToken) => {
       if (token.token.toLowerCase() === newToken?.token.token.toLowerCase()) {
-        fetch()
+        await fetch()
       }
     },
     [fetch, newToken]
@@ -170,7 +170,7 @@ export const ManageTokens = ({
         <TokenItem
           token={newToken.token}
           tokenList={newToken.tokenList}
-          undetermined="import"
+          style={TokenItemStyle.IMPORT}
           onClick={async () => {
             if (
               (newToken.existing || newToken.tokenList) &&

@@ -160,7 +160,8 @@ class RpcConn {
       ...msg.args,
       {
         ...msg.ctx,
-        fromUrl: this.fromInternal ? undefined : port.sender?.url
+        fromUrl: this.fromInternal ? undefined : port.sender?.url,
+        fromInternal: this.fromInternal
       } as Context
     ]
 

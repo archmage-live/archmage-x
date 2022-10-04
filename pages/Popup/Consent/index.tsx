@@ -18,6 +18,7 @@ import {
   Text,
   useDisclosure
 } from '@chakra-ui/react'
+import { atom } from 'jotai'
 import { ReactNode, useCallback, useEffect, useMemo, useState } from 'react'
 import * as React from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -29,7 +30,10 @@ import {
   ConsentType,
   useConsentRequests
 } from '~lib/services/consentService'
+import { useIsPopupWindow } from '~pages/Popup'
+import { useSendModal } from '~pages/Popup/Assets/Send'
 
+import { useModalBox } from '../ModalBox'
 import { AddNetwork } from './AddNetwork'
 import { RequestPermission } from './RequestPermission'
 import { SignMessage } from './SignMessage'
@@ -38,7 +42,23 @@ import { SwitchNetwork } from './SwitchNetwork'
 import { Transaction } from './Transaction'
 import { WatchAsset } from './WatchAsset'
 
-export default function Consent() {
+const isOpenAtom = atom<boolean>(false)
+
+export function useConsentModal() {
+  return useModalBox(isOpenAtom)
+}
+
+export default function Consent({
+  isOpen,
+  onClose
+}: {
+  isOpen: boolean
+  onClose: () => void
+}) {
+  const isPopupWindow = useIsPopupWindow()
+
+  const { onClose: onSendClose } = useSendModal()
+
   const navigate = useNavigate()
 
   const allRequests = useConsentRequests()
@@ -67,10 +87,12 @@ export default function Consent() {
 
   const onComplete = useCallback(async () => {
     const requests = await CONSENT_SERVICE.getRequests()
-    if (!requests.length) {
+    if (!requests.length && isPopupWindow) {
       window.close()
     }
-  }, [])
+    onClose()
+    onSendClose()
+  }, [isPopupWindow, onClose, onSendClose])
 
   const {
     isOpen: isRejectOpen,

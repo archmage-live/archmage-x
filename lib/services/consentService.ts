@@ -68,12 +68,16 @@ export type ConsentRequest = {
   networkId: number
   accountId: number | number[]
   type: ConsentType
-  origin: string
+  origin?: string
   payload: any
 }
 
 interface IConsentService {
-  requestConsent(ctx: Context, req: Omit<ConsentRequest, 'id'>): Promise<any>
+  requestConsent(
+    req: Omit<ConsentRequest, 'id'>,
+    ctx?: Context,
+    waitCompleted?: boolean
+  ): Promise<any>
 
   getRequests(): Promise<ConsentRequest[]>
 
@@ -159,8 +163,9 @@ class ConsentService implements IConsentService {
 
   // be called by content script
   async requestConsent(
-    ctx: Context,
-    request: Omit<ConsentRequest, 'id'>
+    request: Omit<ConsentRequest, 'id'>,
+    ctx?: Context,
+    waitCompleted = true
   ): Promise<any> {
     // check wallet keystore ability for signing request
     switch (request.type) {
@@ -189,32 +194,39 @@ class ConsentService implements IConsentService {
     }
     await this.addRequest(req)
 
-    let resolve, reject
-    const promise = new Promise((res, rej) => {
-      resolve = res
-      reject = rej
-    })
-    this.waits.set(req.id, [resolve as any, reject as any])
+    let promise
+    if (waitCompleted) {
+      let resolve, reject
+      promise = new Promise((res, rej) => {
+        resolve = res
+        reject = rej
+      })
+      this.waits.set(req.id, [resolve as any, reject as any])
+    }
 
     await this.setBadge()
 
-    // open popup
-    const window = await createWindow(ctx, '/')
+    if (ctx && !ctx.fromInternal) {
+      // open popup
+      const window = await createWindow(ctx, '/')
 
-    if (request.type === ConsentType.UNLOCK) {
-      const listener = async (windowId: number) => {
-        if (windowId !== window.id) {
-          return
+      if (request.type === ConsentType.UNLOCK) {
+        const listener = async (windowId: number) => {
+          if (windowId !== window.id) {
+            return
+          }
+          if (await PASSWORD_SERVICE.isLocked()) {
+            await this.processRequest(req, false)
+          }
+          browser.windows.onRemoved.removeListener(listener)
         }
-        if (await PASSWORD_SERVICE.isLocked()) {
-          await this.processRequest(req, false)
-        }
-        browser.windows.onRemoved.removeListener(listener)
+        browser.windows.onRemoved.addListener(listener)
       }
-      browser.windows.onRemoved.addListener(listener)
     }
 
-    return await promise
+    if (waitCompleted) {
+      return await promise
+    }
   }
 
   // be called by popup
@@ -267,7 +279,7 @@ class ConsentService implements IConsentService {
           case ConsentType.REQUEST_PERMISSION:
             response = await this.requestPermission(
               accounts!,
-              req.origin,
+              req.origin!,
               req.payload
             )
             break

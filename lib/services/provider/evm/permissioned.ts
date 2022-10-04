@@ -147,13 +147,16 @@ export class EvmPermissionedProvider {
     const provider = new EvmProviderAdaptor(this.provider)
     const txPayload = await provider.populateTransaction(this.account, params)
 
-    return CONSENT_SERVICE.requestConsent(ctx, {
-      networkId: this.network.id,
-      accountId: this.account.id,
-      type: ConsentType.TRANSACTION,
-      origin: this.origin,
-      payload: txPayload
-    })
+    return CONSENT_SERVICE.requestConsent(
+      {
+        networkId: this.network.id,
+        accountId: this.account.id,
+        type: ConsentType.TRANSACTION,
+        origin: this.origin,
+        payload: txPayload
+      },
+      ctx
+    )
   }
 
   // https://ethereum.org/en/developers/docs/apis/json-rpc/#eth_sign
@@ -175,15 +178,18 @@ export class EvmPermissionedProvider {
 
     message = hexlify(arrayify(message))
 
-    return await CONSENT_SERVICE.requestConsent(ctx, {
-      networkId: this.network.id,
-      accountId: this.account.id,
-      type: ConsentType.SIGN_MSG,
-      origin: this.origin,
-      payload: {
-        message
-      } as SignMsgPayload
-    } as any as ConsentRequest)
+    return await CONSENT_SERVICE.requestConsent(
+      {
+        networkId: this.network.id,
+        accountId: this.account.id,
+        type: ConsentType.SIGN_MSG,
+        origin: this.origin,
+        payload: {
+          message
+        } as SignMsgPayload
+      } as any as ConsentRequest,
+      ctx
+    )
   }
 
   async signTypedData(ctx: Context, [from, typedData]: [string, any]) {
@@ -203,20 +209,23 @@ export class EvmPermissionedProvider {
       throw ethErrors.rpc.invalidParams('Mismatched chainId')
     }
 
-    return await CONSENT_SERVICE.requestConsent(ctx, {
-      networkId: this.network.id,
-      accountId: this.account.id,
-      type: ConsentType.SIGN_TYPED_DATA,
-      origin: this.origin,
-      payload: {
-        metadata: [
-          ['Name', name],
-          ['Version', version],
-          ['Contract', verifyingContract]
-        ],
-        typedData
-      } as SignTypedDataPayload
-    } as any as ConsentRequest)
+    return await CONSENT_SERVICE.requestConsent(
+      {
+        networkId: this.network.id,
+        accountId: this.account.id,
+        type: ConsentType.SIGN_TYPED_DATA,
+        origin: this.origin,
+        payload: {
+          metadata: [
+            ['Name', name],
+            ['Version', version],
+            ['Contract', verifyingContract]
+          ],
+          typedData
+        } as SignTypedDataPayload
+      } as any as ConsentRequest,
+      ctx
+    )
   }
 
   getAccounts() {
@@ -226,13 +235,16 @@ export class EvmPermissionedProvider {
   // https://eips.ethereum.org/EIPS/eip-1102
   async requestAccounts(ctx: Context) {
     if (await PASSWORD_SERVICE.isLocked()) {
-      await CONSENT_SERVICE.requestConsent(ctx, {
-        networkId: undefined,
-        accountId: undefined,
-        type: ConsentType.UNLOCK,
-        origin: this.origin,
-        payload: {}
-      } as any as ConsentRequest)
+      await CONSENT_SERVICE.requestConsent(
+        {
+          networkId: undefined,
+          accountId: undefined,
+          type: ConsentType.UNLOCK,
+          origin: this.origin,
+          payload: {}
+        } as any as ConsentRequest,
+        ctx
+      )
     }
 
     await this.getWallet()
@@ -279,15 +291,18 @@ export class EvmPermissionedProvider {
       throw ethErrors.rpc.invalidParams()
     }
 
-    await CONSENT_SERVICE.requestConsent(ctx, {
-      networkId: this.network.id!,
-      accountId: [],
-      type: ConsentType.REQUEST_PERMISSION,
-      origin: this.origin,
-      payload: {
-        permissions: [{ permission: Permission.ACCOUNT }]
-      } as RequestPermissionPayload
-    })
+    await CONSENT_SERVICE.requestConsent(
+      {
+        networkId: this.network.id!,
+        accountId: [],
+        type: ConsentType.REQUEST_PERMISSION,
+        origin: this.origin,
+        payload: {
+          permissions: [{ permission: Permission.ACCOUNT }]
+        } as RequestPermissionPayload
+      },
+      ctx
+    )
 
     await this.getWallet()
 
@@ -365,17 +380,20 @@ export class EvmPermissionedProvider {
       throw ethErrors.rpc.invalidParams('Mismatched chainId')
     }
 
-    await CONSENT_SERVICE.requestConsent(ctx, {
-      networkId: undefined,
-      accountId: undefined,
-      type: ConsentType.ADD_NETWORK,
-      origin: this.origin,
-      payload: {
-        networkKind: NetworkKind.EVM,
-        chainId,
-        info
-      } as AddNetworkPayload
-    } as any as ConsentRequest)
+    await CONSENT_SERVICE.requestConsent(
+      {
+        networkId: undefined,
+        accountId: undefined,
+        type: ConsentType.ADD_NETWORK,
+        origin: this.origin,
+        payload: {
+          networkKind: NetworkKind.EVM,
+          chainId,
+          info
+        } as AddNetworkPayload
+      } as any as ConsentRequest,
+      ctx
+    )
 
     return this.switchEthereumChain(ctx, [
       { chainId: params.chainId } as SwitchEthereumChainParameter
@@ -398,13 +416,16 @@ export class EvmPermissionedProvider {
       )
     }
 
-    await CONSENT_SERVICE.requestConsent(ctx, {
-      networkId: network.id,
-      accountId: undefined,
-      type: ConsentType.SWITCH_NETWORK,
-      origin: this.origin,
-      payload: {}
-    } as any as ConsentRequest)
+    await CONSENT_SERVICE.requestConsent(
+      {
+        networkId: network.id,
+        accountId: undefined,
+        type: ConsentType.SWITCH_NETWORK,
+        origin: this.origin,
+        payload: {}
+      } as any as ConsentRequest,
+      ctx
+    )
 
     return null
   }
@@ -465,13 +486,16 @@ export class EvmPermissionedProvider {
       logoURI: image
     } as TokenInfo
 
-    await CONSENT_SERVICE.requestConsent(ctx, {
-      networkId: this.network.id,
-      accountId: this.account.id,
-      type: ConsentType.WATCH_ASSET,
-      origin: this.origin,
-      payload: { token, info, balance } as WatchAssetPayload
-    } as any as ConsentRequest)
+    await CONSENT_SERVICE.requestConsent(
+      {
+        networkId: this.network.id,
+        accountId: this.account.id,
+        type: ConsentType.WATCH_ASSET,
+        origin: this.origin,
+        payload: { token, info, balance } as WatchAssetPayload
+      } as any as ConsentRequest,
+      ctx
+    )
 
     return true
   }

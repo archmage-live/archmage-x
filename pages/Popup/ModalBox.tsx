@@ -9,6 +9,7 @@ import { Send, useSendModal } from '~pages/Popup/Assets/Send'
 import TokenDetail, {
   useTokenDetailModal
 } from '~pages/Popup/Assets/TokenDetail'
+import Consent, { useConsentModal } from '~pages/Popup/Consent'
 
 const numModalBoxAtom = atom<number>(0)
 const isOpenModalBoxAtom = atom<boolean>(false)
@@ -47,6 +48,7 @@ export const ModalBox = () => {
   const { isOpen: isDepositOpen, onClose: onDepositClose } = useDepositModal()
   const { isOpen: isTokenDetailOpen, onClose: onTokenDetailClose } =
     useTokenDetailModal()
+  const { isOpen: isConsentOpen, onClose: onConsentClose } = useConsentModal()
 
   const animate = !isOpen ? 'hidden' : 'visible'
 
@@ -85,6 +87,12 @@ export const ModalBox = () => {
           isOpen={isDepositOpen}
           onClose={onDepositClose}
           child={Deposit}
+        />
+
+        <ModalBoxRender
+          isOpen={isConsentOpen}
+          onClose={onConsentClose}
+          child={Consent}
         />
       </Box>
     </Box>

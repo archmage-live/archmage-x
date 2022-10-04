@@ -19,7 +19,7 @@ import { Toolbar } from './Toolbar'
 
 const isPopupWindowAtom = atom<boolean>(false)
 
-function useIsPopupWindow() {
+export function useIsPopupWindow() {
   const location = useLocation()
   const [isPopupWindow, setIsPopupWindowAtom] = useAtom(isPopupWindowAtom)
   if (isPopupWindow) {

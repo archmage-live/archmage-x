@@ -25,7 +25,7 @@ import { getNetworkInfo, useNetwork } from '~lib/services/network'
 import { useToken } from '~lib/services/token'
 import { useChainAccount } from '~lib/services/walletService'
 import { useSiteIconUrl } from '~lib/util'
-import { TokenItem } from '~pages/Popup/Assets/TokenItem'
+import { TokenItem, TokenItemStyle } from '~pages/Popup/Assets/TokenItem'
 
 export const WatchAsset = ({
   request,
@@ -116,7 +116,7 @@ export const WatchAsset = ({
             {token && (
               <TokenItem
                 token={token}
-                undetermined="displayWithPrice"
+                style={TokenItemStyle.DISPLAY_WITH_PRICE}
                 currencySymbol={price?.currencySymbol}
                 price={price?.price}
                 change24Hour={price?.change24Hour}

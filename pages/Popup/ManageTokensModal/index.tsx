@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { atom, useAtom } from 'jotai'
+import { ReactNode, useState } from 'react'
 
 import { WizardModal } from '~components/WizardModal'
 import { ITokenList } from '~lib/schema'
@@ -8,30 +9,33 @@ import { ImportToken } from './ImportToken'
 import { ImportTokenList } from './ImportTokenList'
 import { ManageTokens } from './ManageTokens'
 
+const manageTokensTitleAtom = atom<string>('')
+
+export function useManageTokensTitleAtom() {
+  return useAtom(manageTokensTitleAtom)
+}
+
 export const ManageTokensModal = ({
   isOpen,
-  onClose
+  onClose,
+  prelude
 }: {
   isOpen: boolean
   onClose: () => void
+  prelude?: ReactNode
 }) => {
-  const [title, setTitle] = useState('')
+  const [title] = useManageTokensTitleAtom()
 
   const [newTokenList, setNewTokenList] = useState<ITokenList>()
   const [newToken, setNewToken] = useState<SearchedToken>()
 
   return (
     <WizardModal isOpen={isOpen} onClose={onClose} title={title}>
-      <ManageTokens
-        setTitle={setTitle}
-        setTokenList={setNewTokenList}
-        setToken={setNewToken}
-      />
+      {prelude}
+      <ManageTokens setTokenList={setNewTokenList} setToken={setNewToken} />
       <>
-        {newTokenList && (
-          <ImportTokenList setTitle={setTitle} tokenList={newTokenList} />
-        )}
-        {newToken && <ImportToken setTitle={setTitle} token={newToken.token} />}
+        {newTokenList && <ImportTokenList tokenList={newTokenList} />}
+        {newToken && <ImportToken token={newToken.token} />}
       </>
     </WizardModal>
   )

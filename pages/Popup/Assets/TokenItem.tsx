@@ -32,39 +32,51 @@ import { BtnBox } from '~components/BtnBox'
 import { formatNumber } from '~lib/formatNumber'
 import { IToken, ITokenList, TokenVisibility } from '~lib/schema'
 import {
+  NativeToken,
   TOKEN_SERVICE,
+  getNativeTokenBrief,
   getTokenBrief,
   getTokenListBrief
 } from '~lib/services/token'
 
+export enum TokenItemStyle {
+  UNSPECIFIED = '',
+  IMPORT = 'import',
+  DISPLAY = 'display',
+  DISPLAY_WITH_PRICE = 'displayWithPrice'
+}
+
 export const TokenItem = ({
   token,
+  nativeToken,
   tokenList,
-  undetermined,
+  style,
   currencySymbol,
   price,
   change24Hour,
   onClick,
   onChange
 }: {
-  token: IToken
+  token?: IToken
+  nativeToken?: NativeToken
   tokenList?: ITokenList
-  undetermined?: 'import' | 'display' | 'displayWithPrice'
+  style?: TokenItemStyle
   currencySymbol?: string
   price?: number
   change24Hour?: number | null
   onClick?: () => void
   onChange?: () => void
 }) => {
-  const brief = getTokenBrief(token)
+  const brief = token ? getTokenBrief(token) : getNativeTokenBrief(nativeToken!)
 
   const tokenListBrief =
-    tokenList && getTokenListBrief(tokenList, token.chainId)
+    token && tokenList && getTokenListBrief(tokenList, token.chainId)
 
-  const existing = typeof token.id === 'number'
+  const existing = typeof token?.id === 'number'
 
   const setTokenVisibility = useCallback(
     async (visible: TokenVisibility) => {
+      if (!token) return
       await TOKEN_SERVICE.setTokenVisibility(token.id, visible)
       onChange?.()
     },
@@ -72,7 +84,7 @@ export const TokenItem = ({
   )
 
   let title1, title2, icon1, icon2, onClick1, onClick2
-  switch (token.visible) {
+  switch (token?.visible) {
     case TokenVisibility.UNSPECIFIED:
       title1 = 'Blacklist'
       title2 = 'Whitelist'
@@ -101,16 +113,16 @@ export const TokenItem = ({
 
   return (
     <Button
-      as={undetermined ? Box : undefined}
+      as={style === TokenItemStyle.IMPORT ? Box : undefined}
       size="lg"
       w="full"
       h="63px"
       px={4}
       justifyContent="start"
       variant="solid-secondary"
-      borderWidth={token.visible === TokenVisibility.HIDE ? '1px' : undefined}
+      borderWidth={token?.visible === TokenVisibility.HIDE ? '1px' : undefined}
       borderColor="red.500"
-      onClick={!undetermined ? onClick : undefined}>
+      onClick={style !== TokenItemStyle.IMPORT ? onClick : undefined}>
       <HStack w="full" justify="space-between" fontWeight="normal">
         <Image
           borderRadius="full"
@@ -131,7 +143,7 @@ export const TokenItem = ({
         />
 
         <HStack
-          w={!undetermined ? 'calc(100% - 56px)' : 'calc(100% - 35px)'}
+          w={!style ? 'calc(100% - 56px)' : 'calc(100% - 35px)'}
           justify="space-between">
           <Stack align="start" maxW={!tokenListBrief ? '50%' : '65%'}>
             <Stack maxW="full" spacing={0}>
@@ -178,7 +190,7 @@ export const TokenItem = ({
             </Text>
           </Stack>
 
-          {(!undetermined || undetermined === 'displayWithPrice') && (
+          {(!style || style === TokenItemStyle.DISPLAY_WITH_PRICE) && (
             <Stack maxW="50%" align="end">
               <Text
                 fontWeight="medium"
@@ -222,7 +234,7 @@ export const TokenItem = ({
             </Stack>
           )}
 
-          {undetermined === 'import' && (
+          {style === TokenItemStyle.IMPORT && (
             <Button
               borderRadius="28px"
               size="sm"
@@ -246,7 +258,7 @@ export const TokenItem = ({
           )}
         </HStack>
 
-        {!undetermined && (
+        {!style && (
           <Box onClick={(event) => event.stopPropagation()}>
             <Menu isLazy autoSelect={false} placement="left">
               <MenuButton as={MenuBtn} />

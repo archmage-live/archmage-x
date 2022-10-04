@@ -38,7 +38,7 @@ export const WizardModal = ({
       isCentered
       motionPreset="slideInBottom"
       size="full">
-      <ModalOverlay />
+      {/*<ModalOverlay />*/}
       <ModalContent>
         <ModalBody p={0}>
           <Box h="100vh" p={4} overflowY="auto">

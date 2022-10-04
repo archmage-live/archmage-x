@@ -10,31 +10,51 @@ import {
   InputGroup,
   InputRightElement,
   Stack,
-  Text
+  Text,
+  useDisclosure
 } from '@chakra-ui/react'
 import Decimal from 'decimal.js'
-import { atom } from 'jotai'
-import { useCallback, useEffect, useState } from 'react'
+import { atom, useAtom } from 'jotai'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import * as React from 'react'
 import { BiQuestionMark } from 'react-icons/bi'
 import { IoSwapVertical } from 'react-icons/io5'
+import { useInterval } from 'react-use'
 
 import { AlertBox } from '~components/AlertBox'
 import { useActive } from '~lib/active'
 import { formatNumber } from '~lib/formatNumber'
+import { NetworkKind } from '~lib/network'
+import { ERC20__factory } from '~lib/network/evm/abi'
+import { IChainAccount, INetwork } from '~lib/schema'
+import { CONSENT_SERVICE, ConsentType } from '~lib/services/consentService'
+import { useCoinGeckoTokenPrice } from '~lib/services/datasource/coingecko'
 import { useCryptoComparePrice } from '~lib/services/datasource/cryptocompare'
 import {
   useBalance,
   useEstimateGasFee,
-  useIsContract
+  useIsContract,
+  useProvider
 } from '~lib/services/provider'
+import { EvmProviderAdaptor, EvmTxParams } from '~lib/services/provider/evm'
+import { NativeToken, getTokenBrief, useTokenById } from '~lib/services/token'
 import { checkAddress } from '~lib/wallet'
+import { TokenItem, TokenItemStyle } from '~pages/Popup/Assets/TokenItem'
+import { useConsentModal } from '~pages/Popup/Consent'
 import { useModalBox } from '~pages/Popup/ModalBox'
+
+import { SelectTokenModal } from './SelectTokenModal'
 
 const isOpenAtom = atom<boolean>(false)
 
 export function useSendModal() {
   return useModalBox(isOpenAtom)
+}
+
+const tokenIdAtom = atom<number | undefined>(undefined)
+
+export function useSendTokenId() {
+  return useAtom(tokenIdAtom)
 }
 
 export const Send = ({
@@ -44,15 +64,20 @@ export const Send = ({
   isOpen: boolean
   onClose: () => void
 }) => {
+  const { onOpen: onConsentOpen } = useConsentModal()
+
   const { network, account } = useActive()
+
+  const [tokenId, setTokenId] = useSendTokenId()
+
+  const { nativeToken, balance, price, iconUrl, token } = useTokenInfo(
+    network,
+    account,
+    tokenId
+  )
 
   const [address, setAddress] = useState('')
   const [amount, setAmount] = useState('')
-
-  const balance = useBalance(network, account)
-  const price = useCryptoComparePrice(balance?.symbol)
-
-  const tokenUrl = price?.imageUrl
 
   const gasFee = useEstimateGasFee(network, account, isOpen ? 10000 : undefined)
 
@@ -69,6 +94,11 @@ export const Send = ({
     setIgnoreContract(false)
     setNextEnabled(false)
   }, [isOpen, network, account])
+
+  useEffect(() => {
+    setAmount('')
+    setAmountAlert('')
+  }, [tokenId])
 
   const isContract = useIsContract(
     network,
@@ -94,12 +124,12 @@ export const Send = ({
       setAmountAlert('Gas price estimation failed due to network error')
       return false
     }
-    if (!balance) {
+    if (!nativeToken || !balance) {
       setAmountAlert('Get balance failed due to network error')
       return false
     }
     return true
-  }, [balance, gasFee])
+  }, [nativeToken, balance, gasFee])
 
   const checkAmount = useCallback(() => {
     if (!amount) {
@@ -117,19 +147,26 @@ export const Send = ({
     }
 
     const amt = new Decimal(amount).mul(new Decimal(10).pow(balance!.decimals))
-    const value = amt.add(gasFee!)
     if (amt.gt(balance!.amountParticle)) {
       setAmountAlert('Insufficient balance')
       return false
     }
-    if (value.gt(balance!.amountParticle)) {
-      setAmountAlert('Insufficient funds for gas')
-      return false
+
+    if (tokenId === undefined) {
+      if (amt.add(gasFee!).gt(balance!.amountParticle)) {
+        setAmountAlert('Insufficient funds for gas')
+        return false
+      }
+    } else {
+      if (new Decimal(gasFee!).gt(nativeToken!.balance.amountParticle)) {
+        setAmountAlert('Insufficient funds for gas')
+        return false
+      }
     }
 
     setAmountAlert('')
     return true
-  }, [amount, balance, gasFee, checkPrecondition])
+  }, [amount, checkPrecondition, balance, tokenId, gasFee, nativeToken])
 
   const check = useCallback(
     (ignore?: boolean) => {
@@ -145,24 +182,106 @@ export const Send = ({
       return false
     }
 
-    const amount = new Decimal(balance!.amountParticle)
-      .sub(gasFee!)
+    let amount = new Decimal(balance!.amountParticle)
+    if (tokenId === undefined) {
+      amount = amount.sub(gasFee!)
+    }
+    amount = amount
       .div(new Decimal(10).pow(balance!.decimals))
-      .toSignificantDigits(9)
+      .toDecimalPlaces(9, Decimal.ROUND_FLOOR)
 
     if (amount.lte(0)) {
-      setAmountAlert('Insufficient funds for gas')
+      if (tokenId === undefined) {
+        setAmountAlert('Insufficient funds for gas')
+      } else {
+        setAmountAlert('Insufficient balance')
+      }
       return
     }
 
     setAmount(amount.toString())
-  }, [balance, gasFee, checkPrecondition])
+    setAmountAlert('')
+  }, [checkPrecondition, balance, tokenId, gasFee])
 
-  const onNext = useCallback(() => {
+  useInterval(check, 1000)
+
+  const provider = useProvider(network)
+
+  const [isLoading, setIsLoading] = useState(false)
+
+  const onNext = useCallback(async () => {
     if (!check()) {
       return
     }
-  }, [check])
+
+    if (!network || !account?.address || !provider || !token) {
+      return
+    }
+
+    const amt = new Decimal(amount)
+      .mul(new Decimal(10).pow(balance!.decimals))
+      .toDecimalPlaces(0)
+      .toString()
+
+    let params
+    switch (network.kind) {
+      case NetworkKind.EVM: {
+        if (tokenId === undefined) {
+          params = {
+            from: account.address,
+            to: address,
+            value: amt
+          } as EvmTxParams
+        } else {
+          const tokenContract = ERC20__factory.connect(
+            token.token,
+            (provider as EvmProviderAdaptor).provider
+          )
+          params = await tokenContract.populateTransaction.transfer(
+            address,
+            amt
+          )
+        }
+        break
+      }
+      default:
+        return
+    }
+
+    setIsLoading(true)
+
+    const txPayload = await provider.populateTransaction(account, params)
+
+    await CONSENT_SERVICE.requestConsent(
+      {
+        networkId: network.id,
+        accountId: account.id,
+        type: ConsentType.TRANSACTION,
+        payload: txPayload
+      },
+      undefined,
+      false
+    )
+
+    onConsentOpen()
+
+    setIsLoading(false)
+  }, [
+    check,
+    network,
+    account,
+    provider,
+    onConsentOpen,
+    address,
+    amount,
+    balance
+  ])
+
+  const {
+    isOpen: isSelectTokenOpen,
+    onOpen: onSelectTokenOpen,
+    onClose: onSelectTokenClose
+  } = useDisclosure()
 
   if (!network) {
     return <></>
@@ -194,7 +313,6 @@ export const Send = ({
             placeholder="Recipient address"
             errorBorderColor="red.500"
             isInvalid={!!addrAlert}
-            onBlur={() => check()}
             value={address}
             onChange={(e) => {
               setAddrAlert('')
@@ -209,14 +327,13 @@ export const Send = ({
                 placeholder="0.0"
                 errorBorderColor="red.500"
                 isInvalid={!!amountAlert}
-                onBlur={() => check()}
                 value={amount}
                 onChange={(e) => {
                   setAmountAlert('')
                   setAmount(e.target.value)
                 }}
               />
-              <InputRightElement>
+              <InputRightElement zIndex={0}>
                 <IconButton
                   variant="ghost"
                   minW="30px"
@@ -229,11 +346,12 @@ export const Send = ({
                       borderRadius="full"
                       boxSize="20px"
                       fit="cover"
-                      src={tokenUrl}
+                      src={iconUrl}
                       fallback={<Icon as={BiQuestionMark} fontSize="xl" />}
                       alt="Token Logo"
                     />
                   }
+                  onClick={onSelectTokenOpen}
                 />
               </InputRightElement>
             </InputGroup>
@@ -293,10 +411,99 @@ export const Send = ({
           size="lg"
           flex={1}
           isDisabled={!nextEnabled}
+          isLoading={isLoading}
           onClick={onNext}>
           Next
         </Button>
       </HStack>
+
+      <SelectTokenModal
+        isOpen={isSelectTokenOpen}
+        onClose={onSelectTokenClose}
+        onSelect={(token) => setTokenId(token.id)}
+        nativeTokenItem={
+          nativeToken && (
+            <TokenItem
+              nativeToken={nativeToken}
+              style={TokenItemStyle.DISPLAY_WITH_PRICE}
+              currencySymbol={price?.currencySymbol}
+              price={price?.price}
+              change24Hour={price?.change24Hour}
+              onClick={() => {
+                setTokenId(undefined)
+                onSelectTokenClose()
+              }}
+            />
+          )
+        }
+      />
     </Stack>
   )
+}
+
+interface TokenPrice {
+  currencySymbol: string | undefined
+  price?: number | undefined
+  change24Hour?: number | undefined
+}
+
+function useTokenInfo(
+  network?: INetwork,
+  account?: IChainAccount,
+  tokenId?: number
+) {
+  const nativeBalance = useBalance(network, account)
+  const nativePrice = useCryptoComparePrice(nativeBalance?.symbol)
+
+  const token = useTokenById(tokenId)
+
+  const tokenPrice = useCoinGeckoTokenPrice(network, token?.token)
+
+  const nativeToken = useMemo(
+    () =>
+      network &&
+      nativeBalance &&
+      ({
+        network,
+        balance: nativeBalance,
+        iconUrl: nativePrice?.imageUrl
+      } as NativeToken),
+    [network, nativeBalance, nativePrice]
+  )
+
+  const [balance, price, iconUrl] = useMemo(() => {
+    if (typeof tokenId !== 'number') {
+      // native
+      const change24Hour = nativePrice?.change24Hour
+      return [
+        nativeBalance,
+        nativePrice &&
+          ({
+            ...nativePrice,
+            change24Hour:
+              change24Hour !== undefined ? change24Hour * 100 : undefined
+          } as TokenPrice | undefined),
+        nativePrice?.imageUrl
+      ]
+    } else {
+      // token
+      if (!token) {
+        return []
+      }
+      const brief = getTokenBrief(token)
+      return [
+        brief.balance,
+        tokenPrice as TokenPrice | undefined,
+        brief.iconUrl
+      ]
+    }
+  }, [nativeBalance, nativePrice, token, tokenId, tokenPrice])
+
+  return {
+    nativeToken,
+    balance,
+    price,
+    iconUrl,
+    token
+  }
 }

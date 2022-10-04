@@ -8,10 +8,12 @@ import { SERVICE_WORKER_CLIENT, SERVICE_WORKER_SERVER } from '~lib/rpc'
 import {
   ChainId,
   IChainAccount,
+  INetwork,
   IToken,
   ITokenList,
   TokenVisibility
 } from '~lib/schema'
+import { getNetworkInfo } from '~lib/services/network'
 import { BaseTokenService } from '~lib/services/token/base'
 
 import {
@@ -50,6 +52,25 @@ export function getTokenBrief(token: IToken): TokenBrief {
     default:
       throw new Error('unknown token')
   }
+}
+
+export interface NativeToken {
+  network: INetwork
+  balance: Balance
+  iconUrl?: string
+}
+
+export function getNativeTokenBrief({
+  network,
+  balance,
+  iconUrl
+}: NativeToken): TokenBrief {
+  const info = getNetworkInfo(network)
+  return {
+    name: info.currencyName,
+    balance,
+    iconUrl
+  } as TokenBrief
 }
 
 export function getTokenListBrief(

@@ -5,15 +5,12 @@ import { useWizard } from 'react-use-wizard'
 import { AlertBox } from '~components/AlertBox'
 import { IToken, TokenVisibility } from '~lib/schema'
 import { TOKEN_SERVICE } from '~lib/services/token'
-import { TokenItem } from '~pages/Popup/Assets/TokenItem'
+import { TokenItem, TokenItemStyle } from '~pages/Popup/Assets/TokenItem'
 
-export const ImportToken = ({
-  setTitle,
-  token
-}: {
-  setTitle: (title: string) => void
-  token?: IToken
-}) => {
+import { useManageTokensTitleAtom } from '.'
+
+export const ImportToken = ({ token }: { token?: IToken }) => {
+  const [, setTitle] = useManageTokensTitleAtom()
   useEffect(() => {
     setTitle('Import Token')
   }, [setTitle])
@@ -26,7 +23,7 @@ export const ImportToken = ({
 
   return (
     <Stack spacing={8} pt={8}>
-      <TokenItem token={token} undetermined="display" />
+      <TokenItem token={token} style={TokenItemStyle.DISPLAY} />
 
       <AlertBox level="error" nowrap>
         <Text fontSize="xl" textAlign="center">

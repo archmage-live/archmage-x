@@ -86,7 +86,7 @@ export const EvmTransaction = ({
   suffix,
   onComplete
 }: {
-  origin: string
+  origin?: string
   request: ConsentRequest
   network: INetwork
   networkInfo: NetworkInfo
@@ -369,7 +369,7 @@ export const EvmTransaction = ({
       <Box ref={scrollRef} overflowY="auto" position="relative" pb={6}>
         <Box w="full" bg={bannerBg}>
           <Stack px={6} py={6} spacing={4}>
-            <Text>{origin}</Text>
+            {origin && <Text>{origin}</Text>}
 
             <HStack minH="30px">
               {isContract !== undefined && (
@@ -782,7 +782,7 @@ export const EvmTransaction = ({
             customGasFeePerGas={customGasFeePerGas}
             gasLimit={gasLimit}
             fromSite={false}
-            origin={origin}
+            origin={origin || ''}
           />
 
           <EvmAdvancedGasFeeModal

@@ -1,5 +1,6 @@
 export interface Context {
   fromUrl?: string
+  fromInternal?: boolean
   window?: {
     x: number
     y: number

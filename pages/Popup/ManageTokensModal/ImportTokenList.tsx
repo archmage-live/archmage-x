@@ -7,15 +7,11 @@ import { useActiveNetwork } from '~lib/active'
 import { ITokenList } from '~lib/schema'
 import { TOKEN_SERVICE } from '~lib/services/token'
 
+import { useManageTokensTitleAtom } from '.'
 import { TokenListItem } from './TokenListItem'
 
-export const ImportTokenList = ({
-  setTitle,
-  tokenList
-}: {
-  setTitle: (title: string) => void
-  tokenList?: ITokenList
-}) => {
+export const ImportTokenList = ({ tokenList }: { tokenList?: ITokenList }) => {
+  const [, setTitle] = useManageTokensTitleAtom()
   useEffect(() => {
     setTitle('Import List')
   }, [setTitle])
