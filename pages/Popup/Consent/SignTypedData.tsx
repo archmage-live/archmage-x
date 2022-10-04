@@ -50,7 +50,7 @@ export const SignTypedData = ({
   const { domain, types, primaryType, message } = typedData
 
   const rjvTheme = useColorModeValue('rjv-default', 'brewer')
-  const rjvBg = useColorModeValue(undefined, 'rgb(12, 13, 14)')
+  const rjvBg = useColorModeValue('gray.50', 'rgb(12, 13, 14)')
 
   const [isLoading, setIsLoading] = useState(false)
 
@@ -99,14 +99,16 @@ export const SignTypedData = ({
             <Divider />
 
             <Stack>
-              {metadata.map(([name, value]) => {
-                return (
-                  <HStack key={name} spacing={8} justify="space-between">
-                    <Text fontWeight="medium">{name}:</Text>
-                    <Text noOfLines={2}>{value}</Text>
-                  </HStack>
-                )
-              })}
+              {metadata
+                .filter(([, value]) => !!value)
+                .map(([name, value]) => {
+                  return (
+                    <HStack key={name} spacing={8} justify="space-between">
+                      <Text fontWeight="medium">{name}:</Text>
+                      <Text noOfLines={2}>{value}</Text>
+                    </HStack>
+                  )
+                })}
             </Stack>
 
             <Stack>
@@ -127,6 +129,7 @@ export const SignTypedData = ({
                   name={false}
                   theme={rjvTheme}
                   iconStyle="triangle"
+                  collapsed={2}
                   enableClipboard={false}
                   displayDataTypes={false}
                   displayArrayKey={false}

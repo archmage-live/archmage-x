@@ -1,4 +1,4 @@
-import { joinSignature } from '@ethersproject/bytes'
+import { arrayify, joinSignature } from '@ethersproject/bytes'
 import { _TypedDataEncoder } from '@ethersproject/hash'
 import { TransactionRequest } from '@ethersproject/providers'
 import assert from 'assert'
@@ -66,7 +66,7 @@ export class EvmWallet implements SigningWallet {
   }
 
   signMessage(message: any): Promise<string> {
-    return this.signingWallet.signMessage(message)
+    return this.signingWallet.signMessage(arrayify(message as string))
   }
 
   async signTypedData({ domain, types, message }: any): Promise<string> {

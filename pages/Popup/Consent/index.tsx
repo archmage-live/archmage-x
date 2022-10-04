@@ -238,7 +238,13 @@ const ConsentByType = ({
         />
       )
     case ConsentType.SIGN_MSG:
-      return <SignMessage request={request} />
+      return (
+        <SignMessage
+          request={request}
+          onComplete={onComplete}
+          rejectAllButton={rejectAllButton}
+        />
+      )
     case ConsentType.SIGN_TYPED_DATA:
       return (
         <SignTypedData

@@ -43,6 +43,10 @@ export type WatchAssetPayload = {
   balance: string
 }
 
+export type SignMsgPayload = {
+  message: string // hex string
+}
+
 export type SignTypedDataPayload = {
   metadata: [string, string][]
   typedData: any
@@ -287,7 +291,8 @@ class ConsentService implements IConsentService {
             break
           }
           case ConsentType.SIGN_MSG:
-            response = await provider!.signMessage(account!, req.payload)
+            const { message } = req.payload as SignMsgPayload
+            response = await provider!.signMessage(account!, message)
             break
           case ConsentType.SIGN_TYPED_DATA: {
             const { typedData } = req.payload as SignTypedDataPayload

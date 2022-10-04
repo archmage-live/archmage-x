@@ -1,3 +1,4 @@
+import { arrayify, hexlify } from '@ethersproject/bytes'
 import { TokenInfo } from '@uniswap/token-lists'
 import assert from 'assert'
 import { ethErrors } from 'eth-rpc-errors'
@@ -17,6 +18,7 @@ import {
   ConsentType,
   Permission,
   RequestPermissionPayload,
+  SignMsgPayload,
   SignTypedDataPayload,
   WatchAssetPayload
 } from '~lib/services/consentService'
@@ -101,9 +103,9 @@ export class EvmPermissionedProvider {
         case 'eth_sendTransaction':
           return await this.sendTransaction(ctx, params)
         case 'eth_sign':
-          return await this.legacySignMessage(params)
+          return await this.legacySignMessage(ctx, params as any)
         case 'personal_sign':
-          return await this.signMessage(params)
+          return await this.signMessage(ctx, params as any)
         case 'eth_signTypedData':
         // fallthrough
         case 'eth_signTypedData_v1':
@@ -154,12 +156,34 @@ export class EvmPermissionedProvider {
     })
   }
 
-  async legacySignMessage([params]: Array<any>) {
-    // TODO: consent
+  // https://ethereum.org/en/developers/docs/apis/json-rpc/#eth_sign
+  // https://github.com/MetaMask/metamask-extension/issues/9957
+  // https://github.com/WalletConnect/walletconnect-monorepo/issues/1395
+  async legacySignMessage(ctx: Context, [from, message]: [string, string]) {
+    // NOTE: we implement `eth_sign` according to the Ethereum standard,
+    //       it is different from MetaMask's legacy insecure implementation
+    return this.signMessage(ctx, [message, from])
   }
 
-  async signMessage([params]: Array<any>) {
-    // TODO: consent
+  async signMessage(ctx: Context, [message, from]: [string, string]) {
+    if (
+      !this.account?.address ||
+      this.account.address !== checkAddress(NetworkKind.EVM, from)
+    ) {
+      throw ethErrors.provider.unauthorized()
+    }
+
+    message = hexlify(arrayify(message))
+
+    return await CONSENT_SERVICE.requestConsent(ctx, {
+      networkId: this.network.id,
+      accountId: this.account.id,
+      type: ConsentType.SIGN_MSG,
+      origin: this.origin,
+      payload: {
+        message
+      } as SignMsgPayload
+    } as any as ConsentRequest)
   }
 
   async signTypedData(ctx: Context, [from, typedData]: [string, any]) {
