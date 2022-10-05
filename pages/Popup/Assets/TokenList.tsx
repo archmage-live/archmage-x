@@ -9,7 +9,7 @@ import {
 import { ReactNode } from 'react'
 import { MdOutlineFormatListBulleted } from 'react-icons/md'
 
-import { useActive, useActiveAccount } from '~lib/active'
+import { useActive } from '~lib/active'
 import { IToken, TokenVisibility } from '~lib/schema'
 import { useCoinGeckoTokensPrice } from '~lib/services/datasource/coingecko'
 import { useTokens } from '~lib/services/token'
@@ -99,9 +99,6 @@ export const TokenList = ({
 export const TokenListSection = () => {
   const { isOpen, onOpen, onClose } = useDisclosure()
 
-  const account = useActiveAccount()
-  const { fetchTokens } = useTokens(account)
-
   const { onOpen: onTokenDetailOpen, setToken } = useTokenDetailModal()
 
   return (
@@ -122,13 +119,7 @@ export const TokenListSection = () => {
         <Text color="gray.500">Manage Token Lists</Text>
       </Button>
 
-      <ManageTokensModal
-        isOpen={isOpen}
-        onClose={() => {
-          onClose()
-          fetchTokens()
-        }}
-      />
+      <ManageTokensModal isOpen={isOpen} onClose={onClose} />
     </Stack>
   )
 }

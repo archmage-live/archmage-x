@@ -6,7 +6,7 @@ import { ENV } from '~lib/env'
 import { NetworkKind } from '~lib/network'
 import { AppChainInfo as CosmChainInfo } from '~lib/network/cosm'
 import { EvmChainInfo } from '~lib/network/evm'
-import { ChainId, IChainAccount, INetwork } from '~lib/schema'
+import { ChainId, IChainAccount, INetwork, IToken } from '~lib/schema'
 
 import { CosmNetworkService } from './cosmService'
 import { EvmNetworkService } from './evmService'
@@ -64,6 +64,23 @@ export function getAccountUrl(
   try {
     const url = new URL(info.explorerUrl)
     url.pathname = `/address/${account.address}`
+    return url.toString()
+  } catch {
+    return undefined
+  }
+}
+
+export function getTokenUrl(
+  network: INetwork,
+  token: IToken
+): string | undefined {
+  const info = getNetworkInfo(network)
+  if (!info?.explorerUrl || !token) {
+    return undefined
+  }
+  try {
+    const url = new URL(info.explorerUrl)
+    url.pathname = `/token/${token.token}`
     return url.toString()
   } catch {
     return undefined

@@ -11,13 +11,21 @@ import {
   MenuGroup,
   MenuItem,
   MenuList,
+  Modal,
+  ModalBody,
+  ModalCloseButton,
+  ModalContent,
+  ModalHeader,
+  ModalOverlay,
   Portal,
   Stack,
   Text,
-  forwardRef
+  forwardRef,
+  useDisclosure
 } from '@chakra-ui/react'
 import Decimal from 'decimal.js'
 import { useCallback } from 'react'
+import * as React from 'react'
 import { BiQuestionMark } from 'react-icons/bi'
 import { FiCheckCircle } from 'react-icons/fi'
 import { IoMdSwap } from 'react-icons/io'
@@ -27,10 +35,14 @@ import {
   MdOutlineCheckCircle
 } from 'react-icons/md'
 import { VscQuestion } from 'react-icons/vsc'
+import browser from 'webextension-polyfill'
 
 import { BtnBox } from '~components/BtnBox'
+import { CopyArea } from '~components/CopyIcon'
+import { useActiveNetwork } from '~lib/active'
 import { formatNumber } from '~lib/formatNumber'
 import { IToken, ITokenList, TokenVisibility } from '~lib/schema'
+import { getTokenUrl } from '~lib/services/network'
 import {
   NativeToken,
   TOKEN_SERVICE,
@@ -73,43 +85,6 @@ export const TokenItem = ({
     token && tokenList && getTokenListBrief(tokenList, token.chainId)
 
   const existing = typeof token?.id === 'number'
-
-  const setTokenVisibility = useCallback(
-    async (visible: TokenVisibility) => {
-      if (!token) return
-      await TOKEN_SERVICE.setTokenVisibility(token.id, visible)
-      onChange?.()
-    },
-    [onChange, token]
-  )
-
-  let title1, title2, icon1, icon2, onClick1, onClick2
-  switch (token?.visible) {
-    case TokenVisibility.UNSPECIFIED:
-      title1 = 'Blacklist'
-      title2 = 'Whitelist'
-      icon1 = MdBlockFlipped
-      icon2 = MdOutlineCheckCircle
-      onClick1 = () => setTokenVisibility(TokenVisibility.HIDE)
-      onClick2 = () => setTokenVisibility(TokenVisibility.SHOW)
-      break
-    case TokenVisibility.SHOW:
-      title1 = 'Blacklist'
-      title2 = 'Unwhitelist'
-      icon1 = MdBlockFlipped
-      icon2 = VscQuestion
-      onClick1 = () => setTokenVisibility(TokenVisibility.HIDE)
-      onClick2 = () => setTokenVisibility(TokenVisibility.UNSPECIFIED)
-      break
-    case TokenVisibility.HIDE:
-      title1 = 'Unblacklist'
-      title2 = 'Whitelist'
-      icon1 = VscQuestion
-      icon2 = MdOutlineCheckCircle
-      onClick1 = () => setTokenVisibility(TokenVisibility.UNSPECIFIED)
-      onClick2 = () => setTokenVisibility(TokenVisibility.SHOW)
-      break
-  }
 
   return (
     <Button
@@ -258,39 +233,160 @@ export const TokenItem = ({
           )}
         </HStack>
 
-        {!style && (
+        {!style && token && (
           <Box onClick={(event) => event.stopPropagation()}>
-            <Menu isLazy autoSelect={false} placement="left">
-              <MenuButton as={MenuBtn} />
-              <Portal>
-                <MenuList minW={32} zIndex={1500}>
-                  <MenuGroup title={brief.name}>
-                    <MenuItem
-                      icon={<Icon as={IoMdSwap} />}
-                      iconSpacing={2}
-                      onClick={() => {}}>
-                      Detail
-                    </MenuItem>
-                    <MenuItem
-                      icon={<Icon as={icon1} />}
-                      iconSpacing={2}
-                      onClick={onClick1}>
-                      {title1}
-                    </MenuItem>
-                    <MenuItem
-                      icon={<Icon as={icon2} />}
-                      iconSpacing={2}
-                      onClick={onClick2}>
-                      {title2}
-                    </MenuItem>
-                  </MenuGroup>
-                </MenuList>
-              </Portal>
-            </Menu>
+            <TokenMenu token={token} onChange={onChange} />
           </Box>
         )}
       </HStack>
     </Button>
+  )
+}
+
+export const TokenMenu = ({
+  token,
+  onChange
+}: {
+  token: IToken
+  onChange?: () => void
+}) => {
+  const brief = getTokenBrief(token)
+
+  const setTokenVisibility = useCallback(
+    async (visible: TokenVisibility) => {
+      if (!token) return
+      await TOKEN_SERVICE.setTokenVisibility(token.id, visible)
+      onChange?.()
+    },
+    [onChange, token]
+  )
+
+  let title1, title2, icon1, icon2, onClick1, onClick2
+  switch (token?.visible) {
+    case TokenVisibility.UNSPECIFIED:
+      title1 = 'Blacklist'
+      title2 = 'Whitelist'
+      icon1 = MdBlockFlipped
+      icon2 = MdOutlineCheckCircle
+      onClick1 = () => setTokenVisibility(TokenVisibility.HIDE)
+      onClick2 = () => setTokenVisibility(TokenVisibility.SHOW)
+      break
+    case TokenVisibility.SHOW:
+      title1 = 'Blacklist'
+      title2 = 'Unwhitelist'
+      icon1 = MdBlockFlipped
+      icon2 = VscQuestion
+      onClick1 = () => setTokenVisibility(TokenVisibility.HIDE)
+      onClick2 = () => setTokenVisibility(TokenVisibility.UNSPECIFIED)
+      break
+    case TokenVisibility.HIDE:
+      title1 = 'Unblacklist'
+      title2 = 'Whitelist'
+      icon1 = VscQuestion
+      icon2 = MdOutlineCheckCircle
+      onClick1 = () => setTokenVisibility(TokenVisibility.UNSPECIFIED)
+      onClick2 = () => setTokenVisibility(TokenVisibility.SHOW)
+      break
+  }
+
+  const {
+    isOpen: isInfoOpen,
+    onOpen: onInfoOpen,
+    onClose: onInfoClose
+  } = useDisclosure()
+
+  return (
+    <>
+      <Menu isLazy autoSelect={false} placement="left">
+        <MenuButton as={MenuBtn} />
+        <Portal>
+          <MenuList minW={32} zIndex={1500}>
+            <MenuGroup title={brief.name}>
+              <MenuItem
+                icon={<Icon as={IoMdSwap} />}
+                iconSpacing={2}
+                onClick={onInfoOpen}>
+                Info
+              </MenuItem>
+              <MenuItem
+                icon={<Icon as={icon1} />}
+                iconSpacing={2}
+                onClick={onClick1}>
+                {title1}
+              </MenuItem>
+              <MenuItem
+                icon={<Icon as={icon2} />}
+                iconSpacing={2}
+                onClick={onClick2}>
+                {title2}
+              </MenuItem>
+            </MenuGroup>
+          </MenuList>
+        </Portal>
+      </Menu>
+
+      <TokenInfoModal token={token} isOpen={isInfoOpen} onClose={onInfoClose} />
+    </>
+  )
+}
+
+const TokenInfoModal = ({
+  token,
+  isOpen,
+  onClose
+}: {
+  token: IToken
+  isOpen: boolean
+  onClose: () => void
+}) => {
+  const network = useActiveNetwork()
+  const brief = getTokenBrief(token)
+  const tokenUrl = network && getTokenUrl(network, token)
+
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      isCentered
+      motionPreset="slideInBottom">
+      <ModalOverlay />
+      <ModalContent>
+        <ModalHeader textAlign="center">Token Info</ModalHeader>
+        <ModalCloseButton />
+        <ModalBody pb={6}>
+          <Stack spacing={6}>
+            <Stack>
+              <Text fontWeight="medium">Contract Address</Text>
+              <CopyArea name="Contract Address" copy={token.token} />
+            </Stack>
+            <Stack>
+              <Text fontWeight="medium">Name</Text>
+              <Text>{brief.name}</Text>
+            </Stack>
+            <Stack>
+              <Text fontWeight="medium">Symbol</Text>
+              <Text>{brief.balance.symbol}</Text>
+            </Stack>
+            <Stack>
+              <Text fontWeight="medium">Decimals</Text>
+              <Text>{brief.balance.decimals}</Text>
+            </Stack>
+            {tokenUrl && (
+              <Stack align="center">
+                <Button
+                  w="auto"
+                  colorScheme="gray"
+                  onClick={async () => {
+                    await browser.tabs.create({ url: tokenUrl })
+                  }}>
+                  View token on block explorer
+                </Button>
+              </Stack>
+            )}
+          </Stack>
+        </ModalBody>
+      </ModalContent>
+    </Modal>
   )
 }
 

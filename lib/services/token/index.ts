@@ -1,6 +1,7 @@
 import { shallowCopy } from '@ethersproject/properties'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useCallback, useEffect } from 'react'
+import { useAsync } from 'react-use'
 
 import { ENV } from '~lib/env'
 import { NetworkKind } from '~lib/network'
@@ -325,14 +326,14 @@ export function useTokenLists(networkKind?: NetworkKind) {
 
 export function useTokens(account?: IChainAccount): {
   tokens: IToken[] | undefined
-  fetchTokens: () => void
+  fetchTokens: () => Promise<void>
 } {
-  const fetchTokens = useCallback(() => {
+  const fetchTokens = useCallback(async () => {
     if (!account) return
-    TOKEN_SERVICE.fetchTokens(account)
+    await TOKEN_SERVICE.fetchTokens(account)
   }, [account])
 
-  useEffect(fetchTokens, [fetchTokens])
+  useAsync(fetchTokens, [fetchTokens])
 
   const tokens = useLiveQuery(async () => {
     if (!account) return

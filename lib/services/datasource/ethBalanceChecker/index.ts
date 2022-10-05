@@ -42,9 +42,14 @@ class EthBalanceCheckerApi {
     if (!contractAddress) {
       return undefined
     }
-    return await getAddressBalances(provider, address, tokens, {
-      contractAddress
-    })
+    try {
+      return await getAddressBalances(provider, address, tokens, {
+        contractAddress
+      })
+    } catch (err) {
+      console.error(err)
+      return undefined
+    }
   }
 
   async getAddressesBalances(
@@ -59,14 +64,19 @@ class EthBalanceCheckerApi {
     if (!contractAddress) {
       return undefined
     }
-    const balances = await getAddressesBalances(provider, addresses, tokens, {
-      contractAddress
-    })
-    const result = []
-    for (const addr of addresses) {
-      result.push(balances[addr] || {})
+    try {
+      const balances = await getAddressesBalances(provider, addresses, tokens, {
+        contractAddress
+      })
+      const result = []
+      for (const addr of addresses) {
+        result.push(balances[addr] || {})
+      }
+      return result
+    } catch (err) {
+      console.error(err)
+      return undefined
     }
-    return result
   }
 }
 

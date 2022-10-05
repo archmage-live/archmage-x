@@ -2,8 +2,9 @@ import { atom, useAtom } from 'jotai'
 import { ReactNode, useState } from 'react'
 
 import { WizardModal } from '~components/WizardModal'
+import { useActiveAccount } from '~lib/active'
 import { ITokenList } from '~lib/schema'
-import { SearchedToken } from '~lib/services/token'
+import { SearchedToken, useTokens } from '~lib/services/token'
 
 import { ImportToken } from './ImportToken'
 import { ImportTokenList } from './ImportTokenList'
@@ -29,8 +30,17 @@ export const ManageTokensModal = ({
   const [newTokenList, setNewTokenList] = useState<ITokenList>()
   const [newToken, setNewToken] = useState<SearchedToken>()
 
+  const account = useActiveAccount()
+  const { fetchTokens } = useTokens(account)
+
   return (
-    <WizardModal isOpen={isOpen} onClose={onClose} title={title}>
+    <WizardModal
+      isOpen={isOpen}
+      onClose={async () => {
+        onClose()
+        await fetchTokens()
+      }}
+      title={title}>
       {prelude}
       <ManageTokens setTokenList={setNewTokenList} setToken={setNewToken} />
       <>

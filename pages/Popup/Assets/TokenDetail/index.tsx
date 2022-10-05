@@ -14,17 +14,17 @@ import {
 import Decimal from 'decimal.js'
 import { atom, useAtom } from 'jotai'
 import * as React from 'react'
+import { useEffect } from 'react'
 import { BiQuestionMark } from 'react-icons/bi'
 
-import { useActive, useActiveWallet } from '~lib/active'
+import { useActive } from '~lib/active'
 import { formatNumber } from '~lib/formatNumber'
 import { IToken } from '~lib/schema'
 import { useCoinGeckoTokenPrice } from '~lib/services/datasource/coingecko'
-import { useBalance } from '~lib/services/provider'
 import { getTokenBrief } from '~lib/services/token'
-import { AccountMenu } from '~pages/Popup/Assets/AccountMenu'
 import { useDepositModal } from '~pages/Popup/Assets/Deposit'
 import { useSendModal, useSendTokenId } from '~pages/Popup/Assets/Send'
+import { TokenMenu } from '~pages/Popup/Assets/TokenItem'
 import { useModalBox } from '~pages/Popup/ModalBox'
 
 const isOpenAtom = atom<boolean>(false)
@@ -44,6 +44,10 @@ export default function TokenDetail({ onClose }: { onClose: () => void }) {
   const { token } = useTokenDetailModal()
 
   const { network, wallet, subWallet, account } = useActive()
+
+  useEffect(() => {
+    onClose()
+  }, [network, onClose])
 
   const price = useCoinGeckoTokenPrice(network, token?.token)
 
@@ -79,7 +83,7 @@ export default function TokenDetail({ onClose }: { onClose: () => void }) {
           </Text>
         </HStack>
 
-        <AccountMenu />
+        <TokenMenu token={token} />
       </HStack>
 
       <HStack justify="center" minH={16}>

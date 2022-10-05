@@ -13,6 +13,7 @@ import {
   Text,
   useDisclosure
 } from '@chakra-ui/react'
+import assert from 'assert'
 import Decimal from 'decimal.js'
 import { atom, useAtom } from 'jotai'
 import { useCallback, useEffect, useMemo, useState } from 'react'
@@ -68,6 +69,10 @@ export const Send = ({
 
   const { network, account } = useActive()
 
+  useEffect(() => {
+    onClose()
+  }, [network, onClose])
+
   const [tokenId, setTokenId] = useSendTokenId()
 
   const { nativeToken, balance, price, iconUrl, token } = useTokenInfo(
@@ -78,6 +83,8 @@ export const Send = ({
 
   const [address, setAddress] = useState('')
   const [amount, setAmount] = useState('')
+  const [amountInput, setAmountInput] = useState('')
+  const [isQuote, setIsQuote] = useState(false)
 
   const gasFee = useEstimateGasFee(network, account, isOpen ? 10000 : undefined)
 
@@ -88,7 +95,8 @@ export const Send = ({
 
   useEffect(() => {
     setAddress('')
-    setAmount('')
+    setAmountInput('')
+    setIsQuote(false)
     setAddrAlert('')
     setAmountAlert('')
     setIgnoreContract(false)
@@ -96,9 +104,42 @@ export const Send = ({
   }, [isOpen, network, account])
 
   useEffect(() => {
-    setAmount('')
+    setAmountInput('')
     setAmountAlert('')
   }, [tokenId])
+
+  useEffect(() => {
+    if (!isQuote) {
+      setAmount(amountInput)
+    } else {
+      setAmount(
+        new Decimal(amountInput || 0)
+          .div(price?.price || 1)
+          .toDecimalPlaces(9, Decimal.ROUND_FLOOR)
+          .toString()
+      )
+    }
+  }, [amountInput, isQuote, price])
+
+  const toggleIsQuote = useCallback(() => {
+    const useQuote = !isQuote
+    if (useQuote) {
+      setAmountInput(
+        new Decimal(amountInput || 0)
+          .mul(price?.price || 0)
+          .toDecimalPlaces(9, Decimal.ROUND_FLOOR)
+          .toString()
+      )
+    } else {
+      setAmountInput(
+        new Decimal(amountInput || 0)
+          .div(price?.price || 1)
+          .toDecimalPlaces(9, Decimal.ROUND_FLOOR)
+          .toString()
+      )
+    }
+    setIsQuote(useQuote)
+  }, [amountInput, isQuote, price])
 
   const isContract = useIsContract(
     network,
@@ -191,6 +232,7 @@ export const Send = ({
       .toDecimalPlaces(9, Decimal.ROUND_FLOOR)
 
     if (amount.lte(0)) {
+      setAmountInput('')
       if (tokenId === undefined) {
         setAmountAlert('Insufficient funds for gas')
       } else {
@@ -199,9 +241,18 @@ export const Send = ({
       return
     }
 
-    setAmount(amount.toString())
+    if (!isQuote) {
+      setAmountInput(amount.toString())
+    } else {
+      setAmountInput(
+        amount
+          .mul(price?.price || 0)
+          .toDecimalPlaces(9, Decimal.ROUND_FLOOR)
+          .toString()
+      )
+    }
     setAmountAlert('')
-  }, [checkPrecondition, balance, tokenId, gasFee])
+  }, [checkPrecondition, balance, tokenId, isQuote, gasFee, price])
 
   useInterval(check, 1000)
 
@@ -214,7 +265,7 @@ export const Send = ({
       return
     }
 
-    if (!network || !account?.address || !provider || !token) {
+    if (!network || !account?.address || !provider) {
       return
     }
 
@@ -233,6 +284,7 @@ export const Send = ({
             value: amt
           } as EvmTxParams
         } else {
+          assert(token)
           const tokenContract = ERC20__factory.connect(
             token.token,
             (provider as EvmProviderAdaptor).provider
@@ -271,10 +323,12 @@ export const Send = ({
     network,
     account,
     provider,
-    onConsentOpen,
-    address,
+    token,
     amount,
-    balance
+    balance,
+    onConsentOpen,
+    tokenId,
+    address
   ])
 
   const {
@@ -307,7 +361,7 @@ export const Send = ({
           <Box w={10}></Box>
         </HStack>
 
-        <Stack spacing={8}>
+        <Stack px={2} spacing={8}>
           <Input
             size="lg"
             placeholder="Recipient address"
@@ -327,10 +381,10 @@ export const Send = ({
                 placeholder="0.0"
                 errorBorderColor="red.500"
                 isInvalid={!!amountAlert}
-                value={amount}
+                value={amountInput}
                 onChange={(e) => {
                   setAmountAlert('')
-                  setAmount(e.target.value)
+                  setAmountInput(e.target.value)
                 }}
               />
               <InputRightElement zIndex={0}>
@@ -356,23 +410,49 @@ export const Send = ({
               </InputRightElement>
             </InputGroup>
 
-            <HStack justify="space-between" color="gray.500">
-              <HStack cursor="pointer" onClick={() => {}}>
-                <Text>
-                  {price && (
-                    <>
-                      {price.currencySymbol}&nbsp;
-                      {formatNumber(
-                        new Decimal(price.price || 0).mul(balance?.amount || 0)
+            <HStack
+              justify="space-between"
+              align="start"
+              color="gray.500"
+              userSelect="none">
+              <HStack
+                cursor="pointer"
+                onClick={() => price?.price !== undefined && toggleIsQuote()}>
+                {price?.price !== undefined && (
+                  <>
+                    <Text>
+                      {!isQuote ? (
+                        <>
+                          {price.currencySymbol}
+                          {formatNumber(
+                            new Decimal(price.price).mul(amount || 0)
+                          )}
+                        </>
+                      ) : (
+                        <>
+                          {formatNumber(amount)} {balance?.symbol}
+                        </>
                       )}
-                    </>
-                  )}
-                </Text>
+                    </Text>
 
-                <Icon as={IoSwapVertical} />
+                    <Icon as={IoSwapVertical} />
+                  </>
+                )}
               </HStack>
               <Text cursor="pointer" onClick={setMaxAmount}>
-                Balance: {formatNumber(balance?.amount)} {balance?.symbol}
+                Balance:&nbsp;
+                {!isQuote ? (
+                  <>
+                    {formatNumber(balance?.amount)} {balance?.symbol}
+                  </>
+                ) : (
+                  <>
+                    {price?.currencySymbol}
+                    {formatNumber(
+                      new Decimal(price?.price || 0).mul(balance?.amount || 0)
+                    )}
+                  </>
+                )}
               </Text>
             </HStack>
           </Stack>
@@ -402,7 +482,7 @@ export const Send = ({
         </Stack>
       </Stack>
 
-      <HStack spacing={4}>
+      <HStack px={2} spacing={4}>
         <Button variant="outline" size="lg" flex={1} onClick={onClose}>
           Cancel
         </Button>
