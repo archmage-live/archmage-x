@@ -40,6 +40,7 @@ import { getAccountUrl } from '~lib/services/network'
 import { WalletInfo } from '~lib/services/walletService'
 import { createTab } from '~lib/util'
 import { WalletType, hasWalletKeystore } from '~lib/wallet'
+import { ConnectedSitesModal } from '~pages/Popup/Assets/ConnectedSites'
 import { DeleteWalletModal } from '~pages/Settings/SettingsWallets/DeleteWalletModal'
 import { ExportMnemonicModal } from '~pages/Settings/SettingsWallets/ExportMnemonicModal'
 import { ExportPrivateKeyModal } from '~pages/Settings/SettingsWallets/ExportPrivateKeyModal'
@@ -55,6 +56,12 @@ export const AccountMenu = () => {
     isOpen: isDetailOpen,
     onOpen: onDetailOpen,
     onClose: onDetailClose
+  } = useDisclosure()
+
+  const {
+    isOpen: isConnectedSitesOpen,
+    onOpen: onConnectedSitesOpen,
+    onClose: onConnectedSitesClose
   } = useDisclosure()
 
   const {
@@ -97,7 +104,7 @@ export const AccountMenu = () => {
           <MenuItem
             icon={<Icon as={FaPlug} />}
             iconSpacing={2}
-            onClick={() => {}}>
+            onClick={onConnectedSitesOpen}>
             Connected sites
           </MenuItem>
           <MenuItem
@@ -126,6 +133,11 @@ export const AccountMenu = () => {
         subWallet={subWallet}
         account={account}
         accountUrl={accountUrl}
+      />
+
+      <ConnectedSitesModal
+        isOpen={isConnectedSitesOpen}
+        onClose={onConnectedSitesClose}
       />
 
       <DeleteWalletModal

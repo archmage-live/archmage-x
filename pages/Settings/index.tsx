@@ -37,16 +37,16 @@ export default function Settings() {
             <HStack justify={'space-between'} pb={4}>
               <Text fontSize="3xl">Settings</Text>
 
-              <InputGroup w={80}>
-                <InputLeftElement pointerEvents="none">
-                  <Icon as={FiSearch} color={inputColor} boxSize="5" />
-                </InputLeftElement>
-                <Input
-                  placeholder="Search"
-                  color={inputColor}
-                  _placeholder={{ color: inputColor }}
-                />
-              </InputGroup>
+              {/*<InputGroup w={80}>*/}
+              {/*  <InputLeftElement pointerEvents="none">*/}
+              {/*    <Icon as={FiSearch} color={inputColor} boxSize="5" />*/}
+              {/*  </InputLeftElement>*/}
+              {/*  <Input*/}
+              {/*    placeholder="Search"*/}
+              {/*    color={inputColor}*/}
+              {/*    _placeholder={{ color: inputColor }}*/}
+              {/*  />*/}
+              {/*</InputGroup>*/}
             </HStack>
 
             <Divider />

@@ -31,9 +31,9 @@ import { useBalance, useNetworkStatus } from '~lib/services/provider'
 import { WalletInfo } from '~lib/services/walletService'
 import { createTab, useCurrentSiteUrl } from '~lib/util'
 import { shortenAddress } from '~lib/utils'
+import { ConnectedAccountsModal } from '~pages/Popup/Assets/ConnectedAccounts'
 import { useDepositModal } from '~pages/Popup/Assets/Deposit'
 import { useSendModal } from '~pages/Popup/Assets/Send'
-import { SiteConnsModal } from '~pages/Popup/Assets/SiteConns'
 import { ExportMnemonicModal } from '~pages/Settings/SettingsWallets/ExportMnemonicModal'
 
 import { AccountMenu } from './AccountMenu'
@@ -78,9 +78,9 @@ export default function Assets({ onLoaded }: { onLoaded?: () => void }) {
   const btnColorScheme = useColorModeValue('purple', undefined)
 
   const {
-    isOpen: isConnsOpen,
-    onOpen: onConnsOpen,
-    onClose: onConnsClose
+    isOpen: isConnectedAccountsOpen,
+    onOpen: onConnectedAccountsOpen,
+    onClose: onConnectedAccountsClose
   } = useDisclosure()
 
   const { onOpen: onSendOpen } = useSendModal()
@@ -151,7 +151,7 @@ export default function Assets({ onLoaded }: { onLoaded?: () => void }) {
                             />
                           )
                         }
-                        onClick={onConnsOpen}
+                        onClick={onConnectedAccountsOpen}
                       />
                     </Tooltip>
                   )}
@@ -325,7 +325,10 @@ export default function Assets({ onLoaded }: { onLoaded?: () => void }) {
 
       <TokenListSection />
 
-      <SiteConnsModal isOpen={isConnsOpen} onClose={onConnsClose} />
+      <ConnectedAccountsModal
+        isOpen={isConnectedAccountsOpen}
+        onClose={onConnectedAccountsClose}
+      />
 
       {wallet && notBackedUp && (
         <ExportMnemonicModal

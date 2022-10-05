@@ -313,8 +313,11 @@ export function useConnectedSitesBySite(href?: string) {
   }, [href])
 }
 
-export function useConnectedSitesByAccount(account: IChainAccount) {
+export function useConnectedSitesByAccount(account?: IChainAccount) {
   return useLiveQuery(async () => {
+    if (!account) {
+      return
+    }
     return CONNECTED_SITE_SERVICE.getConnectedSitesByAccount(account)
   }, [account])
 }

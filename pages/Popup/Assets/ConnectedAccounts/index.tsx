@@ -34,7 +34,7 @@ import {
 import { WalletItem } from './WalletItem'
 import { WalletList } from './WalletList'
 
-export const SiteConnsModal = ({
+export const ConnectedAccountsModal = ({
   isOpen,
   onClose
 }: {
@@ -86,7 +86,7 @@ export const SiteConnsModal = ({
                   fit="cover"
                   src={iconUrl}
                   fallback={<Icon as={FaGlobeAmericas} fontSize="3xl" />}
-                  alt="Origin Icon"
+                  alt="Site Icon"
                 />
                 <Text fontSize="lg" fontWeight="medium" noOfLines={2}>
                   {origin && new URL(origin).host}

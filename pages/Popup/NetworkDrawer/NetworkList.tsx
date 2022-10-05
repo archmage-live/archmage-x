@@ -3,12 +3,17 @@ import { useVirtualizer } from '@tanstack/react-virtual'
 import { useRef } from 'react'
 
 import { useActiveNetworkId } from '~lib/active'
-import { getNetworkInfo, useNetworks } from '~lib/services/network'
+import { INetwork } from '~lib/schema'
+import { getNetworkInfo } from '~lib/services/network'
 import { NetworkItem } from '~pages/Popup/NetworkDrawer/NetworkItem'
 
-export const NetworkList = ({ onSelected }: { onSelected(): void }) => {
-  const networks = useNetworks() || []
-
+export const NetworkList = ({
+  networks,
+  onSelected
+}: {
+  networks: INetwork[]
+  onSelected(): void
+}) => {
   const { networkId, setNetworkId } = useActiveNetworkId()
 
   const parentRef = useRef(null)
@@ -16,7 +21,7 @@ export const NetworkList = ({ onSelected }: { onSelected(): void }) => {
     count: networks.length,
     getScrollElement: () => parentRef.current,
     estimateSize: () => 56,
-    getItemKey: (index) => networks[index].id!
+    getItemKey: (index) => networks[index].id
   })
 
   return (
