@@ -17,6 +17,8 @@ export interface ProviderAdaptor {
 
   estimateSendGas(account: IChainAccount, to: string): Promise<string>
 
+  estimateGas(account: IChainAccount, tx: any): Promise<string>
+
   populateTransaction(
     account: IChainAccount,
     transaction: any

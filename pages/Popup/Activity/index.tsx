@@ -1,14 +1,15 @@
 import { Box, Text, useDisclosure } from '@chakra-ui/react'
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { useActive } from '~lib/active'
-import { IPendingTx, ITransaction } from '~lib/schema'
+import { IPendingTx } from '~lib/schema'
 import { EvmTxType } from '~lib/services/datasource/etherscan'
 import { useEvmTransactionsMixed } from '~lib/services/transaction/evm'
 
 import { ActivityDetailModal } from './ActivityDetail'
 import { ActivityItem } from './ActivityItem'
+import { EvmSpeedUpOrCancelModal } from './EvmSpeedUpOrCancelModal'
 
 export default function Activity() {
   const { network, account } = useActive()
@@ -61,7 +62,11 @@ export default function Activity() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [totalCount, transactions, txVirtualizer.getVirtualItems()])
 
-  const { isOpen, onClose, onOpen } = useDisclosure()
+  const {
+    isOpen: isDetailOpen,
+    onClose: onDetailClose,
+    onOpen: onDetailOpen
+  } = useDisclosure()
 
   const [txId, setTxId] = useState<{ id: number; isPending: boolean }>()
   const tx = useMemo(() => {
@@ -73,6 +78,14 @@ export default function Activity() {
       return tx.id === txId.id && isPending === txId.isPending
     })
   }, [transactions, txId])
+
+  const {
+    isOpen: isSpeedUpOpen,
+    onOpen: onSpeedUpOpen,
+    onClose: onSpeedUpClose
+  } = useDisclosure()
+
+  const [isSpeedUp, setIsSpeedUp] = useState(false)
 
   return (
     <Box px={4}>
@@ -142,7 +155,15 @@ export default function Activity() {
                       id: tx.id,
                       isPending
                     })
-                    onOpen()
+                    onDetailOpen()
+                  }}
+                  onSpeedUp={(isSpeedUp) => {
+                    setIsSpeedUp(isSpeedUp)
+                    setTxId({
+                      id: tx.id,
+                      isPending
+                    })
+                    onSpeedUpOpen()
                   }}
                 />
               </Box>
@@ -165,8 +186,18 @@ export default function Activity() {
         <ActivityDetailModal
           network={network}
           tx={tx}
-          isOpen={isOpen}
-          onClose={onClose}
+          isOpen={isDetailOpen}
+          onClose={onDetailClose}
+        />
+      )}
+
+      {network && tx && typeof (tx as IPendingTx).nonce === 'number' && (
+        <EvmSpeedUpOrCancelModal
+          isOpen={isSpeedUpOpen}
+          onClose={onSpeedUpClose}
+          network={network}
+          tx={tx}
+          isSpeedUp={isSpeedUp}
         />
       )}
     </Box>

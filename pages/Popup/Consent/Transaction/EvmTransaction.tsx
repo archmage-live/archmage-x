@@ -1,4 +1,4 @@
-import { ChevronRightIcon, EditIcon, InfoIcon } from '@chakra-ui/icons'
+import { EditIcon, InfoIcon } from '@chakra-ui/icons'
 import {
   Box,
   Button,
@@ -20,7 +20,6 @@ import {
   Tabs,
   Text,
   Tooltip,
-  chakra,
   useColorModeValue,
   useDisclosure
 } from '@chakra-ui/react'
@@ -28,7 +27,14 @@ import { BigNumber } from '@ethersproject/bignumber'
 import Decimal from 'decimal.js'
 import { useScroll } from 'framer-motion'
 import * as React from 'react'
-import { ReactNode, useCallback, useEffect, useRef, useState } from 'react'
+import {
+  ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState
+} from 'react'
 import { BiQuestionMark } from 'react-icons/bi'
 
 import { AlertBox } from '~components/AlertBox'
@@ -53,6 +59,7 @@ import {
   GasFeeEstimation,
   GasOption,
   MaxFeePerGas,
+  formatGwei,
   isSourcedGasFeeEstimates,
   parseGwei,
   useDefaultGasFeeSettings,
@@ -61,16 +68,13 @@ import {
 import { Balance } from '~lib/services/token'
 import { useNonce } from '~lib/services/transaction/evm'
 import { shortenAddress } from '~lib/utils'
+import { EvmGasFeeEditSection } from '~pages/Popup/Consent/Transaction/EvmGasFeeEditSection'
 
 import { EvmAdvancedGasFeeModal } from './EvmAdvancedGasFeeModal'
 import {
   EvmGasFeeEditModal,
   NETWORK_CONGESTION_THRESHOLDS,
-  minWaitTimeColor,
-  minWaitTimeText,
-  optionGasFee,
-  optionIcon,
-  optionTitle
+  optionGasFee
 } from './EvmGasFeeEditModal'
 import { FromToWithCheck } from './FromTo'
 
@@ -105,6 +109,20 @@ export const EvmTransaction = ({
   useEffect(() => {
     console.log('payload:', payload)
   }, [payload])
+
+  const siteSuggestedGasFeePerGas = useMemo(() => {
+    if (!txParams.maxPriorityFeePerGas || !txParams.maxFeePerGas) {
+      return
+    }
+    return {
+      maxPriorityFeePerGas: formatGwei(
+        (txParams.maxPriorityFeePerGas || populated.maxPriorityFeePerGas)!
+      ),
+      maxFeePerGas: formatGwei(
+        (txParams.maxFeePerGas || populated.maxFeePerGas)!
+      )
+    } as MaxFeePerGas
+  }, [txParams, populated])
 
   const isContract = useIsContract(network, txParams.to)
   const functionSig = useEvmFunctionSignature(txParams.data)
@@ -169,6 +187,12 @@ export const EvmTransaction = ({
   } = useDefaultGasFeeSettings(network.id)
 
   const [_activeOption, setActiveOption] = useState<GasOption>()
+  useEffect(() => {
+    if (siteSuggestedGasFeePerGas) {
+      setActiveOption(GasOption.SITE_SUGGESTED)
+    }
+  }, [siteSuggestedGasFeePerGas])
+
   const activeOption = _activeOption || defaultGasFeeOption || GasOption.MEDIUM
 
   const [customGasFeePerGas, setCustomGasFeePerGas] = useState<MaxFeePerGas>()
@@ -223,20 +247,16 @@ export const EvmTransaction = ({
     ]
   )
 
-  const [normalFee, maxFee] =
-    (gasFeeEstimation &&
-      activeOption &&
-      computeFee(
-        gasFeeEstimation,
-        gasLimit,
-        activeOption,
-        networkInfo.decimals,
-        customGasFeePerGas?.maxPriorityFeePerGas,
-        customGasFeePerGas?.maxFeePerGas
-      )) ||
-    []
+  const [normalFee, maxFee] = useComputeFee(
+    gasLimit,
+    networkInfo.decimals,
+    activeOption,
+    gasFeeEstimation,
+    customGasFeePerGas,
+    siteSuggestedGasFeePerGas
+  )
 
-  const value = computeValue(
+  const value = useComputeValue(
     (txParams.value as BigNumber) || 0,
     networkInfo.decimals
   )
@@ -251,8 +271,6 @@ export const EvmTransaction = ({
       return
     }
 
-    setSpinning(true)
-
     let maxPriorityFeePerGas, maxFeePerGas, gasPrice
     switch (gasFeeEstimation.gasEstimateType) {
       case GasEstimateType.FEE_MARKET: {
@@ -260,11 +278,10 @@ export const EvmTransaction = ({
         const gasFee = optionGasFee(
           activeOption,
           estimates,
-          customGasFeePerGas?.maxPriorityFeePerGas,
-          customGasFeePerGas?.maxFeePerGas
+          customGasFeePerGas,
+          siteSuggestedGasFeePerGas
         )
         if (!gasFee) {
-          setSpinning(false)
           return
         }
         maxPriorityFeePerGas = gasFee.suggestedMaxPriorityFeePerGas
@@ -280,6 +297,8 @@ export const EvmTransaction = ({
         break
       }
     }
+
+    setSpinning(true)
 
     await CONSENT_SERVICE.processRequest(
       {
@@ -310,15 +329,16 @@ export const EvmTransaction = ({
     onComplete()
     setSpinning(false)
   }, [
-    onComplete,
+    gasFeeEstimation,
+    activeOption,
     request,
     payload,
-    functionSig,
-    activeOption,
     nonce,
     gasLimit,
-    gasFeeEstimation,
-    customGasFeePerGas
+    functionSig,
+    onComplete,
+    customGasFeePerGas,
+    siteSuggestedGasFeePerGas
   ])
 
   const Data = () => {
@@ -494,108 +514,18 @@ export const EvmTransaction = ({
                           </AlertBox>
                         )}
 
-                        <Stack spacing={2}>
-                          <HStack justify="end">
-                            <Button
-                              variant="ghost"
-                              colorScheme="blue"
-                              size="sm"
-                              px={1}
-                              rightIcon={<ChevronRightIcon fontSize="xl" />}
-                              onClick={onGasFeeEditOpen}>
-                              {activeOption && optionIcon(activeOption)}
-                              &nbsp;
-                              {activeOption && optionTitle(activeOption)}
-                            </Button>
-
-                            {activeOption === GasOption.ADVANCED && (
-                              <Button
-                                variant="link"
-                                size="sm"
-                                minW={0}
-                                onClick={() => onAdvancedGasFeeOpen(false)}>
-                                <EditIcon />
-                              </Button>
-                            )}
-                          </HStack>
-
-                          <HStack justify="space-between">
-                            <Text>
-                              <chakra.span fontWeight="bold">Gas</chakra.span>
-                              &nbsp;
-                              <chakra.span fontSize="md" fontStyle="italic">
-                                (estimated)
-                              </chakra.span>
-                              &nbsp;
-                              <Tooltip
-                                label={
-                                  <Stack>
-                                    <Text>
-                                      Gas fee is paid to miners/validators who
-                                      process transactions on the Ethereum
-                                      network. Archmage does not profit from gas
-                                      fees.
-                                    </Text>
-                                    <Text>
-                                      Gas fee is set by the network and
-                                      fluctuate based on network traffic and
-                                      transaction complexity.
-                                    </Text>
-                                  </Stack>
-                                }>
-                                <InfoIcon verticalAlign="baseline" />
-                              </Tooltip>
-                            </Text>
-
-                            <Stack align="end" spacing={0}>
-                              <Text fontWeight="bold">
-                                {normalFee?.toDecimalPlaces(8).toString()}
-                                &nbsp;
-                                {networkInfo.currencySymbol}
-                              </Text>
-                              <Text>
-                                {price ? (
-                                  <>
-                                    {price.currencySymbol}&nbsp;
-                                    {formatNumber(
-                                      normalFee?.mul(price.price || 0)
-                                    )}
-                                  </>
-                                ) : (
-                                  <>
-                                    {normalFee?.toDecimalPlaces(8).toString()}
-                                  </>
-                                )}
-                              </Text>
-                            </Stack>
-                          </HStack>
-
-                          <HStack justify="space-between">
-                            <Text
-                              color={
-                                activeOption && minWaitTimeColor(activeOption)
-                              }
-                              fontSize="sm"
-                              fontWeight="medium">
-                              {gasFeeEstimation?.gasEstimateType ===
-                                GasEstimateType.FEE_MARKET &&
-                                activeOption &&
-                                minWaitTimeText(
-                                  activeOption,
-                                  gasFeeEstimation.gasFeeEstimates as GasFeeEstimates,
-                                  customGasFeePerGas?.maxPriorityFeePerGas,
-                                  customGasFeePerGas?.maxFeePerGas
-                                )}
-                            </Text>
-
-                            <Text color="gray.500">
-                              Max:&nbsp;
-                              {maxFee?.toDecimalPlaces(8).toString()}
-                              &nbsp;
-                              {networkInfo.currencySymbol}
-                            </Text>
-                          </HStack>
-                        </Stack>
+                        <EvmGasFeeEditSection
+                          networkInfo={networkInfo}
+                          activeOption={activeOption}
+                          onGasFeeEditOpen={onGasFeeEditOpen}
+                          onAdvancedGasFeeOpen={onAdvancedGasFeeOpen}
+                          normalFee={normalFee}
+                          maxFee={maxFee}
+                          gasFeeEstimation={gasFeeEstimation}
+                          customGasFeePerGas={customGasFeePerGas}
+                          siteSuggestedGasFeePerGas={siteSuggestedGasFeePerGas}
+                          price={price}
+                        />
 
                         <Divider />
                       </>
@@ -780,8 +710,8 @@ export const EvmTransaction = ({
               gasFeeEstimation.gasFeeEstimates as GasFeeEstimates
             }
             customGasFeePerGas={customGasFeePerGas}
+            siteSuggestedGasFeePerGas={siteSuggestedGasFeePerGas}
             gasLimit={gasLimit}
-            fromSite={false}
             origin={origin || ''}
           />
 
@@ -805,61 +735,83 @@ export const EvmTransaction = ({
   )
 }
 
-function computeFee(
-  gasFeeEstimation: GasFeeEstimation,
+export function useComputeFee(
   gasLimit: number,
-  option: GasOption,
   decimals: number,
-  customMaxPriorityFeePerGas?: string,
-  customMaxFeePerGas?: string
+  option?: GasOption,
+  gasFeeEstimation?: GasFeeEstimation,
+  customGasFeePerGas?: MaxFeePerGas,
+  siteSuggestedGasFeePerGas?: MaxFeePerGas,
+  increasedGasFeePerGas?: MaxFeePerGas
 ) {
-  let normalFee, maxFee
-  switch (gasFeeEstimation.gasEstimateType) {
-    case GasEstimateType.FEE_MARKET: {
-      const estimates = gasFeeEstimation.gasFeeEstimates as GasFeeEstimates
-      const gasFee = optionGasFee(
-        option,
-        estimates,
-        customMaxPriorityFeePerGas,
-        customMaxFeePerGas
-      )
-      if (!gasFee) {
+  const [normalFee, maxFee] =
+    useMemo(() => {
+      if (!option || !gasFeeEstimation) {
         return
       }
-      maxFee = parseGwei(gasFee.suggestedMaxFeePerGas)
-      normalFee = parseGwei(estimates.estimatedBaseFee).add(
-        parseGwei(gasFee.suggestedMaxPriorityFeePerGas)
-      )
-      break
-    }
-    // case GasEstimateType.LEGACY: {
-    //   const estimates = gasFeeEstimation.gasFeeEstimates as LegacyGasPriceEstimate
-    //   return
-    // }
-    case GasEstimateType.ETH_GAS_PRICE: {
-      const estimates = gasFeeEstimation.gasFeeEstimates as EthGasPriceEstimate
-      normalFee = parseGwei(estimates.gasPrice)
-      maxFee = normalFee
-      break
-    }
-  }
 
-  if (!normalFee || !maxFee) {
-    return
-  }
+      let normalFee, maxFee
+      switch (gasFeeEstimation.gasEstimateType) {
+        case GasEstimateType.FEE_MARKET: {
+          const estimates = gasFeeEstimation.gasFeeEstimates as GasFeeEstimates
+          const gasFee = optionGasFee(
+            option,
+            estimates,
+            customGasFeePerGas,
+            siteSuggestedGasFeePerGas,
+            increasedGasFeePerGas
+          )
+          if (!gasFee) {
+            return
+          }
+          maxFee = parseGwei(gasFee.suggestedMaxFeePerGas)
+          normalFee = parseGwei(estimates.estimatedBaseFee).add(
+            parseGwei(gasFee.suggestedMaxPriorityFeePerGas)
+          )
+          break
+        }
+        // case GasEstimateType.LEGACY: {
+        //   const estimates = gasFeeEstimation.gasFeeEstimates as LegacyGasPriceEstimate
+        //   return
+        // }
+        case GasEstimateType.ETH_GAS_PRICE: {
+          const estimates =
+            gasFeeEstimation.gasFeeEstimates as EthGasPriceEstimate
+          normalFee = parseGwei(estimates.gasPrice)
+          maxFee = normalFee
+          break
+        }
+      }
 
-  return [
-    new Decimal(normalFee.toString())
-      .mul(gasLimit)
-      .div(new Decimal(10).pow(decimals)),
-    new Decimal(maxFee.toString())
-      .mul(gasLimit)
-      .div(new Decimal(10).pow(decimals))
-  ]
+      if (!normalFee || !maxFee) {
+        return
+      }
+
+      return [
+        new Decimal(normalFee.toString())
+          .mul(gasLimit)
+          .div(new Decimal(10).pow(decimals)),
+        new Decimal(maxFee.toString())
+          .mul(gasLimit)
+          .div(new Decimal(10).pow(decimals))
+      ]
+    }, [
+      decimals,
+      gasFeeEstimation,
+      gasLimit,
+      option,
+      customGasFeePerGas,
+      siteSuggestedGasFeePerGas,
+      increasedGasFeePerGas
+    ]) || []
+  return [normalFee, maxFee]
 }
 
-function computeValue(value: BigNumber | number, decimals: number) {
-  return new Decimal(value.toString()).div(new Decimal(10).pow(decimals))
+function useComputeValue(value: BigNumber | number, decimals: number) {
+  return useMemo(
+    () => new Decimal(value.toString()).div(new Decimal(10).pow(decimals)),
+    [value, decimals]
+  )
 }
 
 function isNetworkBusy(gasFeeEstimation?: GasFeeEstimation) {

@@ -21,19 +21,14 @@ import { ENV } from '~lib/env'
 import { EXTENSION } from '~lib/extension'
 import { NetworkKind } from '~lib/network'
 import { SERVICE_WORKER_CLIENT, SERVICE_WORKER_SERVER } from '~lib/rpc'
-import {
-  ChainId,
-  IChainAccount,
-  INetwork,
-  IPendingTx,
-  ITransaction
-} from '~lib/schema'
+import { IChainAccount, INetwork, IPendingTx, ITransaction } from '~lib/schema'
 import {
   ETHERSCAN_API,
   EtherscanTxResponse,
   EvmTxType
 } from '~lib/services/datasource/etherscan'
 import { NETWORK_SERVICE, getNetworkInfo } from '~lib/services/network'
+import { getProvider } from '~lib/services/provider'
 import {
   EvmProvider,
   parseEvmFunctionSignature,
@@ -134,9 +129,15 @@ export function getEvmTransactionInfo(
     timestamp = info.tx.timestamp * 1000
   }
 
+  const isCancelled =
+    info.tx.from === info.tx.to &&
+    info.tx.data.toLowerCase() === '0x' &&
+    info.tx.value.isZero()
+
   return {
     type,
     isPending,
+    isCancelled,
     name,
     to: info.tx.to,
     origin: info.origin,
@@ -163,7 +164,11 @@ function formatTransactions<T extends ITransaction | IPendingTx>(
       info.receipt = formatter.receipt(info.receipt)
     }
     if (info.request) {
-      info.request = formatter.transactionRequest(info.request)
+      const chainId = info.request.chainId
+      info.request = {
+        ...formatter.transactionRequest(info.request),
+        chainId
+      }
     }
     return tx
   })
@@ -171,6 +176,14 @@ function formatTransactions<T extends ITransaction | IPendingTx>(
 
 interface IEvmTransactionService {
   getNonce(account: IChainAccount, signer: Signer): Promise<number>
+
+  signAndSendTx(
+    account: IChainAccount,
+    request: TransactionRequest,
+    origin?: string,
+    functionSig?: FunctionFragment,
+    replace?: boolean
+  ): Promise<IPendingTx>
 
   addPendingTx(
     account: IChainAccount,
@@ -513,11 +526,37 @@ export class EvmTransactionService extends EvmTransactionServicePartial {
         return
       }
 
+      console.log('Waiting for tx:', pendingTx)
       const tx = await this.waitForTx(pendingTx)
       if (!tx) {
         return
       }
     }
+  }
+
+  async signAndSendTx(
+    account: IChainAccount,
+    request: TransactionRequest,
+    origin?: string,
+    functionSig?: FunctionFragment,
+    replace?: boolean
+  ): Promise<IPendingTx> {
+    const network = await NETWORK_SERVICE.getNetwork({
+      kind: account.networkKind,
+      chainId: account.chainId
+    })
+    assert(network)
+    const provider = await getProvider(network)
+    const signedTx = await provider.signTransaction(account, request)
+    const txResponse = await provider.sendTransaction(signedTx)
+    return this.addPendingTx(
+      account,
+      request,
+      txResponse,
+      origin,
+      functionSig,
+      replace
+    )
   }
 
   async addPendingTx(
@@ -651,6 +690,7 @@ export class EvmTransactionService extends EvmTransactionServicePartial {
       } else {
         // We don't know how to wait for this transaction, so delete it.
         // Should not happen.
+        console.log('delete pending tx:', pendingTx.id)
         await DB.pendingTxs.delete(pendingTx.id)
         return
       }

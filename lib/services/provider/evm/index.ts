@@ -264,6 +264,45 @@ export class EvmProviderAdaptor implements ProviderAdaptor {
     return gas.toString()
   }
 
+  async estimateGas(account: IChainAccount, tx: any): Promise<string> {
+    const voidSigner = new VoidSigner(account.address!, this.provider)
+
+    const estimateGas = async (tx: any) => {
+      return await voidSigner.estimateGas(tx).catch((error) => {
+        if (forwardErrors.indexOf(error.code) >= 0) {
+          throw error
+        }
+
+        return logger.throwError(
+          'cannot estimate gas; transaction may fail or may require manual gas limit',
+          Logger.errors.UNPREDICTABLE_GAS_LIMIT,
+          {
+            error: error,
+            tx: tx
+          }
+        )
+      })
+    }
+
+    try {
+      return (await estimateGas(tx)).toString()
+    } catch (error: any) {
+      if (
+        error.code === Logger.errors.INSUFFICIENT_FUNDS &&
+        tx.value &&
+        BigNumber.from(tx.value).gt(0) &&
+        !tx.data?.length
+      ) {
+        // retry without value
+        const txCopy = shallowCopy(tx)
+        delete txCopy.value
+        return (await estimateGas(txCopy)).toString()
+      } else {
+        throw error
+      }
+    }
+  }
+
   async populateTransaction(
     account: IChainAccount,
     transaction: EvmTxParams
@@ -433,42 +472,9 @@ export class EvmProviderAdaptor implements ProviderAdaptor {
       delete (tx as any).gas
     }
 
-    const estimateGas = async (tx: any) => {
-      return await signer.estimateGas(tx).catch((error) => {
-        if (forwardErrors.indexOf(error.code) >= 0) {
-          throw error
-        }
-
-        return logger.throwError(
-          'cannot estimate gas; transaction may fail or may require manual gas limit',
-          Logger.errors.UNPREDICTABLE_GAS_LIMIT,
-          {
-            error: error,
-            tx: tx
-          }
-        )
-      })
-    }
-
     if (tx.gasLimit == null) {
       try {
-        try {
-          tx.gasLimit = await estimateGas(tx)
-        } catch (error: any) {
-          if (
-            error.code === Logger.errors.INSUFFICIENT_FUNDS &&
-            tx.value &&
-            BigNumber.from(tx.value).gt(0) &&
-            !tx.data?.length
-          ) {
-            // retry without value
-            const txCopy = shallowCopy(tx)
-            delete txCopy.value
-            tx.gasLimit = await estimateGas(txCopy)
-          } else {
-            throw error
-          }
-        }
+        tx.gasLimit = await this.estimateGas(account, tx)
       } catch (error: any) {
         tx.gasLimit = 28500000
         if (forwardErrors.indexOf(error.code) >= 0) {

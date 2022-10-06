@@ -253,6 +253,28 @@ export function useEstimateGasPrice(
 export function useEstimateGas(
   network?: INetwork,
   account?: IChainAccount,
+  tx?: any
+) {
+  const provider = useProvider(network)
+
+  const { value } = useAsync(async () => {
+    if (!network || !account?.address || !tx || !provider) {
+      return
+    }
+
+    try {
+      return provider.estimateGas(account, tx)
+    } catch (err) {
+      console.error('useEstimateGas:', err)
+    }
+  }, [network, account, tx, provider])
+
+  return value
+}
+
+export function useEstimateSendGas(
+  network?: INetwork,
+  account?: IChainAccount,
   to?: string
 ) {
   const provider = useProvider(network)
@@ -274,14 +296,14 @@ export function useEstimateGas(
   return value
 }
 
-export function useEstimateGasFee(
+export function useEstimateSendGasFee(
   network?: INetwork,
   account?: IChainAccount,
   retryInterval?: number,
   to?: string
 ) {
   const gasPrice = useEstimateGasPrice(network, retryInterval)
-  const gas = useEstimateGas(network, account, to)
+  const gas = useEstimateSendGas(network, account, to)
 
   return useMemo(() => {
     if (!network || !gasPrice || !gas) {

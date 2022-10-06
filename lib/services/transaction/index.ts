@@ -38,6 +38,7 @@ export function getTransactionInfo(
 export interface TransactionInfo {
   type: TransactionType
   isPending: boolean
+  isCancelled: boolean
   name: string
   to?: string
   origin?: string

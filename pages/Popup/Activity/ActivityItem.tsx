@@ -24,11 +24,13 @@ import { Status } from './ActivityDetail/evm'
 export const ActivityItem = ({
   network,
   tx,
-  onClick
+  onClick,
+  onSpeedUp
 }: {
   network: INetwork
   tx: IPendingTx | ITransaction
   onClick: () => void
+  onSpeedUp: (isSpeedUp: boolean) => void
 }) => {
   const netInfo = getNetworkInfo(network)
 
@@ -102,12 +104,20 @@ export const ActivityItem = ({
 
             {txInfo.isPending && (
               <HStack onClick={(e) => e.stopPropagation()}>
-                <Button size="xs" colorScheme="purple">
-                  Speed Up
+                <Button
+                  size="xs"
+                  colorScheme="purple"
+                  onClick={() => onSpeedUp(true)}>
+                  {!txInfo.isCancelled ? 'Speed Up' : 'Speed Up Cancellation'}
                 </Button>
-                <Button size="xs" variant="outline">
-                  Cancel
-                </Button>
+                {!txInfo.isCancelled && (
+                  <Button
+                    size="xs"
+                    variant="outline"
+                    onClick={() => onSpeedUp(false)}>
+                    Cancel
+                  </Button>
+                )}
               </HStack>
             )}
           </Stack>

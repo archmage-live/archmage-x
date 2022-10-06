@@ -33,7 +33,7 @@ import { useCoinGeckoTokenPrice } from '~lib/services/datasource/coingecko'
 import { useCryptoComparePrice } from '~lib/services/datasource/cryptocompare'
 import {
   useBalance,
-  useEstimateGasFee,
+  useEstimateSendGasFee,
   useIsContract,
   useProvider
 } from '~lib/services/provider'
@@ -86,7 +86,11 @@ export const Send = ({
   const [amountInput, setAmountInput] = useState('')
   const [isQuote, setIsQuote] = useState(false)
 
-  const gasFee = useEstimateGasFee(network, account, isOpen ? 10000 : undefined)
+  const gasFee = useEstimateSendGasFee(
+    network,
+    account,
+    isOpen ? 10000 : undefined
+  )
 
   const [addrAlert, setAddrAlert] = useState('')
   const [amountAlert, setAmountAlert] = useState('')

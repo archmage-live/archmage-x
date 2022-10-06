@@ -162,18 +162,20 @@ class CryptoCompare {
 
 export const CRYPTO_COMPARE_SERVICE = new CryptoCompare()
 
-export function useCryptoComparePrice(currency?: string):
-  | {
-      imageUrl: string | undefined
-      currencySymbol: string | undefined
-      price: number | undefined
-      displayPrice: string | undefined
-      change24Hour: number | undefined
-      changePercent24Hour: number | undefined
-      displayChange24Hour: string | undefined
-      displayChangePercent24Hour: string | undefined
-    }
-  | undefined {
+export interface CryptoComparePrice {
+  imageUrl: string | undefined
+  currencySymbol: string | undefined
+  price: number | undefined
+  displayPrice: string | undefined
+  change24Hour: number | undefined
+  changePercent24Hour: number | undefined
+  displayChange24Hour: string | undefined
+  displayChangePercent24Hour: string | undefined
+}
+
+export function useCryptoComparePrice(
+  currency?: string
+): CryptoComparePrice | undefined {
   const { quoteCurrency, quoteCurrencySymbol } = useQuoteCurrency()
 
   const { data } = useQuery(

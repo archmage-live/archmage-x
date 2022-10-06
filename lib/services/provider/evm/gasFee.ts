@@ -449,7 +449,8 @@ export enum GasOption {
   MEDIUM = 'medium',
   HIGH = 'high',
   SITE_SUGGESTED = 'siteSuggested',
-  ADVANCED = 'advanced'
+  ADVANCED = 'advanced',
+  TEN_PERCENT_INCREASE = '10%Increase'
 }
 
 export type MaxFeePerGas = {

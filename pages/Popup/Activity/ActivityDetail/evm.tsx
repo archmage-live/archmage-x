@@ -1,6 +1,5 @@
 import {
   CheckCircleIcon,
-  CopyIcon,
   ExternalLinkIcon,
   TimeIcon,
   WarningIcon
