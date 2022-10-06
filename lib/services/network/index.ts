@@ -127,7 +127,30 @@ export class NetworkService {
   }
 
   async deleteNetwork(id: number) {
-    await DB.networks.delete(id)
+    await DB.transaction(
+      'rw',
+      [
+        DB.networks,
+        DB.chainAccounts,
+        DB.pendingTxs,
+        DB.transactions,
+        DB.tokens
+      ],
+      async () => {
+        const network = await DB.networks.get(id)
+        if (!network) {
+          return
+        }
+
+        await DB.networks.delete(id)
+
+        const query = { networkKind: network.kind, chainId: network.chainId }
+        await DB.chainAccounts.where(query).delete()
+        await DB.pendingTxs.where(query).delete()
+        await DB.transactions.where(query).delete()
+        await DB.tokens.where(query).delete()
+      }
+    )
   }
 }
 

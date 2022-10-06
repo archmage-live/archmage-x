@@ -234,48 +234,6 @@ export const EVM_NETWORKS_PRESET: EvmChainInfo[] = [
     ]
   },
   {
-    name: 'Ropsten',
-    title: 'Ethereum Testnet Ropsten',
-    chain: 'ETH',
-    network: 'testnet',
-    rpc: ['https://ropsten.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161'],
-    faucets: ['http://fauceth.komputing.org?chain=3&address=${ADDRESS}'],
-    nativeCurrency: { name: 'Ropsten Ether', symbol: 'ROP', decimals: 18 },
-    infoURL: 'https://github.com/ethereum/ropsten',
-    shortName: 'rop',
-    chainId: 3,
-    networkId: 3,
-    ens: { registry: '0x112234455c3a32fd11230c42e7bccd4a84e02010' },
-    explorers: [
-      {
-        name: 'etherscan',
-        url: 'https://ropsten.etherscan.io',
-        standard: 'EIP3091'
-      }
-    ]
-  },
-  {
-    name: 'Rinkeby',
-    title: 'Ethereum Testnet Rinkeby',
-    chain: 'ETH',
-    network: 'testnet',
-    rpc: ['https://rinkeby.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161'],
-    faucets: ['http://fauceth.komputing.org?chain=4&address=${ADDRESS}'],
-    nativeCurrency: { name: 'Rinkeby Ether', symbol: 'RIN', decimals: 18 },
-    infoURL: 'https://www.rinkeby.io',
-    shortName: 'rin',
-    chainId: 4,
-    networkId: 4,
-    ens: { registry: '0xe7410170f87102df0055eb195163a03b7f2bff4a' },
-    explorers: [
-      {
-        name: 'etherscan-rinkeby',
-        url: 'https://rinkeby.etherscan.io',
-        standard: 'EIP3091'
-      }
-    ]
-  },
-  {
     name: 'Görli',
     title: 'Ethereum Testnet Görli',
     chain: 'ETH',

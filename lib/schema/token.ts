@@ -16,7 +16,7 @@ export interface IToken {
 }
 
 export const tokenSchemaV1 =
-  '++id, &[masterId+index+networkKind+chainId+address+token], [masterId+index+networkKind+chainId+address+sortId]'
+  '++id, &[masterId+index+networkKind+chainId+address+token], [masterId+index+networkKind+chainId+address+sortId], [networkKind+chainId]'
 
 export enum TokenVisibility {
   UNSPECIFIED = 'unspecified',
