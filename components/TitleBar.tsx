@@ -12,7 +12,7 @@ export const TitleBar = (props: BoxProps) => {
       fontSize="xl"
       fontWeight="bold"
       {...props}>
-      <Text cursor="pointer">Archmage X</Text>
+      <Text cursor="pointer">Archmage</Text>
 
       <HStack
         color="gray.500"

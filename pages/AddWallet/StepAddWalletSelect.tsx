@@ -15,7 +15,7 @@ export const StepAddWalletSelect = () => {
     <Stack p="4" pt="16">
       <HStack justify="center">
         <Text fontSize="4xl" fontWeight="bold">
-          Archmage X
+          Archmage
         </Text>
       </HStack>
       <HStack justify="center">

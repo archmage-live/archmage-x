@@ -9,7 +9,7 @@ export default function Welcome() {
       <Stack w="32rem">
         <HStack justify="center">
           <Text fontSize="4xl" fontWeight="bold">
-            Welcome to Archmage X
+            Welcome to Archmage
           </Text>
         </HStack>
 

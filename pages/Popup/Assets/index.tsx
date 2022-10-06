@@ -176,23 +176,7 @@ export default function Assets({ onLoaded }: { onLoaded?: () => void }) {
 
               <Tooltip
                 closeOnClick={false}
-                label={
-                  !hasCopied ? (
-                    <>
-                      <Text textAlign="center">
-                        {wallet?.name}
-                        {subWallet?.name && ` / ${subWallet.name}`}
-                      </Text>
-                      <Text textAlign="center">
-                        {account?.address
-                          ? account.address
-                          : `Not Available for network ${networkInfo?.name}`}
-                      </Text>
-                    </>
-                  ) : (
-                    'Copied Address'
-                  )
-                }
+                label={!hasCopied ? 'Copy Address' : 'Copied'}
                 placement="top">
                 <Button
                   variant="ghost"

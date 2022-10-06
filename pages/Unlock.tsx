@@ -73,7 +73,7 @@ export default function Unlock() {
         locked && (
           <Stack align="center" spacing={0}>
             <Text fontSize="2xl" fontWeight="bold">
-              Archmage X
+              Archmage
             </Text>
             <Text fontSize="lg" color="gray.500">
               Use your password to unlock

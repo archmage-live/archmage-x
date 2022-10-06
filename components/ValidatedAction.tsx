@@ -85,7 +85,7 @@ const ValidatePassword = ({ onClose }: { onClose(): void }) => {
       <Stack>
         <HStack justify="center">
           <Text fontSize="4xl" fontWeight="bold">
-            Archmage X
+            Archmage
           </Text>
         </HStack>
         <HStack justify="center">
