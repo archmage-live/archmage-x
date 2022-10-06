@@ -16,9 +16,15 @@ export class SolWallet implements SigningWallet {
 
   private constructor(private wallet: HDNode | Keypair) {}
 
-  static async from({ id, type, path }: WalletOpts): Promise<SolWallet> {
+  static async from({
+    id,
+    type,
+    path
+  }: WalletOpts): Promise<SolWallet | undefined> {
     const ks = await KEYSTORE.get(id, true)
-    assert(ks)
+    if (!ks) {
+      return undefined
+    }
     const mnemonic = ks.mnemonic
 
     let wallet

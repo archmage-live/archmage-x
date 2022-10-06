@@ -13,9 +13,15 @@ export class AptosWallet {
 
   wallet!: HDNode | AptosAccount
 
-  static async from({ id, type, path }: WalletOpts): Promise<AptosWallet> {
+  static async from({
+    id,
+    type,
+    path
+  }: WalletOpts): Promise<AptosWallet | undefined> {
     const ks = await KEYSTORE.get(id, true)
-    assert(ks)
+    if (!ks) {
+      return undefined
+    }
     const mnemonic = ks.mnemonic
 
     let wallet

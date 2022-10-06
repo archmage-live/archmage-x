@@ -9,6 +9,7 @@ import { ENV } from '~lib/env'
 import { PASSWORD } from '~lib/password'
 import { IKeystore, PSEUDO_INDEX } from '~lib/schema'
 import { IWallet } from '~lib/schema/wallet'
+import { WALLET_SERVICE } from '~lib/services/walletService'
 import { SESSION_STORE, StoreKey } from '~lib/store'
 import { stall } from '~lib/util'
 import { hasWalletKeystore } from '~lib/wallet'
@@ -163,7 +164,7 @@ export class Keystore {
     const account = await this.accounts.get(wallet.id)
     const password = await PASSWORD.get()
     if (!account) {
-      await DB.wallets.delete(wallet.id)
+      await WALLET_SERVICE.deleteWallet(wallet.id)
       console.log(
         `keystore for wallet ${wallet.id} cannot be recovered anymore, so delete it`
       )

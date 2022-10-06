@@ -500,6 +500,9 @@ export class EvmProviderAdaptor implements ProviderAdaptor {
 
   async signTransaction(wallet: IChainAccount, transaction: any): Promise<any> {
     const signer = await getSigningWallet(wallet)
+    if (!signer) {
+      throw ethErrors.rpc.internal()
+    }
     return signer.signTransaction(transaction)
   }
 
@@ -509,6 +512,9 @@ export class EvmProviderAdaptor implements ProviderAdaptor {
 
   async signMessage(wallet: IChainAccount, message: any): Promise<any> {
     const signer = await getSigningWallet(wallet)
+    if (!signer) {
+      throw ethErrors.rpc.internal()
+    }
     return signer.signMessage(message)
   }
 
@@ -537,6 +543,9 @@ export class EvmProviderAdaptor implements ProviderAdaptor {
 
   async signTypedData(wallet: IChainAccount, typedData: any): Promise<any> {
     const signer = await getSigningWallet(wallet)
+    if (!signer) {
+      throw ethErrors.rpc.internal()
+    }
     return signer.signTypedData(typedData)
   }
 }

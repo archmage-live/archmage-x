@@ -55,8 +55,8 @@ export const WalletList = ({
   const balanceMap = usePaginatedBalances(
     network,
     wallets,
-    virtualItems[0].index,
-    virtualItems[0].index + virtualItems.length
+    virtualItems[0]?.index,
+    virtualItems[0]?.index + virtualItems.length
   )
 
   return (

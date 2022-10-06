@@ -962,9 +962,14 @@ async function ensureChainAccounts(
   let hdPath: IHdPath | undefined
   if (wallet.type === WalletType.HD) {
     signingWallet = await getMasterSigningWallet(wallet, networkKind, chainId)
+    if (!signingWallet) {
+      return
+    }
 
     hdPath = await DB.hdPaths.where({ masterId, networkKind }).first()
-    assert(hdPath)
+    if (!hdPath) {
+      return
+    }
   }
 
   const existing = new Set()
@@ -1068,6 +1073,9 @@ async function ensureChainAccount(
         networkKind,
         chainId
       )
+      if (!signingWallet) {
+        return
+      }
       const hdPath = await DB.hdPaths
         .where({ masterId: wallet.id, networkKind })
         .first()
@@ -1082,6 +1090,9 @@ async function ensureChainAccount(
         networkKind,
         chainId
       )
+      if (!signingWallet) {
+        return
+      }
       address = signingWallet.address
       break
     }

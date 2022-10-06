@@ -35,9 +35,11 @@ export class CosmWallet implements SigningWallet {
     type,
     path,
     prefix
-  }: WalletOpts): Promise<CosmWallet> {
+  }: WalletOpts): Promise<CosmWallet | undefined> {
     const ks = await KEYSTORE.get(id, true)
-    assert(ks)
+    if (!ks) {
+      return undefined
+    }
     const mnemonic = ks.mnemonic
 
     const wallet = new CosmWallet()

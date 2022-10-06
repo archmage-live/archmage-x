@@ -13,7 +13,8 @@ import {
   Stack,
   Text
 } from '@chakra-ui/react'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
+import { useAsync } from 'react-use'
 
 import { CopyArea } from '~components/CopyIcon'
 import { ValidatedAction } from '~components/ValidatedAction'
@@ -63,10 +64,12 @@ export const ExportPrivateKey = ({
   onClose: () => void
 }) => {
   const [privateKey, setPrivateKey] = useState('')
-  useEffect(() => {
-    getSigningWallet(account).then((signingWallet) => {
-      setPrivateKey(signingWallet.privateKey)
-    })
+  useAsync(async () => {
+    const signingWallet = await getSigningWallet(account)
+    if (!signingWallet) {
+      return
+    }
+    setPrivateKey(signingWallet.privateKey)
   }, [account])
 
   return (

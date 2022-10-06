@@ -47,8 +47,8 @@ export const SubWalletList = ({
   const balanceMap = usePaginatedBalances(
     network,
     subWallets,
-    virtualItems[0].index,
-    virtualItems[0].index + virtualItems.length
+    virtualItems[0]?.index,
+    virtualItems[0]?.index + virtualItems.length
   )
 
   useDebounce(
@@ -116,10 +116,10 @@ export const SubWalletList = ({
 }
 
 export function usePaginatedBalances(
-  network: INetwork | undefined,
-  wallets: WalletEntry[] | SubWalletEntry[] | undefined,
-  startIndex: number,
-  endIndex: number
+  network?: INetwork,
+  wallets?: WalletEntry[] | SubWalletEntry[],
+  startIndex: number = 0,
+  endIndex: number = 0
 ) {
   const [balanceMap, setBalanceMap] = useState(new Map<number, Balance>())
 

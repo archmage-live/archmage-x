@@ -15,9 +15,15 @@ export class EvmWallet implements SigningWallet {
 
   private constructor(private wallet: ethers.utils.HDNode | ethers.Wallet) {}
 
-  static async from({ id, type, path }: WalletOpts): Promise<EvmWallet> {
+  static async from({
+    id,
+    type,
+    path
+  }: WalletOpts): Promise<EvmWallet | undefined> {
     const ks = await KEYSTORE.get(id, true)
-    assert(ks)
+    if (!ks) {
+      return undefined
+    }
     const mnemonic = ks.mnemonic
 
     let wallet
