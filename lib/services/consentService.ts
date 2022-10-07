@@ -235,7 +235,7 @@ class ConsentService implements IConsentService {
 
     let index = this.consentRequests.findIndex(({ id }) => req.id === id)
     if (index < 0) {
-      throw new Error(`transaction request with id ${req.id} not found`)
+      throw new Error(`consent request with id ${req.id} not found`)
     }
 
     let resolve: any, reject: any

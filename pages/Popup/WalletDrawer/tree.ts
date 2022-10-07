@@ -389,6 +389,7 @@ export function useWalletTree<
       _setChecked((oldChecked) => {
         let checked = new Map(oldChecked.entries())
         let wallets = walletEntries.slice()
+        let isChanged = false
         if (typeof item === 'number') {
           const foundIndex = walletEntries.findIndex(
             (wallet) => wallet.wallet.id === item
@@ -399,11 +400,13 @@ export function useWalletTree<
             subWallet.isChecked = isChecked
 
             if (isChecked && !checked.has(subWallet.account.id)) {
+              isChanged = true
               checked.set(subWallet.account.id, {
                 id: subWallet.subWallet.masterId,
                 subId: subWallet.subWallet.id
               })
             } else if (!isChecked && checked.has(subWallet.account.id)) {
+              isChanged = true
               checked.delete(subWallet.account.id)
             }
           })
@@ -414,17 +417,21 @@ export function useWalletTree<
             markSubWalletItem(wallets, id, subId, undefined, isChecked)
           wallets = changedWallets
 
-          if (isChecked) {
+          if (isChecked && !checked.has(subWallet.account.id)) {
+            isChanged = true
             checked.set(subWallet.account.id, {
               id: subWallet.subWallet.masterId,
               subId: subWallet.subWallet.id
             })
-          } else {
+          } else if (!isChecked && checked.has(subWallet.account.id)) {
+            isChanged = true
             checked.delete(subWallet.account.id)
           }
         }
 
-        setWalletEntries(wallets)
+        if (isChanged) {
+          setWalletEntries(wallets)
+        }
 
         return checked
       })

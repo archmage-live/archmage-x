@@ -1,5 +1,4 @@
 import { checkLockTime } from '~hooks/useLockTime'
-import '~lib/inject'
 import '~lib/keystore'
 import { SERVICE_WORKER_SERVER } from '~lib/rpc'
 import { NetworkService } from '~lib/services/network'

@@ -74,6 +74,7 @@ export async function createWindow(ctx: Context, to: string) {
     }
   } catch (err) {
     console.error(err)
+    window = undefined
   }
 
   if (window) {

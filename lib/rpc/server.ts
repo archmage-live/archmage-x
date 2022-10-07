@@ -10,8 +10,6 @@
 import assert from 'assert'
 import browser from 'webextension-polyfill'
 
-// import { Platform, getPlatform } from '~lib/platform'
-import { HELLO, SERVICE_WORKER_CHANNEL } from './client'
 import {
   Context,
   Event,
@@ -21,7 +19,9 @@ import {
   Listener,
   Request,
   isMsgEventMethod
-} from './clientInjected'
+} from '../inject/client'
+// import { Platform, getPlatform } from '~lib/platform'
+import { HELLO, SERVICE_WORKER_CHANNEL } from './client'
 
 /**
  * RPC server side.
@@ -47,8 +47,8 @@ export class RpcServer {
     browser.runtime.onConnect.addListener(this.onConnect)
   }
 
-  onConnect = (port: browser.Runtime.Port) => {
-    const conn = RpcConn.from(port, this)
+  onConnect = async (port: browser.Runtime.Port) => {
+    const conn = await RpcConn.from(port, this)
     if (!conn) {
       return
     }
@@ -64,7 +64,8 @@ export class RpcServer {
 }
 
 class RpcConn {
-  private events = new Map<any, Map<EventType, Listener>>()
+  private connected: boolean = true
+  private events = new Map<EventEmitter, Map<EventType, Listener>>()
 
   constructor(
     private port: browser.Runtime.Port,
@@ -72,7 +73,7 @@ class RpcConn {
     private server: RpcServer
   ) {}
 
-  static from(port: browser.Runtime.Port, server: RpcServer) {
+  static async from(port: browser.Runtime.Port, server: RpcServer) {
     if (port.name !== server.channel) {
       port.disconnect()
       console.warn(
@@ -93,19 +94,38 @@ class RpcConn {
     port.onMessage.addListener(conn.onMessage)
     port.onDisconnect.addListener(conn.onDisconnect)
     // say hello to handshake
-    port.postMessage(HELLO)
+    conn.postMessage(port, HELLO)
 
     return conn
   }
 
   onDisconnect = () => {
+    this.connected = false
+    for (const [emitter, events] of this.events) {
+      for (const [event, listener] of events) {
+        emitter.off(event, listener)
+      }
+    }
     this.server.onDisconnect(this)
+  }
+
+  postMessage(port: browser.Runtime.Port, msg: any) {
+    try {
+      port.postMessage(msg)
+    } catch (err: any) {
+      console.error(err)
+      if (
+        err.toString().includes('Attempting to use a disconnected port object')
+      ) {
+        this.onDisconnect()
+      }
+    }
   }
 
   onMessage = (msg: Request, port: browser.Runtime.Port) => {
     const service = this.server.services.get(msg.service)
     if (!service || (!this.fromInternal && service?.[1])) {
-      port.postMessage({
+      this.postMessage(port, {
         id: msg.id,
         error: `rpc service not found: ${msg.service}`
       })
@@ -113,27 +133,73 @@ class RpcConn {
     }
 
     if (isMsgEventMethod(msg.method)) {
-      return this.onEvent(service[0], msg, port)
+      return this.onEvent(service[0] as EventEmitter, msg, port)
     }
 
     return this.onCall(service[0], msg, port)
   }
 
-  onEvent = (service: any, msg: Request, port: browser.Runtime.Port) => {
-    let events = this.events.get(service)
-    if (!events) {
-      events = new Map()
-      this.events.set(service, events)
+  onCall = (service: any, msg: Request, port: browser.Runtime.Port) => {
+    const id = msg.id
+    const args = [
+      ...msg.args,
+      {
+        ...msg.ctx,
+        fromUrl: this.fromInternal ? undefined : port.sender?.url,
+        fromInternal: this.fromInternal
+      } as Context
+    ]
+
+    let promise: Promise<any>
+    try {
+      promise = service[msg.method](...args)
+    } catch (err) {
+      this.postMessage(port, {
+        id,
+        error: `rpc service call failed: ${msg.service}.${msg.method}, error: ${err}`
+      })
+      return
     }
 
-    const emitter = service as EventEmitter
+    promise
+      .then((result) => {
+        this.postMessage(port, {
+          id,
+          result
+        })
+      })
+      .catch((err) => {
+        this.postMessage(port, {
+          id,
+          error: err.toString()
+        })
+
+        if (process.env.NODE_ENV === 'development') {
+          throw err
+        } else {
+          console.log(err)
+        }
+      })
+  }
+
+  onEvent = (
+    emitter: EventEmitter,
+    msg: Request,
+    port: browser.Runtime.Port
+  ) => {
+    let events = this.events.get(emitter)
+    if (!events) {
+      events = new Map()
+      this.events.set(emitter, events)
+    }
+
     const eventName = msg.args[0] as EventType
 
     switch (msg.method as EventMethodType) {
       case 'on': {
         assert(!events.has(eventName))
         const listener = (...args: any[]) => {
-          port.postMessage({
+          this.postMessage(port, {
             service: msg.service,
             eventName,
             args
@@ -152,49 +218,6 @@ class RpcConn {
         break
       }
     }
-  }
-
-  onCall = (service: any, msg: Request, port: browser.Runtime.Port) => {
-    const id = msg.id
-    const args = [
-      ...msg.args,
-      {
-        ...msg.ctx,
-        fromUrl: this.fromInternal ? undefined : port.sender?.url,
-        fromInternal: this.fromInternal
-      } as Context
-    ]
-
-    let promise: Promise<any>
-    try {
-      promise = service[msg.method](...args)
-    } catch (err) {
-      port.postMessage({
-        id,
-        error: `rpc service call failed: ${msg.service}.${msg.method}, error: ${err}`
-      })
-      return
-    }
-
-    promise
-      .then((result) => {
-        port.postMessage({
-          id,
-          result
-        })
-      })
-      .catch((err) => {
-        port.postMessage({
-          id,
-          error: err.toString()
-        })
-
-        if (process.env.NODE_ENV === 'development') {
-          throw err
-        } else {
-          console.log(err)
-        }
-      })
   }
 }
 

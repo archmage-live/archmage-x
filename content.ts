@@ -1,6 +1,5 @@
 import type { PlasmoContentScript } from 'plasmo'
 
-import { SERVICE_WORKER_CLIENT } from '~lib/rpc/client'
 import type {
   Event,
   EventMethodType,
@@ -8,8 +7,10 @@ import type {
   Listener,
   Request,
   Response
-} from '~lib/rpc/clientInjected'
-import { isMsgEventMethod } from '~lib/rpc/clientInjected'
+} from '~lib/inject/client'
+import { isMsgEventMethod } from '~lib/inject/client'
+import { inject } from '~lib/inject/inject'
+import { SERVICE_WORKER_CLIENT } from '~lib/rpc/client'
 
 export const config: PlasmoContentScript = {
   // matches: ['*://*/*'],
@@ -25,6 +26,8 @@ class RpcClientMiddleware {
   private events = new Map<string, Map<EventType, Listener>>()
 
   constructor() {
+    SERVICE_WORKER_CLIENT.connect()
+
     const listener = (event: MessageEvent) => {
       if (event.source !== window) {
         return
@@ -100,3 +103,5 @@ if (!global.archmage) {
 if (!global.archmage._service_client_middleware) {
   global.archmage._service_client_middleware = new RpcClientMiddleware()
 }
+
+inject()

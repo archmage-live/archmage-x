@@ -15,7 +15,7 @@ import {
   Event,
   Request,
   Response
-} from './clientInjected'
+} from '../inject/client'
 
 export const HELLO = 'hello'
 

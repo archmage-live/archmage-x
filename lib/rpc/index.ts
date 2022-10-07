@@ -1,3 +1,3 @@
-export * from './server'
+export * from '../inject/client'
 export * from './client'
-export * from './clientInjected'
+export * from './server'

@@ -12,7 +12,7 @@ import { ReactNode, useEffect, useState } from 'react'
 import { FaGlobeAmericas } from 'react-icons/fa'
 import { useAsync } from 'react-use'
 
-import { useActiveNetwork } from '~lib/active'
+import { useActive } from '~lib/active'
 import { CONSENT_SERVICE, ConsentRequest } from '~lib/services/consentService'
 import { WALLET_SERVICE } from '~lib/services/walletService'
 import { useSiteIconUrl } from '~lib/util'
@@ -32,13 +32,26 @@ export const RequestPermission = ({
 }) => {
   const iconUrl = useSiteIconUrl(request.origin)
 
-  const network = useActiveNetwork()
+  const { network, wallet, subWallet } = useActive()
   const { wallets, toggleOpen, checked, setChecked, clearChecked } =
     useWalletTree(network)
 
+  const [isFirst, setIsFirst] = useState(true)
+
   useEffect(() => {
     clearChecked()
+    setIsFirst(true)
   }, [request, clearChecked])
+
+  useEffect(() => {
+    if (!isFirst) {
+      return
+    }
+    if (wallet && subWallet && wallets) {
+      setIsFirst(false)
+      setChecked({ id: wallet.id, subId: subWallet.id }, true)
+    }
+  }, [wallet, subWallet, wallets, setChecked, isFirst])
 
   const [flatChecked, setFlatChecked] = useState<number[]>()
   const [info, setInfo] = useState<any>()
