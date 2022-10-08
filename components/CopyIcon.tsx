@@ -52,7 +52,11 @@ export const CopyArea = ({
   area,
   noWrap,
   props
-}: CopyProps & { area?: string; noWrap?: boolean; props?: StackProps }) => {
+}: CopyProps & {
+  area?: string
+  noWrap?: boolean
+  props?: StackProps
+}) => {
   const { hasCopied, onCopy } = useClipboard(copy)
   const label = !hasCopied ? `Copy ${name}` : 'Copied'
 

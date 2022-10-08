@@ -1,6 +1,7 @@
+import { FunctionFragment } from '@ethersproject/abi'
 import { VoidSigner } from '@ethersproject/abstract-signer'
 import { BigNumber } from '@ethersproject/bignumber'
-import { BytesLike } from '@ethersproject/bytes'
+import { BytesLike, hexValue, hexlify } from '@ethersproject/bytes'
 import { _TypedDataEncoder } from '@ethersproject/hash'
 import { Logger } from '@ethersproject/logger'
 import { Network } from '@ethersproject/networks'
@@ -13,7 +14,6 @@ import { version } from '@ethersproject/providers/lib/_version'
 import { ConnectionInfo } from '@ethersproject/web'
 import assert from 'assert'
 import { ethErrors } from 'eth-rpc-errors'
-import { ethers } from 'ethers'
 import { useCallback, useMemo } from 'react'
 import { useAsync } from 'react-use'
 
@@ -102,7 +102,7 @@ class UrlJsonRpcProvider extends BaseUrlJsonRpcProvider {
         return [
           'eth_feeHistory',
           [
-            ethers.utils.hexValue(params.numberOfBlocks),
+            hexValue(params.numberOfBlocks),
             params.endBlockTag,
             params.percentiles
           ]
@@ -574,8 +574,8 @@ export function useEvmProvider(network?: INetwork) {
 
 export function useEvmFunctionSignature(
   data?: BytesLike
-): ethers.utils.FunctionFragment | undefined {
-  const hex = data?.length ? ethers.utils.hexlify(data) : undefined
+): FunctionFragment | undefined {
+  const hex = data?.length ? hexlify(data) : undefined
 
   const sig = useEvmSignatureFrom4Bytes(hex?.slice(0, 10))
 
@@ -589,7 +589,7 @@ export function useEvmFunctionSignature(
 }
 
 export function parseEvmFunctionSignature(sig: string) {
-  return ethers.utils.FunctionFragment.from(sig)
+  return FunctionFragment.from(sig)
 }
 
 function gasFeeStoreKey(networkId: number): string {

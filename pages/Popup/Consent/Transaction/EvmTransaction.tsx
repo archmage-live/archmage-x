@@ -66,7 +66,10 @@ import {
   useEvmFunctionSignature
 } from '~lib/services/provider/evm'
 import { Balance } from '~lib/services/token'
-import { useNonce } from '~lib/services/transaction/evm'
+import {
+  useNonce,
+  useTransactionDescription
+} from '~lib/services/transaction/evm'
 import { shortenAddress } from '~lib/utils'
 import { EvmGasFeeEditSection } from '~pages/Popup/Consent/Transaction/EvmGasFeeEditSection'
 
@@ -76,6 +79,7 @@ import {
   NETWORK_CONGESTION_THRESHOLDS,
   optionGasFee
 } from './EvmGasFeeEditModal'
+import { EvmTransactionData } from './EvmTransactionData'
 import { FromToWithCheck } from './FromTo'
 
 export const EvmTransaction = ({
@@ -125,7 +129,11 @@ export const EvmTransaction = ({
   }, [txParams, populated])
 
   const isContract = useIsContract(network, txParams.to)
-  const functionSig = useEvmFunctionSignature(txParams.data)
+
+  const { signature: functionSig, description } = useTransactionDescription(
+    network,
+    isContract ? txParams : undefined
+  )
 
   const [ignoreEstimateError, setIgnoreEstimateError] = useState(false)
 
@@ -175,6 +183,8 @@ export const EvmTransaction = ({
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  const [tabIndex, setTabIndex] = useState(0)
 
   const [spinning, setSpinning] = useState(false)
 
@@ -341,14 +351,6 @@ export const EvmTransaction = ({
     siteSuggestedGasFeePerGas
   ])
 
-  const Data = () => {
-    return <></>
-  }
-
-  const Hex = () => {
-    return <></>
-  }
-
   return (
     <>
       <Stack>
@@ -400,17 +402,16 @@ export const EvmTransaction = ({
                         {shortenAddress(txParams.to)}
                       </Text>
 
-                      <Text fontSize="md" color="gray.500">
-                        <span>
+                      <HStack spacing={1} fontSize="md" color="gray.500">
+                        <Text maxW="196px" noOfLines={1}>
                           :&nbsp;
                           {functionSig?.name.toUpperCase() ||
                             'Contract Interaction'.toUpperCase()}
-                        </span>
-                        &nbsp;
+                        </Text>
                         <Tooltip label="We cannot verify this contract. Make sure you trust this address.">
                           <InfoIcon />
                         </Tooltip>
-                      </Text>
+                      </HStack>
                     </>
                   ) : !txParams.to ? (
                     <Text fontSize="md" color="gray.500">
@@ -463,18 +464,20 @@ export const EvmTransaction = ({
           <Divider />
         </Box>
 
-        <Box ref={anchorRef} w="full" bg={bg} zIndex={1} sx={tabsHeaderSx}>
-          <Tabs w="full" px={6}>
-            <TabList>
-              <Tab>DETAILS</Tab>
-              <Tab>DATA</Tab>
-              <Tab>HEX</Tab>
-            </TabList>
-          </Tabs>
-        </Box>
+        {isContract && (
+          <Box ref={anchorRef} w="full" bg={bg} zIndex={1} sx={tabsHeaderSx}>
+            <Tabs w="full" px={6} index={tabIndex} onChange={setTabIndex}>
+              <TabList>
+                <Tab>DETAILS</Tab>
+                <Tab>DATA</Tab>
+                <Tab>HEX</Tab>
+              </TabList>
+            </Tabs>
+          </Box>
+        )}
 
         <Stack w="full" px={6} pt={6} spacing={8}>
-          <Tabs>
+          <Tabs index={tabIndex}>
             <TabPanels>
               <TabPanel p={0}>
                 <Stack spacing={16}>
@@ -640,10 +643,14 @@ export const EvmTransaction = ({
                 </Stack>
               </TabPanel>
               <TabPanel p={0}>
-                <Data />
+                <EvmTransactionData tx={txParams} description={description} />
               </TabPanel>
               <TabPanel p={0}>
-                <Hex />
+                <EvmTransactionData
+                  tx={txParams}
+                  description={description}
+                  showHex
+                />
               </TabPanel>
             </TabPanels>
           </Tabs>

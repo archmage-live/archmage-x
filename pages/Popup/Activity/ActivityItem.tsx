@@ -66,6 +66,7 @@ export const ActivityItem = ({
       px={4}
       justifyContent="start"
       variant="solid-secondary"
+      fontSize="md"
       onClick={onClick}>
       <HStack w="full" justify="space-between" fontWeight="normal">
         <Center
@@ -79,7 +80,7 @@ export const ActivityItem = ({
 
         <HStack w="calc(100% - 42px)" justify="space-between" align="start">
           <Stack align="start" maxW="65%" spacing={4}>
-            <Stack>
+            <Stack maxW="full">
               <Text
                 fontWeight="medium"
                 noOfLines={1}

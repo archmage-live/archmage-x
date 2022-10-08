@@ -4,7 +4,8 @@ import {
   ModalCloseButton,
   ModalContent,
   ModalHeader,
-  ModalOverlay
+  ModalOverlay,
+  chakra
 } from '@chakra-ui/react'
 
 import { NetworkKind } from '~lib/network'
@@ -44,7 +45,11 @@ export const ActivityDetailModal = ({
     <Modal size="full" isOpen={isOpen} onClose={onClose}>
       <ModalOverlay />
       <ModalContent>
-        <ModalHeader>{txInfo.name}</ModalHeader>
+        <ModalHeader>
+          <chakra.div maxW="224px" noOfLines={1}>
+            {txInfo.name}
+          </chakra.div>
+        </ModalHeader>
         <ModalCloseButton />
         <ModalBody>
           <ActivityDetail network={network} tx={tx} />

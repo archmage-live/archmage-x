@@ -9,6 +9,9 @@ export const theme: Record<string, any> = extendTheme(
   {
     styles: {
       global: (props: StyleFunctionProps) => ({
+        html: {
+          fontSize: '14px'
+        },
         body: {
           fontFamily: 'body',
           color: mode('gray.800', 'whiteAlpha.900')(props),

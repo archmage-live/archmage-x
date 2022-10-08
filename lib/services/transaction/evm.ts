@@ -13,7 +13,7 @@ import Dexie from 'dexie'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { Signer, ethers } from 'ethers'
 import { useEffect, useMemo } from 'react'
-import { useAsyncRetry } from 'react-use'
+import { useAsync, useAsyncRetry } from 'react-use'
 import browser from 'webextension-polyfill'
 
 import { DB } from '~lib/db'
@@ -25,13 +25,15 @@ import { IChainAccount, INetwork, IPendingTx, ITransaction } from '~lib/schema'
 import {
   ETHERSCAN_API,
   EtherscanTxResponse,
-  EvmTxType
+  EvmTxType,
+  useEtherScanProvider
 } from '~lib/services/datasource/etherscan'
 import { NETWORK_SERVICE, getNetworkInfo } from '~lib/services/network'
 import { getProvider } from '~lib/services/provider'
 import {
   EvmProvider,
   parseEvmFunctionSignature,
+  useEvmFunctionSignature,
   useEvmProvider
 } from '~lib/services/provider/evm'
 
@@ -1148,4 +1150,34 @@ export function useNonce(account?: IChainAccount, network?: INetwork) {
     const signer = new VoidSigner(account.address, provider)
     return EVM_TRANSACTION_SERVICE.getNonce(account, signer)
   }, [account, provider])
+}
+
+export function useTransactionDescription(
+  network?: INetwork,
+  tx?: TransactionRequest
+) {
+  const provider = useEtherScanProvider(network)
+
+  const { value: description } = useAsync(async () => {
+    const contract = tx?.to
+    const data = tx?.data?.length ? ethers.utils.hexlify(tx.data) : undefined
+    if (!provider || !contract || !data) {
+      return
+    }
+    let iface
+    try {
+      iface = await provider.getAbi(contract)
+    } catch {
+      return
+    }
+    return iface.parseTransaction({ data })
+  }, [provider, tx])
+
+  const _signature = useEvmFunctionSignature(tx?.data)
+  const signature = description?.functionFragment || _signature
+
+  return {
+    signature,
+    description
+  }
 }

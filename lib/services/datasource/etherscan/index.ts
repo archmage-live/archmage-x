@@ -1,3 +1,4 @@
+import { Interface } from '@ethersproject/abi'
 import { TransactionResponse } from '@ethersproject/abstract-provider'
 import { Logger } from '@ethersproject/logger'
 import { Network } from '@ethersproject/networks'
@@ -5,6 +6,7 @@ import { EtherscanProvider } from '@ethersproject/providers'
 import { version } from '@ethersproject/providers/lib/_version'
 import { ConnectionInfo } from '@ethersproject/web'
 import assert from 'assert'
+import { useMemo } from 'react'
 
 import { fetchJson, fetchJsonWithCache } from '~lib/fetch'
 import { EvmChainInfo } from '~lib/network/evm'
@@ -195,6 +197,16 @@ class CachedEtherscanProvider extends EtherscanProvider {
 
   async getBlockCountdown() {}
 
+  async getAbi(addressOrName: string): Promise<Interface> {
+    const params = {
+      action: 'getabi',
+      address: await this.resolveName(addressOrName)
+    }
+
+    const result = await this.fetch('contract', params)
+    return new Interface(JSON.parse(result))
+  }
+
   async getTransactions(
     type: EvmTxType,
     addressOrName: string,
@@ -272,3 +284,12 @@ class EtherScanApi {
 }
 
 export const ETHERSCAN_API = new EtherScanApi()
+
+export function useEtherScanProvider(network?: INetwork) {
+  return useMemo(() => {
+    if (!network) {
+      return
+    }
+    return ETHERSCAN_API.getProvider(network)
+  }, [network])
+}

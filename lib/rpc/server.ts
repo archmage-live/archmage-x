@@ -113,11 +113,12 @@ class RpcConn {
     try {
       port.postMessage(msg)
     } catch (err: any) {
-      console.error(err)
       if (
         err.toString().includes('Attempting to use a disconnected port object')
       ) {
         this.onDisconnect()
+      } else {
+        console.error(err)
       }
     }
   }
