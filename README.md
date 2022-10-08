@@ -1,8 +1,21 @@
-This is a [Plasmo extension](https://docs.plasmo.com/) project bootstrapped with [`plasmo init`](https://www.npmjs.com/package/plasmo).
+# 🚀 Archmage X
 
-## Getting Started
+<p align="center"><a href="https://archmage.live" target="_blank" rel="noopener noreferrer"><img width="200" src="https://github.com/archmage-live/archmage-x/raw/main/assets/archmage.svg" alt="Archmage logo"></a></p>
 
-First, run the development server:
+Archmage X is an open source decentralized programmable Web3 wallet, built as a browser extension.
+
+* **Concise and professional:** Web3 and blockchain are complex, and we encapsulate the complexity to create the best user experience. But we don't shy away from complexity, and provide advanced functionality as well.
+* **Heterogeneous multi-chain:** Now it is Ethereum, and the future is heterogeneous multi-chain. Archmage not only strives to build the best Ethereum DApp experience, but also will create a consistent interface for emerging blockchain platforms such as Cosmos.
+* **Massive local wallets/accounts management:** Currently there's no App that can effectively and conveniently manage a large number of wallets, but we know that this is just needed in a decentralized world. Archmage's local storage framework based on [IndexedDB API](https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API) will provide anyone with massive wallets/accounts management capabilities.
+* **Extensible and customizable:** Want even more features? Archmage will soon implement the **extensions-on-extension framework**. And anyone can install extensions to perform batch operation, view information of all wallets/accounts across all networks, and customize colors and themes. Extensions run in separate execution environment, ensuring they won't slow down Archmage or create any security risks.
+
+## Install
+
+You can download the latest Archmage X [here](https://github.com/archmage-live/archmage-x/releases/latest).
+
+## Development
+
+Run the development server:
 
 ```bash
 pnpm dev
@@ -10,13 +23,10 @@ pnpm dev
 npm run dev
 ```
 
-Open your browser and load the appropriate development build. For example, if you are developing for the chrome browser, using manifest v3, use: `build/chrome-mv3-dev`.
+Open your browser and load the appropriate development build. For example, if you are developing for the chrome browser,
+using manifest v3, use: `build/chrome-mv3-dev`.
 
-You can start editing the popup by modifying `popup.tsx`. It should auto-update as you make changes. To add an options page, simply add a `options.tsx` file to the root of the project, with a react component default exported. Likewise to add a content page, add a `content.ts` file to the root of the project, importing some module and do some logic, then reload the extension on your browser.
-
-For further guidance, [visit our Documentation](https://docs.plasmo.com/)
-
-## Making production build
+## Build
 
 Run the following:
 
@@ -26,8 +36,8 @@ pnpm build
 npm run build
 ```
 
-This should create a production bundle for your extension, ready to be zipped and published to the stores.
+This should create a production bundle, ready to be zipped and published to the stores.
 
-## Submit to the webstores
+## License
 
-The easiest way to deploy your Plasmo extension is to use the built-in [bpp](https://bpp.browser.market) GitHub action. Prior to using this action however, make sure to build your extension and upload the first version to the store to establish the basic credentials. Then, simply follow [this setup instruction](https://docs.plasmo.com/workflows#submit-your-extension) and you should be on your way for automated submission!
+Archmage X is [Apache licensed](./LICENSE).
