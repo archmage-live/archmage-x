@@ -2,33 +2,28 @@ import {
   Button,
   FormControl,
   FormErrorMessage,
-  FormHelperText,
   FormLabel,
   HStack,
-  Select,
   Stack,
   Text,
   useDisclosure
 } from '@chakra-ui/react'
-import { useCallback, useEffect, useState } from 'react'
-import { useDebounce } from 'react-use'
+import { stringToPath } from '@cosmjs/crypto'
+import { useState } from 'react'
 
 import { HdPathInput } from '~components/HdPathInput'
 import { SaveInput } from '~components/SaveInput'
 import { DB } from '~lib/db'
-import { NETWORK_SCOPES, getNetworkKind } from '~lib/network'
+import { NetworkKind } from '~lib/network'
 import { IWallet } from '~lib/schema/wallet'
 import {
   WALLET_SERVICE,
   WalletInfo,
-  useHdPaths,
+  useHdPath,
   useSubWallets
 } from '~lib/services/walletService'
-import {
-  WalletType,
-  getDefaultPathPrefix,
-  getWalletTypeTitle
-} from '~lib/wallet'
+import { WalletType, getWalletTypeTitle } from '~lib/wallet'
+import { ChangeHdPathModal } from '~pages/Settings/SettingsWallets/ChangeHdPathModal'
 
 import {
   WrappedDeleteWalletModal,
@@ -37,60 +32,27 @@ import {
 import { ExportMnemonicModal } from './ExportMnemonicModal'
 
 interface WalletEditProps {
+  networkKind: NetworkKind
   wallet: IWallet
   onDelete: () => void
 }
 
-export const WalletEdit = ({ wallet, onDelete }: WalletEditProps) => {
-  const hdPaths = useHdPaths(wallet.id)
+export const WalletEdit = ({
+  networkKind,
+  wallet,
+  onDelete
+}: WalletEditProps) => {
   const subWallets = useSubWallets(wallet.id)
 
-  const [networkScope, setNetworkScope] = useState(NETWORK_SCOPES[0])
-  const [hdPath, setHdPath] = useState('')
-  useEffect(() => {
-    const networkKind = getNetworkKind(networkScope)
-    setHdPath(hdPaths?.get(networkKind) || '')
-  }, [hdPaths, networkScope])
-
-  const [changed, setChanged] = useState(false)
-  const [notDefault, setNotDefault] = useState(false)
-  useEffect(() => {
-    const networkKind = getNetworkKind(networkScope)
-    setChanged(hdPath !== hdPaths?.get(networkKind))
-    setNotDefault(hdPath !== getDefaultPathPrefix(networkKind))
-  }, [hdPath, hdPaths, networkScope])
-
-  const [hdPathAction, setHdPathAction] = useState('')
-
-  const [saveVisibility, setSaveVisibility] = useState<any>('hidden')
-  const [saveColorScheme, setSaveColorScheme] = useState('gray')
-  useDebounce(
-    () => {
-      if (changed) {
-        setHdPathAction('Save')
-      } else if (notDefault) {
-        setHdPathAction('Default')
-      }
-      setSaveVisibility(!(changed || notDefault) ? 'hidden' : 'visible')
-      setSaveColorScheme(!(changed || notDefault) ? 'gray' : 'purple')
-    },
-    200,
-    [changed, notDefault]
-  )
-
-  const onSaveHdPath = useCallback(async () => {
-    const networkKind = getNetworkKind(networkScope)
-    const h = await DB.hdPaths
-      .where({ masterId: wallet.id, networkKind })
-      .first()
-    if (!h) {
-      return
-    }
-    const path = changed ? hdPath : getDefaultPathPrefix(networkKind)
-    await DB.hdPaths.update(h, { path })
-  }, [changed, hdPath, networkScope, wallet])
+  const [hdPath, derivePosition] = useHdPath(networkKind, wallet, 0)
 
   const [deriveNum, setDeriveNum] = useState(0)
+
+  const {
+    isOpen: isChangeHdPathOpen,
+    onOpen: onChangeHdPathOpen,
+    onClose: onChangeHdPathClose
+  } = useDisclosure()
 
   const {
     isOpen: isExportOpen,
@@ -103,58 +65,27 @@ export const WalletEdit = ({ wallet, onDelete }: WalletEditProps) => {
   const { onOpen: onOpenDeleteWallet } = useDeleteWalletModal()
 
   return (
-    <Stack spacing="12">
+    <Stack spacing="12" fontSize="md">
       <WalletNameEdit wallet={wallet} />
 
       <Text fontWeight="medium">Type: {getWalletTypeTitle(wallet.type)}</Text>
 
-      {wallet.type === WalletType.HD && (
-        <Stack spacing={6}>
-          <FormControl>
-            <FormLabel>Network Type</FormLabel>
+      {wallet.type === WalletType.HD && hdPath && (
+        <FormControl>
+          <FormLabel>HD Path</FormLabel>
 
-            <HStack spacing={6}>
-              <Select
-                w={32}
-                value={networkScope}
-                onChange={(e) => setNetworkScope(e.target.value)}>
-                {NETWORK_SCOPES.map((scope) => {
-                  return (
-                    <option key={scope} value={scope}>
-                      {scope}
-                    </option>
-                  )
-                })}
-              </Select>
-
-              <Button
-                visibility={saveVisibility}
-                colorScheme={saveColorScheme}
-                transition="all 0.2s"
-                onClick={onSaveHdPath}>
-                {hdPathAction}
-              </Button>
-            </HStack>
-          </FormControl>
-
-          {hdPath && (
-            <FormControl>
-              <FormLabel>HD Path</FormLabel>
-
-              <HdPathInput
-                forcePrefix="m"
-                value={hdPath}
-                onChange={setHdPath}
-              />
-
-              <FormHelperText>
-                You can set HD path for any specific network type. Please be
-                careful that changing the default HD path will cause the
-                addresses of all derived wallets to change.
-              </FormHelperText>
-            </FormControl>
-          )}
-        </Stack>
+          <HStack spacing={12}>
+            <HdPathInput
+              forcePrefixLength={stringToPath(hdPath).length}
+              fixedLength
+              derivePosition={derivePosition}
+              value={hdPath}
+            />
+            <Button colorScheme="purple" onClick={onChangeHdPathOpen}>
+              Change
+            </Button>
+          </HStack>
+        </FormControl>
       )}
 
       <Stack spacing={6}>
@@ -209,6 +140,13 @@ export const WalletEdit = ({ wallet, onDelete }: WalletEditProps) => {
           Delete Wallet
         </Button>
       </HStack>
+
+      <ChangeHdPathModal
+        isOpen={isChangeHdPathOpen}
+        onClose={onChangeHdPathClose}
+        wallet={wallet}
+        networkKind={networkKind}
+      />
 
       <ExportMnemonicModal
         walletId={wallet.id}

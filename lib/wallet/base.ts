@@ -1,3 +1,9 @@
+import { Slip10RawIndex, pathToString, stringToPath } from '@cosmjs/crypto'
+import assert from 'assert'
+
+import { NetworkKind } from '~lib/network'
+import { DerivePosition, IHdPath } from '~lib/schema'
+
 export enum WalletType {
   HD = 'hd', // Hierarchical Deterministic, derived from mnemonic
   PRIVATE_KEY = 'private_key', // private key (maybe derived from mnemonic)
@@ -81,11 +87,53 @@ export interface SigningWallet {
   address: string
   privateKey: string
 
-  derive(prefixPath: string, index: number): Promise<SigningWallet>
+  derive(
+    pathTemplate: string,
+    index: number,
+    derivePosition?: DerivePosition
+  ): Promise<SigningWallet>
 
   signTransaction(transaction: any): Promise<string>
 
   signMessage(message: any): Promise<string>
 
   signTypedData(typedData: any): Promise<string>
+}
+
+export function getDefaultDerivePosition(
+  networkKind: NetworkKind
+): DerivePosition {
+  switch (networkKind) {
+    case NetworkKind.APTOS:
+      return DerivePosition.ACCOUNT
+    default:
+      return DerivePosition.ADDRESS_INDEX
+  }
+}
+
+export function getDerivePosition(
+  hdPath: IHdPath,
+  networkKind: NetworkKind
+): DerivePosition {
+  return hdPath.info?.derivePosition || getDefaultDerivePosition(networkKind)
+}
+
+export function generatePath(
+  pathTemplate: string,
+  index: number,
+  derivePosition?: DerivePosition
+) {
+  const path = stringToPath(pathTemplate)
+  if (!derivePosition) {
+    derivePosition = DerivePosition.ADDRESS_INDEX
+  }
+  assert(derivePosition < path.length)
+  const component = path[derivePosition].isHardened()
+    ? Slip10RawIndex.hardened(index)
+    : Slip10RawIndex.normal(index)
+  return pathToString([
+    ...(path.slice(0, derivePosition) || []),
+    component,
+    ...(path.slice(derivePosition + 1) || [])
+  ])
 }

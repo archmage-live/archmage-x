@@ -1,14 +1,19 @@
 import assert from 'assert'
 
-import { DB } from '~lib/db'
 import { NetworkKind } from '~lib/network'
 import { CosmChainInfo } from '~lib/network/cosm'
-import { IChainAccount } from '~lib/schema'
+import { DerivePosition, IChainAccount } from '~lib/schema'
 import { IWallet } from '~lib/schema/wallet'
 import { NETWORK_SERVICE } from '~lib/services/network'
 import { WALLET_SERVICE } from '~lib/services/walletService'
 
-import { SigningWallet, WalletOpts, WalletType } from './base'
+import { AptosWallet } from './aptos'
+import {
+  SigningWallet,
+  WalletOpts,
+  WalletType,
+  getDerivePosition
+} from './base'
 import { CosmWallet } from './cosm'
 import { EvmWallet } from './evm'
 import { SolWallet } from './sol'
@@ -21,14 +26,16 @@ export * from './sui'
 export * from './aleo'
 export * from './sol'
 
-export function getDefaultPathPrefix(networkKind: NetworkKind): string {
+export function getDefaultPath(networkKind: NetworkKind): string {
   switch (networkKind) {
     case NetworkKind.EVM:
-      return EvmWallet.defaultPathPrefix
+      return EvmWallet.defaultPath
     case NetworkKind.COSM:
-      return CosmWallet.defaultPathPrefix
+      return CosmWallet.defaultPath
+    case NetworkKind.APTOS:
+      return AptosWallet.defaultPath
     case NetworkKind.SOL:
-      return SolWallet.defaultPathPrefix
+      return SolWallet.defaultPath
   }
 }
 
@@ -41,6 +48,8 @@ export function checkAddress(
       return EvmWallet.checkAddress(address)
     case NetworkKind.COSM:
       return CosmWallet.checkAddress(address)
+    case NetworkKind.APTOS:
+      return AptosWallet.checkAddress(address)
     default:
       return false
   }
@@ -77,6 +86,8 @@ export async function getMasterSigningWallet(
       const info = network.info as CosmChainInfo
       opts.prefix = info.bech32Config.bech32PrefixAccAddr
       return CosmWallet.from(opts)
+    case NetworkKind.APTOS:
+      return AptosWallet.from(opts)
     case NetworkKind.SOL:
       return SolWallet.from(opts)
   }
@@ -96,11 +107,15 @@ export async function getSigningWallet(
     return undefined
   }
   if (master.type === WalletType.HD) {
-    const hdPath = await DB.hdPaths
-      .where({ masterId: account.masterId, networkKind: account.networkKind })
-      .first()
-    assert(hdPath)
-    signingWallet = await signingWallet.derive(hdPath.path, account.index!)
+    const hdPath = await WALLET_SERVICE.getHdPath(
+      account.masterId,
+      account.networkKind
+    )
+    signingWallet = await signingWallet.derive(
+      hdPath.path,
+      account.index,
+      getDerivePosition(hdPath, account.networkKind)
+    )
   }
   assert(signingWallet.address === account.address)
   return signingWallet

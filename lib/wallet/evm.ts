@@ -5,13 +5,12 @@ import assert from 'assert'
 import { ethers } from 'ethers'
 
 import { KEYSTORE } from '~lib/keystore'
+import { DerivePosition } from '~lib/schema'
 
-import type { SigningWallet, WalletOpts } from './base'
-import { WalletType } from './base'
+import { SigningWallet, WalletOpts, WalletType, generatePath } from '.'
 
 export class EvmWallet implements SigningWallet {
-  static defaultPathPrefix = "m/44'/60'/0'/0"
-  static defaultPath = EvmWallet.defaultPathPrefix + '/0'
+  static defaultPath = "m/44'/60'/0'/0/0"
 
   private constructor(private wallet: ethers.utils.HDNode | ethers.Wallet) {}
 
@@ -46,9 +45,13 @@ export class EvmWallet implements SigningWallet {
     return new EvmWallet(wallet)
   }
 
-  async derive(prefixPath: string, index: number): Promise<EvmWallet> {
+  async derive(
+    pathTemplate: string,
+    index: number,
+    derivePosition?: DerivePosition
+  ): Promise<EvmWallet> {
     assert(this.wallet instanceof ethers.utils.HDNode)
-    const path = `${prefixPath}/${index}`
+    const path = generatePath(pathTemplate, index, derivePosition)
     const wallet = this.wallet.derivePath(path)
     return new EvmWallet(wallet)
   }

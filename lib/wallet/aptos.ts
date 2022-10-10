@@ -1,17 +1,18 @@
 import { arrayify, hexlify } from '@ethersproject/bytes'
-import { AptosAccount } from 'aptos'
+import { AptosAccount, HexString } from 'aptos'
 import assert from 'assert'
 import { sign } from 'tweetnacl'
 
 import { HDNode, HardenedBit } from '~lib/crypto/ed25519'
 import { KEYSTORE } from '~lib/keystore'
-import { WalletOpts, WalletType } from '~lib/wallet/index'
+import { DerivePosition } from '~lib/schema'
 
-export class AptosWallet {
-  // TODO
-  static defaultPath = "44'/60'/0'"
+import { SigningWallet, WalletOpts, WalletType, generatePath } from '.'
 
-  wallet!: HDNode | AptosAccount
+export class AptosWallet implements SigningWallet {
+  static defaultPath = "m/44'/637'/0'/0'/0'"
+
+  private constructor(private wallet: HDNode | AptosAccount) {}
 
   static async from({
     id,
@@ -40,18 +41,21 @@ export class AptosWallet {
         wallet = new AptosAccount(arrayify(ks.privateKey))
       }
     }
+    assert(wallet)
 
-    return { wallet } as AptosWallet
+    return new AptosWallet(wallet)
   }
 
-  derive(prefixPath: string, index: number): AptosWallet {
+  async derive(
+    pathTemplate: string,
+    index: number,
+    derivePosition?: DerivePosition
+  ): Promise<AptosWallet> {
     assert(index < HardenedBit)
     assert(this.wallet instanceof HDNode)
-    const path = `${prefixPath}/${index}'`
+    const path = generatePath(pathTemplate, index, derivePosition)
     const wallet = this.wallet.derivePath(path)
-    return {
-      wallet
-    } as AptosWallet
+    return new AptosWallet(wallet)
   }
 
   private _account?: AptosAccount
@@ -66,7 +70,7 @@ export class AptosWallet {
   }
 
   get address() {
-    return this.account.address()
+    return this.account.address().toString()
   }
 
   get publicKey() {
@@ -91,5 +95,32 @@ export class AptosWallet {
 
   verifyHex(msg: string, sig: Uint8Array): boolean {
     return this.verify(arrayify(msg), sig)
+  }
+
+  async signTransaction(transaction: any): Promise<string> {
+    // TODO
+    throw new Error('not implemented')
+  }
+
+  async signMessage(message: any): Promise<string> {
+    // TODO
+    throw new Error('not implemented')
+  }
+
+  async signTypedData(typedData: any): Promise<string> {
+    // TODO
+    throw new Error('not implemented')
+  }
+
+  static checkAddress(address: string): string | false {
+    try {
+      address = HexString.fromUint8Array(
+        new HexString(address).toUint8Array()
+      ).toString()
+      assert(address.length === 66)
+      return address
+    } catch {
+      return false
+    }
   }
 }

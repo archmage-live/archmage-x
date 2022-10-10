@@ -9,7 +9,9 @@ import assert from 'assert'
 
 import { HDNode, HardenedBit } from '~lib/crypto/ed25519'
 import { KEYSTORE } from '~lib/keystore'
-import { WalletOpts, WalletType } from '~lib/wallet'
+import { DerivePosition } from '~lib/schema'
+
+import { WalletOpts, WalletType, generatePath } from '.'
 
 export class SuiWallet {
   // TODO
@@ -48,10 +50,14 @@ export class SuiWallet {
     return { wallet } as SuiWallet
   }
 
-  derive(prefixPath: string, index: number): SuiWallet {
+  derive(
+    pathTemplate: string,
+    index: number,
+    derivePosition?: DerivePosition
+  ): SuiWallet {
     assert(index < HardenedBit)
     assert(this.wallet instanceof HDNode)
-    const path = `${prefixPath}/${index}'`
+    const path = generatePath(pathTemplate, index, derivePosition)
     const node = this.wallet.derivePath(path)
     const wallet = Ed25519Keypair.fromSecretKey(arrayify(node.secretKey!))
     return {

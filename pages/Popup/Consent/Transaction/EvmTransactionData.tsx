@@ -4,7 +4,7 @@ import {
   FormatTypes,
   FunctionFragment
 } from '@ethersproject/abi/src.ts/fragments'
-import { BigNumber } from '@ethersproject/bignumber/src.ts/bignumber'
+import { BigNumber } from '@ethersproject/bignumber'
 import { shallowCopy } from '@ethersproject/properties'
 import { TransactionRequest } from '@ethersproject/providers'
 import { ethers } from 'ethers'

@@ -2,10 +2,17 @@ import { AddIcon, MinusIcon } from '@chakra-ui/icons'
 import {
   Box,
   Button,
+  Center,
   HStack,
   IconButton,
   NumberInput,
   NumberInputField,
+  Popover,
+  PopoverArrow,
+  PopoverBody,
+  PopoverContent,
+  PopoverTrigger,
+  Stack,
   Text
 } from '@chakra-ui/react'
 import {
@@ -14,31 +21,35 @@ import {
   pathToString,
   stringToPath
 } from '@cosmjs/crypto'
-import { useCallback } from 'react'
+import assert from 'assert'
+import { useCallback, useEffect, useState } from 'react'
+import * as React from 'react'
 
 import { HardenedBit } from '~lib/crypto/ed25519'
+import { DerivePosition } from '~lib/schema'
 
 interface HdPathInputProps {
   isEd25519Curve?: boolean
-  forcePrefix?: string
+  forcePrefixLength?: number
   fixedLength?: boolean
+  derivePosition?: DerivePosition
   value?: string
-
-  onChange(value: string): void
+  onChange?: (value: string) => void
 }
 
 export const HdPathInput = ({
   isEd25519Curve,
-  forcePrefix = 'm',
+  forcePrefixLength = 0,
   fixedLength,
+  derivePosition = DerivePosition.ADDRESS_INDEX,
   value = 'm',
   onChange
 }: HdPathInputProps) => {
-  if (!value.startsWith(forcePrefix)) {
-    throw new Error(`Prefix of HD path '${value}' is not '${forcePrefix}'`)
-  }
-  const hdPathPrefix: HdPath = stringToPath(forcePrefix)
   const hdPath: HdPath = stringToPath(value)
+
+  assert(hdPath.length >= forcePrefixLength)
+  const hdPathPrefix: HdPath = hdPath.slice(0, forcePrefixLength)
+
   if (isEd25519Curve) {
     if (
       hdPathPrefix.find((component) => !component.isHardened()) ||
@@ -61,7 +72,7 @@ export const HdPathInput = ({
       const path = pathToString(
         hdPath.slice().fill(component, index, index + 1)
       )
-      onChange(path)
+      onChange?.(path)
     },
     [hdPath, onChange]
   )
@@ -76,7 +87,7 @@ export const HdPathInput = ({
       const path = pathToString(
         hdPath.slice().fill(component, index, index + 1)
       )
-      onChange(path)
+      onChange?.(path)
     },
     [hdPath, onChange]
   )
@@ -91,84 +102,181 @@ export const HdPathInput = ({
             : Slip10RawIndex.normal(0)
         )
     )
-    onChange(path)
+    onChange?.(path)
   }, [hdPath, isEd25519Curve, onChange])
 
   const onRemoveComponent = useCallback(() => {
     const path = pathToString(hdPath.slice(0, hdPath.length - 1))
-    onChange(path)
+    onChange?.(path)
   }, [hdPath, onChange])
 
-  return (
-    <HStack>
-      <Text>m</Text>
-      {hdPath.map((component, index) => {
-        return (
-          <HStack key={index}>
-            <Text>/</Text>
-            <PathComponent
-              value={
-                component.toNumber() -
-                (component.isHardened() ? HardenedBit : 0)
-              }
-              onChange={(value) => onValueChange(value, index)}
-              changeable={index + 1 > hdPathPrefix.length}
-            />
-            <HardenedSymbol
-              value={component.isHardened()}
-              onChange={() => onHardenedChange(component, index)}
-              changeable={!isEd25519Curve && index + 1 > hdPathPrefix.length}
-            />
-          </HStack>
-        )
-      })}
+  const [positions, setPositions] = useState<
+    {
+      x?: number
+      w?: number
+    }[]
+  >([])
+  useEffect(() => {
+    setPositions((positions) => {
+      const ps = positions.slice()
+      ps[DerivePosition.ACCOUNT] = {}
+      ps[DerivePosition.CHANGE] = {}
+      ps[DerivePosition.ADDRESS_INDEX] = {}
+      return ps
+    })
+  }, [])
 
-      {!fixedLength && (
-        <HStack ps={4}>
-          {hdPath.length < 5 && (
-            <IconButton
-              size="xs"
-              aria-label="Add HD path component"
-              icon={<AddIcon />}
-              onClick={onAddComponent}
-            />
-          )}
-          {hdPath.length > 2 && (
-            <IconButton
-              size="xs"
-              aria-label="Remove HD path component"
-              icon={<MinusIcon />}
-              onClick={onRemoveComponent}
-            />
-          )}
-        </HStack>
-      )}
-    </HStack>
+  const onComponentXW = useCallback((index: number, x: number, w: number) => {
+    setPositions((positions) => {
+      const position = positions[index]
+      if (!position) {
+        return positions
+      }
+      if (position.x === x && position.w === w) {
+        return positions
+      }
+      const ps = positions.slice()
+      ps[index] = { x, w }
+      return ps
+    })
+  }, [])
+
+  const [boxX, setBoxX] = useState<number>(0)
+  const ref = useCallback((node: HTMLDivElement | null) => {
+    if (node) {
+      setBoxX(node.getBoundingClientRect().x)
+    }
+  }, [])
+
+  return (
+    <Stack>
+      <HStack ref={ref}>
+        <Text>m</Text>
+        {hdPath.map((component, index) => {
+          return (
+            <HStack key={index}>
+              <Text>/</Text>
+              <PathComponent
+                value={
+                  component.toNumber() -
+                  (component.isHardened() ? HardenedBit : 0)
+                }
+                onChange={(value) => onValueChange(value, index)}
+                changeable={index + 1 > hdPathPrefix.length}
+                isDerivePosition={index === derivePosition}
+                setXW={(x, w) => onComponentXW(index, x, w)}
+              />
+              <HardenedSymbol
+                value={component.isHardened()}
+                onChange={() => onHardenedChange(component, index)}
+                changeable={!isEd25519Curve && index + 1 > hdPathPrefix.length}
+              />
+            </HStack>
+          )
+        })}
+
+        {!fixedLength && (
+          <HStack ps={4}>
+            {hdPath.length < 5 && (
+              <IconButton
+                size="xs"
+                aria-label="Add HD path component"
+                icon={<AddIcon />}
+                onClick={onAddComponent}
+              />
+            )}
+            {hdPath.length > 2 && (
+              <IconButton
+                size="xs"
+                aria-label="Remove HD path component"
+                icon={<MinusIcon />}
+                onClick={onRemoveComponent}
+              />
+            )}
+          </HStack>
+        )}
+      </HStack>
+
+      <Box position="relative" h={2}>
+        {positions
+          .filter((p) => typeof p.w === 'number')
+          .map((p, index) => {
+            return (
+              <Center
+                key={index}
+                position="absolute"
+                left={`${p.x! - boxX}px`}
+                width={`${p.w!}px`}>
+                <Popover
+                  isLazy
+                  trigger="hover"
+                  placement="bottom"
+                  isOpen={index === derivePosition ? undefined : false}>
+                  <PopoverTrigger>
+                    <Center
+                      w={2}
+                      h={2}
+                      borderRadius="50%"
+                      bg={index === derivePosition ? 'green.500' : 'gray.500'}
+                      transition="background 0.2s ease-out"
+                    />
+                  </PopoverTrigger>
+                  <PopoverContent w="auto">
+                    <PopoverBody>
+                      This position will be used as derivation index
+                    </PopoverBody>
+                  </PopoverContent>
+                </Popover>
+              </Center>
+            )
+          })}
+      </Box>
+    </Stack>
   )
 }
 
 const PathComponent = ({
   value,
   onChange,
-  changeable
+  changeable,
+  isDerivePosition,
+  setXW
 }: {
   value: number
   onChange: (value: number) => void
   changeable: boolean
+  isDerivePosition: boolean
+  setXW: (x: number, width: number) => void
 }) => {
-  return changeable ? (
-    <NumberInput
-      w={12}
-      value={value}
-      onChange={(_, value) => onChange(value)}
-      precision={0}
-      step={1}
-      min={0}
-      max={HardenedBit - 1}>
-      <NumberInputField ps={2} pe={2} textAlign="center" />
-    </NumberInput>
-  ) : (
-    <Box>{value}</Box>
+  const ref = useCallback(
+    (node: HTMLDivElement | null) => {
+      if (node) {
+        setXW(
+          node.getBoundingClientRect().x,
+          node.getBoundingClientRect().width
+        )
+      }
+    },
+    [setXW]
+  )
+
+  return (
+    <Box ref={ref} color={isDerivePosition ? 'green.500' : undefined}>
+      {changeable ? (
+        <NumberInput
+          w={12}
+          value={value}
+          onChange={(_, value) => onChange(value)}
+          precision={0}
+          step={1}
+          min={0}
+          max={HardenedBit - 1}>
+          <NumberInputField ps={2} pe={2} textAlign="center" />
+        </NumberInput>
+      ) : (
+        value
+      )}
+    </Box>
   )
 }
 

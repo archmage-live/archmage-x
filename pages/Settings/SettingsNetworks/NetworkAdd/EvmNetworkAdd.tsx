@@ -124,7 +124,7 @@ export const EvmNetworkAdd = ({
 
     await Promise.all([confirm(), stall(500)])
     setLoading(false)
-  }, [onConfirm, setLoading, name, chainIdStr, currencySymbol, explorerUrls])
+  }, [onConfirm, setLoading, name, chainIdStr, currencySymbol])
 
   return (
     <Stack spacing="12">

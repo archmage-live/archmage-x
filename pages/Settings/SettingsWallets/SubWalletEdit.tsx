@@ -8,8 +8,8 @@ import {
   Text,
   useDisclosure
 } from '@chakra-ui/react'
-import { Slip10RawIndex, pathToString, stringToPath } from '@cosmjs/crypto'
-import { useEffect, useState } from 'react'
+import { stringToPath } from '@cosmjs/crypto'
+import { useState } from 'react'
 import browser from 'webextension-polyfill'
 
 import { CopyArea } from '~components/CopyIcon'
@@ -17,16 +17,10 @@ import { HdPathInput } from '~components/HdPathInput'
 import { SaveInput } from '~components/SaveInput'
 import { DB } from '~lib/db'
 import { formatNumber } from '~lib/formatNumber'
-import {
-  INetwork,
-  ISubWallet,
-  IWallet,
-  PSEUDO_INDEX,
-  isSubNameInvalid
-} from '~lib/schema'
+import { INetwork, ISubWallet, IWallet, isSubNameInvalid } from '~lib/schema'
 import { getAccountUrl } from '~lib/services/network'
 import { useBalance } from '~lib/services/provider'
-import { useChainAccountByIndex, useHdPaths } from '~lib/services/walletService'
+import { useChainAccountByIndex, useHdPath } from '~lib/services/walletService'
 import {
   getWalletTypeTitle,
   hasWalletKeystore,
@@ -63,24 +57,7 @@ export const SubWalletEdit = ({
   const balance = useBalance(network, account)
   const accountUrl = account && getAccountUrl(network, account)
 
-  const hdPaths = useHdPaths(wallet.id)
-  const [hdPath, setHdPath] = useState('')
-  useEffect(() => {
-    const hdPath = hdPaths?.get(network.kind)
-    if (!hdPath) {
-      setHdPath('')
-      return
-    }
-    if (subWallet.index === PSEUDO_INDEX) {
-      setHdPath('')
-      return
-    }
-    const fullHdPath = stringToPath(hdPath).concat(
-      // TODO
-      Slip10RawIndex.normal(subWallet.index)
-    )
-    setHdPath(pathToString(fullHdPath))
-  }, [hdPaths, network, subWallet])
+  const [hdPath] = useHdPath(network.kind, wallet, subWallet.index)
 
   const {
     isOpen: isExportOpen,
@@ -139,10 +116,9 @@ export const SubWalletEdit = ({
           <FormLabel>HD Path</FormLabel>
 
           <HdPathInput
-            forcePrefix={hdPath}
+            forcePrefixLength={stringToPath(hdPath).length}
             fixedLength
             value={hdPath}
-            onChange={setHdPath}
           />
         </FormControl>
       )}

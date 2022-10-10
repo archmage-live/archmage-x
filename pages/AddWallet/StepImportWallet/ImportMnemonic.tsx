@@ -73,6 +73,7 @@ export const ImportMnemonic = () => {
   const [isOneAccountChecked, setIsOneAccountChecked] = useState(false)
   const [hdPath, setHdPath] = useHdPath()
   useEffect(() => {
+    // TODO: set by network kind
     setHdPath("m/44'/60'/0'/0/0")
   }, [setHdPath])
 

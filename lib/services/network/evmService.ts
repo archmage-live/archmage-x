@@ -3,7 +3,7 @@ import assert from 'assert'
 import { DB, getNextField } from '~lib/db'
 import { NetworkKind } from '~lib/network'
 import { EVM_NETWORKS_PRESET, EvmChainInfo } from '~lib/network/evm'
-import { INetwork, createSearchString } from '~lib/schema/network'
+import { ChainId, INetwork, createSearchString } from '~lib/schema/network'
 
 export interface IEvmNetworkService {}
 
@@ -16,7 +16,7 @@ export class EvmNetworkService implements IEvmNetworkService {
     const nextSortId = await getNextField(DB.networks)
     const nets = EVM_NETWORKS_PRESET.map((net, index) => {
       return {
-        ...EvmNetworkService.buildNetwork(net),
+        ...EvmNetworkService.buildNetwork(net.chainId, net),
         sortId: nextSortId + index
       } as INetwork
     })
@@ -24,18 +24,8 @@ export class EvmNetworkService implements IEvmNetworkService {
     console.log('initialized evm networks')
   }
 
-  static async addNetwork(
-    chainId: number | string,
-    info: EvmChainInfo
-  ): Promise<INetwork> {
+  static buildNetwork(chainId: ChainId, info: EvmChainInfo): INetwork {
     assert(chainId === info.chainId)
-    const network = EvmNetworkService.buildNetwork(info)
-    network.sortId = await getNextField(DB.networks)
-    network.id = await DB.networks.add(network)
-    return network
-  }
-
-  private static buildNetwork(info: EvmChainInfo): INetwork {
     return {
       kind: NetworkKind.EVM,
       chainId: info.chainId,

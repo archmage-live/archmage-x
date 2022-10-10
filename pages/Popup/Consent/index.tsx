@@ -52,8 +52,8 @@ export default function Consent({
   isOpen,
   onClose
 }: {
-  isOpen: boolean
-  onClose: () => void
+  isOpen?: boolean
+  onClose?: () => void
 }) {
   const isPopupWindow = useIsPopupWindow()
 
@@ -90,7 +90,7 @@ export default function Consent({
     if (!requests.length && isPopupWindow) {
       window.close()
     }
-    onClose()
+    onClose?.()
     onSendClose()
   }, [isPopupWindow, onClose, onSendClose])
 

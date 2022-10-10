@@ -18,6 +18,7 @@ import { SERVICE_WORKER_CLIENT, SERVICE_WORKER_SERVER } from '~lib/rpc'
 import {
   ChainAccountIndex,
   ChainId,
+  DerivePosition,
   IChainAccountAux,
   IHdPath,
   Index,
@@ -32,7 +33,9 @@ import {
   SigningWallet,
   WalletType,
   checkAddressMayThrow,
-  getDefaultPathPrefix,
+  generatePath,
+  getDefaultPath,
+  getDerivePosition,
   getMasterSigningWallet,
   hasWalletKeystore,
   isWalletGroup
@@ -131,6 +134,17 @@ export interface IWalletService {
     networkKind: NetworkKind,
     chainId: ChainId
   ): Promise<IChainAccount | undefined>
+
+  getHdPath(masterId: number, networkKind: NetworkKind): Promise<IHdPath>
+
+  getHdPaths(masterId: number): Promise<IHdPath[]>
+
+  updateHdPath(
+    masterId: number,
+    networkKind: NetworkKind,
+    path: string,
+    derivePosition?: DerivePosition
+  ): Promise<void>
 }
 
 // @ts-ignore
@@ -448,7 +462,6 @@ class WalletService extends WalletServicePartial {
 
         switch (wallet.type) {
           case WalletType.HD: {
-            await this.createHdPaths(wallet.id)
             // derive one sub wallet
             await this.deriveSubWallets(wallet.id, 1)
             break
@@ -546,14 +559,11 @@ class WalletService extends WalletServicePartial {
           DB.pendingTxs
         ],
         async () => {
+          await this._deleteWalletResources(id)
           await DB.hdPaths.where('masterId').equals(id).delete()
           await DB.subWallets.where('masterId').equals(id).delete()
-          await DB.chainAccounts.where('masterId').equals(id).delete()
           await DB.chainAccountsAux.where('masterId').equals(id).delete()
           await DB.connectedSites.where('masterId').equals(id).delete()
-          await DB.tokens.where('masterId').equals(id).delete()
-          await DB.transactions.where('masterId').equals(id).delete()
-          await DB.pendingTxs.where('masterId').equals(id).delete()
 
           await DB.wallets.delete(id)
           await DB.keystores.where('masterId').equals(id).delete()
@@ -564,6 +574,13 @@ class WalletService extends WalletServicePartial {
     } finally {
       unlock()
     }
+  }
+
+  private async _deleteWalletResources(id: number) {
+    await DB.chainAccounts.where('masterId').equals(id).delete()
+    await DB.tokens.where('masterId').equals(id).delete()
+    await DB.transactions.where('masterId').equals(id).delete()
+    await DB.pendingTxs.where('masterId').equals(id).delete()
   }
 
   async deleteSubWallet(id: number) {
@@ -683,14 +700,90 @@ class WalletService extends WalletServicePartial {
     }
   }
 
-  private async createHdPaths(id: number) {
-    // TODO
-    for (const networkKind of Object.values(NetworkKind) as NetworkKind[]) {
-      await DB.hdPaths.add({
-        masterId: id,
-        networkKind,
-        path: getDefaultPathPrefix(networkKind)
-      } as IHdPath)
+  async _getHdPath(
+    masterId: number,
+    networkKind: NetworkKind,
+    useLock: boolean
+  ) {
+    let hdPath = await DB.hdPaths.where({ masterId, networkKind }).first()
+    if (!hdPath) {
+      assert((await this.getWallet(masterId))?.type === WalletType.HD)
+      const unlock = useLock && (await this._ensureLock(masterId))
+      try {
+        await DB.hdPaths.add({
+          masterId,
+          networkKind,
+          path: getDefaultPath(networkKind)
+        } as IHdPath)
+      } finally {
+        unlock && unlock()
+      }
+      hdPath = await DB.hdPaths.where({ masterId, networkKind }).first()
+      assert(hdPath)
+    }
+    return hdPath
+  }
+
+  async getHdPath(masterId: number, networkKind: NetworkKind) {
+    return this._getHdPath(masterId, networkKind, true)
+  }
+
+  async getHdPaths(masterId: number) {
+    let hdPaths = await DB.hdPaths.where('masterId').equals(masterId).toArray()
+    const networkKinds = Object.values(NetworkKind) as NetworkKind[]
+    if (hdPaths.length < networkKinds.length) {
+      for (const networkKind of networkKinds) {
+        if (hdPaths.find((hdPath) => hdPath.networkKind === networkKind)) {
+          continue
+        }
+        await this.getHdPath(masterId, networkKind)
+      }
+      hdPaths = await DB.hdPaths.where('masterId').equals(masterId).toArray()
+      assert(hdPaths.length >= networkKinds.length)
+    }
+    return hdPaths
+  }
+
+  async updateHdPath(
+    masterId: number,
+    networkKind: NetworkKind,
+    path: string,
+    derivePosition?: DerivePosition
+  ) {
+    const hdPath = await this.getHdPath(masterId, networkKind)
+    if (
+      hdPath.path === path &&
+      (!derivePosition || hdPath.info?.derivePosition === derivePosition)
+    ) {
+      return
+    }
+
+    const unlock = await this._ensureLock(masterId)
+    try {
+      await DB.transaction(
+        'rw',
+        [
+          DB.hdPaths,
+          DB.chainAccounts,
+          DB.tokens,
+          DB.transactions,
+          DB.pendingTxs
+        ],
+        async () => {
+          let info = hdPath.info
+          if (derivePosition) {
+            if (!info) {
+              info = {}
+            }
+            info.derivePosition = derivePosition
+          }
+          await DB.hdPaths.update(hdPath, { path, info })
+          // Delete all related accounts, and later they will be generated with new hd path
+          await this._deleteWalletResources(masterId)
+        }
+      )
+    } finally {
+      unlock()
     }
   }
 }
@@ -837,6 +930,23 @@ export function useSubWalletByIndex(masterId?: number, index?: Index) {
   }, [masterId, index])
 }
 
+export function useHdPath(
+  networkKind?: NetworkKind,
+  wallet?: IWallet,
+  index?: number
+): [string | undefined, DerivePosition | undefined] {
+  return (
+    useLiveQuery(async () => {
+      if (!networkKind || !wallet || typeof index !== 'number') {
+        return
+      }
+      const hdPath = await WALLET_SERVICE.getHdPath(wallet.id, networkKind)
+      const position = getDerivePosition(hdPath, networkKind)
+      return [generatePath(hdPath.path, index, position), position]
+    }, [networkKind, wallet, index]) || [undefined, undefined]
+  )
+}
+
 export function useHdPaths(
   walletId?: number
 ): Map<NetworkKind, string> | undefined {
@@ -845,10 +955,7 @@ export function useHdPaths(
       return undefined
     }
     const m = new Map<NetworkKind, string>()
-    const hdPaths = await DB.hdPaths
-      .where('masterId')
-      .equals(walletId)
-      .toArray()
+    const hdPaths = await WALLET_SERVICE.getHdPaths(walletId)
     for (const hdPath of hdPaths) {
       m.set(hdPath.networkKind, hdPath.path)
     }
@@ -966,10 +1073,11 @@ async function ensureChainAccounts(
       return
     }
 
-    hdPath = await DB.hdPaths.where({ masterId, networkKind }).first()
-    if (!hdPath) {
-      return
-    }
+    hdPath = await (WALLET_SERVICE as any)._getHdPath(
+      masterId,
+      networkKind,
+      false
+    )
   }
 
   const existing = new Set()
@@ -991,7 +1099,8 @@ async function ensureChainAccounts(
           assert(signingWallet && hdPath)
           const subSigningWallet = await signingWallet.derive(
             hdPath.path,
-            subWallet.index
+            subWallet.index,
+            getDerivePosition(hdPath, networkKind)
           )
           address = subSigningWallet.address
           break
@@ -1076,11 +1185,16 @@ async function ensureChainAccount(
       if (!signingWallet) {
         return
       }
-      const hdPath = await DB.hdPaths
-        .where({ masterId: wallet.id, networkKind })
-        .first()
-      assert(hdPath)
-      const subSigningWallet = await signingWallet.derive(hdPath.path, index)
+      const hdPath = await (WALLET_SERVICE as any)._getHdPath(
+        wallet.id,
+        networkKind,
+        false
+      )
+      const subSigningWallet = await signingWallet.derive(
+        hdPath.path,
+        index,
+        getDerivePosition(hdPath, networkKind)
+      )
       address = subSigningWallet.address
       break
     }

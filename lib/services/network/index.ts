@@ -1,13 +1,16 @@
+import assert from 'assert'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useMemo } from 'react'
 
-import { DB } from '~lib/db'
+import { DB, getNextField } from '~lib/db'
 import { ENV } from '~lib/env'
 import { NetworkKind } from '~lib/network'
-import { AppChainInfo as CosmChainInfo } from '~lib/network/cosm'
+import { AptosChainInfo } from '~lib/network/aptos'
+import { CosmChainInfo } from '~lib/network/cosm'
 import { EvmChainInfo } from '~lib/network/evm'
 import { ChainId, IChainAccount, INetwork, IToken } from '~lib/schema'
 
+import { AptosNetworkService } from './aptosService'
 import { CosmNetworkService } from './cosmService'
 import { EvmNetworkService } from './evmService'
 
@@ -46,6 +49,19 @@ export function getNetworkInfo(network: INetwork): NetworkInfo {
         currencyName: info.feeCurrencies?.[0].coinDenom,
         currencySymbol: info.feeCurrencies?.[0].coinDenom,
         decimals: info.feeCurrencies?.[0].coinDecimals
+      }
+    }
+    case NetworkKind.APTOS: {
+      const info = network.info as AptosChainInfo
+      return {
+        name: info.name,
+        description: info.name,
+        chainId: info.chainId,
+        currencyName: info.currency.name,
+        currencySymbol: info.currency.symbol,
+        decimals: info.currency.decimals,
+        rpcUrl: info.rpc.at(0),
+        explorerUrl: undefined
       }
     }
     default:
@@ -92,6 +108,7 @@ export class NetworkService {
     if (ENV.inServiceWorker) {
       await EvmNetworkService.init()
       await CosmNetworkService.init()
+      await AptosNetworkService.init()
     }
   }
 
@@ -118,12 +135,20 @@ export class NetworkService {
     chainId: ChainId,
     info: any
   ): Promise<INetwork> {
+    let network
     switch (kind) {
       case NetworkKind.EVM:
-        return EvmNetworkService.addNetwork(chainId, info)
+        network = EvmNetworkService.buildNetwork(chainId, info)
+        break
+      case NetworkKind.APTOS:
+        network = AptosNetworkService.buildNetwork(chainId, info)
+        break
+      default:
+        throw new Error(`network ${kind} is not implemented`)
     }
-    // TODO
-    return {} as INetwork
+    network.sortId = await getNextField(DB.networks)
+    network.id = await DB.networks.add(network)
+    return network
   }
 
   async deleteNetwork(id: number) {

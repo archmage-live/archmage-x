@@ -9,17 +9,16 @@ import assert from 'assert'
 import { ethers } from 'ethers'
 
 import { KEYSTORE } from '~lib/keystore'
+import { DerivePosition } from '~lib/schema'
 
-import type { SigningWallet, WalletOpts } from './base'
-import { WalletType } from './base'
+import { SigningWallet, WalletOpts, WalletType, generatePath } from '.'
 
 interface AccountDataWithPrivkey extends AccountData {
   readonly privkey: Uint8Array
 }
 
 export class CosmWallet implements SigningWallet {
-  static defaultPathPrefix = "m/44'/118'/0'/0"
-  static defaultPath = CosmWallet.defaultPathPrefix + '/0'
+  static defaultPath = "m/44'/118'/0'/0/0"
 
   wallet!: DirectSecp256k1HdWallet | DirectSecp256k1Wallet
   mnemonic?: string
@@ -76,9 +75,15 @@ export class CosmWallet implements SigningWallet {
     return wallet
   }
 
-  async derive(prefixPath: string, index: number): Promise<CosmWallet> {
+  async derive(
+    pathTemplate: string,
+    index: number,
+    derivePosition?: DerivePosition
+  ): Promise<CosmWallet> {
     assert(this.mnemonic)
-    const hdPath = stringToPath(`${prefixPath}/${index}`)
+    const hdPath = stringToPath(
+      generatePath(pathTemplate, index, derivePosition)
+    )
     const wallet = await DirectSecp256k1HdWallet.fromMnemonic(this.mnemonic, {
       hdPaths: [hdPath],
       prefix: this.prefix

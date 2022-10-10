@@ -163,19 +163,19 @@ export const SettingsWallets = () => {
           </HStack>
 
           {selectedWallet &&
+            network &&
             (selectedSubWallet ? (
-              network && (
-                <SubWalletEdit
-                  network={network}
-                  wallet={selectedWallet}
-                  subWallet={selectedSubWallet}
-                  onDelete={() => {
-                    setSelected(undefined)
-                  }}
-                />
-              )
+              <SubWalletEdit
+                network={network}
+                wallet={selectedWallet}
+                subWallet={selectedSubWallet}
+                onDelete={() => {
+                  setSelected(undefined)
+                }}
+              />
             ) : (
               <WalletEdit
+                networkKind={network.kind}
                 wallet={selectedWallet}
                 onDelete={() => {
                   setSelected(undefined)

@@ -37,7 +37,7 @@ export interface AppChainInfo extends ChainInfo {
 
 export type CosmChainInfo = AppChainInfo
 
-export const EmbedChainInfos: AppChainInfo[] = [
+export const EmbedChainInfos: CosmChainInfo[] = [
   {
     rpc: 'https://rpc-cosmoshub.keplr.app',
     rest: 'https://lcd-cosmoshub.keplr.app',

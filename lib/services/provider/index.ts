@@ -13,6 +13,7 @@ import {
   useCachesByKeys3
 } from '~lib/services/cacheService'
 import { getNetworkInfo } from '~lib/services/network'
+import { AptosAddressZero } from '~lib/services/network/aptosService'
 import { Balance } from '~lib/services/token'
 import { checkAddress } from '~lib/wallet'
 
@@ -27,7 +28,10 @@ export async function getProvider(network: INetwork): Promise<ProviderAdaptor> {
     case NetworkKind.EVM:
       return await EvmProviderAdaptor.from(network)
     case NetworkKind.COSM:
+      break
+    case NetworkKind.APTOS:
     case NetworkKind.SOL:
+      break
   }
   throw new Error(`provider for network ${network.kind} is not implemented`)
 }
@@ -36,6 +40,8 @@ export function addressZero(network: INetwork): string {
   switch (network.kind) {
     case NetworkKind.EVM:
       return AddressZero
+    case NetworkKind.APTOS:
+      return AptosAddressZero
   }
   throw new Error(`provider for network ${network.kind} is not implemented`)
 }
