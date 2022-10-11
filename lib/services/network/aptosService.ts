@@ -10,6 +10,9 @@ export const AptosAddressZero =
 
 export class AptosNetworkService {
   static async init() {
+    // TODO
+    return
+
     if (await DB.networks.where('kind').equals(NetworkKind.APTOS).count()) {
       return
     }
