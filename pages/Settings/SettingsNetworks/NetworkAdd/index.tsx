@@ -1,6 +1,7 @@
 import { NetworkKind } from '~lib/network'
 import { ChainId } from '~lib/schema'
 
+import { AptosNetworkAdd } from './AptosNetworkAdd'
 import { EvmNetworkAdd } from './EvmNetworkAdd'
 
 export const NetworkAdd = ({
@@ -22,6 +23,14 @@ export const NetworkAdd = ({
     case NetworkKind.EVM:
       return (
         <EvmNetworkAdd
+          onCancel={onCancel}
+          onConfirm={onConfirm}
+          setLoading={setLoading}
+        />
+      )
+    case NetworkKind.APTOS:
+      return (
+        <AptosNetworkAdd
           onCancel={onCancel}
           onConfirm={onConfirm}
           setLoading={setLoading}
