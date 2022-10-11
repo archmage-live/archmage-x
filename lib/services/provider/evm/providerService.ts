@@ -8,36 +8,15 @@ import {
   watchActiveWalletChange
 } from '~lib/active'
 import { DB } from '~lib/db'
+import { EVM_PROVIDER_NAME, IEvmProviderService } from '~lib/inject/evm'
 import { NetworkKind } from '~lib/network'
 import { watchPasswordUnlocked } from '~lib/password'
-import {
-  Context,
-  EventEmitter,
-  EventType,
-  Listener,
-  SERVICE_WORKER_SERVER
-} from '~lib/rpc'
+import { Context, EventType, Listener, SERVICE_WORKER_SERVER } from '~lib/rpc'
 import { INetwork } from '~lib/schema'
 import { PASSWORD_SERVICE } from '~lib/services/passwordService'
-import { EvmProvider } from '~lib/services/provider/evm'
-import { EvmPermissionedProvider } from '~lib/services/provider/evm/permissioned'
 
-export const EVM_PROVIDER_NAME = 'evmProvider' as const
-
-export interface IEvmProviderService extends EventEmitter {
-  state(ctx?: Context): Promise<{
-    isUnlocked: boolean
-    chainId?: string
-    networkVersion?: string
-    isConnected: boolean
-    accounts: string[]
-  }>
-
-  request(
-    args: { method: string; params?: Array<any> },
-    ctx?: Context
-  ): Promise<any>
-}
+import { EvmPermissionedProvider } from './permissionedProvider'
+import { EvmProvider } from './provider'
 
 class EvmProviderService implements IEvmProviderService {
   private provider?: EvmProvider

@@ -1,6 +1,6 @@
 import { Decimal } from 'decimal.js'
 
-import { DEFAULT_LOCALE, SUPPORTED_LOCALES } from '~constants/locales'
+import { DEFAULT_LOCALE, SUPPORTED_LOCALES } from '~lib/constants/locales'
 
 interface FormatLocaleNumberArgs {
   number?: number | string | Decimal | null

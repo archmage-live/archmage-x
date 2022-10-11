@@ -1,7 +1,7 @@
 import { Box, Text } from '@chakra-ui/react'
 import { ReactNode } from 'react'
 
-import { useTransparentize } from '~hooks/useColor'
+import { useTransparentize } from '~lib/hooks/useColor'
 
 export type AlertLevel = 'info' | 'warning' | 'error'
 

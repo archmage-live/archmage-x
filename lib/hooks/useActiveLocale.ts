@@ -3,12 +3,12 @@ import { atomWithStorage } from 'jotai/utils'
 import { useEffect, useState } from 'react'
 import browser from 'webextension-polyfill'
 
-import type { SupportedLocale } from '~constants/locales'
+import type { SupportedLocale } from '~lib/constants/locales'
 import {
   DEFAULT_LOCALE,
   LOCALE_CODE,
   SUPPORTED_LOCALES
-} from '~constants/locales'
+} from '~lib/constants/locales'
 
 /**
  * Given a locale string, return the best match for corresponding SupportedLocale

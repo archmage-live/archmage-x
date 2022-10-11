@@ -4,7 +4,7 @@ import { ReactNode } from 'react'
 import HashLoader from 'react-spinners/HashLoader'
 import { useTimeout } from 'react-use'
 
-import { useColor } from '~hooks/useColor'
+import { useColor } from '~lib/hooks/useColor'
 import { useCheckUnlocked } from '~lib/password'
 
 interface OverlayProps {

@@ -1,5 +1,5 @@
-import { setUnlockTime } from '~hooks/useLockTime'
 import { ENV } from '~lib/env'
+import { setUnlockTime } from '~lib/hooks/useLockTime'
 import { KEYSTORE } from '~lib/keystore'
 import { PASSWORD } from '~lib/password'
 import { SERVICE_WORKER_CLIENT, SERVICE_WORKER_SERVER } from '~lib/rpc'

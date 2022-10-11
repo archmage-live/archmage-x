@@ -2,9 +2,9 @@ import { Select, Stack, useColorMode } from '@chakra-ui/react'
 import { useEffect } from 'react'
 
 import { SaveInput } from '~components/SaveInput'
-import { LOCALE_LABEL } from '~constants/locales'
-import { useUserLocale } from '~hooks/useActiveLocale'
-import { useLockTime } from '~hooks/useLockTime'
+import { LOCALE_LABEL } from '~lib/constants/locales'
+import { useUserLocale } from '~lib/hooks/useActiveLocale'
+import { useLockTime } from '~lib/hooks/useLockTime'
 import { QUOTE_CURRENCY_LABEL, useQuoteCurrency } from '~lib/quoteCurrency'
 
 import { SettingItem, useForPopupSettings } from './SettingItem'

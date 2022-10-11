@@ -35,9 +35,9 @@ import {
 import type { PluralCategory } from 'make-plural/plurals'
 import { ReactNode, useCallback, useEffect } from 'react'
 
-import type { SupportedLocale } from '~constants/locales'
-import { DEFAULT_LOCALE } from '~constants/locales'
-import { useActiveLocale, useUserLocale } from '~hooks/useActiveLocale'
+import type { SupportedLocale } from '~lib/constants/locales'
+import { DEFAULT_LOCALE } from '~lib/constants/locales'
+import { useActiveLocale, useUserLocale } from '~lib/hooks/useActiveLocale'
 
 type LocalePlural = {
   [key in SupportedLocale]: (

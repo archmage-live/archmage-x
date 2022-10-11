@@ -8,7 +8,7 @@
     "dev": "plasmo dev",
     "build": "plasmo build",
     "test": "jest",
-    "format": "prettier --write --loglevel warn \"./{pages,components,theme,lib,hooks,utils,config}/**\"",
+    "format": "prettier --write --loglevel warn \"./{pages,components,theme,lib}/**\"",
     "i18n:extract": "NODE_ENV=development lingui extract --clean --overwrite --locale en",
     "i18n:compile": "lingui compile",
     "i18n": "pnpm i18n:extract && pnpm i18n:compile",

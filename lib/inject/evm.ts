@@ -1,10 +1,21 @@
-import type { IEvmProviderService } from '~/lib/services/provider/evmService'
 import type { RpcClientInjected } from '~lib/inject/client'
+import { Context, EventEmitter } from '~lib/inject/client'
 
 export const EVM_PROVIDER_NAME = 'evmProvider' as const
 
-export interface IEvmProvider {
-  request: (args: { method: string; params?: Array<any> }) => Promise<any>
+export interface IEvmProviderService extends EventEmitter {
+  state(ctx?: Context): Promise<{
+    isUnlocked: boolean
+    chainId?: string
+    networkVersion?: string
+    isConnected: boolean
+    accounts: string[]
+  }>
+
+  request(
+    args: { method: string; params?: Array<any> },
+    ctx?: Context
+  ): Promise<any>
 }
 
 declare global {
@@ -35,7 +46,7 @@ if (!globalThis.archmage.evm) {
     request(args: { method: string; params?: Array<any> }): Promise<any> {
       return getService().request(args)
     }
-  } as IEvmProvider
+  }
 
   const init = async () => {
     const listeners = new Map<string, Function[]>()

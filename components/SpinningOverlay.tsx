@@ -2,7 +2,7 @@ import { Center } from '@chakra-ui/react'
 import * as React from 'react'
 import HashLoader from 'react-spinners/HashLoader'
 
-import { useColor } from '~hooks/useColor'
+import { useColor } from '~lib/hooks/useColor'
 
 export const SpinningOverlay = ({ loading }: { loading?: boolean }) => {
   const spinnerColor = useColor('purple.500', 'purple.500')

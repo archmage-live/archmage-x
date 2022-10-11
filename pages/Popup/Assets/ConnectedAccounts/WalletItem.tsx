@@ -2,7 +2,7 @@ import { Box, Button, HStack, Text } from '@chakra-ui/react'
 import { useCallback, useEffect, useRef } from 'react'
 
 import { AccountAvatar } from '~components/AccountAvatar'
-import { useTransparentize } from '~hooks/useColor'
+import { useTransparentize } from '~lib/hooks/useColor'
 import { INetwork } from '~lib/schema/network'
 import { shortenAddress } from '~lib/utils'
 import { isWalletGroup } from '~lib/wallet'
