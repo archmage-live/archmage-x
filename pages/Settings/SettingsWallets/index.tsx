@@ -175,7 +175,7 @@ export const SettingsWallets = () => {
               />
             ) : (
               <WalletEdit
-                networkKind={network.kind}
+                network={network}
                 wallet={selectedWallet}
                 onDelete={() => {
                   setSelected(undefined)

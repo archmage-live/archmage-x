@@ -8,7 +8,6 @@ import {
   NumberInput,
   NumberInputField,
   Popover,
-  PopoverArrow,
   PopoverBody,
   PopoverContent,
   PopoverTrigger,
@@ -33,6 +32,7 @@ interface HdPathInputProps {
   forcePrefixLength?: number
   fixedLength?: boolean
   derivePosition?: DerivePosition
+  setDerivePosition?: (position: DerivePosition) => void
   value?: string
   onChange?: (value: string) => void
 }
@@ -41,7 +41,8 @@ export const HdPathInput = ({
   isEd25519Curve,
   forcePrefixLength = 0,
   fixedLength,
-  derivePosition = DerivePosition.ADDRESS_INDEX,
+  derivePosition,
+  setDerivePosition,
   value = 'm',
   onChange
 }: HdPathInputProps) => {
@@ -106,9 +107,13 @@ export const HdPathInput = ({
   }, [hdPath, isEd25519Curve, onChange])
 
   const onRemoveComponent = useCallback(() => {
-    const path = pathToString(hdPath.slice(0, hdPath.length - 1))
+    const hp = hdPath.slice(0, hdPath.length - 1)
+    if (derivePosition !== undefined && derivePosition > hp.length - 1) {
+      setDerivePosition?.(hp.length - 1)
+    }
+    const path = pathToString(hp)
     onChange?.(path)
-  }, [hdPath, onChange])
+  }, [derivePosition, setDerivePosition, hdPath, onChange])
 
   const [positions, setPositions] = useState<
     {
@@ -162,7 +167,9 @@ export const HdPathInput = ({
                   (component.isHardened() ? HardenedBit : 0)
                 }
                 onChange={(value) => onValueChange(value, index)}
-                changeable={index + 1 > hdPathPrefix.length}
+                changeable={
+                  index + 1 > hdPathPrefix.length && index !== derivePosition
+                }
                 isDerivePosition={index === derivePosition}
                 setXW={(x, w) => onComponentXW(index, x, w)}
               />
@@ -185,7 +192,7 @@ export const HdPathInput = ({
                 onClick={onAddComponent}
               />
             )}
-            {hdPath.length > 2 && (
+            {hdPath.length > 3 && (
               <IconButton
                 size="xs"
                 aria-label="Remove HD path component"
@@ -197,40 +204,54 @@ export const HdPathInput = ({
         )}
       </HStack>
 
-      <Box position="relative" h={2}>
-        {positions
-          .filter((p) => typeof p.w === 'number')
-          .map((p, index) => {
+      {derivePosition !== undefined && (
+        <Box position="relative" h="10px">
+          {positions.map((p, index) => {
+            if (typeof p.w !== 'number' || index > hdPath.length - 1) {
+              return <React.Fragment key={index} />
+            }
+
             return (
               <Center
                 key={index}
                 position="absolute"
-                left={`${p.x! - boxX}px`}
-                width={`${p.w!}px`}>
+                left={`${p.x! - boxX - 2}px`}
+                width={`${p.w! + 4}px`}>
                 <Popover
                   isLazy
                   trigger="hover"
                   placement="bottom"
-                  isOpen={index === derivePosition ? undefined : false}>
+                  isOpen={
+                    index === derivePosition || setDerivePosition
+                      ? undefined
+                      : false
+                  }>
                   <PopoverTrigger>
                     <Center
-                      w={2}
-                      h={2}
+                      w="10px"
+                      h="10px"
                       borderRadius="50%"
                       bg={index === derivePosition ? 'green.500' : 'gray.500'}
                       transition="background 0.2s ease-out"
+                      cursor="pointer"
+                      onClick={() => setDerivePosition?.(index)}
                     />
                   </PopoverTrigger>
                   <PopoverContent w="auto">
                     <PopoverBody>
-                      This position will be used as derivation index
+                      {index === derivePosition ? (
+                        <>This position will be used as derivation index</>
+                      ) : (
+                        <>Click to mark this position as derivation index</>
+                      )}
                     </PopoverBody>
                   </PopoverContent>
                 </Popover>
               </Center>
             )
           })}
-      </Box>
+        </Box>
+      )}
     </Stack>
   )
 }

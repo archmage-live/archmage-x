@@ -14,7 +14,7 @@ import { useState } from 'react'
 import { HdPathInput } from '~components/HdPathInput'
 import { SaveInput } from '~components/SaveInput'
 import { DB } from '~lib/db'
-import { NetworkKind } from '~lib/network'
+import { INetwork } from '~lib/schema'
 import { IWallet } from '~lib/schema/wallet'
 import {
   WALLET_SERVICE,
@@ -32,19 +32,15 @@ import {
 import { ExportMnemonicModal } from './ExportMnemonicModal'
 
 interface WalletEditProps {
-  networkKind: NetworkKind
+  network: INetwork
   wallet: IWallet
   onDelete: () => void
 }
 
-export const WalletEdit = ({
-  networkKind,
-  wallet,
-  onDelete
-}: WalletEditProps) => {
+export const WalletEdit = ({ network, wallet, onDelete }: WalletEditProps) => {
   const subWallets = useSubWallets(wallet.id)
 
-  const [hdPath, derivePosition] = useHdPath(networkKind, wallet, 0)
+  const [hdPath, derivePosition] = useHdPath(network.kind, wallet, 0)
 
   const [deriveNum, setDeriveNum] = useState(0)
 
@@ -72,7 +68,7 @@ export const WalletEdit = ({
 
       {wallet.type === WalletType.HD && hdPath && (
         <FormControl>
-          <FormLabel>HD Path</FormLabel>
+          <FormLabel>HD Path Schema</FormLabel>
 
           <HStack spacing={12}>
             <HdPathInput
@@ -144,8 +140,8 @@ export const WalletEdit = ({
       <ChangeHdPathModal
         isOpen={isChangeHdPathOpen}
         onClose={onChangeHdPathClose}
+        network={network}
         wallet={wallet}
-        networkKind={networkKind}
       />
 
       <ExportMnemonicModal

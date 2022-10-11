@@ -26,6 +26,17 @@ export * from './sui'
 export * from './aleo'
 export * from './sol'
 
+export function isUseEd25519Curve(networkKind: NetworkKind): boolean {
+  switch (networkKind) {
+    case NetworkKind.APTOS:
+    // pass through
+    case NetworkKind.SOL:
+      return true
+    default:
+      return false
+  }
+}
+
 export function getDefaultPath(networkKind: NetworkKind): string {
   switch (networkKind) {
     case NetworkKind.EVM:
@@ -111,6 +122,9 @@ export async function getSigningWallet(
       account.masterId,
       account.networkKind
     )
+    if (!hdPath) {
+      return undefined
+    }
     signingWallet = await signingWallet.derive(
       hdPath.path,
       account.index,

@@ -135,7 +135,10 @@ export interface IWalletService {
     chainId: ChainId
   ): Promise<IChainAccount | undefined>
 
-  getHdPath(masterId: number, networkKind: NetworkKind): Promise<IHdPath>
+  getHdPath(
+    masterId: number,
+    networkKind: NetworkKind
+  ): Promise<IHdPath | undefined>
 
   getHdPaths(masterId: number): Promise<IHdPath[]>
 
@@ -356,6 +359,32 @@ class WalletServicePartial implements IWalletService {
       WALLET_SERVICE.ensureChainAccount(wallet, index, networkKind, chainId)
     )
   }
+
+  async getHdPath(
+    masterId: number,
+    networkKind: NetworkKind
+  ): Promise<IHdPath | undefined> {
+    const hdPath = await DB.hdPaths.where({ masterId, networkKind }).first()
+    if (hdPath) {
+      return hdPath
+    }
+    return (WALLET_SERVICE as any)._getHdPath(masterId, networkKind, true)
+  }
+
+  async getHdPaths(masterId: number) {
+    let hdPaths = await DB.hdPaths.where('masterId').equals(masterId).toArray()
+    const networkKinds = Object.values(NetworkKind) as NetworkKind[]
+    if (hdPaths.length < networkKinds.length) {
+      for (const networkKind of networkKinds) {
+        if (hdPaths.find((hdPath) => hdPath.networkKind === networkKind)) {
+          continue
+        }
+        await this.getHdPath(masterId, networkKind)
+      }
+      hdPaths = await DB.hdPaths.where('masterId').equals(masterId).toArray()
+    }
+    return hdPaths
+  }
 }
 
 class WalletService extends WalletServicePartial {
@@ -568,7 +597,7 @@ class WalletService extends WalletServicePartial {
           await DB.wallets.delete(id)
           await DB.keystores.where('masterId').equals(id).delete()
 
-          await KEYSTORE.remove(id)
+          await Dexie.waitFor(KEYSTORE.remove(id))
         }
       )
     } finally {
@@ -706,10 +735,21 @@ class WalletService extends WalletServicePartial {
     useLock: boolean
   ) {
     let hdPath = await DB.hdPaths.where({ masterId, networkKind }).first()
+
     if (!hdPath) {
-      assert((await this.getWallet(masterId))?.type === WalletType.HD)
+      const wallet = await this.getWallet(masterId)
+      if (!wallet) {
+        return
+      }
+      assert(wallet.type === WalletType.HD)
       const unlock = useLock && (await this._ensureLock(masterId))
       try {
+        hdPath = await DB.hdPaths.where({ masterId, networkKind }).first()
+        if (hdPath) {
+          unlock && unlock()
+          return hdPath
+        }
+
         await DB.hdPaths.add({
           masterId,
           networkKind,
@@ -718,30 +758,11 @@ class WalletService extends WalletServicePartial {
       } finally {
         unlock && unlock()
       }
+
       hdPath = await DB.hdPaths.where({ masterId, networkKind }).first()
-      assert(hdPath)
     }
+
     return hdPath
-  }
-
-  async getHdPath(masterId: number, networkKind: NetworkKind) {
-    return this._getHdPath(masterId, networkKind, true)
-  }
-
-  async getHdPaths(masterId: number) {
-    let hdPaths = await DB.hdPaths.where('masterId').equals(masterId).toArray()
-    const networkKinds = Object.values(NetworkKind) as NetworkKind[]
-    if (hdPaths.length < networkKinds.length) {
-      for (const networkKind of networkKinds) {
-        if (hdPaths.find((hdPath) => hdPath.networkKind === networkKind)) {
-          continue
-        }
-        await this.getHdPath(masterId, networkKind)
-      }
-      hdPaths = await DB.hdPaths.where('masterId').equals(masterId).toArray()
-      assert(hdPaths.length >= networkKinds.length)
-    }
-    return hdPaths
   }
 
   async updateHdPath(
@@ -752,8 +773,9 @@ class WalletService extends WalletServicePartial {
   ) {
     const hdPath = await this.getHdPath(masterId, networkKind)
     if (
-      hdPath.path === path &&
-      (!derivePosition || hdPath.info?.derivePosition === derivePosition)
+      !hdPath ||
+      (hdPath.path === path &&
+        (!derivePosition || hdPath.info?.derivePosition === derivePosition))
     ) {
       return
     }
@@ -941,6 +963,9 @@ export function useHdPath(
         return
       }
       const hdPath = await WALLET_SERVICE.getHdPath(wallet.id, networkKind)
+      if (!hdPath) {
+        return
+      }
       const position = getDerivePosition(hdPath, networkKind)
       return [generatePath(hdPath.path, index, position), position]
     }, [networkKind, wallet, index]) || [undefined, undefined]
@@ -1078,6 +1103,9 @@ async function ensureChainAccounts(
       networkKind,
       false
     )
+    if (!hdPath) {
+      return
+    }
   }
 
   const existing = new Set()
@@ -1190,6 +1218,9 @@ async function ensureChainAccount(
         networkKind,
         false
       )
+      if (!hdPath) {
+        return
+      }
       const subSigningWallet = await signingWallet.derive(
         hdPath.path,
         index,
