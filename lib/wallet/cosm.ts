@@ -26,6 +26,7 @@ export class CosmWallet implements SigningWallet {
 
   address!: string
   privateKey!: string
+  publicKey!: string
 
   private constructor() {}
 
@@ -61,6 +62,7 @@ export class CosmWallet implements SigningWallet {
         ).getAccountsWithPrivkeys()[0]) as AccountDataWithPrivkey
         wallet.address = account.address
         wallet.privateKey = ethers.utils.hexlify(account.privkey)
+        wallet.publicKey = ethers.utils.hexlify(account.pubkey)
       } else {
         assert(!path)
         const w = await DirectSecp256k1Wallet.fromKey(
@@ -68,8 +70,10 @@ export class CosmWallet implements SigningWallet {
           prefix
         )
         wallet.wallet = w
-        wallet.address = (await w.getAccounts())[0].address
+        const account = (await w.getAccounts())[0]
+        wallet.address = account.address
         wallet.privateKey = ks.privateKey
+        wallet.publicKey = ethers.utils.hexlify(account.pubkey)
       }
     }
     return wallet
@@ -89,7 +93,14 @@ export class CosmWallet implements SigningWallet {
       prefix: this.prefix
     })
     const ws = new CosmWallet()
-    ws.address = (await wallet.getAccounts())[0].address
+
+    ws.wallet = wallet
+    const account = (await (
+      wallet as any
+    ).getAccountsWithPrivkeys()[0]) as AccountDataWithPrivkey
+    ws.address = account.address
+    ws.privateKey = ethers.utils.hexlify(account.privkey)
+    ws.publicKey = ethers.utils.hexlify(account.pubkey)
     return ws
   }
 

@@ -2,7 +2,7 @@ import assert from 'assert'
 
 import { NetworkKind } from '~lib/network'
 import { CosmChainInfo } from '~lib/network/cosm'
-import { DerivePosition, IChainAccount } from '~lib/schema'
+import { IChainAccount } from '~lib/schema'
 import { IWallet } from '~lib/schema/wallet'
 import { NETWORK_SERVICE } from '~lib/services/network'
 import { WALLET_SERVICE } from '~lib/services/walletService'
@@ -12,7 +12,8 @@ import {
   SigningWallet,
   WalletOpts,
   WalletType,
-  getDerivePosition
+  getDerivePosition,
+  hasWalletKeystore
 } from './base'
 import { CosmWallet } from './cosm'
 import { EvmWallet } from './evm'
@@ -80,6 +81,9 @@ export async function getMasterSigningWallet(
   networkKind: NetworkKind,
   chainId: number | string
 ): Promise<SigningWallet | undefined> {
+  if (!hasWalletKeystore(wallet.type)) {
+    return undefined
+  }
   const opts: WalletOpts = {
     id: wallet.id,
     type: wallet.type,

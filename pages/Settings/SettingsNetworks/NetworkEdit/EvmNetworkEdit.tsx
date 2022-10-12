@@ -14,11 +14,8 @@ import { DB } from '~lib/db'
 import { NetworkKind } from '~lib/network'
 import { EvmChainInfo } from '~lib/network/evm'
 import { INetwork } from '~lib/schema'
+import { getEvmBlockNumber, getEvmChainId } from '~lib/services/provider/evm'
 import { DeleteNetworkModal } from '~pages/Settings/SettingsNetworks/DeleteNetworkModal'
-import {
-  getEvmBlockNumber,
-  getEvmChainId
-} from '~pages/Settings/SettingsNetworks/NetworkAdd/EvmNetworkAdd'
 import {
   ExplorerUrlInputGroup,
   RpcUrlInputGroup

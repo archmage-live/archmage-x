@@ -10,12 +10,12 @@ import { ChainId, IChainAccount, INetwork, TokenVisibility } from '~lib/schema'
 import { CONNECTED_SITE_SERVICE } from '~lib/services/connectedSiteService'
 import { NETWORK_SERVICE } from '~lib/services/network'
 import { PASSWORD_SERVICE } from '~lib/services/passwordService'
+import { getProvider } from '~lib/services/provider/provider'
 import {
   ProviderAdaptor,
   TransactionPayload,
-  formatTxParams,
-  getProvider
-} from '~lib/services/provider'
+  formatTxParams
+} from '~lib/services/provider/types'
 import { TOKEN_SERVICE } from '~lib/services/token'
 import { EVM_TRANSACTION_SERVICE } from '~lib/services/transaction/evm'
 import { WALLET_SERVICE } from '~lib/services/walletService'
@@ -108,7 +108,7 @@ class ConsentService implements IConsentService {
         .reduce((maxId, id) => Math.max(maxId, id))
       this.nextId = lastId + 1
 
-      this.setBadge()
+      this.setBadge().finally()
     })
   }
 
@@ -299,7 +299,7 @@ class ConsentService implements IConsentService {
               req.origin,
               payload.populatedParams?.functionSig
             )
-            response = txResponse.hash
+            response = txResponse
             break
           }
           case ConsentType.SIGN_MSG:

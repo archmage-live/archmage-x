@@ -1,5 +1,6 @@
 import { arrayify, hexlify } from '@ethersproject/bytes'
 import { AptosAccount, HexString } from 'aptos'
+import { TransactionBuilderEd25519, TxnBuilderTypes } from 'aptos'
 import assert from 'assert'
 import { sign } from 'tweetnacl'
 
@@ -74,7 +75,7 @@ export class AptosWallet implements SigningWallet {
   }
 
   get publicKey() {
-    return this.account.pubKey()
+    return this.account.pubKey().toString()
   }
 
   get privateKey() {
@@ -97,9 +98,18 @@ export class AptosWallet implements SigningWallet {
     return this.verify(arrayify(msg), sig)
   }
 
-  async signTransaction(transaction: any): Promise<string> {
-    // TODO
-    throw new Error('not implemented')
+  async signTransaction(
+    transaction: TxnBuilderTypes.RawTransaction
+  ): Promise<Uint8Array> {
+    const txnBuilder = new TransactionBuilderEd25519(
+      (signingMessage: TxnBuilderTypes.SigningMessage) => {
+        const sig = this.sign(signingMessage)
+        return new TxnBuilderTypes.Ed25519Signature(sig)
+      },
+      arrayify(this.publicKey)
+    )
+
+    return txnBuilder.sign(transaction)
   }
 
   async signMessage(message: any): Promise<string> {

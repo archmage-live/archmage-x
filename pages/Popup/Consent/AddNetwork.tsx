@@ -20,8 +20,8 @@ import {
   CONSENT_SERVICE,
   ConsentRequest
 } from '~lib/services/consentService'
+import { getEvmBlockNumber } from '~lib/services/provider/evm'
 import { useSiteIconUrl } from '~lib/util'
-import { getEvmBlockNumber } from '~pages/Settings/SettingsNetworks/NetworkAdd/EvmNetworkAdd'
 import {
   ExplorerUrlInputGroup,
   RpcUrlInputGroup

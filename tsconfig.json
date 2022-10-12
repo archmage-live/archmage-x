@@ -10,6 +10,7 @@
   ],
   "compilerOptions": {
     "strict": true,
+    "experimentalDecorators": true,
     "importsNotUsedAsValues": "remove",
     "paths": {
       "~*": [

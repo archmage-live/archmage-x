@@ -1,6 +1,6 @@
 import { shallowCopy } from '@ethersproject/properties'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { useCallback, useEffect } from 'react'
+import { useCallback } from 'react'
 import { useAsync } from 'react-use'
 
 import { ENV } from '~lib/env'

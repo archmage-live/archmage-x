@@ -6,7 +6,7 @@ import { TokenList } from '@uniswap/token-lists'
 import { fetchJsonWithCache } from '~lib/fetch'
 import { IPFS_GATEWAY_API } from '~lib/services/datasource/ipfsGateway'
 import { DEFAULT_EVM_TOKEN_LIST_URLS } from '~lib/services/datasource/tokenlists/defaultTokenLists'
-import { EvmProvider } from '~lib/services/provider/evm'
+import { EvmProvider } from '~lib/services/provider/evm/provider'
 
 import validate from './validate'
 

@@ -1,3 +1,4 @@
+import { TransactionResponse } from '@ethersproject/abstract-provider'
 import { arrayify, hexlify } from '@ethersproject/bytes'
 import { TokenInfo } from '@uniswap/token-lists'
 import assert from 'assert'
@@ -9,35 +10,29 @@ import { NetworkKind } from '~lib/network'
 import { EvmChainInfo, EvmExplorer, NativeCurrency } from '~lib/network/evm'
 import { ERC20__factory } from '~lib/network/evm/abi'
 import { Context } from '~lib/rpc'
-import { IChainAccount, INetwork, TokenVisibility } from '~lib/schema'
-import { getConnectedAccountsBySite } from '~lib/services/connectedSiteService'
+import { INetwork, TokenVisibility } from '~lib/schema'
 import {
-  AddNetworkPayload,
   CONSENT_SERVICE,
   ConsentRequest,
   ConsentType,
-  Permission,
-  RequestPermissionPayload,
   SignMsgPayload,
   SignTypedDataPayload,
   WatchAssetPayload
 } from '~lib/services/consentService'
 import { NETWORK_SERVICE } from '~lib/services/network'
-import { PASSWORD_SERVICE } from '~lib/services/passwordService'
+import { BasePermissionedProvider } from '~lib/services/provider/base'
 import { TOKEN_SERVICE } from '~lib/services/token'
 import { checkAddress } from '~lib/wallet'
-import { getEvmChainId } from '~pages/Settings/SettingsNetworks/NetworkAdd/EvmNetworkAdd'
 
-import { EvmProvider, EvmProviderAdaptor } from '.'
+import { EvmProvider, EvmProviderAdaptor, getEvmChainId } from '.'
 
-export class EvmPermissionedProvider {
-  account?: IChainAccount
-
+export class EvmPermissionedProvider extends BasePermissionedProvider {
   private constructor(
-    public network: INetwork,
+    network: INetwork,
     public provider: EvmProvider,
-    public origin: string
+    origin: string
   ) {
+    super(network, origin)
     assert(network.kind === NetworkKind.EVM)
   }
 
@@ -65,39 +60,34 @@ export class EvmPermissionedProvider {
       new URL(fromUrl).origin
     )
 
-    if (await PASSWORD_SERVICE.isUnlocked()) {
-      await permissionedProvider.getWallet()
-    }
+    await permissionedProvider.fetchConnectedAccounts()
 
     return permissionedProvider
   }
 
-  private async getWallet() {
-    const accounts = await this.getConnectedAccounts()
-    if (accounts.length) {
-      this.account = accounts[0]
-    }
-  }
-
-  async getConnectedAccounts() {
-    return getConnectedAccountsBySite(this.origin, this.network)
+  getActiveAccounts() {
+    return this.account ? [this.account.address!] : []
   }
 
   async send(ctx: Context, method: string, params: Array<any>): Promise<any> {
     try {
       switch (method) {
         case 'eth_accounts':
-          return await this.getAccounts()
-        case 'eth_requestAccounts':
-          return await this.requestAccounts(ctx)
+          return this.getActiveAccounts()
+        case 'eth_requestAccounts': {
+          await this.requestAccounts(ctx)
+          return this.getActiveAccounts()
+        }
         case 'wallet_getPermissions':
           return await this.getPermissions()
-        case 'wallet_requestPermissions':
-          return await this.requestPermissions(ctx, params)
+        case 'wallet_requestPermissions': {
+          await this.requestPermissions(ctx, params)
+          return await this.getPermissions()
+        }
         case 'wallet_addEthereumChain':
-          return await this.addEthereumChain(ctx, params)
+          return await this.addChain(ctx, params)
         case 'wallet_switchEthereumChain':
-          return await this.switchEthereumChain(ctx, params)
+          return await this.switchChain(ctx, params)
         case 'wallet_watchAsset':
           return await this.watchAsset(ctx, params as any)
         case 'eth_sendTransaction':
@@ -147,7 +137,7 @@ export class EvmPermissionedProvider {
     const provider = new EvmProviderAdaptor(this.provider)
     const txPayload = await provider.populateTransaction(this.account, params)
 
-    return CONSENT_SERVICE.requestConsent(
+    const response: TransactionResponse = await CONSENT_SERVICE.requestConsent(
       {
         networkId: this.network.id,
         accountId: this.account.id,
@@ -157,6 +147,7 @@ export class EvmPermissionedProvider {
       },
       ctx
     )
+    return response.hash
   }
 
   // https://ethereum.org/en/developers/docs/apis/json-rpc/#eth_sign
@@ -228,92 +219,8 @@ export class EvmPermissionedProvider {
     )
   }
 
-  getAccounts() {
-    return this.account?.address ? [this.account.address] : []
-  }
-
-  // https://eips.ethereum.org/EIPS/eip-1102
-  async requestAccounts(ctx: Context) {
-    if (await PASSWORD_SERVICE.isLocked()) {
-      await CONSENT_SERVICE.requestConsent(
-        {
-          networkId: undefined,
-          accountId: undefined,
-          type: ConsentType.UNLOCK,
-          origin: this.origin,
-          payload: {}
-        } as any as ConsentRequest,
-        ctx
-      )
-    }
-
-    await this.getWallet()
-
-    if (!this.getAccounts().length) {
-      await this.requestPermissions(ctx, [{ eth_accounts: {} }])
-    }
-
-    return this.getAccounts()
-  }
-
-  // https://eips.ethereum.org/EIPS/eip-2255
-  async getPermissions() {
-    let addresses: string[] = []
-    if (await PASSWORD_SERVICE.isUnlocked()) {
-      addresses = (await this.getConnectedAccounts()).map((acc) => acc.address!)
-    }
-
-    return [
-      {
-        invoker: this.origin,
-        parentCapability: 'eth_accounts',
-        caveats: [
-          {
-            type: 'filterResponse',
-            value: addresses
-          },
-          {
-            type: 'restrictReturnedAccounts', // MetaMask
-            value: addresses
-          }
-        ]
-      }
-    ]
-  }
-
-  // https://eips.ethereum.org/EIPS/eip-2255
-  async requestPermissions(
-    ctx: Context,
-    [{ eth_accounts, ...restPermissions }]: Array<any>
-  ) {
-    if (!eth_accounts || Object.keys(restPermissions).length) {
-      // now only support `eth_accounts`
-      throw ethErrors.rpc.invalidParams()
-    }
-
-    await CONSENT_SERVICE.requestConsent(
-      {
-        networkId: this.network.id!,
-        accountId: [],
-        type: ConsentType.REQUEST_PERMISSION,
-        origin: this.origin,
-        payload: {
-          permissions: [{ permission: Permission.ACCOUNT }]
-        } as RequestPermissionPayload
-      },
-      ctx
-    )
-
-    await this.getWallet()
-
-    return this.getPermissions()
-  }
-
   // https://eips.ethereum.org/EIPS/eip-3085
-  async addEthereumChain(
-    ctx: Context,
-    [params]: Array<AddEthereumChainParameter>
-  ) {
+  async addChain(ctx: Context, [params]: Array<AddEthereumChainParameter>) {
     const chainId = this.checkChainId(params.chainId)
 
     const existing = await NETWORK_SERVICE.getNetwork({
@@ -329,7 +236,7 @@ export class EvmPermissionedProvider {
         return null
       }
 
-      return this.switchEthereumChain(ctx, [
+      return this.switchChain(ctx, [
         { chainId: params.chainId } as SwitchEthereumChainParameter
       ])
     }
@@ -380,53 +287,18 @@ export class EvmPermissionedProvider {
       throw ethErrors.rpc.invalidParams('Mismatched chainId')
     }
 
-    await CONSENT_SERVICE.requestConsent(
-      {
-        networkId: undefined,
-        accountId: undefined,
-        type: ConsentType.ADD_NETWORK,
-        origin: this.origin,
-        payload: {
-          networkKind: NetworkKind.EVM,
-          chainId,
-          info
-        } as AddNetworkPayload
-      } as any as ConsentRequest,
-      ctx
-    )
+    await this._addChain(ctx, NetworkKind.EVM, chainId, info)
 
-    return this.switchEthereumChain(ctx, [
-      { chainId: params.chainId } as SwitchEthereumChainParameter
-    ])
+    return null
   }
 
   // https://eips.ethereum.org/EIPS/eip-3326
-  async switchEthereumChain(
+  async switchChain(
     ctx: Context,
     [params]: Array<SwitchEthereumChainParameter>
   ) {
     const chainId = this.checkChainId(params.chainId)
-    const network = await NETWORK_SERVICE.getNetwork({
-      kind: NetworkKind.EVM,
-      chainId
-    })
-    if (!network) {
-      throw ethErrors.rpc.invalidRequest(
-        'Chain with the specified chainId is not found'
-      )
-    }
-
-    await CONSENT_SERVICE.requestConsent(
-      {
-        networkId: network.id,
-        accountId: undefined,
-        type: ConsentType.SWITCH_NETWORK,
-        origin: this.origin,
-        payload: {}
-      } as any as ConsentRequest,
-      ctx
-    )
-
+    await this._switchChain(ctx, NetworkKind.EVM, chainId)
     return null
   }
 

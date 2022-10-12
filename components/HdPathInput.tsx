@@ -109,7 +109,11 @@ export const HdPathInput = ({
   const onRemoveComponent = useCallback(() => {
     const hp = hdPath.slice(0, hdPath.length - 1)
     if (derivePosition !== undefined && derivePosition > hp.length - 1) {
-      setDerivePosition?.(hp.length - 1)
+      const position = hp.length - 1
+      setDerivePosition?.(position)
+      hp[position] = hp[position].isHardened()
+        ? Slip10RawIndex.hardened(0)
+        : Slip10RawIndex.normal(0)
     }
     const path = pathToString(hp)
     onChange?.(path)
@@ -234,7 +238,10 @@ export const HdPathInput = ({
                       bg={index === derivePosition ? 'green.500' : 'gray.500'}
                       transition="background 0.2s ease-out"
                       cursor="pointer"
-                      onClick={() => setDerivePosition?.(index)}
+                      onClick={() => {
+                        setDerivePosition?.(index)
+                        onValueChange(0, index)
+                      }}
                     />
                   </PopoverTrigger>
                   <PopoverContent w="auto">

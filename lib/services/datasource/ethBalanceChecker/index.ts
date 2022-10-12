@@ -6,7 +6,7 @@ import {
   getAddressesBalances
 } from 'eth-balance-checker/lib/ethers'
 
-import { EvmProvider } from '~lib/services/provider/evm'
+import { EvmProvider } from '~lib/services/provider/evm/provider'
 
 const NATIVE_TOKEN = AddressZero
 

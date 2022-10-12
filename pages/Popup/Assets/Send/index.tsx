@@ -37,7 +37,8 @@ import {
   useIsContract,
   useProvider
 } from '~lib/services/provider'
-import { EvmProviderAdaptor, EvmTxParams } from '~lib/services/provider/evm'
+import { EvmProviderAdaptor } from '~lib/services/provider/evm/providerAdaptor'
+import { EvmTxParams } from '~lib/services/provider/evm/types'
 import { NativeToken, getTokenBrief, useTokenById } from '~lib/services/token'
 import { checkAddress } from '~lib/wallet'
 import { TokenItem, TokenItemStyle } from '~pages/Popup/Assets/TokenItem'

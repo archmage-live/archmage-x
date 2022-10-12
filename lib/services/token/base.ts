@@ -3,7 +3,7 @@ import Dexie from 'dexie'
 import { DB } from '~lib/db'
 import { NetworkKind } from '~lib/network'
 import { IChainAccount, IToken, ITokenList, TokenVisibility } from '~lib/schema'
-import { formatTokenIdentifier } from '~lib/services/token/index'
+import { formatTokenIdentifier } from '~lib/services/token'
 
 export class BaseTokenService {
   async getTokenLists(networkKind: NetworkKind) {

@@ -1,4 +1,3 @@
-import assert from 'assert'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useMemo } from 'react'
 

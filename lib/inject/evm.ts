@@ -1,3 +1,4 @@
+import { ENV } from '~lib/env'
 import type { RpcClientInjected } from '~lib/inject/client'
 import { Context, EventEmitter } from '~lib/inject/client'
 
@@ -27,7 +28,7 @@ if (!globalThis.archmage) {
   globalThis.archmage = {}
 }
 
-if (!globalThis.archmage.evm) {
+if (!ENV.inServiceWorker && !globalThis.archmage.evm) {
   const getService = () => {
     if (
       !globalThis.archmage.clientProxy &&

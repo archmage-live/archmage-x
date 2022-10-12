@@ -18,7 +18,7 @@ import {
 import { ETH_BALANCE_CHECKER_API } from '~lib/services/datasource/ethBalanceChecker'
 import { TOKENLISTS_API } from '~lib/services/datasource/tokenlists'
 import { NETWORK_SERVICE } from '~lib/services/network'
-import { EvmProvider } from '~lib/services/provider/evm'
+import { EvmProvider } from '~lib/services/provider/evm/provider'
 import { LOCAL_STORE, StoreKey } from '~lib/store'
 
 import { TokenBrief, TokenListBrief } from '.'

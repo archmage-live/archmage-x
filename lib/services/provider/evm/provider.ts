@@ -5,6 +5,7 @@ import { Network } from '@ethersproject/networks'
 import { resolveProperties } from '@ethersproject/properties'
 import { BlockTag } from '@ethersproject/providers'
 import { UrlJsonRpcProvider as BaseUrlJsonRpcProvider } from '@ethersproject/providers'
+import { JsonRpcProvider } from '@ethersproject/providers/src.ts/json-rpc-provider'
 import { ConnectionInfo } from '@ethersproject/web'
 import assert from 'assert'
 import { version } from 'ethers'
@@ -167,4 +168,23 @@ export class EvmProvider extends UrlJsonRpcProvider {
     const lastBlock = await this.getBlock(thisBlock.number - 1)
     return thisBlock.timestamp - lastBlock.timestamp // seconds
   }
+}
+
+export async function getEvmBlockNumber(url: string) {
+  const provider = new JsonRpcProvider({
+    url,
+    throttleLimit: 1,
+    timeout: 3000
+  })
+  return await provider.getBlockNumber()
+}
+
+export async function getEvmChainId(url: string) {
+  return (
+    await new JsonRpcProvider({
+      url,
+      throttleLimit: 1,
+      timeout: 3000
+    }).getNetwork()
+  ).chainId
 }

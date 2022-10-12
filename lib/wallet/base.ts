@@ -86,6 +86,7 @@ export interface WalletOpts {
 export interface SigningWallet {
   address: string
   privateKey: string
+  publicKey: string
 
   derive(
     pathTemplate: string,
@@ -93,7 +94,7 @@ export interface SigningWallet {
     derivePosition?: DerivePosition
   ): Promise<SigningWallet>
 
-  signTransaction(transaction: any): Promise<string>
+  signTransaction(transaction: any): Promise<any>
 
   signMessage(message: any): Promise<string>
 

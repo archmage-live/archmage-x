@@ -64,6 +64,10 @@ export class EvmWallet implements SigningWallet {
     return this.wallet.privateKey
   }
 
+  get publicKey(): string {
+    return this.wallet.publicKey
+  }
+
   private get signingWallet() {
     return this.wallet instanceof ethers.utils.HDNode
       ? new ethers.Wallet(this.wallet)

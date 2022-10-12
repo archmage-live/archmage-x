@@ -48,6 +48,8 @@ export function formatTxParams(
   switch (network.kind) {
     case NetworkKind.EVM:
       return formatEvmTxParams(params, populatedParams)
+    case NetworkKind.APTOS:
+      return
   }
   throw new Error(`provider for network ${network.kind} is not implemented`)
 }

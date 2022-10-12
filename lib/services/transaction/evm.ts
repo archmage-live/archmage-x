@@ -29,13 +29,13 @@ import {
   useEtherScanProvider
 } from '~lib/services/datasource/etherscan'
 import { NETWORK_SERVICE, getNetworkInfo } from '~lib/services/network'
-import { getProvider } from '~lib/services/provider'
 import {
-  EvmProvider,
   parseEvmFunctionSignature,
   useEvmFunctionSignature,
   useEvmProvider
-} from '~lib/services/provider/evm'
+} from '~lib/services/provider/evm/hooks'
+import { EvmProvider } from '~lib/services/provider/evm/provider'
+import { getProvider } from '~lib/services/provider/provider'
 
 import { TransactionInfo, TransactionStatus, TransactionType } from './'
 
@@ -599,7 +599,7 @@ export class EvmTransactionService extends EvmTransactionServicePartial {
       pendingTx.id = await DB.pendingTxs.put(pendingTx)
     })
 
-    const _ = this.waitForTx(pendingTx, tx)
+    this.waitForTx(pendingTx, tx).finally()
 
     return pendingTx
   }

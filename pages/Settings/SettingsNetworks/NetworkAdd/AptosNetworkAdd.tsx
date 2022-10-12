@@ -181,6 +181,8 @@ export const AptosNetworkAdd = ({
       />
 
       <ExplorerUrlInputGroup
+        name="faucet"
+        title="Faucet"
         urls={faucetUrls}
         setUrls={setFaucetUrls}
         checkUrls={checkFaucetUrls}

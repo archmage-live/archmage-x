@@ -244,6 +244,8 @@ export const RpcUrlInputGroup = ({
 }
 
 export const ExplorerUrlInputGroup = ({
+  name = 'explorer',
+  title = 'Block Explorer',
   urls,
   setUrls,
   noAdd,
@@ -254,6 +256,8 @@ export const ExplorerUrlInputGroup = ({
   isSaveDisabled,
   isUrlsChanged
 }: {
+  name?: string
+  title?: string
   urls: string[]
   setUrls: (urls: string[]) => void
   noAdd?: boolean
@@ -270,18 +274,18 @@ export const ExplorerUrlInputGroup = ({
   }, [urls])
 
   const _checkUrls = useCallback(() => {
-    const checkedExplorerUrls = urls.map(checkUrl) as string[]
-    if (checkedExplorerUrls.some((url) => !url)) {
-      setAlert('Invalid explorer url(s)')
+    const checkedUrls = urls.map(checkUrl) as string[]
+    if (checkedUrls.some((url) => !url)) {
+      setAlert(`Invalid ${name} url(s)`)
       return
     }
-    if (new Set(checkedExplorerUrls).size !== checkedExplorerUrls.length) {
-      setAlert('Duplicate explorer url(s)')
+    if (new Set(checkedUrls).size !== checkedUrls.length) {
+      setAlert(`Duplicate ${name} url(s)`)
       return
     }
 
-    return checkedExplorerUrls
-  }, [urls])
+    return checkedUrls
+  }, [name, urls])
 
   useEffect(() => {
     if (checkUrls) {
@@ -301,7 +305,7 @@ export const ExplorerUrlInputGroup = ({
   return (
     <Stack spacing={6}>
       <FormControl>
-        <FormLabel>Block Explorer Url(s)</FormLabel>
+        <FormLabel>{title} Url(s)</FormLabel>
         <UrlInputGroup
           urls={urls}
           setUrls={setUrls}
@@ -311,7 +315,7 @@ export const ExplorerUrlInputGroup = ({
         />
         {!urls.length && !noAdd && (
           <HStack h={12} spacing={8}>
-            <Text color="gray.500">No explorer urls.</Text>
+            <Text color="gray.500">No {name} urls.</Text>
             <IconButton
               size="xs"
               aria-label="Add url"

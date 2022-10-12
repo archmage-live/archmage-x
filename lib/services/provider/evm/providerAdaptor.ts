@@ -7,7 +7,10 @@ import { ethErrors } from 'eth-rpc-errors'
 
 import { IChainAccount, INetwork } from '~lib/schema'
 import { ETH_BALANCE_CHECKER_API } from '~lib/services/datasource/ethBalanceChecker'
-import { ProviderAdaptor, TransactionPayload } from '~lib/services/provider'
+import {
+  ProviderAdaptor,
+  TransactionPayload
+} from '~lib/services/provider/types'
 import { EVM_TRANSACTION_SERVICE } from '~lib/services/transaction/evm'
 import { getSigningWallet } from '~lib/wallet'
 

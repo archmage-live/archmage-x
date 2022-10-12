@@ -11,7 +11,6 @@ import {
   NumberInputStepper,
   Stack
 } from '@chakra-ui/react'
-import { JsonRpcProvider } from '@ethersproject/providers/src.ts/json-rpc-provider'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { AlertBox } from '~components/AlertBox'
@@ -19,6 +18,7 @@ import { NetworkKind } from '~lib/network'
 import { EvmChainInfo } from '~lib/network/evm'
 import { ChainId } from '~lib/schema'
 import { NETWORK_SERVICE } from '~lib/services/network'
+import { getEvmBlockNumber, getEvmChainId } from '~lib/services/provider/evm'
 import { stall } from '~lib/util'
 
 import { ExplorerUrlInputGroup, RpcUrlInputGroup } from './UrlInputGroup'
@@ -211,23 +211,4 @@ export const EvmNetworkAdd = ({
       </HStack>
     </Stack>
   )
-}
-
-export async function getEvmBlockNumber(url: string) {
-  const provider = new JsonRpcProvider({
-    url,
-    throttleLimit: 1,
-    timeout: 3000
-  })
-  return await provider.getBlockNumber()
-}
-
-export async function getEvmChainId(url: string) {
-  return (
-    await new JsonRpcProvider({
-      url,
-      throttleLimit: 1,
-      timeout: 3000
-    }).getNetwork()
-  ).chainId
 }

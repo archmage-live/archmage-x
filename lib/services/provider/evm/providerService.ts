@@ -2,54 +2,25 @@ import { EventFilter } from '@ethersproject/abstract-provider'
 import { ethErrors } from 'eth-rpc-errors'
 import { ethers } from 'ethers'
 
-import {
-  getActiveNetworkByKind,
-  watchActiveNetworkChange,
-  watchActiveWalletChange
-} from '~lib/active'
-import { DB } from '~lib/db'
 import { EVM_PROVIDER_NAME, IEvmProviderService } from '~lib/inject/evm'
 import { NetworkKind } from '~lib/network'
-import { watchPasswordUnlocked } from '~lib/password'
-import { Context, EventType, Listener, SERVICE_WORKER_SERVER } from '~lib/rpc'
+import { Context, Listener, SERVICE_WORKER_SERVER } from '~lib/rpc'
 import { INetwork } from '~lib/schema'
 import { PASSWORD_SERVICE } from '~lib/services/passwordService'
+import { BaseProviderService } from '~lib/services/provider/base'
 
 import { EvmPermissionedProvider } from './permissionedProvider'
 import { EvmProvider } from './provider'
 
-class EvmProviderService implements IEvmProviderService {
+class EvmProviderService
+  extends BaseProviderService
+  implements IEvmProviderService
+{
   private provider?: EvmProvider
-  private listeners = new Map<EventType, Listener[]>()
   private subscriptions = new Map<string, [string | EventFilter, Listener]>()
 
   constructor() {
-    getActiveNetworkByKind(NetworkKind.EVM).then((network) =>
-      this.switchNetwork(network)
-    )
-
-    watchPasswordUnlocked((isUnlocked) => {
-      this.emit('unlocked', isUnlocked)
-    })
-
-    watchActiveNetworkChange(async () => {
-      const network = await getActiveNetworkByKind(NetworkKind.EVM)
-      await this.switchNetwork(network)
-      this.emit('networkChanged', {
-        chainId: network
-          ? ethers.utils.hexStripZeros(ethers.utils.hexlify(network.chainId))
-          : '',
-        networkVersion: network ? String(network.chainId) : null
-      })
-    })
-
-    const handleAccountsChanged = () => this.emit('accountsChanged')
-
-    watchActiveWalletChange(handleAccountsChanged)
-
-    DB.connectedSites.hook('creating', handleAccountsChanged)
-    DB.connectedSites.hook('updating', handleAccountsChanged)
-    DB.connectedSites.hook('deleting', handleAccountsChanged)
+    super(NetworkKind.EVM)
   }
 
   async state(ctx: Context) {
@@ -57,7 +28,7 @@ class EvmProviderService implements IEvmProviderService {
     const provider = await EvmPermissionedProvider.from(ctx.fromUrl!)
     if (provider) {
       network = provider.network
-      accounts = await provider.getConnectedAccounts()
+      accounts = provider.accounts.map((acc) => acc.address!)
     }
     return {
       isUnlocked: await PASSWORD_SERVICE.isUnlocked(),
@@ -66,8 +37,37 @@ class EvmProviderService implements IEvmProviderService {
         : undefined,
       networkVersion: network ? String(network.chainId) : undefined,
       isConnected: navigator.onLine,
-      accounts: accounts?.map((acc) => acc.address!) || []
+      accounts: accounts || []
     }
+  }
+
+  protected override async switchNetwork(network?: INetwork) {
+    // retain subscriptions
+    const blockSub = this.provider?.listeners('block')
+    const pendingSub = this.provider?.listeners('pending')
+    // remove subscriptions from old provider
+    this.provider?.removeAllListeners('block')
+    this.provider?.removeAllListeners('pending')
+
+    this.provider = network ? await EvmProvider.from(network) : undefined
+
+    // add subscriptions to new provider
+    blockSub?.forEach((listener) => this.provider?.on('block', listener))
+    pendingSub?.forEach((listener) => this.provider?.on('pending', listener))
+  }
+
+  protected override async emitNetworkChange(network?: INetwork) {
+    this.emit('networkChanged', {
+      chainId: network
+        ? ethers.utils.hexStripZeros(ethers.utils.hexlify(network.chainId))
+        : '',
+      networkVersion: network ? String(network.chainId) : null
+    })
+  }
+
+  protected override async emitAccountsChange() {
+    // here do not carry new accounts, since the injected script will fetch them
+    this.emit('accountsChanged')
   }
 
   async request(
@@ -86,21 +86,6 @@ class EvmProviderService implements IEvmProviderService {
 
     const provider = await EvmPermissionedProvider.fromMayThrow(ctx.fromUrl!)
     return provider.send(ctx, args.method, args.params || [])
-  }
-
-  private async switchNetwork(network?: INetwork) {
-    // retain subscriptions
-    const blockSub = this.provider?.listeners('block')
-    const pendingSub = this.provider?.listeners('pending')
-    // remove subscriptions from old provider
-    this.provider?.removeAllListeners('block')
-    this.provider?.removeAllListeners('pending')
-
-    this.provider = network ? await EvmProvider.from(network) : undefined
-
-    // add subscriptions to new provider
-    blockSub?.forEach((listener) => this.provider?.on('block', listener))
-    pendingSub?.forEach((listener) => this.provider?.on('pending', listener))
   }
 
   // https://geth.ethereum.org/docs/rpc/pubsub
@@ -174,29 +159,6 @@ class EvmProviderService implements IEvmProviderService {
         result
       }
     })
-  }
-
-  private emit(eventName: EventType, ...args: any[]) {
-    this.listeners.get(eventName)?.forEach((listener) => listener(...args))
-  }
-
-  on(eventName: EventType, listener: Listener): void {
-    let listeners = this.listeners.get(eventName)
-    if (!listeners) {
-      listeners = []
-      this.listeners.set(eventName, listeners)
-    }
-    listeners.push(listener)
-  }
-
-  off(eventName: EventType, listener: Listener): void {
-    const listeners = this.listeners.get(eventName)
-    if (listeners) {
-      const index = listeners.indexOf(listener)
-      if (index > -1) {
-        listeners.splice(index, 1)
-      }
-    }
   }
 }
 
