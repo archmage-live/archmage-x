@@ -1,8 +1,8 @@
 import { ENV } from '~lib/env'
-import type { RpcClientInjected } from '~lib/inject/client'
-import { Context, EventEmitter } from '~lib/inject/client'
 
-export const EVM_PROVIDER_NAME = 'evmProvider' as const
+import { Context, EventEmitter, RpcClientInjected } from './client'
+
+export const EVM_PROVIDER_NAME = 'evmProvider'
 
 export interface IEvmProviderService extends EventEmitter {
   state(ctx?: Context): Promise<{
@@ -20,51 +20,35 @@ export interface IEvmProviderService extends EventEmitter {
 }
 
 declare global {
-  var archmage: any
   var ethereum: any
 }
 
-if (!globalThis.archmage) {
-  globalThis.archmage = {}
-}
-
 if (!ENV.inServiceWorker && !globalThis.archmage.evm) {
-  const getService = () => {
-    if (
-      !globalThis.archmage.clientProxy &&
-      globalThis.archmage.RpcClientInjected
-    ) {
-      globalThis.archmage.clientProxy =
-        new globalThis.archmage.RpcClientInjected()
-      globalThis.archmage.evmService = (
-        globalThis.archmage.clientProxy as RpcClientInjected
-      ).service<IEvmProviderService>(EVM_PROVIDER_NAME)
-    }
-    return globalThis.archmage.evmService as IEvmProviderService
-  }
+  const service =
+    RpcClientInjected.instance().service<IEvmProviderService>(EVM_PROVIDER_NAME)
 
   globalThis.archmage.evm = {
     request(args: { method: string; params?: Array<any> }): Promise<any> {
-      return getService().request(args)
+      return service.request(args)
     }
   }
 
   const init = async () => {
     const listeners = new Map<string, Function[]>()
 
-    getService().on('unlocked', (isUnlocked) => {
+    service.on('unlocked', (isUnlocked) => {
       globalThis.ethereum._state.isUnlocked = isUnlocked
     })
 
-    getService().on('networkChanged', ({ chainId, networkVersion }) => {
+    service.on('networkChanged', ({ chainId, networkVersion }) => {
       globalThis.ethereum.chainId = chainId
       globalThis.ethereum.networkVersion = networkVersion
 
       listeners.get('chainChanged')?.forEach((handler) => handler(chainId))
     })
 
-    getService().on('accountsChanged', async () => {
-      const { chainId, networkVersion, ...state } = await getService().state()
+    service.on('accountsChanged', async () => {
+      const { chainId, networkVersion, ...state } = await service.state()
       globalThis.ethereum._state = state
       globalThis.ethereum.selectedAddress = state.accounts.length
         ? state.accounts[0]
@@ -75,23 +59,21 @@ if (!ENV.inServiceWorker && !globalThis.archmage.evm) {
         ?.forEach((handler) => handler(state.accounts.slice(0, 1)))
     })
 
-    getService().on('message', (...args: any[]) => {
+    service.on('message', (...args: any[]) => {
       listeners.get('message')?.forEach((handler) => handler(...args))
     })
 
-    getService()
-      .state()
-      .then(({ chainId, networkVersion, ...state }) => {
-        const ethereum = globalThis.ethereum
-        ethereum._state = state
-        ethereum.chainId = chainId
-        ethereum.networkVersion = networkVersion
-        ethereum.selectedAddress = state.accounts.length
-          ? state.accounts[0]
-          : null
-      })
+    service.state().then(({ chainId, networkVersion, ...state }) => {
+      const ethereum = globalThis.ethereum
+      ethereum._state = state
+      ethereum.chainId = chainId
+      ethereum.networkVersion = networkVersion
+      ethereum.selectedAddress = state.accounts.length
+        ? state.accounts[0]
+        : null
+    })
 
-    const ethereum = {
+    globalThis.ethereum = {
       ...globalThis.archmage.evm,
 
       _state: {},
@@ -146,7 +128,7 @@ if (!ENV.inServiceWorker && !globalThis.archmage.evm) {
         request: { method: string; params?: Array<any> },
         callback: (error: any, response: any) => void
       ) {
-        getService()
+        service
           .request(request)
           .then((rep) => callback(undefined, rep))
           .catch((err) => callback(err, undefined))
@@ -163,7 +145,7 @@ if (!ENV.inServiceWorker && !globalThis.archmage.evm) {
           typeof methodOrRequest === 'string' &&
           (paramsOrCallback === undefined || Array.isArray(paramsOrCallback))
         ) {
-          return getService().request({
+          return service.request({
             method: methodOrRequest,
             params: paramsOrCallback
           })
@@ -172,7 +154,7 @@ if (!ENV.inServiceWorker && !globalThis.archmage.evm) {
           paramsOrCallback &&
           !Array.isArray(paramsOrCallback)
         ) {
-          getService()
+          service
             .request(methodOrRequest)
             .then((rep) => paramsOrCallback(undefined, rep))
             .catch((err) => paramsOrCallback(err, undefined))
@@ -180,10 +162,8 @@ if (!ENV.inServiceWorker && !globalThis.archmage.evm) {
       }
     }
 
-    globalThis.ethereum = ethereum
-
     globalThis.dispatchEvent(new CustomEvent('ethereum#initialized'))
   }
 
-  init()
+  init().finally()
 }

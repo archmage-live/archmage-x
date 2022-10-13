@@ -192,6 +192,7 @@ export class BaseProviderService {
 
     watchActiveWalletChange(handleAccountsChanged)
 
+    // NOTE: Dexie hooks can only be functions which don't return promises
     DB.connectedSites.hook('creating', handleAccountsChanged)
     DB.connectedSites.hook('updating', handleAccountsChanged)
     DB.connectedSites.hook('deleting', handleAccountsChanged)
@@ -205,7 +206,7 @@ export class BaseProviderService {
     throw new Error('not implemented')
   }
 
-  protected async emitAccountsChange() {
+  protected emitAccountsChange() {
     throw new Error('not implemented')
   }
 

@@ -14,13 +14,24 @@ import { getActiveNetworkByKind } from '~lib/active'
 import { Context } from '~lib/inject/client'
 import { NetworkKind } from '~lib/network'
 import { INetwork } from '~lib/schema'
-import { CONSENT_SERVICE, ConsentType } from '~lib/services/consentService'
+import {
+  CONSENT_SERVICE,
+  ConsentRequest,
+  ConsentType,
+  SignTypedDataPayload
+} from '~lib/services/consentService'
+import { getNetworkInfo } from '~lib/services/network'
 import { TransactionPayload } from '~lib/services/provider'
 import { getAptosClient } from '~lib/services/provider/aptos/client'
 import { AptosProviderAdaptor } from '~lib/services/provider/aptos/providerAdaptor'
-import { isEntryFunctionPayload } from '~lib/services/provider/aptos/types'
 import { BasePermissionedProvider } from '~lib/services/provider/base'
 import { getSigningWallet } from '~lib/wallet'
+
+import {
+  SignMessagePayload,
+  SignMessageResponse,
+  isEntryFunctionPayload
+} from './types'
 
 export class AptosPermissionedProvider extends BasePermissionedProvider {
   private constructor(
@@ -79,9 +90,12 @@ export class AptosPermissionedProvider extends BasePermissionedProvider {
         return !!this.account
       case 'account':
         return this.getActiveAccount()
+      case 'network':
+        return this.getNetwork()
       case 'signAndSubmitTransaction':
         return this.signAndSubmitTransaction(ctx, params[0])
       case 'signMessage':
+        return this.signTypedData(ctx, params[0])
 
       // https://aptos-labs.github.io/ts-sdk-doc/classes/AptosClient.html
       // query
@@ -184,6 +198,12 @@ export class AptosPermissionedProvider extends BasePermissionedProvider {
       address: this.account.address!,
       publicKey: signingWallet ? [signingWallet.publicKey] : []
     } as PublicAccount
+  }
+
+  async getNetwork() {
+    // TODO
+    const info = getNetworkInfo(this.network)
+    return info.name
   }
 
   async signAndSubmitTransaction(
@@ -307,6 +327,52 @@ export class AptosPermissionedProvider extends BasePermissionedProvider {
       aptosAccount as unknown as AptosAccount,
       rawTransaction,
       query
+    )
+  }
+
+  async signTypedData(ctx: Context, req: SignMessagePayload) {
+    if (!this.account) {
+      throw ethErrors.provider.unauthorized()
+    }
+
+    assert(req.message && req.nonce)
+
+    const msg = {
+      address: req.address ? this.account.address! : undefined,
+      application: req.application ? new URL(ctx.fromUrl!).host : undefined,
+      chainId: req.chainId ? this.account.chainId : undefined,
+      message: req.message,
+      nonce: String(req.nonce),
+      prefix: 'APTOS'
+    } as SignMessageResponse
+
+    const fullMsg = ['APTOS']
+    if (req.address) {
+      fullMsg.push(`address: ${msg.address}`)
+    }
+    if (req.application) {
+      fullMsg.push(`application: ${msg.application}`)
+    }
+    if (req.chainId) {
+      fullMsg.push(`chain_id: ${msg.chainId}`)
+    }
+    fullMsg.push(`message: ${msg.message}`)
+    fullMsg.push(`nonce: ${msg.nonce}`)
+
+    msg.fullMessage = fullMsg.join('\n')
+
+    return await CONSENT_SERVICE.requestConsent(
+      {
+        networkId: this.network.id,
+        accountId: this.account.id,
+        type: ConsentType.SIGN_TYPED_DATA,
+        origin: this.origin,
+        payload: {
+          metadata: [],
+          typedData: msg
+        } as SignTypedDataPayload
+      } as any as ConsentRequest,
+      ctx
     )
   }
 }

@@ -14,6 +14,7 @@ import {
 } from '~lib/services/cacheService'
 import { getNetworkInfo } from '~lib/services/network'
 import { AptosAddressZero } from '~lib/services/network/aptosService'
+import { AptosProviderAdaptor } from '~lib/services/provider/aptos/providerAdaptor'
 import { getEvmGasFeeBrief } from '~lib/services/provider/evm/gasFee'
 import { EvmProviderAdaptor } from '~lib/services/provider/evm/providerAdaptor'
 import { ProviderAdaptor } from '~lib/services/provider/types'
@@ -27,6 +28,7 @@ export async function getProvider(network: INetwork): Promise<ProviderAdaptor> {
     case NetworkKind.COSM:
       break
     case NetworkKind.APTOS:
+      return await AptosProviderAdaptor.from(network)
     case NetworkKind.SOL:
       break
   }

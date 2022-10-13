@@ -1,15 +1,25 @@
 import { AptosClient, TxnBuilderTypes, Types } from 'aptos'
+import assert from 'assert'
 import { ethErrors } from 'eth-rpc-errors'
 
-import { IChainAccount } from '~lib/schema'
+import { IChainAccount, INetwork } from '~lib/schema'
 import { ProviderAdaptor, TransactionPayload } from '~lib/services/provider'
 import { getSigningWallet } from '~lib/wallet'
+
+import { getAptosClient } from './client'
+import { SignMessageResponse } from './types'
 
 export const DEFAULT_MAX_GAS_AMOUNT = 20000
 export const DEFAULT_TXN_EXP_SEC_FROM_NOW = 20
 
 export class AptosProviderAdaptor implements ProviderAdaptor {
   constructor(public client: AptosClient) {}
+
+  static async from(network: INetwork) {
+    const client = await getAptosClient(network)
+    assert(client)
+    return new AptosProviderAdaptor(client)
+  }
 
   estimateGas(account: IChainAccount, tx: any): Promise<string> {
     return Promise.resolve('')
@@ -73,10 +83,10 @@ export class AptosProviderAdaptor implements ProviderAdaptor {
   }
 
   async signTransaction(
-    wallet: IChainAccount,
+    account: IChainAccount,
     transaction: TxnBuilderTypes.RawTransaction
   ): Promise<Uint8Array> {
-    const signer = await getSigningWallet(wallet)
+    const signer = await getSigningWallet(account)
     if (!signer) {
       throw ethErrors.rpc.internal()
     }
@@ -90,10 +100,17 @@ export class AptosProviderAdaptor implements ProviderAdaptor {
   }
 
   signMessage(account: IChainAccount, message: any): Promise<any> {
-    return Promise.resolve(undefined)
+    throw new Error('not implemented')
   }
 
-  signTypedData(account: IChainAccount, typedData: any): Promise<any> {
-    return Promise.resolve(undefined)
+  async signTypedData(
+    account: IChainAccount,
+    typedData: SignMessageResponse
+  ): Promise<string> {
+    const signer = await getSigningWallet(account)
+    if (!signer) {
+      throw ethErrors.rpc.internal()
+    }
+    return signer.signTypedData(typedData.fullMessage)
   }
 }

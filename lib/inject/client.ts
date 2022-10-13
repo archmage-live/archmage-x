@@ -156,6 +156,15 @@ export abstract class AbstractRpcClient {
 }
 
 export class RpcClientInjected extends AbstractRpcClient {
+  private static _instance?: RpcClientInjected
+
+  static instance() {
+    if (!RpcClientInjected._instance) {
+      RpcClientInjected._instance = new RpcClientInjected()
+    }
+    return RpcClientInjected._instance
+  }
+
   constructor() {
     super()
 
@@ -208,12 +217,10 @@ export class RpcClientInjected extends AbstractRpcClient {
   }
 }
 
-if (typeof window !== 'undefined') {
-  const global = window as any
-  if (!global.archmage) {
-    global.archmage = {}
-  }
-  if (!global.archmage.RpcClientInjected) {
-    global.archmage.RpcClientInjected = RpcClientInjected
-  }
+declare global {
+  var archmage: any
+}
+
+if (!globalThis.archmage) {
+  globalThis.archmage = {}
 }

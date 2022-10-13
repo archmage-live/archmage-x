@@ -113,13 +113,11 @@ export class AptosWallet implements SigningWallet {
   }
 
   async signMessage(message: any): Promise<string> {
-    // TODO
     throw new Error('not implemented')
   }
 
-  async signTypedData(typedData: any): Promise<string> {
-    // TODO
-    throw new Error('not implemented')
+  async signTypedData(typedData: string): Promise<string> {
+    return hexlify(this.signHex(typedData))
   }
 
   static checkAddress(address: string): string | false {

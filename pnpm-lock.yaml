@@ -70,6 +70,7 @@ specifiers:
   '@types/react-syntax-highlighter': ^15.5.5
   '@types/webextension-polyfill': ^0.9.0
   '@uniswap/token-lists': 1.0.0-beta.30
+  '@vespaiach/axios-fetch-adapter': ^0.3.1
   '@zxcvbn-ts/core': ^2.0.3
   '@zxcvbn-ts/language-common': ^2.0.1
   '@zxcvbn-ts/language-en': ^2.0.1
@@ -171,6 +172,7 @@ dependencies:
   '@tanstack/react-query-persist-client': 4.0.10
   '@tanstack/react-virtual': 3.0.0-beta.18_react@18.2.0
   '@uniswap/token-lists': 1.0.0-beta.30
+  '@vespaiach/axios-fetch-adapter': 0.3.1_axios@0.27.2
   '@zxcvbn-ts/core': 2.0.3
   '@zxcvbn-ts/language-common': 2.0.1
   '@zxcvbn-ts/language-en': 2.0.1
@@ -4599,6 +4601,14 @@ packages:
   /@uniswap/token-lists/1.0.0-beta.30:
     resolution: {integrity: sha512-HwY2VvkQ8lNR6ks5NqQfAtg+4IZqz3KV1T8d2DlI8emIn9uMmaoFbIOg0nzjqAVKKnZSbMTRRtUoAh6mmjRvog==}
     engines: {node: '>=10'}
+    dev: false
+
+  /@vespaiach/axios-fetch-adapter/0.3.1_axios@0.27.2:
+    resolution: {integrity: sha512-+1F52VWXmQHSRFSv4/H0wtnxfvjRMPK5531e880MIjypPdUSX6QZuoDgEVeCE1vjhzDdxCVX7rOqkub7StEUwQ==}
+    peerDependencies:
+      axios: '>=0.26.0'
+    dependencies:
+      axios: 0.27.2
     dev: false
 
   /@vue/compiler-core/3.2.40:

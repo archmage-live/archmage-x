@@ -65,7 +65,7 @@ class EvmProviderService
     })
   }
 
-  protected override async emitAccountsChange() {
+  protected override emitAccountsChange() {
     // here do not carry new accounts, since the injected script will fetch them
     this.emit('accountsChanged')
   }

@@ -58,6 +58,7 @@
     "@tanstack/react-query-persist-client": "^4.0.10",
     "@tanstack/react-virtual": "3.0.0-beta.18",
     "@uniswap/token-lists": "1.0.0-beta.30",
+    "@vespaiach/axios-fetch-adapter": "^0.3.1",
     "@zxcvbn-ts/core": "^2.0.3",
     "@zxcvbn-ts/language-common": "^2.0.1",
     "@zxcvbn-ts/language-en": "^2.0.1",

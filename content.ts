@@ -23,6 +23,15 @@ export const config: PlasmoContentScript = {
 // console.log('archmage content script')
 
 class RpcClientMiddleware {
+  private static _instance?: RpcClientMiddleware
+
+  static instance() {
+    if (!RpcClientMiddleware._instance) {
+      RpcClientMiddleware._instance = new RpcClientMiddleware()
+    }
+    return RpcClientMiddleware._instance
+  }
+
   private events = new Map<string, Map<EventType, Listener>>()
 
   constructor() {
@@ -96,12 +105,6 @@ class RpcClientMiddleware {
   }
 }
 
-const global = window as any
-if (!global.archmage) {
-  global.archmage = {}
-}
-if (!global.archmage._service_client_middleware) {
-  global.archmage._service_client_middleware = new RpcClientMiddleware()
-}
+RpcClientMiddleware.instance()
 
 inject()
