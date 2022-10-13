@@ -71,19 +71,8 @@ export class EvmProviderAdaptor implements ProviderAdaptor {
     return result
   }
 
-  async getTransactions(address: string): Promise<any> {
-    // TODO
-    return
-  }
-
   async estimateGasPrice(): Promise<any> {
     return fetchGasFeeEstimates(this.provider)
-  }
-
-  async estimateSendGas(account: IChainAccount, to: string): Promise<string> {
-    const voidSigner = new VoidSigner(account.address!, this.provider)
-    const gas = await voidSigner.estimateGas({ to, value: 0 })
-    return gas.toString()
   }
 
   async estimateGas(account: IChainAccount, tx: any): Promise<string> {

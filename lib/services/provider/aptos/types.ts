@@ -1,4 +1,4 @@
-import { Types } from 'aptos'
+import { HexString, Types } from 'aptos'
 
 export function isEntryFunctionPayload(
   payload: Types.TransactionPayload
@@ -36,4 +36,12 @@ export interface SignMessageResponse {
   prefix: string // Should always be APTOS
   signature: string | string[] // The signed full message
   bitmap?: Uint8Array // a 4-byte (32 bits) bit-vector of length N
+}
+
+export class FakeAptosAccount {
+  constructor(private publicKey: HexString) {}
+
+  pubKey(): HexString {
+    return this.publicKey
+  }
 }

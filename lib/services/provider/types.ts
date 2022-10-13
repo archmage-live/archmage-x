@@ -9,13 +9,9 @@ export interface ProviderAdaptor {
 
   getBalance(address: string): Promise<string>
 
-  getBalances(address: string[]): Promise<string[] | undefined>
-
-  getTransactions(address: string): Promise<any>
+  getBalances(addresses: string[]): Promise<string[] | undefined>
 
   estimateGasPrice(): Promise<any>
-
-  estimateSendGas(account: IChainAccount, to: string): Promise<string>
 
   estimateGas(account: IChainAccount, tx: any): Promise<string>
 

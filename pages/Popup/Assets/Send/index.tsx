@@ -13,30 +13,35 @@ import {
   Text,
   useDisclosure
 } from '@chakra-ui/react'
+import { CoinClient } from 'aptos'
+import { APTOS_COIN } from 'aptos/src/utils'
 import assert from 'assert'
 import Decimal from 'decimal.js'
 import { atom, useAtom } from 'jotai'
-import { useCallback, useEffect, useMemo, useState } from 'react'
 import * as React from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { BiQuestionMark } from 'react-icons/bi'
 import { IoSwapVertical } from 'react-icons/io5'
-import { useInterval } from 'react-use'
+import { useAsync, useInterval } from 'react-use'
 
 import { AlertBox } from '~components/AlertBox'
 import { useActive } from '~lib/active'
 import { formatNumber } from '~lib/formatNumber'
 import { NetworkKind } from '~lib/network'
 import { ERC20__factory } from '~lib/network/evm/abi'
-import { IChainAccount, INetwork } from '~lib/schema'
+import { IChainAccount, INetwork, IToken } from '~lib/schema'
 import { CONSENT_SERVICE, ConsentType } from '~lib/services/consentService'
 import { useCoinGeckoTokenPrice } from '~lib/services/datasource/coingecko'
 import { useCryptoComparePrice } from '~lib/services/datasource/cryptocompare'
 import {
+  ProviderAdaptor,
+  addressZero,
   useBalance,
-  useEstimateSendGasFee,
+  useEstimateGasFee,
   useIsContract,
   useProvider
 } from '~lib/services/provider'
+import { AptosProviderAdaptor } from '~lib/services/provider/aptos/providerAdaptor'
 import { EvmProviderAdaptor } from '~lib/services/provider/evm/providerAdaptor'
 import { EvmTxParams } from '~lib/services/provider/evm/types'
 import { NativeToken, getTokenBrief, useTokenById } from '~lib/services/token'
@@ -87,9 +92,11 @@ export const Send = ({
   const [amountInput, setAmountInput] = useState('')
   const [isQuote, setIsQuote] = useState(false)
 
-  const gasFee = useEstimateSendGasFee(
+  const tx = useBuildSendTx(network, account, token)
+  const gasFee = useEstimateGasFee(
     network,
     account,
+    tx,
     isOpen ? 10000 : undefined
   )
 
@@ -279,30 +286,17 @@ export const Send = ({
       .toDecimalPlaces(0)
       .toString()
 
-    let params
-    switch (network.kind) {
-      case NetworkKind.EVM: {
-        if (tokenId === undefined) {
-          params = {
-            from: account.address,
-            to: address,
-            value: amt
-          } as EvmTxParams
-        } else {
-          assert(token)
-          const tokenContract = ERC20__factory.connect(
-            token.token,
-            (provider as EvmProviderAdaptor).provider
-          )
-          params = await tokenContract.populateTransaction.transfer(
-            address,
-            amt
-          )
-        }
-        break
-      }
-      default:
-        return
+    assert(tokenId === undefined || !!token)
+    let params = await buildSendTx(
+      network,
+      provider,
+      account,
+      address,
+      amt,
+      token
+    )
+    if (!params) {
+      return
     }
 
     setIsLoading(true)
@@ -590,5 +584,70 @@ function useTokenInfo(
     price,
     iconUrl,
     token
+  }
+}
+
+function useBuildSendTx(
+  network?: INetwork,
+  account?: IChainAccount,
+  token?: IToken,
+  to?: string,
+  amount?: string | number
+) {
+  const provider = useProvider(network)
+
+  const { value } = useAsync(async () => {
+    if (!network || !provider || !account) {
+      return
+    }
+
+    to = to ? to : addressZero(network)
+    amount = amount ? amount : 0
+
+    return buildSendTx(network, provider, account, to, amount, token)
+  }, [network, account, token, to, amount])
+
+  return value
+}
+
+async function buildSendTx(
+  network: INetwork,
+  provider: ProviderAdaptor,
+  account: IChainAccount,
+  to: string,
+  amount: string | number,
+  token?: IToken
+) {
+  switch (network.kind) {
+    case NetworkKind.EVM: {
+      if (!token) {
+        return {
+          from: account.address,
+          to,
+          value: amount
+        } as EvmTxParams
+      } else {
+        const tokenContract = ERC20__factory.connect(
+          token.token,
+          (provider as EvmProviderAdaptor).provider
+        )
+        return await tokenContract.populateTransaction.transfer(to, amount)
+      }
+    }
+    case NetworkKind.APTOS: {
+      if (!token) {
+        return new CoinClient(
+          (provider as AptosProviderAdaptor).client
+        ).transactionBuilder.buildTransactionPayload(
+          '0x1::coin::transfer',
+          [APTOS_COIN],
+          [to, amount]
+        )
+      } else {
+        // TODO
+      }
+    }
+    default:
+      return
   }
 }

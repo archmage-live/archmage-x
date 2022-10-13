@@ -1,5 +1,4 @@
 import {
-  AptosAccount,
   AptosClient,
   BCS,
   HexString,
@@ -316,15 +315,8 @@ export class AptosPermissionedProvider extends BasePermissionedProvider {
     if (!this.account) {
       throw ethErrors.provider.unauthorized()
     }
-    const signingWallet = await getSigningWallet(this.account)
-    if (!signingWallet) {
-      throw ethErrors.provider.unauthorized()
-    }
-    const aptosAccount = new FakeAptosAccount(
-      HexString.ensure(signingWallet.publicKey)
-    )
-    return this.client.simulateTransaction(
-      aptosAccount as unknown as AptosAccount,
+    return new AptosProviderAdaptor(this.client).simulateTransaction(
+      this.account,
       rawTransaction,
       query
     )
@@ -383,12 +375,4 @@ interface PublicAccount {
   address: string
   publicKey: string | string[]
   minKeysRequired?: number // for multi-signer account
-}
-
-class FakeAptosAccount {
-  constructor(private publicKey: HexString) {}
-
-  pubKey(): HexString {
-    return this.publicKey
-  }
 }

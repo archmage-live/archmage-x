@@ -19,7 +19,6 @@ import { getEvmGasFeeBrief } from '~lib/services/provider/evm/gasFee'
 import { EvmProviderAdaptor } from '~lib/services/provider/evm/providerAdaptor'
 import { ProviderAdaptor } from '~lib/services/provider/types'
 import { Balance } from '~lib/services/token'
-import { checkAddress } from '~lib/wallet'
 
 export async function getProvider(network: INetwork): Promise<ProviderAdaptor> {
   switch (network.kind) {
@@ -277,38 +276,14 @@ export function useEstimateGas(
   return value
 }
 
-export function useEstimateSendGas(
+export function useEstimateGasFee(
   network?: INetwork,
   account?: IChainAccount,
-  to?: string
-) {
-  const provider = useProvider(network)
-
-  const { value } = useAsync(async () => {
-    if (!network || !account?.address || !provider) {
-      return
-    }
-
-    let toAddr = to ? to : addressZero(network)
-
-    if (!checkAddress(network.kind, toAddr)) {
-      return
-    }
-
-    return provider.estimateSendGas(account, toAddr)
-  }, [network, account, to, provider])
-
-  return value
-}
-
-export function useEstimateSendGasFee(
-  network?: INetwork,
-  account?: IChainAccount,
-  retryInterval?: number,
-  to?: string
+  tx?: any,
+  retryInterval?: number
 ) {
   const gasPrice = useEstimateGasPrice(network, retryInterval)
-  const gas = useEstimateSendGas(network, account, to)
+  const gas = useEstimateGas(network, account, tx)
 
   return useMemo(() => {
     if (!network || !gasPrice || !gas) {

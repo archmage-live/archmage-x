@@ -1,13 +1,25 @@
-import { AptosClient, TxnBuilderTypes, Types } from 'aptos'
+import {
+  AptosAccount,
+  AptosClient,
+  CoinClient,
+  HexString,
+  TxnBuilderTypes,
+  Types
+} from 'aptos'
 import assert from 'assert'
 import { ethErrors } from 'eth-rpc-errors'
+import PQueue from 'p-queue'
 
 import { IChainAccount, INetwork } from '~lib/schema'
 import { ProviderAdaptor, TransactionPayload } from '~lib/services/provider'
 import { getSigningWallet } from '~lib/wallet'
 
 import { getAptosClient } from './client'
-import { SignMessageResponse } from './types'
+import {
+  FakeAptosAccount,
+  SignMessageResponse,
+  isEntryFunctionPayload
+} from './types'
 
 export const DEFAULT_MAX_GAS_AMOUNT = 20000
 export const DEFAULT_TXN_EXP_SEC_FROM_NOW = 20
@@ -21,8 +33,26 @@ export class AptosProviderAdaptor implements ProviderAdaptor {
     return new AptosProviderAdaptor(client)
   }
 
-  estimateGas(account: IChainAccount, tx: any): Promise<string> {
-    throw new Error('not implemented')
+  async simulateTransaction(
+    account: IChainAccount,
+    rawTransaction: TxnBuilderTypes.RawTransaction,
+    query?: {
+      estimateGasUnitPrice?: boolean
+      estimateMaxGasAmount?: boolean
+    }
+  ): Promise<Types.UserTransaction[]> {
+    const signingWallet = await getSigningWallet(account)
+    if (!signingWallet) {
+      throw ethErrors.provider.unauthorized()
+    }
+    const aptosAccount = new FakeAptosAccount(
+      HexString.ensure(signingWallet.publicKey)
+    )
+    return this.client.simulateTransaction(
+      aptosAccount as unknown as AptosAccount,
+      rawTransaction,
+      query
+    )
   }
 
   async estimateGasPrice(): Promise<number> {
@@ -30,20 +60,43 @@ export class AptosProviderAdaptor implements ProviderAdaptor {
     return estimation.gas_estimate
   }
 
-  estimateSendGas(account: IChainAccount, to: string): Promise<string> {
-    throw new Error('not implemented')
+  async estimateGas(
+    account: IChainAccount,
+    payload: Types.TransactionPayload
+  ): Promise<string> {
+    assert(isEntryFunctionPayload(payload))
+
+    const { txParams, populatedParams } = await this.populateTransaction(
+      account,
+      payload
+    )
+
+    const rawTransaction = await this.client.generateTransaction(
+      HexString.ensure(account.address!),
+      txParams as Types.TransactionPayload_EntryFunctionPayload,
+      populatedParams as Types.SubmitTransactionRequest
+    )
+
+    const response = await this.simulateTransaction(account, rawTransaction, {
+      estimateGasUnitPrice: true,
+      estimateMaxGasAmount: true
+    })
+
+    return response[0].max_gas_amount
   }
 
-  getBalance(address: string): Promise<string> {
-    return Promise.resolve('')
+  async getBalance(address: string): Promise<string> {
+    const account = new AptosAccount(undefined, address)
+    const balance = await new CoinClient(this.client).checkBalance(account)
+    return balance.toString()
   }
 
-  getBalances(address: string[]): Promise<string[] | undefined> {
-    return Promise.resolve(undefined)
-  }
-
-  getTransactions(address: string): Promise<any> {
-    return Promise.resolve(undefined)
+  async getBalances(addresses: string[]): Promise<string[] | undefined> {
+    // TODO: retry when error
+    const queue = new PQueue({ concurrency: 3 })
+    return await queue.addAll(
+      addresses.map((addr) => () => this.getBalance(addr))
+    )
   }
 
   getTypedData(typedData: any): Promise<any> {
