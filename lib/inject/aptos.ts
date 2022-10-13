@@ -21,7 +21,11 @@ declare global {
   var aptos: any
 }
 
-if (!ENV.inServiceWorker && !globalThis.archmage.aptos) {
+if (
+  !ENV.inServiceWorker &&
+  process.env.PLASMO_PUBLIC_ENABLE_APTOS &&
+  !globalThis.archmage.aptos
+) {
   const service =
     RpcClientInjected.instance().service<IAptosProviderService>(
       APTOS_PROVIDER_NAME

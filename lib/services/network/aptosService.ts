@@ -10,6 +10,10 @@ export const AptosAddressZero =
 
 export class AptosNetworkService {
   static async init() {
+    if (!process.env.PLASMO_PUBLIC_ENABLE_APTOS) {
+      return
+    }
+
     if (await DB.networks.where('kind').equals(NetworkKind.APTOS).count()) {
       return
     }

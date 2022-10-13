@@ -9,6 +9,10 @@ export interface IEvmNetworkService {}
 
 export class EvmNetworkService implements IEvmNetworkService {
   static async init() {
+    if (!process.env.PLASMO_PUBLIC_ENABLE_EVM) {
+      return
+    }
+
     if (await DB.networks.where('kind').equals(NetworkKind.EVM).count()) {
       return
     }

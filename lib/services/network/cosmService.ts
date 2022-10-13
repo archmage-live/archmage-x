@@ -5,8 +5,9 @@ import { INetwork, createSearchString } from '~lib/schema/network'
 
 export class CosmNetworkService {
   static async init() {
-    // TODO
-    return
+    if (!process.env.PLASMO_PUBLIC_ENABLE_COSMOS) {
+      return
+    }
 
     if (await DB.networks.where('kind').equals(NetworkKind.COSM).count()) {
       return

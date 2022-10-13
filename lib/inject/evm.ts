@@ -23,7 +23,11 @@ declare global {
   var ethereum: any
 }
 
-if (!ENV.inServiceWorker && !globalThis.archmage.evm) {
+if (
+  !ENV.inServiceWorker &&
+  process.env.PLASMO_PUBLIC_ENABLE_EVM &&
+  !globalThis.archmage.evm
+) {
   const service =
     RpcClientInjected.instance().service<IEvmProviderService>(EVM_PROVIDER_NAME)
 

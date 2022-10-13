@@ -22,15 +22,16 @@ export class AptosProviderAdaptor implements ProviderAdaptor {
   }
 
   estimateGas(account: IChainAccount, tx: any): Promise<string> {
-    return Promise.resolve('')
+    throw new Error('not implemented')
   }
 
-  estimateGasPrice(): Promise<any> {
-    return Promise.resolve(undefined)
+  async estimateGasPrice(): Promise<number> {
+    const estimation = await this.client.estimateGasPrice()
+    return estimation.gas_estimate
   }
 
   estimateSendGas(account: IChainAccount, to: string): Promise<string> {
-    return Promise.resolve('')
+    throw new Error('not implemented')
   }
 
   getBalance(address: string): Promise<string> {
@@ -46,15 +47,21 @@ export class AptosProviderAdaptor implements ProviderAdaptor {
   }
 
   getTypedData(typedData: any): Promise<any> {
-    return Promise.resolve(undefined)
+    throw new Error('not implemented')
   }
 
   isContract(address: string): Promise<boolean> {
-    return Promise.resolve(false)
+    throw new Error('not implemented')
   }
 
-  isOk(): Promise<boolean> {
-    return Promise.resolve(false)
+  async isOk(): Promise<boolean> {
+    try {
+      await this.client.getLedgerInfo()
+      return true
+    } catch (err) {
+      console.error(err)
+      return false
+    }
   }
 
   async populateTransaction(
