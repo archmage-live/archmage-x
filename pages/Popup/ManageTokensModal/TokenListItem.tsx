@@ -23,7 +23,7 @@ import { MdOutlineSettings } from 'react-icons/md'
 import browser from 'webextension-polyfill'
 
 import { INetwork, ITokenList } from '~lib/schema'
-import { EvmProvider } from '~lib/services/provider/evm'
+import { EvmClient } from '~lib/services/provider/evm'
 import { TOKEN_SERVICE, getTokenListBrief } from '~lib/services/token'
 
 export const TokenListItem = ({
@@ -44,7 +44,7 @@ export const TokenListItem = ({
   useEffect(() => {
     const effect = async () => {
       if (!brief.iconUrl) return
-      const provider = await EvmProvider.from(network)
+      const provider = await EvmClient.from(network)
       setIconUrl(await provider.resolveUrl(brief.iconUrl))
     }
 

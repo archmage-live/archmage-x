@@ -12,12 +12,12 @@ import { NETWORK_SERVICE } from '~lib/services/network'
 import { PASSWORD_SERVICE } from '~lib/services/passwordService'
 import { getProvider } from '~lib/services/provider/provider'
 import {
-  ProviderAdaptor,
+  Provider,
   TransactionPayload,
   formatTxParams
-} from '~lib/services/provider/types'
+} from '~lib/services/provider/provider'
 import { TOKEN_SERVICE } from '~lib/services/token'
-import { EVM_TRANSACTION_SERVICE } from '~lib/services/transaction/evm'
+import { EVM_TRANSACTION_SERVICE } from '~lib/services/transaction/evmService'
 import { WALLET_SERVICE } from '~lib/services/walletService'
 import { SESSION_STORE, StoreKey, useSessionStorage } from '~lib/store'
 import { createWindow } from '~lib/util'
@@ -260,7 +260,7 @@ class ConsentService implements IConsentService {
         let network: INetwork | undefined
         let accounts: IChainAccount[] | undefined
         let account: IChainAccount | undefined
-        let provider: ProviderAdaptor | undefined
+        let provider: Provider | undefined
         if (req.networkId != null) {
           network = await NETWORK_SERVICE.getNetwork(req.networkId)
           assert(network)

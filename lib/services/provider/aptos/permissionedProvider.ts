@@ -22,7 +22,7 @@ import {
 import { getNetworkInfo } from '~lib/services/network'
 import { TransactionPayload } from '~lib/services/provider'
 import { getAptosClient } from '~lib/services/provider/aptos/client'
-import { AptosProviderAdaptor } from '~lib/services/provider/aptos/providerAdaptor'
+import { AptosProvider } from '~lib/services/provider/aptos/provider'
 import { BasePermissionedProvider } from '~lib/services/provider/base'
 import { getSigningWallet } from '~lib/wallet'
 
@@ -218,7 +218,7 @@ export class AptosPermissionedProvider extends BasePermissionedProvider {
       )
     }
 
-    const provider = new AptosProviderAdaptor(this.client)
+    const provider = new AptosProvider(this.client)
 
     const { txParams, populatedParams } = await provider.populateTransaction(
       this.account,
@@ -315,7 +315,7 @@ export class AptosPermissionedProvider extends BasePermissionedProvider {
     if (!this.account) {
       throw ethErrors.provider.unauthorized()
     }
-    return new AptosProviderAdaptor(this.client).simulateTransaction(
+    return new AptosProvider(this.client).simulateTransaction(
       this.account,
       rawTransaction,
       query

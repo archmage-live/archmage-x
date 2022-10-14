@@ -28,12 +28,12 @@ import { formatNumber } from '~lib/formatNumber'
 import { useTransparentize } from '~lib/hooks/useColor'
 import { INetwork, IPendingTx, ITransaction } from '~lib/schema'
 import { getNetworkInfo } from '~lib/services/network'
-import { EvmProvider } from '~lib/services/provider/evm'
+import { EvmClient } from '~lib/services/provider/evm'
 import {
   TransactionStatus,
   getTransactionInfo
 } from '~lib/services/transaction'
-import { EvmTransactionInfo } from '~lib/services/transaction/evm'
+import { EvmTransactionInfo } from '~lib/services/transaction/evmService'
 import { shortenAddress } from '~lib/utils'
 import { FromTo } from '~pages/Popup/Consent/Transaction/FromTo'
 
@@ -88,7 +88,7 @@ export const EvmActivityDetail = ({
   const [baseFeePerGas, setBaseFeePerGas] = useState<BigNumber | null>()
 
   useAsync(async () => {
-    const provider = await EvmProvider.from(network)
+    const provider = await EvmClient.from(network)
     let receipt
     if (info.receipt) {
       receipt = info.receipt

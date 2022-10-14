@@ -4,7 +4,7 @@ import { ethers } from 'ethers'
 
 import { CODEFI_GAS_API } from '~lib/services/datasource/codefi'
 
-import { EvmProvider } from './'
+import { EvmClient } from './'
 
 const MAX_NUMBER_OF_BLOCKS_PER_ETH_FEE_HISTORY_CALL = 1024
 
@@ -29,7 +29,7 @@ async function fetchBlockFeeHistory({
   percentiles: givenPercentiles = [],
   includeNextBlock
 }: {
-  provider: EvmProvider
+  provider: EvmClient
   numberOfBlocks: number
   endBlock?: number | 'latest'
   percentiles?: readonly number[]
@@ -251,7 +251,7 @@ function calculateGasFeeEstimatesForPriorityLevels(
 }
 
 async function fetchGasFeeEstimatesViaFeeHistory(
-  provider: EvmProvider
+  provider: EvmClient
 ): Promise<GasFeeEstimates> {
   const latestBlock = await provider.getBlock('latest')
   const feeHistory = await fetchBlockFeeHistory({
@@ -370,7 +370,7 @@ export function getEvmGasFeeBrief({
 }
 
 export async function fetchGasFeeEstimates(
-  provider: EvmProvider
+  provider: EvmClient
 ): Promise<GasFeeEstimation> {
   const network = await provider.getNetwork()
   const latestBlock = await provider.getBlock('latest')

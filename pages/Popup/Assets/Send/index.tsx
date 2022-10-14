@@ -34,15 +34,15 @@ import { CONSENT_SERVICE, ConsentType } from '~lib/services/consentService'
 import { useCoinGeckoTokenPrice } from '~lib/services/datasource/coingecko'
 import { useCryptoComparePrice } from '~lib/services/datasource/cryptocompare'
 import {
-  ProviderAdaptor,
+  Provider,
   addressZero,
   useBalance,
   useEstimateGasFee,
   useIsContract,
   useProvider
 } from '~lib/services/provider'
-import { AptosProviderAdaptor } from '~lib/services/provider/aptos/providerAdaptor'
-import { EvmProviderAdaptor } from '~lib/services/provider/evm/providerAdaptor'
+import { AptosProvider } from '~lib/services/provider/aptos/provider'
+import { EvmProvider } from '~lib/services/provider/evm/provider'
 import { EvmTxParams } from '~lib/services/provider/evm/types'
 import { NativeToken, getTokenBrief, useTokenById } from '~lib/services/token'
 import { checkAddress } from '~lib/wallet'
@@ -612,7 +612,7 @@ function useBuildSendTx(
 
 async function buildSendTx(
   network: INetwork,
-  provider: ProviderAdaptor,
+  provider: Provider,
   account: IChainAccount,
   to: string,
   amount: string | number,
@@ -629,7 +629,7 @@ async function buildSendTx(
       } else {
         const tokenContract = ERC20__factory.connect(
           token.token,
-          (provider as EvmProviderAdaptor).provider
+          (provider as EvmProvider).provider
         )
         return await tokenContract.populateTransaction.transfer(to, amount)
       }
@@ -637,7 +637,7 @@ async function buildSendTx(
     case NetworkKind.APTOS: {
       if (!token) {
         return new CoinClient(
-          (provider as AptosProviderAdaptor).client
+          (provider as AptosProvider).client
         ).transactionBuilder.buildTransactionPayload(
           '0x1::coin::transfer',
           [APTOS_COIN],

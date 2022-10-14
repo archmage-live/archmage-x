@@ -6,7 +6,7 @@ import { useAsync } from 'react-use'
 import { INetwork } from '~lib/schema'
 import { useEvmSignatureFrom4Bytes } from '~lib/services/datasource/4byte'
 import { GasOption, MaxFeePerGas } from '~lib/services/provider/evm/gasFee'
-import { EvmProvider } from '~lib/services/provider/evm/provider'
+import { EvmClient } from '~lib/services/provider/evm/client'
 import { StoreKey, useLocalStorage } from '~lib/store'
 
 export function useEvmProvider(network?: INetwork) {
@@ -14,7 +14,7 @@ export function useEvmProvider(network?: INetwork) {
     if (!network) {
       return
     }
-    return EvmProvider.from(network)
+    return EvmClient.from(network)
   }, [network])
   return value
 }

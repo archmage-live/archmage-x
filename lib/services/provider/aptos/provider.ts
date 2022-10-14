@@ -11,7 +11,7 @@ import { ethErrors } from 'eth-rpc-errors'
 import PQueue from 'p-queue'
 
 import { IChainAccount, INetwork } from '~lib/schema'
-import { ProviderAdaptor, TransactionPayload } from '~lib/services/provider'
+import { Provider, TransactionPayload, getNonce } from '~lib/services/provider'
 import { getSigningWallet } from '~lib/wallet'
 
 import { getAptosClient } from './client'
@@ -24,13 +24,20 @@ import {
 export const DEFAULT_MAX_GAS_AMOUNT = 20000
 export const DEFAULT_TXN_EXP_SEC_FROM_NOW = 20
 
-export class AptosProviderAdaptor implements ProviderAdaptor {
+export class AptosProvider implements Provider {
   constructor(public client: AptosClient) {}
 
   static async from(network: INetwork) {
     const client = await getAptosClient(network)
     assert(client)
-    return new AptosProviderAdaptor(client)
+    return new AptosProvider(client)
+  }
+
+  async getNextNonce(address: string, tag?: string | number): Promise<number> {
+    const { sequence_number: sequenceNumber } = await this.client.getAccount(
+      address
+    )
+    return +sequenceNumber
   }
 
   async simulateTransaction(
@@ -121,10 +128,7 @@ export class AptosProviderAdaptor implements ProviderAdaptor {
     account: IChainAccount,
     transaction: Types.TransactionPayload
   ): Promise<TransactionPayload> {
-    // TODO
-    const { sequence_number: sequenceNumber } = await this.client.getAccount(
-      account.address!
-    )
+    const sequenceNumber = await getNonce(this, account)
 
     const { gas_estimate: gasEstimate } = await this.client.estimateGasPrice()
 
@@ -137,7 +141,7 @@ export class AptosProviderAdaptor implements ProviderAdaptor {
         max_gas_amount: DEFAULT_MAX_GAS_AMOUNT.toString(),
         gas_unit_price: gasEstimate.toString(),
         expiration_timestamp_secs: expireTimestamp.toString(),
-        sequence_number: sequenceNumber
+        sequence_number: sequenceNumber.toString()
       } as Types.SubmitTransactionRequest
     } as TransactionPayload
   }

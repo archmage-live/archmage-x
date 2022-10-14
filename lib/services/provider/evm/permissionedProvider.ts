@@ -24,12 +24,12 @@ import { BasePermissionedProvider } from '~lib/services/provider/base'
 import { TOKEN_SERVICE } from '~lib/services/token'
 import { checkAddress } from '~lib/wallet'
 
-import { EvmProvider, EvmProviderAdaptor, getEvmChainId } from '.'
+import { EvmClient, EvmProvider, getEvmChainId } from '.'
 
 export class EvmPermissionedProvider extends BasePermissionedProvider {
   private constructor(
     network: INetwork,
-    public provider: EvmProvider,
+    public provider: EvmClient,
     origin: string
   ) {
     super(network, origin)
@@ -53,7 +53,7 @@ export class EvmPermissionedProvider extends BasePermissionedProvider {
       return
     }
 
-    const provider = await EvmProvider.from(network)
+    const provider = await EvmClient.from(network)
     const permissionedProvider = new EvmPermissionedProvider(
       network,
       provider,
@@ -134,7 +134,7 @@ export class EvmPermissionedProvider extends BasePermissionedProvider {
       throw ethErrors.provider.unauthorized()
     }
 
-    const provider = new EvmProviderAdaptor(this.provider)
+    const provider = new EvmProvider(this.provider)
     const txPayload = await provider.populateTransaction(this.account, params)
 
     const response: TransactionResponse = await CONSENT_SERVICE.requestConsent(
@@ -191,7 +191,7 @@ export class EvmPermissionedProvider extends BasePermissionedProvider {
       throw ethErrors.provider.unauthorized()
     }
 
-    const provider = new EvmProviderAdaptor(this.provider)
+    const provider = new EvmProvider(this.provider)
     typedData = await provider.getTypedData(JSON.parse(typedData))
 
     const { chainId, name, version, verifyingContract } = typedData.domain

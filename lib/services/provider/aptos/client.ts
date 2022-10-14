@@ -16,11 +16,9 @@ export async function getAptosClient(network: INetwork) {
     client = new AptosClient(info.rpc[0])
 
     // check chain id
-    console.log('getChainId 1')
     if ((await client.getChainId()) !== network.chainId) {
       return
     }
-    console.log('getChainId 2')
 
     APTOS_CLIENTS.set(network.chainId, client)
   }

@@ -1,16 +1,46 @@
 import { NetworkKind } from '~lib/network'
-import { INetwork, IPendingTx, ITransaction } from '~lib/schema'
+import { IChainAccount, INetwork, IPendingTx, ITransaction } from '~lib/schema'
 
 import {
   EVM_TRANSACTION_SERVICE,
   getEvmTransactionInfo,
   getEvmTransactionTypes
-} from './evm'
+} from './evmService'
 
-interface ITransactionService {}
+export interface ITransactionService {
+  getPendingTxCount(account: IChainAccount): Promise<number>
 
-export function getTransactionService(network: INetwork): ITransactionService {
-  switch (network.kind) {
+  getTransactionCount(account: IChainAccount, type: string): Promise<number>
+
+  getPendingTxs(
+    account: IChainAccount,
+    limit?: number,
+    reverse?: boolean,
+    lastNonce?: number
+  ): Promise<IPendingTx[]>
+
+  getTransactions(
+    account: IChainAccount,
+    type: string,
+    limit?: number,
+    lastIndex1?: number,
+    lastIndex2?: number
+  ): Promise<ITransaction[]>
+
+  getPendingTx(id: number): Promise<IPendingTx | undefined>
+
+  getTransaction(id: number): Promise<ITransaction | undefined>
+
+  fetchTransactions(
+    account: IChainAccount,
+    type: string
+  ): Promise<number | undefined>
+}
+
+export function getTransactionService(
+  networkKind: NetworkKind
+): ITransactionService {
+  switch (networkKind) {
     case NetworkKind.EVM:
       return EVM_TRANSACTION_SERVICE
   }

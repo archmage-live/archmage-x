@@ -48,7 +48,8 @@ import {
   TransactionPayload,
   formatTxParams,
   useEstimateGasPrice,
-  useIsContract
+  useIsContract,
+  useNonce
 } from '~lib/services/provider'
 import {
   EthGasPriceEstimate,
@@ -66,10 +67,7 @@ import {
   useEvmFunctionSignature
 } from '~lib/services/provider/evm'
 import { Balance } from '~lib/services/token'
-import {
-  useNonce,
-  useTransactionDescription
-} from '~lib/services/transaction/evm'
+import { useTransactionDescription } from '~lib/services/transaction/evmService'
 import { shortenAddress } from '~lib/utils'
 import { EvmGasFeeEditSection } from '~pages/Popup/Consent/Transaction/EvmGasFeeEditSection'
 
@@ -137,9 +135,12 @@ export const EvmTransaction = ({
 
   const [ignoreEstimateError, setIgnoreEstimateError] = useState(false)
 
-  const gasFeeEstimation = useEstimateGasPrice(network, 15000) as
-    | GasFeeEstimation
-    | undefined
+  const { gasPrice: gasFeeEstimation } = useEstimateGasPrice(
+    network,
+    15000
+  ) as {
+    gasPrice: GasFeeEstimation | undefined
+  }
   useEffect(() => {
     console.log('gasFeeEstimation:', gasFeeEstimation)
   }, [gasFeeEstimation])
@@ -151,7 +152,7 @@ export const EvmTransaction = ({
   const [editNonce, setEditNonce] = useState(false)
   const [editGasLimit, setEditGasLimit] = useState(false)
 
-  const managedNonce = useNonce(account, network)
+  const managedNonce = useNonce(network, account)
   useEffect(() => {
     if (editNonce || managedNonce === undefined) {
       return

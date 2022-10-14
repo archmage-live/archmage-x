@@ -1,11 +1,11 @@
 import { Box, Text, useDisclosure } from '@chakra-ui/react'
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 import { useActive } from '~lib/active'
 import { IPendingTx } from '~lib/schema'
 import { EvmTxType } from '~lib/services/datasource/etherscan'
-import { useEvmTransactionsMixed } from '~lib/services/transaction/evm'
+import { useTransactionsMixed } from '~lib/services/transaction/hooks'
 
 import { ActivityDetailModal } from './ActivityDetail'
 import { ActivityItem } from './ActivityItem'
@@ -16,7 +16,7 @@ export default function Activity() {
 
   const [count, setCount] = useState(0)
 
-  const { txTotal: totalCount, txs: transactions } = useEvmTransactionsMixed(
+  const { txTotal: totalCount, txs: transactions } = useTransactionsMixed(
     EvmTxType.NORMAL,
     network,
     account,

@@ -11,6 +11,7 @@ import {
   useWallet
 } from '~lib/services/walletService'
 
+import { AptosTransaction } from './AptosTransaction'
 import { EvmTransaction } from './EvmTransaction'
 
 export const Transaction = ({
@@ -44,6 +45,21 @@ export const Transaction = ({
     case NetworkKind.EVM:
       return (
         <EvmTransaction
+          origin={request.origin}
+          request={request}
+          network={network}
+          networkInfo={networkInfo}
+          wallet={wallet}
+          subWallet={subWallet}
+          account={account}
+          balance={balance}
+          onComplete={onComplete}
+          suffix={rejectAllButton}
+        />
+      )
+    case NetworkKind.APTOS:
+      return (
+        <AptosTransaction
           origin={request.origin}
           request={request}
           network={network}

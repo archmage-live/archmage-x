@@ -1,6 +1,7 @@
 import { FunctionFragment } from '@ethersproject/abi'
 import { TransactionResponse } from '@ethersproject/abstract-provider'
-import { VoidSigner } from '@ethersproject/abstract-signer'
+import { getAddress } from '@ethersproject/address'
+import { hexlify } from '@ethersproject/bytes'
 import { Logger } from '@ethersproject/logger'
 import { shallowCopy } from '@ethersproject/properties'
 import {
@@ -9,9 +10,7 @@ import {
   TransactionRequest
 } from '@ethersproject/providers'
 import assert from 'assert'
-import Dexie from 'dexie'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { Signer, ethers } from 'ethers'
 import { useEffect, useMemo } from 'react'
 import { useAsync, useAsyncRetry } from 'react-use'
 import browser from 'webextension-polyfill'
@@ -29,15 +28,20 @@ import {
   useEtherScanProvider
 } from '~lib/services/datasource/etherscan'
 import { NETWORK_SERVICE, getNetworkInfo } from '~lib/services/network'
+import { EvmClient } from '~lib/services/provider/evm/client'
 import {
   parseEvmFunctionSignature,
-  useEvmFunctionSignature,
-  useEvmProvider
+  useEvmFunctionSignature
 } from '~lib/services/provider/evm/hooks'
-import { EvmProvider } from '~lib/services/provider/evm/provider'
 import { getProvider } from '~lib/services/provider/provider'
+import { BaseTransactionService } from '~lib/services/transaction/baseService'
 
-import { TransactionInfo, TransactionStatus, TransactionType } from './'
+import {
+  ITransactionService,
+  TransactionInfo,
+  TransactionStatus,
+  TransactionType
+} from './'
 
 export function getEvmTransactionTypes() {
   return [
@@ -89,7 +93,7 @@ export function getEvmTransactionInfo(
   if ((info.tx as any).creates || !info.tx.to) {
     type = TransactionType.DeployContract
     name = 'Deploy Contract'
-  } else if (ethers.utils.getAddress(info.tx.from) !== transaction.address) {
+  } else if (getAddress(info.tx.from) !== transaction.address) {
     type = TransactionType.Receive
     name = 'Receive'
   } else if (!info.tx.data || info.tx.data.toLowerCase() === '0x') {
@@ -149,7 +153,7 @@ export function getEvmTransactionInfo(
   } as TransactionInfo
 }
 
-function formatTransactions<T extends ITransaction | IPendingTx>(
+export function formatEvmTransactions<T extends ITransaction | IPendingTx>(
   txs: T[]
 ): T[] {
   const formatter = new Formatter()
@@ -176,9 +180,7 @@ function formatTransactions<T extends ITransaction | IPendingTx>(
   })
 }
 
-interface IEvmTransactionService {
-  getNonce(account: IChainAccount, signer: Signer): Promise<number>
-
+interface IEvmTransactionService extends ITransactionService {
   signAndSendTx(
     account: IChainAccount,
     request: TransactionRequest,
@@ -202,29 +204,6 @@ interface IEvmTransactionService {
     confirmations: number
   ): Promise<ITransaction | undefined>
 
-  getPendingTx(id: number): Promise<IPendingTx | undefined>
-
-  getTransaction(id: number): Promise<ITransaction | undefined>
-
-  getPendingTxCount(account: IChainAccount): Promise<number>
-
-  getTransactionCount(account: IChainAccount, type: string): Promise<number>
-
-  getPendingTxs(
-    account: IChainAccount,
-    limit?: number,
-    reverse?: boolean,
-    lastNonce?: number
-  ): Promise<IPendingTx[]>
-
-  getTransactions(
-    account: IChainAccount,
-    type: string,
-    limit?: number,
-    lastIndex1?: number,
-    lastIndex2?: number
-  ): Promise<ITransaction[]>
-
   fetchTransactions(
     account: IChainAccount,
     type: string
@@ -237,22 +216,10 @@ interface IEvmTransactionService {
 }
 
 // @ts-ignore
-class EvmTransactionServicePartial implements IEvmTransactionService {
-  async getNonce(account: IChainAccount, signer: Signer) {
-    assert(account.address)
-
-    let nextNonce = await Promise.resolve(signer.getTransactionCount('pending'))
-
-    const pendingTxs = await this.getPendingTxs(account, undefined, false)
-    for (const { nonce } of pendingTxs) {
-      if (nonce === nextNonce) {
-        ++nextNonce
-      }
-    }
-
-    return nextNonce
-  }
-
+class EvmTransactionServicePartial
+  extends BaseTransactionService
+  implements IEvmTransactionService
+{
   protected normalizeTx<T extends ITransaction | IPendingTx>(
     transaction: T,
     tx: TransactionResponse
@@ -292,7 +259,7 @@ class EvmTransactionServicePartial implements IEvmTransactionService {
     origin?: string
     functionSig?: FunctionFragment
   }) {
-    assert(account.address === ethers.utils.getAddress(tx.from))
+    assert(account.address === getAddress(tx.from))
 
     let transaction = {
       masterId: account.masterId,
@@ -360,133 +327,6 @@ class EvmTransactionServicePartial implements IEvmTransactionService {
     transaction = this.normalizeTxAndReceipt(transaction, tx, receipt)
 
     return transaction
-  }
-
-  async getPendingTx(id: number): Promise<IPendingTx | undefined> {
-    return DB.pendingTxs.get(id)
-  }
-
-  async getTransaction(id: number): Promise<ITransaction | undefined> {
-    return DB.transactions.get(id)
-  }
-
-  async getPendingTxCount(account: IChainAccount): Promise<number> {
-    if (!account.address) {
-      return 0
-    }
-    return DB.pendingTxs
-      .where('[masterId+index+networkKind+chainId+address]')
-      .equals([
-        account.masterId,
-        account.index,
-        account.networkKind,
-        account.chainId,
-        account.address
-      ])
-      .count()
-  }
-
-  async getTransactionCount(
-    account: IChainAccount,
-    type: string
-  ): Promise<number> {
-    if (!account.address) {
-      return 0
-    }
-    return DB.transactions
-      .where('[masterId+index+networkKind+chainId+address+type]')
-      .equals([
-        account.masterId,
-        account.index,
-        account.networkKind,
-        account.chainId,
-        account.address,
-        type
-      ])
-      .count()
-  }
-
-  async getPendingTxs(
-    account: IChainAccount,
-    limit?: number,
-    reverse = true,
-    lastNonce?: number
-  ): Promise<IPendingTx[]> {
-    if (!account.address) {
-      return []
-    }
-    let collection = DB.pendingTxs
-      .where('[masterId+index+networkKind+chainId+address+nonce]')
-      .between(
-        [
-          account.masterId,
-          account.index,
-          account.networkKind,
-          account.chainId,
-          account.address,
-          Dexie.minKey
-        ],
-        [
-          account.masterId,
-          account.index,
-          account.networkKind,
-          account.chainId,
-          account.address,
-          lastNonce !== undefined && lastNonce !== null
-            ? lastNonce
-            : Dexie.maxKey
-        ]
-      )
-
-    collection = reverse ? collection.reverse() : collection
-
-    collection =
-      typeof limit === 'number' ? collection.limit(limit) : collection
-
-    return collection.toArray()
-  }
-
-  async getTransactions(
-    account: IChainAccount,
-    type: string,
-    limit: number = 100,
-    lastIndex1?: number,
-    lastIndex2?: number
-  ): Promise<ITransaction[]> {
-    if (!account.address) {
-      return []
-    }
-    return DB.transactions
-      .where('[masterId+index+networkKind+chainId+address+type+index1+index2]')
-      .between(
-        [
-          account.masterId,
-          account.index,
-          account.networkKind,
-          account.chainId,
-          account.address,
-          type,
-          Dexie.minKey,
-          Dexie.minKey
-        ],
-        [
-          account.masterId,
-          account.index,
-          account.networkKind,
-          account.chainId,
-          account.address,
-          type,
-          lastIndex1 !== undefined && lastIndex1 !== null
-            ? lastIndex1
-            : Dexie.maxKey,
-          lastIndex2 !== undefined && lastIndex2 !== null
-            ? lastIndex2
-            : Dexie.maxKey
-        ]
-      )
-      .reverse()
-      .limit(limit)
-      .toArray()
   }
 }
 
@@ -654,7 +494,7 @@ export class EvmTransactionService extends EvmTransactionServicePartial {
       await DB.pendingTxs.delete(pendingTx.id)
       return
     }
-    const provider = await EvmProvider.from(network)
+    const provider = await EvmClient.from(network)
 
     const info = pendingTx.info as EvmPendingTxInfo
     if (!tx) {
@@ -1023,135 +863,6 @@ function createEvmTransactionService(): IEvmTransactionService {
 
 export const EVM_TRANSACTION_SERVICE = createEvmTransactionService()
 
-export function useEvmPendingTxCount(account?: IChainAccount) {
-  return useLiveQuery(() => {
-    if (account === undefined) {
-      return
-    }
-    return EVM_TRANSACTION_SERVICE.getPendingTxCount(account)
-  }, [account])
-}
-
-export function useEvmTransactionCount(type: string, account?: IChainAccount) {
-  return useLiveQuery(() => {
-    if (account === undefined) {
-      return
-    }
-    return EVM_TRANSACTION_SERVICE.getTransactionCount(account, type)
-  }, [account, type])
-}
-
-export function useEvmPendingTxs(
-  network?: INetwork,
-  account?: IChainAccount,
-  count?: number
-) {
-  return useLiveQuery(async () => {
-    if (account === undefined || count === undefined) {
-      return
-    }
-    return formatTransactions(
-      await EVM_TRANSACTION_SERVICE.getPendingTxs(account, count)
-    )
-  }, [account, count])
-}
-
-export function useEvmTransactions(
-  type: string,
-  network?: INetwork,
-  account?: IChainAccount,
-  count?: number
-) {
-  const { value, retry, loading } = useAsyncRetry(async () => {
-    if (network === undefined || account === undefined) {
-      return
-    }
-    try {
-      return await EVM_TRANSACTION_SERVICE.fetchTransactions(account, type)
-    } catch (e) {
-      console.error(e)
-    }
-  }, [type, network, account])
-
-  useEffect(() => {
-    if (!loading && typeof value === 'number' && value > 0) {
-      retry()
-    }
-  }, [value, retry, loading])
-
-  return useLiveQuery(async () => {
-    if (account === undefined || count === undefined) {
-      return
-    }
-    return formatTransactions(
-      await EVM_TRANSACTION_SERVICE.getTransactions(account, type, count)
-    )
-  }, [type, account, count])
-}
-
-export function useEvmTransactionsMixed(
-  type: string,
-  network?: INetwork,
-  account?: IChainAccount,
-  count?: number
-) {
-  const pendingTxTotal = useEvmPendingTxCount(account)
-  const historyTxTotal = useEvmTransactionCount(type, account)
-
-  const [pendingTxCount, historyTxCount] = useMemo(() => {
-    let pendingTxCount, historyTxCount
-
-    if (typeof count === 'number') {
-      if (typeof pendingTxTotal === 'number' && pendingTxTotal > 0) {
-        pendingTxCount = Math.min(pendingTxTotal, count)
-      }
-
-      if (
-        typeof historyTxTotal === 'number' &&
-        historyTxTotal > 0 &&
-        (pendingTxCount || 0) < count
-      ) {
-        historyTxCount = Math.min(historyTxTotal, count - (pendingTxCount || 0))
-      }
-    }
-
-    return [pendingTxCount, historyTxCount]
-  }, [count, pendingTxTotal, historyTxTotal])
-
-  const pendingTxs = useEvmPendingTxs(network, account, pendingTxCount)
-
-  const historyTxs = useEvmTransactions(type, network, account, historyTxCount)
-
-  const txs = useMemo(() => {
-    if (!pendingTxs && !historyTxs) {
-      return
-    }
-    return [...(pendingTxs || []), ...(historyTxs || [])]
-  }, [pendingTxs, historyTxs])
-
-  return {
-    txTotal:
-      pendingTxTotal !== undefined && historyTxTotal !== undefined
-        ? pendingTxTotal + historyTxTotal
-        : undefined,
-    pendingTxCount,
-    historyTxCount,
-    txs
-  }
-}
-
-export function useNonce(account?: IChainAccount, network?: INetwork) {
-  const provider = useEvmProvider(network)
-
-  return useLiveQuery(async () => {
-    if (!account?.address || !provider) {
-      return
-    }
-    const signer = new VoidSigner(account.address, provider)
-    return EVM_TRANSACTION_SERVICE.getNonce(account, signer)
-  }, [account, provider])
-}
-
 export function useTransactionDescription(
   network?: INetwork,
   tx?: TransactionRequest
@@ -1160,7 +871,7 @@ export function useTransactionDescription(
 
   const { value: description } = useAsync(async () => {
     const contract = tx?.to
-    const data = tx?.data?.length ? ethers.utils.hexlify(tx.data) : undefined
+    const data = tx?.data?.length ? hexlify(tx.data) : undefined
     if (!provider || !contract || !data) {
       return
     }

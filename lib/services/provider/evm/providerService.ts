@@ -10,13 +10,13 @@ import { PASSWORD_SERVICE } from '~lib/services/passwordService'
 import { BaseProviderService } from '~lib/services/provider/base'
 
 import { EvmPermissionedProvider } from './permissionedProvider'
-import { EvmProvider } from './provider'
+import { EvmClient } from './client'
 
 class EvmProviderService
   extends BaseProviderService
   implements IEvmProviderService
 {
-  private provider?: EvmProvider
+  private provider?: EvmClient
   private subscriptions = new Map<string, [string | EventFilter, Listener]>()
 
   constructor() {
@@ -49,7 +49,7 @@ class EvmProviderService
     this.provider?.removeAllListeners('block')
     this.provider?.removeAllListeners('pending')
 
-    this.provider = network ? await EvmProvider.from(network) : undefined
+    this.provider = network ? await EvmClient.from(network) : undefined
 
     // add subscriptions to new provider
     blockSub?.forEach((listener) => this.provider?.on('block', listener))

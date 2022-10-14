@@ -6,7 +6,7 @@ import {
   getAddressesBalances
 } from 'eth-balance-checker/lib/ethers'
 
-import { EvmProvider } from '~lib/services/provider/evm/provider'
+import { EvmClient } from '~lib/services/provider/evm/client'
 
 const NATIVE_TOKEN = AddressZero
 
@@ -31,7 +31,7 @@ class EthBalanceCheckerApi {
   NATIVE_TOKEN = NATIVE_TOKEN
 
   async getAddressBalances(
-    provider: EvmProvider,
+    provider: EvmClient,
     address: string,
     tokens: (string | typeof NATIVE_TOKEN)[] = [NATIVE_TOKEN] // '0x0' means native currency token
   ): Promise<Record<string, string> | undefined> {
@@ -53,7 +53,7 @@ class EthBalanceCheckerApi {
   }
 
   async getAddressesBalances(
-    provider: EvmProvider,
+    provider: EvmClient,
     addresses: string[],
     tokens: (string | typeof NATIVE_TOKEN)[] = [NATIVE_TOKEN] // '0x0' means native currency token
   ): Promise<Record<string, string>[] | undefined> {

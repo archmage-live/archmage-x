@@ -37,7 +37,7 @@ import {
 import {
   EVM_TRANSACTION_SERVICE,
   EvmPendingTxInfo
-} from '~lib/services/transaction/evm'
+} from '~lib/services/transaction/evmService'
 import { EvmAdvancedGasFeeModal } from '~pages/Popup/Consent/Transaction/EvmAdvancedGasFeeModal'
 import {
   EvmGasFeeEditModal,
@@ -71,9 +71,12 @@ export const EvmSpeedUpOrCancelModal = ({
     BigNumber.from(info.tx.gasLimit).toNumber()
   )
 
-  const gasFeeEstimation = useEstimateGasPrice(network, 15000) as
-    | GasFeeEstimation
-    | undefined
+  const { gasPrice: gasFeeEstimation } = useEstimateGasPrice(
+    network,
+    15000
+  ) as {
+    gasPrice: GasFeeEstimation | undefined
+  }
 
   const {
     defaultGasFeeOption,
