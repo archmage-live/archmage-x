@@ -3,6 +3,8 @@ import Dexie from 'dexie'
 import { DB } from '~lib/db'
 import { IChainAccount, IPendingTx, ITransaction } from '~lib/schema'
 
+import { PENDING_TX_CHECKER } from './check'
+
 export abstract class BaseTransactionService {
   async getPendingTxCount(account: IChainAccount): Promise<number> {
     if (!account.address) {
@@ -129,5 +131,12 @@ export abstract class BaseTransactionService {
 
   async getTransaction(id: number): Promise<ITransaction | undefined> {
     return DB.transactions.get(id)
+  }
+
+  async checkPendingTx(
+    pendingTx: IPendingTx,
+    ...args: any[]
+  ): Promise<ITransaction | undefined> {
+    return PENDING_TX_CHECKER.checkPendingTx(pendingTx, ...args)
   }
 }

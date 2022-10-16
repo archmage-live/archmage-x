@@ -1,6 +1,7 @@
 import { NetworkKind } from '~lib/network'
-import { IChainAccount, INetwork, IPendingTx, ITransaction } from '~lib/schema'
+import { IChainAccount, IPendingTx, ITransaction } from '~lib/schema'
 
+import { APTOS_TRANSACTION_SERVICE } from './aptosService'
 import {
   EVM_TRANSACTION_SERVICE,
   getEvmTransactionInfo,
@@ -35,6 +36,16 @@ export interface ITransactionService {
     account: IChainAccount,
     type: string
   ): Promise<number | undefined>
+
+  checkPendingTx(
+    pendingTx: IPendingTx,
+    ...args: any[]
+  ): Promise<ITransaction | undefined>
+
+  waitForTx(
+    pendingTx: IPendingTx,
+    ...args: any[]
+  ): Promise<ITransaction | undefined>
 }
 
 export function getTransactionService(
@@ -43,6 +54,8 @@ export function getTransactionService(
   switch (networkKind) {
     case NetworkKind.EVM:
       return EVM_TRANSACTION_SERVICE
+    case NetworkKind.APTOS:
+      return APTOS_TRANSACTION_SERVICE
   }
   throw new Error('transaction service not found')
 }

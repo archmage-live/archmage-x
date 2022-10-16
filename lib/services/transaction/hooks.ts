@@ -4,9 +4,7 @@ import { useAsyncRetry } from 'react-use'
 
 import { NetworkKind } from '~lib/network'
 import { IChainAccount, INetwork } from '~lib/schema'
-import {
-  formatEvmTransactions
-} from '~lib/services/transaction/evmService'
+import { formatEvmTransactions } from '~lib/services/transaction/evmService'
 import { getTransactionService } from '~lib/services/transaction/index'
 
 export function usePendingTxCount(account?: IChainAccount) {
