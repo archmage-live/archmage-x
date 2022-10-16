@@ -10,10 +10,7 @@ import {
   TransactionRequest
 } from '@ethersproject/providers'
 import assert from 'assert'
-import { useLiveQuery } from 'dexie-react-hooks'
-import { useEffect, useMemo } from 'react'
-import { useAsync, useAsyncRetry } from 'react-use'
-import browser from 'webextension-polyfill'
+import { useAsync } from 'react-use'
 
 import { DB } from '~lib/db'
 import { ENV } from '~lib/env'
@@ -331,51 +328,6 @@ class EvmTransactionServicePartial
 }
 
 export class EvmTransactionService extends EvmTransactionServicePartial {
-  private waits: Map<number, Promise<ITransaction>> = new Map()
-  private inCheck: boolean = false
-
-  constructor() {
-    super()
-
-    browser.alarms.create('checkPendingTxs', {
-      delayInMinutes: 1,
-      periodInMinutes: 1
-    })
-    browser.alarms.onAlarm.addListener(async (alarm) => {
-      if (alarm.name !== 'checkPendingTxs') {
-        return
-      }
-      if (this.inCheck) {
-        return
-      }
-      this.inCheck = true
-      try {
-        await this.checkPendingTxs()
-      } catch (err) {
-        console.error('checkPendingTxs:', err)
-      }
-      this.inCheck = false
-    })
-  }
-
-  async checkPendingTxs() {
-    while (true) {
-      const pendingTx = await DB.pendingTxs
-        .where('networkKind')
-        .equals(NetworkKind.EVM)
-        .first()
-      if (!pendingTx) {
-        return
-      }
-
-      console.log('Waiting for tx:', pendingTx)
-      const tx = await this.waitForTx(pendingTx)
-      if (!tx) {
-        return
-      }
-    }
-  }
-
   async signAndSendTx(
     account: IChainAccount,
     request: TransactionRequest,
@@ -439,43 +391,12 @@ export class EvmTransactionService extends EvmTransactionServicePartial {
       pendingTx.id = await DB.pendingTxs.put(pendingTx)
     })
 
-    this.waitForTx(pendingTx, tx).finally()
+    this.checkPendingTx(pendingTx, tx).finally()
 
     return pendingTx
   }
 
   async waitForTx(
-    pendingTx: IPendingTx,
-    tx?: TransactionResponse,
-    confirmations = 1
-  ): Promise<ITransaction | undefined> {
-    const wait = this.waits.get(pendingTx.id)
-    if (wait) {
-      return wait
-    }
-
-    let resolve: any = undefined
-    this.waits.set(
-      pendingTx.id,
-      new Promise((r) => {
-        resolve = r
-      })
-    )
-
-    let transaction
-    try {
-      transaction = await this._waitForTx(pendingTx, tx, confirmations)
-    } catch (err) {
-      console.error(err)
-    }
-
-    this.waits.delete(pendingTx.id)
-    resolve(transaction)
-
-    return transaction
-  }
-
-  async _waitForTx(
     pendingTx: IPendingTx,
     tx?: TransactionResponse,
     confirmations = 1
@@ -819,7 +740,7 @@ export class EvmTransactionService extends EvmTransactionServicePartial {
     })
 
     for (const [pendingTx, tx] of confirmedPending) {
-      await this.waitForTx(pendingTx, tx)
+      await this.checkPendingTx(pendingTx, tx)
     }
 
     return transactions.length

@@ -3,6 +3,7 @@ import { Config, animals, uniqueNamesGenerator } from 'unique-names-generator'
 
 import {
   IAddressBook,
+  IAptosEvent,
   ICache,
   IChainAccount,
   IChainAccountAux,
@@ -17,6 +18,7 @@ import {
   ITransaction,
   IWallet,
   addressBookSchemaV1,
+  aptosEventSchemaV2,
   cacheSchemaV1,
   chainAccountAuxSchemaV1,
   chainAccountSchemaV1,
@@ -47,6 +49,7 @@ export class Database extends Dexie {
   connectedSites!: Dexie.Table<IConnectedSite, number>
   addressBook!: Dexie.Table<IAddressBook, number>
   cache!: Dexie.Table<ICache, number>
+  aptosEvents!: Dexie.Table<IAptosEvent, number>
 
   constructor() {
     super('database')
@@ -65,6 +68,9 @@ export class Database extends Dexie {
       connectedSites: connectedSiteSchemaV1,
       addressBook: addressBookSchemaV1,
       cache: cacheSchemaV1
+    })
+    this.version(2).stores({
+      aptosEvents: aptosEventSchemaV2
     })
   }
 }

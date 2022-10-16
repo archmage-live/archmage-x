@@ -14,6 +14,7 @@ export * from './token'
 export * from './connectedSite'
 export * from './addressBook'
 export * from './cache'
+export * from './aptosEvent'
 
 // https://dexie.org/docs/Indexable-Type
 // non-indexable types:
