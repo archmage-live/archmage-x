@@ -9,8 +9,8 @@ import { INetwork } from '~lib/schema'
 import { PASSWORD_SERVICE } from '~lib/services/passwordService'
 import { BaseProviderService } from '~lib/services/provider/base'
 
-import { EvmPermissionedProvider } from './permissionedProvider'
 import { EvmClient } from './client'
+import { EvmPermissionedProvider } from './permissionedProvider'
 
 class EvmProviderService
   extends BaseProviderService

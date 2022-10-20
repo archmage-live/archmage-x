@@ -1,7 +1,13 @@
 import Dexie from 'dexie'
 
 import { DB } from '~lib/db'
+import { EXTENSION } from '~lib/extension'
 import { IChainAccount, IPendingTx, ITransaction } from '~lib/schema'
+import {
+  TransactionInfo,
+  TransactionStatus,
+  getTransactionInfo
+} from '~lib/services/transaction/index'
 
 import { PENDING_TX_CHECKER } from './check'
 
@@ -138,5 +144,24 @@ export abstract class BaseTransactionService {
     ...args: any[]
   ): Promise<ITransaction | undefined> {
     return PENDING_TX_CHECKER.checkPendingTx(pendingTx, ...args)
+  }
+
+  async notifyTransaction(transaction: ITransaction, explorerUrl?: string) {
+    const info = getTransactionInfo(transaction)
+    const success = info.status === TransactionStatus.CONFIRMED
+    const nonce = info.nonce
+
+    const title = success ? 'Confirmed transaction' : 'Failed transaction'
+    const message = success
+      ? `Transaction ${nonce} confirmed! ${
+          explorerUrl?.length ? 'View on block explorer' : ''
+        }`
+      : `Transaction ${nonce} failed! Transaction encountered an error.`
+
+    EXTENSION.showNotification(
+      title,
+      message,
+      explorerUrl?.length ? `${explorerUrl}/tx/${info.hash}` : undefined
+    )
   }
 }

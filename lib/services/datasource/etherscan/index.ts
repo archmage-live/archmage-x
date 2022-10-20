@@ -89,7 +89,7 @@ export interface EtherscanTxResponse {
 }
 
 export enum EvmTxType {
-  NORMAL = 'normal',
+  NORMAL = '',
   INTERNAL = 'internal',
   ERC20 = 'erc20',
   ERC721 = 'erc721',

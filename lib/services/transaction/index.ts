@@ -1,7 +1,10 @@
 import { NetworkKind } from '~lib/network'
 import { IChainAccount, IPendingTx, ITransaction } from '~lib/schema'
 
-import { APTOS_TRANSACTION_SERVICE } from './aptosService'
+import {
+  APTOS_TRANSACTION_SERVICE,
+  getAptosTransactionInfo
+} from './aptosService'
 import {
   EVM_TRANSACTION_SERVICE,
   getEvmTransactionInfo,
@@ -64,6 +67,8 @@ export function getTransactionTypes(networkKind: NetworkKind) {
   switch (networkKind) {
     case NetworkKind.EVM:
       return getEvmTransactionTypes()
+    case NetworkKind.APTOS:
+    // TODO
   }
   throw new Error('getTransactionInfo not found')
 }
@@ -74,6 +79,8 @@ export function getTransactionInfo(
   switch (tx.networkKind) {
     case NetworkKind.EVM:
       return getEvmTransactionInfo(tx)
+    case NetworkKind.APTOS:
+      return getAptosTransactionInfo(tx)
   }
   throw new Error('getTransactionInfo not found')
 }
@@ -86,6 +93,8 @@ export interface TransactionInfo {
   to?: string
   origin?: string
   amount: string
+  hash: string
+  nonce: number
   status: TransactionStatus
   timestamp?: number
 }
