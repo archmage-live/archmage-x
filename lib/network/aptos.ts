@@ -15,6 +15,17 @@ export interface NativeCurrency {
 
 export const APTOS_NETWORKS_PRESET: AptosChainInfo[] = [
   {
+    name: 'Aptos Mainnet',
+    isTestnet: false,
+    chainId: 1,
+    currency: {
+      name: 'Aptos',
+      symbol: 'APT',
+      decimals: 8
+    },
+    rpc: ['https://fullnode.mainnet.aptoslabs.com']
+  },
+  {
     name: 'Aptos Testnet',
     isTestnet: true,
     chainId: 2,

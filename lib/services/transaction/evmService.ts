@@ -14,7 +14,6 @@ import { useAsync } from 'react-use'
 
 import { DB } from '~lib/db'
 import { ENV } from '~lib/env'
-import { EXTENSION } from '~lib/extension'
 import { NetworkKind } from '~lib/network'
 import { SERVICE_WORKER_CLIENT, SERVICE_WORKER_SERVER } from '~lib/rpc'
 import { IChainAccount, INetwork, IPendingTx, ITransaction } from '~lib/schema'
@@ -145,6 +144,8 @@ export function getEvmTransactionInfo(
     to: info.tx.to,
     origin: info.origin,
     amount: info.tx.value.toString(),
+    hash: info.tx.hash,
+    nonce: info.tx.nonce,
     status,
     timestamp
   } as TransactionInfo
@@ -205,11 +206,6 @@ interface IEvmTransactionService extends ITransactionService {
     account: IChainAccount,
     type: string
   ): Promise<number | undefined>
-
-  notifyTransaction(
-    transaction: ITransaction,
-    explorerUrl?: string
-  ): Promise<void>
 }
 
 // @ts-ignore
@@ -744,25 +740,6 @@ export class EvmTransactionService extends EvmTransactionServicePartial {
     }
 
     return transactions.length
-  }
-
-  async notifyTransaction(transaction: ITransaction, explorerUrl?: string) {
-    const info = transaction.info as EvmTransactionInfo
-    const success = info.receipt!.status !== 0
-    const nonce = info.tx.nonce
-
-    const title = success ? 'Confirmed transaction' : 'Failed transaction'
-    const message = success
-      ? `Transaction ${nonce} confirmed! ${
-          explorerUrl?.length ? 'View on block explorer' : ''
-        }`
-      : `Transaction ${nonce} failed! Transaction encountered an error.`
-
-    EXTENSION.showNotification(
-      title,
-      message,
-      explorerUrl?.length ? `${explorerUrl}/tx/${info.tx.hash}` : undefined
-    )
   }
 }
 

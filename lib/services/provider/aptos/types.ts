@@ -1,21 +1,30 @@
 import { HexString, Types } from 'aptos'
 
+export enum AptosPayloadType {
+  ENTRY_FUNCTION = 'entryFunction',
+  SCRIPT = 'script',
+  MODULE_BUNDLE = 'moduleBundle'
+}
+
 export function isEntryFunctionPayload(
   payload: Types.TransactionPayload
 ): payload is Types.TransactionPayload_EntryFunctionPayload {
-  return !!(payload as Types.TransactionPayload_EntryFunctionPayload).function
-}
-
-export function isModuleBundlePayload(
-  payload: Types.TransactionPayload
-): payload is Types.TransactionPayload_ModuleBundlePayload {
-  return !!(payload as Types.TransactionPayload_ModuleBundlePayload).modules
+  return payload.type === 'entry_function_payload'
+  // return !!(payload as Types.TransactionPayload_EntryFunctionPayload).function
 }
 
 export function isScriptPayload(
   payload: Types.TransactionPayload
 ): payload is Types.TransactionPayload_ScriptPayload {
-  return !!(payload as Types.TransactionPayload_ScriptPayload).code
+  return payload.type === 'script_payload'
+  // return !!(payload as Types.TransactionPayload_ScriptPayload).code
+}
+
+export function isModuleBundlePayload(
+  payload: Types.TransactionPayload
+): payload is Types.TransactionPayload_ModuleBundlePayload {
+  return payload.type === 'module_bundle_payload'
+  // return !!(payload as Types.TransactionPayload_ModuleBundlePayload).modules
 }
 
 export interface SignMessagePayload {
