@@ -220,18 +220,10 @@ export class AptosPermissionedProvider extends BasePermissionedProvider {
 
     const provider = new AptosProvider(this.client)
 
-    const { txParams, populatedParams } = await provider.populateTransaction(
-      this.account,
-      payload
-    )
+    const { txParams: rawTransaction, populatedParams: userTransaction } =
+      await provider.populateTransaction(this.account, payload)
 
-    const rawTransaction = await this.client.generateTransaction(
-      HexString.ensure(this.account.address),
-      txParams as Types.TransactionPayload_EntryFunctionPayload,
-      populatedParams as Types.SubmitTransactionRequest
-    )
-
-    return this.sendTransaction(ctx, rawTransaction)
+    return this.sendTransaction(ctx, rawTransaction, userTransaction)
   }
 
   async generateSignSubmitTransaction(
@@ -249,7 +241,16 @@ export class AptosPermissionedProvider extends BasePermissionedProvider {
       extraArgs
     )
 
-    const response = await this.sendTransaction(ctx, rawTransaction)
+    const userTxs = await new AptosProvider(this.client).simulateTransaction(
+      this.account,
+      rawTransaction,
+      {
+        estimateGasUnitPrice: false,
+        estimateMaxGasAmount: true
+      }
+    )
+
+    const response = await this.sendTransaction(ctx, rawTransaction, userTxs[0])
     return response.hash
   }
 
@@ -292,7 +293,8 @@ export class AptosPermissionedProvider extends BasePermissionedProvider {
 
   private async sendTransaction(
     ctx: Context,
-    rawTransaction: TxnBuilderTypes.RawTransaction
+    rawTransaction: TxnBuilderTypes.RawTransaction,
+    userTransaction: Types.UserTransaction
   ): Promise<Types.PendingTransaction> {
     assert(this.account)
 
@@ -302,7 +304,10 @@ export class AptosPermissionedProvider extends BasePermissionedProvider {
         accountId: this.account.id,
         type: ConsentType.TRANSACTION,
         origin: this.origin,
-        payload: { txParams: rawTransaction } as TransactionPayload
+        payload: {
+          txParams: rawTransaction,
+          populatedParams: userTransaction
+        } as TransactionPayload
       },
       ctx
     )

@@ -14,9 +14,10 @@ import { getProvider } from '~lib/services/provider/provider'
 import {
   Provider,
   TransactionPayload,
-  formatTxParams
+  formatTxPayload
 } from '~lib/services/provider/provider'
 import { TOKEN_SERVICE } from '~lib/services/token'
+import { APTOS_TRANSACTION_SERVICE } from '~lib/services/transaction/aptosService'
 import { EVM_TRANSACTION_SERVICE } from '~lib/services/transaction/evmService'
 import { WALLET_SERVICE } from '~lib/services/walletService'
 import { SESSION_STORE, StoreKey, useSessionStorage } from '~lib/store'
@@ -285,20 +286,35 @@ class ConsentService implements IConsentService {
             break
           case ConsentType.TRANSACTION: {
             const payload = req.payload as TransactionPayload
-            formatTxParams(network!, payload.txParams, payload.populatedParams)
+            formatTxPayload(network!, payload)
 
             const signedTx = await provider!.signTransaction(
               account!,
               payload.txParams
             )
+
             const txResponse = await provider!.sendTransaction(signedTx)
-            await EVM_TRANSACTION_SERVICE.addPendingTx(
-              account!,
-              payload.txParams,
-              txResponse,
-              req.origin,
-              payload.populatedParams?.functionSig
-            )
+
+            switch (network!.kind) {
+              case NetworkKind.EVM:
+                await EVM_TRANSACTION_SERVICE.addPendingTx(
+                  account!,
+                  payload.txParams,
+                  txResponse,
+                  req.origin,
+                  payload.populatedParams?.functionSig
+                )
+                break
+              case NetworkKind.APTOS:
+                await APTOS_TRANSACTION_SERVICE.addPendingTx(
+                  account!,
+                  { ...txResponse, type: 'pending_transaction' },
+                  { ...payload.populatedParams, type: 'user_transaction' },
+                  req.origin
+                )
+                break
+            }
+
             response = txResponse
             break
           }

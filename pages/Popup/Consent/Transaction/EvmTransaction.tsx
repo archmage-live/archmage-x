@@ -46,7 +46,7 @@ import { useCryptoComparePrice } from '~lib/services/datasource/cryptocompare'
 import { NetworkInfo } from '~lib/services/network'
 import {
   TransactionPayload,
-  formatTxParams,
+  formatTxPayload,
   useEstimateGasPrice,
   useIsContract,
   useNonce
@@ -104,7 +104,7 @@ export const EvmTransaction = ({
   onComplete: () => void
 }) => {
   const payload = request.payload as TransactionPayload
-  formatTxParams(network, payload.txParams, payload.populatedParams)
+  formatTxPayload(network, payload)
 
   const txParams = payload.txParams as EvmTxParams
   const populated = payload.populatedParams as EvmTxPopulatedParams

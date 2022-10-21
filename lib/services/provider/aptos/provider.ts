@@ -73,23 +73,12 @@ export class AptosProvider implements Provider {
   ): Promise<string> {
     assert(isEntryFunctionPayload(payload))
 
-    const { txParams, populatedParams } = await this.populateTransaction(
+    const { populatedParams: userTx } = await this.populateTransaction(
       account,
       payload
     )
 
-    const rawTransaction = await this.client.generateTransaction(
-      HexString.ensure(account.address!),
-      txParams as Types.TransactionPayload_EntryFunctionPayload,
-      populatedParams as Types.SubmitTransactionRequest
-    )
-
-    const response = await this.simulateTransaction(account, rawTransaction, {
-      estimateGasUnitPrice: true,
-      estimateMaxGasAmount: true
-    })
-
-    return response[0].max_gas_amount
+    return (userTx as Types.UserTransaction).max_gas_amount
   }
 
   async getBalance(address: string): Promise<string> {
@@ -128,6 +117,8 @@ export class AptosProvider implements Provider {
     account: IChainAccount,
     transaction: Types.TransactionPayload
   ): Promise<TransactionPayload> {
+    assert(isEntryFunctionPayload(transaction))
+
     const sequenceNumber = await getNonce(this, account)
 
     const { gas_estimate: gasEstimate } = await this.client.estimateGasPrice()
@@ -135,14 +126,25 @@ export class AptosProvider implements Provider {
     const expireTimestamp =
       Math.floor(Date.now() / 1000) + DEFAULT_TXN_EXP_SEC_FROM_NOW
 
-    return {
-      txParams: transaction,
-      populatedParams: {
+    const rawTransaction = await this.client.generateTransaction(
+      HexString.ensure(account.address!),
+      transaction as Types.TransactionPayload_EntryFunctionPayload,
+      {
         max_gas_amount: DEFAULT_MAX_GAS_AMOUNT.toString(),
         gas_unit_price: gasEstimate.toString(),
         expiration_timestamp_secs: expireTimestamp.toString(),
         sequence_number: sequenceNumber.toString()
       } as Types.SubmitTransactionRequest
+    )
+
+    const userTxs = await this.simulateTransaction(account, rawTransaction, {
+      estimateGasUnitPrice: false,
+      estimateMaxGasAmount: true
+    })
+
+    return {
+      txParams: rawTransaction,
+      populatedParams: userTxs[0]
     } as TransactionPayload
   }
 

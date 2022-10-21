@@ -9,20 +9,26 @@ import {
 } from '@chakra-ui/react'
 
 import { NetworkKind } from '~lib/network'
-import { INetwork, IPendingTx, ITransaction } from '~lib/schema'
+import { IChainAccount, INetwork, IPendingTx, ITransaction } from '~lib/schema'
 import { getTransactionInfo } from '~lib/services/transaction'
-import { EvmActivityDetail } from '~pages/Popup/Activity/ActivityDetail/evm'
+
+import { AptosActivityDetail } from './aptos'
+import { EvmActivityDetail } from './evm'
 
 export const ActivityDetail = ({
   network,
+  account,
   tx
 }: {
   network: INetwork
+  account: IChainAccount
   tx: IPendingTx | ITransaction
 }) => {
   switch (network.kind) {
     case NetworkKind.EVM:
       return <EvmActivityDetail network={network} tx={tx} />
+    case NetworkKind.APTOS:
+      return <AptosActivityDetail network={network} account={account} tx={tx} />
   }
 
   return <></>
@@ -30,11 +36,13 @@ export const ActivityDetail = ({
 
 export const ActivityDetailModal = ({
   network,
+  account,
   tx,
   isOpen,
   onClose
 }: {
   network: INetwork
+  account: IChainAccount
   tx: IPendingTx | ITransaction
   isOpen: boolean
   onClose: () => void
@@ -52,7 +60,7 @@ export const ActivityDetailModal = ({
         </ModalHeader>
         <ModalCloseButton />
         <ModalBody>
-          <ActivityDetail network={network} tx={tx} />
+          <ActivityDetail network={network} account={account} tx={tx} />
         </ModalBody>
       </ModalContent>
     </Modal>

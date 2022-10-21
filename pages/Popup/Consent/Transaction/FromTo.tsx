@@ -13,7 +13,7 @@ export const FromTo = ({
   checkFrom = undefined
 }: {
   from: string
-  to: string
+  to?: string
   checkFrom?: ReactNode
 }) => {
   return (
@@ -34,8 +34,8 @@ export const FromTo = ({
       </Center>
 
       <HStack>
-        <AccountAvatar text={to} scale={0.8} />
-        <Text fontSize="md">{shortenAddress(to)}</Text>
+        {to && <AccountAvatar text={to} scale={0.8} />}
+        <Text fontSize="md">{to ? shortenAddress(to) : 'n/a'}</Text>
       </HStack>
     </HStack>
   )

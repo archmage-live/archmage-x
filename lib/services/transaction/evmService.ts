@@ -23,7 +23,7 @@ import {
   EvmTxType,
   useEtherScanProvider
 } from '~lib/services/datasource/etherscan'
-import { NETWORK_SERVICE, getNetworkInfo } from '~lib/services/network'
+import { NETWORK_SERVICE } from '~lib/services/network'
 import { EvmClient } from '~lib/services/provider/evm/client'
 import {
   parseEvmFunctionSignature,
@@ -178,41 +178,12 @@ export function formatEvmTransactions<T extends ITransaction | IPendingTx>(
   })
 }
 
-interface IEvmTransactionService extends ITransactionService {
-  signAndSendTx(
-    account: IChainAccount,
-    request: TransactionRequest,
-    origin?: string,
-    functionSig?: FunctionFragment,
-    replace?: boolean
-  ): Promise<IPendingTx>
-
-  addPendingTx(
-    account: IChainAccount,
-    request: TransactionRequest,
-    tx: TransactionResponse,
-    origin?: string,
-    functionSig?: FunctionFragment,
-    replace?: boolean
-  ): Promise<IPendingTx>
-
-  waitForTx(
-    transaction: IPendingTx,
-    tx: TransactionResponse,
-    confirmations: number
-  ): Promise<ITransaction | undefined>
-
-  fetchTransactions(
-    account: IChainAccount,
-    type: string
-  ): Promise<number | undefined>
-}
-
 // @ts-ignore
 class EvmTransactionServicePartial
   extends BaseTransactionService
-  implements IEvmTransactionService
-{
+  implements ITransactionService {}
+
+export class EvmTransactionService extends EvmTransactionServicePartial {
   protected normalizeTx<T extends ITransaction | IPendingTx>(
     transaction: T,
     tx: TransactionResponse
@@ -321,9 +292,7 @@ class EvmTransactionServicePartial
 
     return transaction
   }
-}
 
-export class EvmTransactionService extends EvmTransactionServicePartial {
   async signAndSendTx(
     account: IChainAccount,
     request: TransactionRequest,
@@ -536,10 +505,7 @@ export class EvmTransactionService extends EvmTransactionServicePartial {
       await DB.pendingTxs.delete(pendingTx.id)
     })
 
-    await this.notifyTransaction(
-      transaction,
-      network && getNetworkInfo(network).explorerUrl
-    )
+    await this.notifyTransaction(network, transaction)
 
     return transaction
   }
@@ -743,14 +709,14 @@ export class EvmTransactionService extends EvmTransactionServicePartial {
   }
 }
 
-function createEvmTransactionService(): IEvmTransactionService {
+function createEvmTransactionService(): ITransactionService {
   const serviceName = 'evmTransactionService'
   let service
   if (ENV.inServiceWorker) {
     service = new EvmTransactionService()
     SERVICE_WORKER_SERVER.registerService(serviceName, service)
   } else {
-    service = SERVICE_WORKER_CLIENT.service<IEvmTransactionService>(
+    service = SERVICE_WORKER_CLIENT.service<ITransactionService>(
       serviceName,
       // @ts-ignore
       new EvmTransactionServicePartial()

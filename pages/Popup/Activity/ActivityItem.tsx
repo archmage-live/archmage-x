@@ -52,9 +52,9 @@ export const ActivityItem = ({
       break
   }
 
-  const amount = new Decimal(txInfo.amount).div(
-    new Decimal(10).pow(netInfo.decimals)
-  )
+  const amount = txInfo.amount
+    ? new Decimal(txInfo.amount).div(new Decimal(10).pow(netInfo.decimals))
+    : undefined
 
   return (
     <Button
@@ -124,13 +124,15 @@ export const ActivityItem = ({
           </Stack>
 
           <Stack>
-            <Text fontWeight="medium" fontSize="md">
-              {amount.gt(0) ? '-' : ''}
-              &nbsp;
-              {formatNumber(amount.toString())}
-              &nbsp;
-              {netInfo.currencySymbol}
-            </Text>
+            {amount && (
+              <Text fontWeight="medium" fontSize="md">
+                {txInfo.type === TransactionType.Receive ? '+' : '-'}
+                &nbsp;
+                {formatNumber(amount.toString())}
+                &nbsp;
+                {netInfo.currencySymbol}
+              </Text>
+            )}
           </Stack>
         </HStack>
       </HStack>

@@ -4,6 +4,7 @@ export interface AptosChainInfo {
   chainId: number | string
   currency: NativeCurrency
   rpc: string[]
+  explorers: string[]
   faucets?: string[]
 }
 
@@ -23,7 +24,8 @@ export const APTOS_NETWORKS_PRESET: AptosChainInfo[] = [
       symbol: 'APT',
       decimals: 8
     },
-    rpc: ['https://fullnode.mainnet.aptoslabs.com']
+    rpc: ['https://fullnode.mainnet.aptoslabs.com'],
+    explorers: ['https://explorer.aptoslabs.com', 'https://aptoscan.com']
   },
   {
     name: 'Aptos Testnet',
@@ -35,6 +37,10 @@ export const APTOS_NETWORKS_PRESET: AptosChainInfo[] = [
       decimals: 8
     },
     rpc: ['https://testnet.aptoslabs.com'],
+    explorers: [
+      'https://explorer.aptoslabs.com/?network=testnet',
+      'https://testnet.aptoscan.com'
+    ],
     faucets: ['https://fullnode.testnet.aptoslabs.com/v1']
   },
   {
@@ -47,6 +53,10 @@ export const APTOS_NETWORKS_PRESET: AptosChainInfo[] = [
       decimals: 8
     },
     rpc: ['https://fullnode.devnet.aptoslabs.com'],
+    explorers: [
+      'https://explorer.aptoslabs.com/?network=devnet',
+      'https://devnet.aptoscan.com'
+    ],
     faucets: ['https://fullnode.devnet.aptoslabs.com/v1']
   }
   // {

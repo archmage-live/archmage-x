@@ -2,9 +2,9 @@ import Dexie from 'dexie'
 
 import { DB } from '~lib/db'
 import { EXTENSION } from '~lib/extension'
-import { IChainAccount, IPendingTx, ITransaction } from '~lib/schema'
+import { IChainAccount, INetwork, IPendingTx, ITransaction } from '~lib/schema'
+import { getTransactionUrl } from '~lib/services/network'
 import {
-  TransactionInfo,
   TransactionStatus,
   getTransactionInfo
 } from '~lib/services/transaction/index'
@@ -146,22 +146,20 @@ export abstract class BaseTransactionService {
     return PENDING_TX_CHECKER.checkPendingTx(pendingTx, ...args)
   }
 
-  async notifyTransaction(transaction: ITransaction, explorerUrl?: string) {
+  async notifyTransaction(network: INetwork, transaction: ITransaction) {
     const info = getTransactionInfo(transaction)
     const success = info.status === TransactionStatus.CONFIRMED
     const nonce = info.nonce
 
+    const explorerUrl = getTransactionUrl(network, info.hash)
+
     const title = success ? 'Confirmed transaction' : 'Failed transaction'
     const message = success
       ? `Transaction ${nonce} confirmed! ${
-          explorerUrl?.length ? 'View on block explorer' : ''
+          explorerUrl ? 'View on block explorer' : ''
         }`
       : `Transaction ${nonce} failed! Transaction encountered an error.`
 
-    EXTENSION.showNotification(
-      title,
-      message,
-      explorerUrl?.length ? `${explorerUrl}/tx/${info.hash}` : undefined
-    )
+    EXTENSION.showNotification(title, message, explorerUrl)
   }
 }
