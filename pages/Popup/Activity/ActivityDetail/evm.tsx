@@ -27,7 +27,7 @@ import { dayjs } from '~lib/dayjs'
 import { formatNumber } from '~lib/formatNumber'
 import { useTransparentize } from '~lib/hooks/useColor'
 import { INetwork, IPendingTx, ITransaction } from '~lib/schema'
-import { getNetworkInfo } from '~lib/services/network'
+import { getNetworkInfo, getTransactionUrl } from '~lib/services/network'
 import { EvmClient } from '~lib/services/provider/evm'
 import {
   TransactionStatus,
@@ -102,7 +102,7 @@ export const EvmActivityDetail = ({
   }, [network, info])
 
   const [amount, fee, total] = useMemo(() => {
-    const amount = new Decimal(txInfo.amount).div(
+    const amount = new Decimal(txInfo.amount!).div(
       new Decimal(10).pow(netInfo.decimals)
     )
 
@@ -127,18 +127,7 @@ export const EvmActivityDetail = ({
 
   const { hasCopied, onCopy } = useClipboard(info.tx.hash)
 
-  const txUrl = useMemo(() => {
-    if (!netInfo.explorerUrl) {
-      return undefined
-    }
-    try {
-      const url = new URL(netInfo.explorerUrl)
-      url.pathname = `/tx/${info.tx.hash}`
-      return url.toString()
-    } catch {
-      return undefined
-    }
-  }, [netInfo, info])
+  const txUrl = getTransactionUrl(network, info.tx.hash)
 
   return (
     <Stack w="full" spacing={4} pt={8}>
@@ -166,7 +155,7 @@ export const EvmActivityDetail = ({
                 size="xs"
                 icon={<ExternalLinkIcon />}
                 onClick={() => {
-                  browser.tabs.create({ url: txUrl })
+                  browser.tabs.create({ url: txUrl }).finally()
                 }}
               />
             </Tooltip>

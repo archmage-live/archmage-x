@@ -60,7 +60,7 @@ export function getNetworkInfo(network: INetwork): NetworkInfo {
         currencySymbol: info.currency.symbol,
         decimals: info.currency.decimals,
         rpcUrl: info.rpc.at(0),
-        explorerUrl: undefined
+        explorerUrl: info.explorers.at(0)
       }
     }
     default:
@@ -78,7 +78,50 @@ export function getAccountUrl(
   }
   try {
     const url = new URL(info.explorerUrl)
-    url.pathname = `/address/${account.address}`
+
+    let pathPrefix
+    switch (network.kind) {
+      case NetworkKind.EVM:
+        pathPrefix = 'address'
+        break
+      case NetworkKind.APTOS:
+        pathPrefix = !url.host.includes('aptoscan.com') ? 'account' : 'address'
+        break
+      default:
+        return undefined
+    }
+
+    url.pathname = `/${pathPrefix}/${account.address}`
+    return url.toString()
+  } catch {
+    return undefined
+  }
+}
+
+export function getTransactionUrl(
+  network: INetwork,
+  txId: string | number
+): string | undefined {
+  const info = getNetworkInfo(network)
+  if (!info?.explorerUrl) {
+    return undefined
+  }
+  try {
+    const url = new URL(info.explorerUrl)
+
+    let pathPrefix
+    switch (network.kind) {
+      case NetworkKind.EVM:
+        pathPrefix = 'tx'
+        break
+      case NetworkKind.APTOS:
+        pathPrefix = !url.host.includes('aptoscan.com') ? 'txn' : 'version'
+        break
+      default:
+        return undefined
+    }
+
+    url.pathname = `/${pathPrefix}/${txId}`
     return url.toString()
   } catch {
     return undefined
@@ -95,7 +138,20 @@ export function getTokenUrl(
   }
   try {
     const url = new URL(info.explorerUrl)
-    url.pathname = `/token/${token.token}`
+
+    let pathPrefix
+    switch (network.kind) {
+      case NetworkKind.EVM:
+        pathPrefix = 'token'
+        break
+      case NetworkKind.APTOS:
+        // TODO
+        return undefined
+      default:
+        return undefined
+    }
+
+    url.pathname = `/${pathPrefix}/${token.token}`
     return url.toString()
   } catch {
     return undefined

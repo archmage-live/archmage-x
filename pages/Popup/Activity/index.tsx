@@ -182,9 +182,10 @@ export default function Activity() {
         </Text>
       )}
 
-      {network && tx && (
+      {network && account && tx && (
         <ActivityDetailModal
           network={network}
+          account={account}
           tx={tx}
           isOpen={isDetailOpen}
           onClose={onDetailClose}

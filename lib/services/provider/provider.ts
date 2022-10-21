@@ -54,14 +54,13 @@ export type TransactionPayload = {
   populatedParams: any
 }
 
-export function formatTxParams(
+export function formatTxPayload(
   network: INetwork,
-  params?: any,
-  populatedParams?: any
+  payload: TransactionPayload
 ) {
   switch (network.kind) {
     case NetworkKind.EVM:
-      return formatEvmTxParams(params, populatedParams)
+      return formatEvmTxParams(payload.txParams, payload.populatedParams)
     case NetworkKind.APTOS:
       return
   }

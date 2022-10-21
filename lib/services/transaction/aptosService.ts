@@ -2,12 +2,14 @@ import {
   AptosAccount,
   AptosClient,
   HexString,
-  TxnBuilderTypes,
+  TransactionBuilderRemoteABI,
   Types
 } from 'aptos'
+import assert from 'assert'
 
 import { DB } from '~lib/db'
 import { ENV } from '~lib/env'
+import { NetworkKind } from '~lib/network'
 import { SERVICE_WORKER_CLIENT, SERVICE_WORKER_SERVER } from '~lib/rpc'
 import {
   IAptosEvent,
@@ -51,14 +53,14 @@ export function getAptosTransactionInfo(
   const info = transaction.info as AptosPendingTxInfo | AptosTransactionInfo
   const tx = info.tx
 
-  const userTransaction: Types.Transaction_UserTransaction | undefined =
-    isPendingTransaction(tx)
-      ? (info as AptosPendingTxInfo).simulatedTx
-      : isUserTransaction(tx)
-      ? tx
-      : undefined
-  const { success, type, functionShort, to, amount } = userTransaction
-    ? parseAptosTxInfo(transaction.address, userTransaction)
+  const maybeUserTx = isAptosPendingTransaction(tx)
+    ? (info as AptosPendingTxInfo).simulatedTx || tx
+    : isAptosUserTransaction(tx)
+    ? tx
+    : undefined
+
+  const { success, type, functionShort, to, amount } = maybeUserTx
+    ? parseAptosTxInfo(transaction.address, maybeUserTx)
     : ({} as any)
 
   let name
@@ -72,7 +74,7 @@ export function getAptosTransactionInfo(
 
   return {
     type,
-    isPending: isPendingTransaction(tx),
+    isPending: isAptosPendingTransaction(tx),
     isCancelled: false, // TODO
     name,
     to,
@@ -80,12 +82,12 @@ export function getAptosTransactionInfo(
     amount,
     hash: tx.hash,
     nonce: +tx.sequence_number,
-    status: isPendingTransaction(tx)
+    status: isAptosPendingTransaction(tx)
       ? TransactionStatus.PENDING
       : success
       ? TransactionStatus.CONFIRMED
       : TransactionStatus.CONFIRMED_FAILURE,
-    timestamp: isUserTransaction(tx)
+    timestamp: isAptosUserTransaction(tx)
       ? Math.floor(+tx.timestamp / 1000)
       : undefined
   } as TransactionInfo
@@ -97,12 +99,126 @@ class AptosTransactionServicePartial
   implements ITransactionService {}
 
 export class AptosTransactionService extends AptosTransactionServicePartial {
+  async signAndSendTx(
+    account: IChainAccount,
+    tx: Types.Transaction_PendingTransaction,
+    simulatedTx: Types.Transaction_UserTransaction,
+    origin?: string
+  ): Promise<IPendingTx> {
+    const network = await NETWORK_SERVICE.getNetwork({
+      kind: account.networkKind,
+      chainId: account.chainId
+    })
+    assert(network)
+
+    const client = await getAptosClient(network)
+    assert(client)
+
+    // TODO
+
+    return {} as IPendingTx
+  }
+
+  async addPendingTx(
+    account: IChainAccount,
+    tx: Types.Transaction_PendingTransaction,
+    simulatedTx: Types.Transaction_UserTransaction,
+    origin?: string
+  ): Promise<IPendingTx> {
+    assert(account.address)
+
+    const pendingTx = {
+      masterId: account.masterId,
+      index: account.index,
+      networkKind: account.networkKind,
+      chainId: account.chainId,
+      address: account.address,
+      nonce: +tx.sequence_number,
+      info: {
+        tx,
+        simulatedTx,
+        origin
+      } as AptosPendingTxInfo
+    } as IPendingTx
+
+    pendingTx.id = await DB.pendingTxs.add(pendingTx)
+
+    this.checkPendingTx(pendingTx).finally()
+
+    return pendingTx
+  }
+
   async waitForTx(
     pendingTx: IPendingTx,
     ...args: any[]
   ): Promise<ITransaction | undefined> {
-    // TODO
-    return
+    if (!(await this.getPendingTx(pendingTx.id))) {
+      return
+    }
+
+    const network = await NETWORK_SERVICE.getNetwork({
+      kind: NetworkKind.APTOS,
+      chainId: pendingTx.chainId
+    })
+    if (!network) {
+      await DB.pendingTxs.delete(pendingTx.id)
+      return
+    }
+
+    const client = await getAptosClient(network)
+    if (!client) {
+      return
+    }
+
+    const info = pendingTx.info as AptosPendingTxInfo
+
+    const tx = (await client.waitForTransactionWithResult(
+      info.tx.hash
+    )) as Types.Transaction_UserTransaction
+
+    let transaction = {
+      masterId: pendingTx.masterId,
+      index: pendingTx.index,
+      networkKind: pendingTx.networkKind,
+      chainId: pendingTx.chainId,
+      address: pendingTx.address,
+      type: '',
+      index1: +tx.version,
+      index2: +tx.sequence_number,
+      info: {
+        tx,
+        origin: info.origin
+      } as AptosTransactionInfo
+    } as ITransaction
+
+    await DB.transaction('rw', [DB.pendingTxs, DB.transactions], async () => {
+      const existingTx = await DB.transactions
+        .where({
+          masterId: pendingTx.masterId,
+          index: pendingTx.index,
+          networkKind: pendingTx.networkKind,
+          chainId: pendingTx.chainId,
+          address: pendingTx.address,
+          type: '',
+          index1: +tx.version,
+          index2: +tx.sequence_number
+        })
+        .first()
+      if (!existingTx) {
+        transaction.id = await DB.transactions.add(transaction)
+      } else {
+        transaction = existingTx
+      }
+
+      if (!(await this.getPendingTx(pendingTx.id))) {
+        return
+      }
+      await DB.pendingTxs.delete(pendingTx.id)
+    })
+
+    await this.notifyTransaction(network, transaction)
+
+    return transaction
   }
 
   async fetchTransactions(
@@ -130,13 +246,13 @@ export class AptosTransactionService extends AptosTransactionServicePartial {
   }
 }
 
-function isPendingTransaction(
+export function isAptosPendingTransaction(
   tx: Types.Transaction_PendingTransaction | Types.Transaction_UserTransaction
 ): tx is Types.Transaction_PendingTransaction {
   return tx.type === 'pending_transaction'
 }
 
-function isUserTransaction(
+export function isAptosUserTransaction(
   tx: Types.Transaction_PendingTransaction | Types.Transaction_UserTransaction
 ): tx is Types.Transaction_UserTransaction {
   return tx.type === 'user_transaction'
@@ -174,7 +290,7 @@ async function fetchTxs(client: AptosClient, account: IChainAccount) {
     const pendingTxQuery = []
     const txQuery = []
     for (const tx of transactions) {
-      if (isPendingTransaction(tx)) {
+      if (isAptosPendingTransaction(tx)) {
         pendingTxQuery.push([
           account.masterId,
           account.index,
@@ -184,7 +300,7 @@ async function fetchTxs(client: AptosClient, account: IChainAccount) {
           +tx.sequence_number
         ])
       }
-      if (isUserTransaction(tx)) {
+      if (isAptosUserTransaction(tx)) {
         txQuery.push([
           account.masterId,
           account.index,
@@ -215,44 +331,39 @@ async function fetchTxs(client: AptosClient, account: IChainAccount) {
     const addTxs: ITransaction[] = []
 
     for (const tx of transactions) {
-      if (isPendingTransaction(tx)) {
+      if (isAptosPendingTransaction(tx)) {
         if (existingPendingTxsSet.has(+tx.sequence_number)) {
           continue
         }
 
-        // const aptosAccount = new FakeAptosAccount(
-        //   HexString.ensure(account.address!) // TODO
-        // )
-        // let payload
-        // if (isEntryFunctionPayload(tx.payload)) {
-        //   const splits = tx.payload.function.split('::')
-        //
-        //   payload = new TxnBuilderTypes.TransactionPayloadEntryFunction(
-        //     TxnBuilderTypes.EntryFunction.natural(
-        //       splits.slice(0, splits.length - 1).join('::'),
-        //       splits[splits.length - 1],
-        //       tx.payload.type_arguments.map((type) => parseTypeTag(type)),
-        //       tx.payload.arguments.map((arg: any) =>
-        //         new HexString(arg).toUint8Array()
-        //       )
-        //     )
-        //   )
-        // } else if (isScriptPayload(tx.payload)) {
-        //
-        // }
-        // const rawTx = new TxnBuilderTypes.RawTransaction(
-        //   TxnBuilderTypes.AccountAddress.fromHex(tx.sender),
-        //   BigInt(tx.sequence_number),
-        //   payload as any,
-        //   BigInt(tx.max_gas_amount),
-        //   BigInt(tx.gas_unit_price),
-        //   BigInt(tx.expiration_timestamp_secs),
-        //   new TxnBuilderTypes.ChainId(Number(account.chainId))
-        // )
-        // const simulatedTx = await client.simulateTransaction(
-        //   aptosAccount as unknown as AptosAccount,
-        //   rawTx
-        // )
+        let simulatedTx
+        const aptosAccount = new FakeAptosAccount(
+          HexString.ensure(account.address!) // TODO
+        )
+        if (isEntryFunctionPayload(tx.payload)) {
+          const txBuilder = new TransactionBuilderRemoteABI(client, {
+            sender: account.address!,
+            sequenceNumber: tx.sequence_number,
+            gasUnitPrice: tx.gas_unit_price,
+            maxGasAmount: tx.max_gas_amount,
+            expSecFromNow:
+              Number(tx.expiration_timestamp_secs) -
+              Math.floor(Date.now() / 1000),
+            chainId: account.chainId
+          })
+          const rawTx = await txBuilder.build(
+            tx.payload.function,
+            tx.payload.type_arguments,
+            tx.payload.arguments
+          )
+          const simulatedTxs = await client.simulateTransaction(
+            aptosAccount as unknown as AptosAccount,
+            rawTx
+          )
+          simulatedTx = simulatedTxs.length ? simulatedTxs[0] : undefined
+        } else if (isScriptPayload(tx.payload)) {
+          // TODO
+        }
 
         addPendingTxs.push({
           masterId: account.masterId,
@@ -262,13 +373,13 @@ async function fetchTxs(client: AptosClient, account: IChainAccount) {
           address: account.address!,
           nonce: Number(tx.sequence_number),
           info: {
-            tx
-            // simulatedTx: simulatedTx.length ? simulatedTx[0] : undefined
+            tx,
+            simulatedTx
           } as AptosPendingTxInfo
         } as IPendingTx)
       }
 
-      if (isUserTransaction(tx)) {
+      if (isAptosUserTransaction(tx)) {
         if (existingTxsSet.has(+tx.version)) {
           continue
         }
@@ -343,23 +454,21 @@ async function fetchEvents(client: AptosClient, account: IChainAccount) {
       const nextSequenceNumber = lastEvent ? lastEvent.sequenceNumber + 1 : 0
 
       let events
-      try {
-        events = await client.getEventsByCreationNumber(
-          account.address!,
-          creationNumber,
-          {
-            start: nextSequenceNumber,
-            limit: 100
-          }
-        )
-      } catch (err) {
-        // monotonically increased creationNumber break off
-        console.error(err)
-        return
-      }
+      events = await client.getEventsByCreationNumber(
+        account.address!,
+        creationNumber,
+        {
+          start: nextSequenceNumber,
+          limit: 100
+        }
+      )
 
-      console.log(creationNumber, nextSequenceNumber, events.length)
       if (!events.length) {
+        if (nextSequenceNumber === 0) {
+          // monotonically increased creationNumber break off
+          return
+        }
+
         break
       }
 
@@ -469,53 +578,6 @@ async function fetchEvents(client: AptosClient, account: IChainAccount) {
         }
       )
     }
-  }
-}
-
-function parseTypeTag(typeTag: any): TxnBuilderTypes.TypeTag {
-  if (typeTag.vector) {
-    return new TxnBuilderTypes.TypeTagVector(parseTypeTag(typeTag.vector))
-  }
-
-  if (typeTag.struct) {
-    const {
-      address,
-      module,
-      name,
-      type_args
-    }: {
-      address: string
-      module: string
-      name: string
-      type_args: any[]
-    } = typeTag.struct
-
-    const typeArgs = type_args.map((arg) => parseTypeTag(arg))
-    const structTag = new TxnBuilderTypes.StructTag(
-      TxnBuilderTypes.AccountAddress.fromHex(address),
-      new TxnBuilderTypes.Identifier(module),
-      new TxnBuilderTypes.Identifier(name),
-      typeArgs
-    )
-
-    return new TxnBuilderTypes.TypeTagStruct(structTag)
-  }
-
-  switch (typeTag) {
-    case 'bool':
-      return new TxnBuilderTypes.TypeTagBool()
-    case 'u8':
-      return new TxnBuilderTypes.TypeTagU8()
-    case 'u64':
-      return new TxnBuilderTypes.TypeTagU64()
-    case 'u128':
-      return new TxnBuilderTypes.TypeTagU128()
-    case 'address':
-      return new TxnBuilderTypes.TypeTagAddress()
-    case 'signer':
-      return new TxnBuilderTypes.TypeTagSigner()
-    default:
-      throw new Error('Unknown type tag')
   }
 }
 

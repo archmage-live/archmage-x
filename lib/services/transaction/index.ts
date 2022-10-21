@@ -1,5 +1,5 @@
 import { NetworkKind } from '~lib/network'
-import { IChainAccount, IPendingTx, ITransaction } from '~lib/schema'
+import { IChainAccount, INetwork, IPendingTx, ITransaction } from '~lib/schema'
 
 import {
   APTOS_TRANSACTION_SERVICE,
@@ -40,6 +40,10 @@ export interface ITransactionService {
     type: string
   ): Promise<number | undefined>
 
+  signAndSendTx(account: IChainAccount, ...args: any[]): Promise<IPendingTx>
+
+  addPendingTx(account: IChainAccount, ...args: any[]): Promise<IPendingTx>
+
   checkPendingTx(
     pendingTx: IPendingTx,
     ...args: any[]
@@ -49,6 +53,8 @@ export interface ITransactionService {
     pendingTx: IPendingTx,
     ...args: any[]
   ): Promise<ITransaction | undefined>
+
+  notifyTransaction(network: INetwork, transaction: ITransaction): Promise<void>
 }
 
 export function getTransactionService(
@@ -89,10 +95,10 @@ export interface TransactionInfo {
   type: TransactionType
   isPending: boolean
   isCancelled: boolean
-  name: string
+  name?: string
   to?: string
   origin?: string
-  amount: string
+  amount?: string
   hash: string
   nonce: number
   status: TransactionStatus

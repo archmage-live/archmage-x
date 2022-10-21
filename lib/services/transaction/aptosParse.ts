@@ -5,13 +5,14 @@ import {
   isEntryFunctionPayload,
   isScriptPayload
 } from '~lib/services/provider/aptos/types'
+import { isAptosUserTransaction } from '~lib/services/transaction/aptosService'
 
 import { TransactionType } from '.'
 
 export const APTOS_COIN = '0x1::aptos_coin::AptosCoin'
 
 interface AptosTxInfo {
-  success: boolean
+  success?: boolean
   type: TransactionType
   payloadType: AptosPayloadType
   function?: string
@@ -23,7 +24,7 @@ interface AptosTxInfo {
 
 export function parseAptosTxInfo(
   account: string,
-  tx: Types.Transaction_UserTransaction
+  tx: Types.Transaction_UserTransaction | Types.Transaction_PendingTransaction
 ): AptosTxInfo {
   let type, payloadType, fun, funShort
   let to, amount
@@ -60,73 +61,79 @@ export function parseAptosTxInfo(
     payloadType = AptosPayloadType.MODULE_BUNDLE
   }
 
-  const coinTypesByEvents = new Map<string, Map<string, AptosCoinType>>()
-  for (const change of tx.changes as Types.WriteSetChange_WriteResource[]) {
-    if (change.type !== 'write_resource') {
-      continue
-    }
-
-    const coinType = parseCoin(change.data.type)
-    if (!coinType) {
-      continue
-    }
-
-    const coinStore = change.data.data as AptosCoinStore
-
-    if (coinStore.deposit_events) {
-      const { addr, creation_num } = coinStore.deposit_events.guid.id
-      let coinTypesByCreationNum = coinTypesByEvents.get(addr)
-      if (!coinTypesByCreationNum) {
-        coinTypesByCreationNum = new Map()
-        coinTypesByEvents.set(addr, coinTypesByCreationNum)
-      }
-      coinTypesByCreationNum.set(creation_num, coinType)
-    }
-
-    if (coinStore.withdraw_events) {
-      const { addr, creation_num } = coinStore.withdraw_events.guid.id
-      let coinTypesByCreationNum = coinTypesByEvents.get(addr)
-      if (!coinTypesByCreationNum) {
-        coinTypesByCreationNum = new Map()
-        coinTypesByEvents.set(addr, coinTypesByCreationNum)
-      }
-      coinTypesByCreationNum.set(creation_num, coinType)
-    }
-  }
-
+  let success
   const coinEvents = new Map<string, Map<string, string>>()
-  for (const event of tx.events) {
-    const { account_address, creation_number } = event.guid
 
-    let coinType, value
-    if (event.type === '0x1::coin::DepositEvent') {
-      coinType = coinTypesByEvents.get(account_address)?.get(creation_number)
-      const deposit = event.data as AptosDepositEvent
-      value = deposit.amount
-    } else if (event.type === '0x1::coin::WithdrawEvent') {
-      coinType = coinTypesByEvents.get(account_address)?.get(creation_number)
-      const withdraw = event.data as AptosWithdrawEvent
-      value = '-' + withdraw.amount
-    } else {
-      continue
+  if (isAptosUserTransaction(tx)) {
+    success = tx.success
+
+    const coinTypesByEvents = new Map<string, Map<string, AptosCoinType>>()
+    for (const change of tx.changes as Types.WriteSetChange_WriteResource[]) {
+      if (change.type !== 'write_resource') {
+        continue
+      }
+
+      const coinType = parseCoin(change.data.type)
+      if (!coinType) {
+        continue
+      }
+
+      const coinStore = change.data.data as AptosCoinStore
+
+      if (coinStore.deposit_events) {
+        const { addr, creation_num } = coinStore.deposit_events.guid.id
+        let coinTypesByCreationNum = coinTypesByEvents.get(addr)
+        if (!coinTypesByCreationNum) {
+          coinTypesByCreationNum = new Map()
+          coinTypesByEvents.set(addr, coinTypesByCreationNum)
+        }
+        coinTypesByCreationNum.set(creation_num, coinType)
+      }
+
+      if (coinStore.withdraw_events) {
+        const { addr, creation_num } = coinStore.withdraw_events.guid.id
+        let coinTypesByCreationNum = coinTypesByEvents.get(addr)
+        if (!coinTypesByCreationNum) {
+          coinTypesByCreationNum = new Map()
+          coinTypesByEvents.set(addr, coinTypesByCreationNum)
+        }
+        coinTypesByCreationNum.set(creation_num, coinType)
+      }
     }
 
-    if (coinType && value) {
-      let eventsByAddr = coinEvents.get(account_address)
-      if (!eventsByAddr) {
-        eventsByAddr = new Map()
-        coinEvents.set(account_address, eventsByAddr)
+    for (const event of tx.events) {
+      const { account_address, creation_number } = event.guid
+
+      let coinType, value
+      if (event.type === '0x1::coin::DepositEvent') {
+        coinType = coinTypesByEvents.get(account_address)?.get(creation_number)
+        const deposit = event.data as AptosDepositEvent
+        value = deposit.amount
+      } else if (event.type === '0x1::coin::WithdrawEvent') {
+        coinType = coinTypesByEvents.get(account_address)?.get(creation_number)
+        const withdraw = event.data as AptosWithdrawEvent
+        value = '-' + withdraw.amount
+      } else {
+        continue
       }
-      const existingValue = eventsByAddr.get(coinType.type)
-      if (existingValue) {
-        value = (BigInt(value) + BigInt(existingValue)).toString()
+
+      if (coinType && value) {
+        let eventsByAddr = coinEvents.get(account_address)
+        if (!eventsByAddr) {
+          eventsByAddr = new Map()
+          coinEvents.set(account_address, eventsByAddr)
+        }
+        const existingValue = eventsByAddr.get(coinType.type)
+        if (existingValue) {
+          value = (BigInt(value) + BigInt(existingValue)).toString()
+        }
+        eventsByAddr.set(coinType.type, value)
       }
-      eventsByAddr.set(coinType.type, value)
     }
   }
 
   return {
-    success: tx.success,
+    success,
     type,
     payloadType,
     function: fun,
