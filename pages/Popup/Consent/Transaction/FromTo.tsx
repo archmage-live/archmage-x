@@ -18,7 +18,7 @@ export const FromTo = ({
 }) => {
   return (
     <HStack justify="space-between">
-      <HStack>
+      <HStack minW={36}>
         <AccountAvatar text={from} scale={0.8} />
         <Text fontSize="md">{shortenAddress(from)}</Text>
         {checkFrom}
@@ -33,7 +33,7 @@ export const FromTo = ({
         <ArrowForwardIcon w={6} h={6} color="gray.500" />
       </Center>
 
-      <HStack>
+      <HStack minW={36} justify="end">
         {to && <AccountAvatar text={to} scale={0.8} />}
         <Text fontSize="md">{to ? shortenAddress(to) : 'n/a'}</Text>
       </HStack>
@@ -48,7 +48,7 @@ export const FromToWithCheck = ({
 }: {
   subWallet: ISubWallet
   from: string
-  to: string
+  to?: string
 }) => {
   const { subWallet } = useActiveWallet()
 

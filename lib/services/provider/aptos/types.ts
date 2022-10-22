@@ -1,4 +1,7 @@
-import { HexString, Types } from 'aptos'
+import { arrayify } from '@ethersproject/bytes'
+import { BCS, HexString, TxnBuilderTypes, Types } from 'aptos'
+
+import { TransactionPayload } from '~lib/services/provider'
 
 export enum AptosPayloadType {
   ENTRY_FUNCTION = 'entryFunction',
@@ -53,4 +56,18 @@ export class FakeAptosAccount {
   pubKey(): HexString {
     return this.publicKey
   }
+}
+
+export function formatAptosTxParams(payload: {
+  txParams?: string | TxnBuilderTypes.RawTransaction
+  populatedParams?: Types.UserTransaction
+}): TransactionPayload {
+  const { txParams, populatedParams } = payload
+
+  if (txParams && !(txParams instanceof TxnBuilderTypes.RawTransaction)) {
+    const deserializer = new BCS.Deserializer(arrayify(txParams))
+    payload.txParams = TxnBuilderTypes.RawTransaction.deserialize(deserializer)
+  }
+
+  return payload as TransactionPayload
 }

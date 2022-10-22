@@ -3,6 +3,8 @@ import { BigNumber, BigNumberish } from '@ethersproject/bignumber'
 import { BytesLike } from '@ethersproject/bytes'
 import { AccessListish } from '@ethersproject/transactions'
 
+import { TransactionPayload } from '~lib/services/provider'
+
 export type EvmTxParams = {
   to?: string
   from?: string
@@ -48,19 +50,23 @@ export const allowedTransactionKeys: Array<string> = [
   'value'
 ]
 
-export function formatEvmTxParams(
-  params?: EvmTxParams,
+export function formatEvmTxParams(payload: {
+  txParams?: EvmTxParams
   populatedParams?: EvmTxPopulatedParams
-) {
-  if (params) {
-    if (params.nonce) params.nonce = BigNumber.from(params.nonce)
-    if (params.gasLimit) params.gasLimit = BigNumber.from(params.gasLimit)
-    if (params.gasPrice) params.gasPrice = BigNumber.from(params.gasPrice)
-    if (params.value) params.value = BigNumber.from(params.value)
-    if (params.maxPriorityFeePerGas)
-      params.maxPriorityFeePerGas = BigNumber.from(params.maxPriorityFeePerGas)
-    if (params.maxFeePerGas)
-      params.maxFeePerGas = BigNumber.from(params.maxFeePerGas)
+}): TransactionPayload {
+  const { txParams, populatedParams } = payload
+
+  if (txParams) {
+    if (txParams.nonce) txParams.nonce = BigNumber.from(txParams.nonce)
+    if (txParams.gasLimit) txParams.gasLimit = BigNumber.from(txParams.gasLimit)
+    if (txParams.gasPrice) txParams.gasPrice = BigNumber.from(txParams.gasPrice)
+    if (txParams.value) txParams.value = BigNumber.from(txParams.value)
+    if (txParams.maxPriorityFeePerGas)
+      txParams.maxPriorityFeePerGas = BigNumber.from(
+        txParams.maxPriorityFeePerGas
+      )
+    if (txParams.maxFeePerGas)
+      txParams.maxFeePerGas = BigNumber.from(txParams.maxFeePerGas)
   }
 
   if (populatedParams) {
@@ -75,4 +81,6 @@ export function formatEvmTxParams(
         populatedParams.maxFeePerGas
       )
   }
+
+  return payload as TransactionPayload
 }

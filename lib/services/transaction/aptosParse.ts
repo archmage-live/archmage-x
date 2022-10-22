@@ -198,6 +198,11 @@ export function parseCoin(input: string) {
   } as AptosCoinType
 }
 
+export function extractAptosFunctionIdentifier(fun?: string) {
+  if (!fun) return []
+  return fun.split('::')
+}
+
 function extractLastName(input: string) {
   return input.slice(input.lastIndexOf(':') + 1)
 }

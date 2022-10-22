@@ -285,8 +285,7 @@ class ConsentService implements IConsentService {
             )
             break
           case ConsentType.TRANSACTION: {
-            const payload = req.payload as TransactionPayload
-            formatTxPayload(network!, payload)
+            const payload = formatTxPayload(network!, req.payload)
 
             const signedTx = await provider!.signTransaction(
               account!,

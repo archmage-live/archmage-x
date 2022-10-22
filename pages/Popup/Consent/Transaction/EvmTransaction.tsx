@@ -63,8 +63,7 @@ import {
   formatGwei,
   isSourcedGasFeeEstimates,
   parseGwei,
-  useDefaultGasFeeSettings,
-  useEvmFunctionSignature
+  useDefaultGasFeeSettings
 } from '~lib/services/provider/evm'
 import { Balance } from '~lib/services/token'
 import { useTransactionDescription } from '~lib/services/transaction/evmService'
@@ -79,6 +78,7 @@ import {
 } from './EvmGasFeeEditModal'
 import { EvmTransactionData } from './EvmTransactionData'
 import { FromToWithCheck } from './FromTo'
+import { useTabsHeaderScroll } from './helpers'
 
 export const EvmTransaction = ({
   origin,
@@ -108,9 +108,9 @@ export const EvmTransaction = ({
 
   const txParams = payload.txParams as EvmTxParams
   const populated = payload.populatedParams as EvmTxPopulatedParams
-  useEffect(() => {
-    console.log('payload:', payload)
-  }, [payload])
+  // useEffect(() => {
+  //   console.log('payload:', payload)
+  // }, [payload])
 
   const siteSuggestedGasFeePerGas = useMemo(() => {
     if (!txParams.maxPriorityFeePerGas || !txParams.maxFeePerGas) {
@@ -168,22 +168,7 @@ export const EvmTransaction = ({
   const bg = useColorModeValue('purple.50', 'gray.800')
   const bannerBg = useColorModeValue('white', 'black')
 
-  const scrollRef = useRef(null)
-  const anchorRef = useRef(null)
-  const { scrollYProgress } = useScroll({
-    container: scrollRef,
-    target: anchorRef,
-    offset: ['start start', 'end end']
-  })
-  const [tabsHeaderSx, setTabsHeaderSx] = useState<any>()
-  useEffect(() => {
-    return scrollYProgress.onChange((progress) => {
-      setTabsHeaderSx(
-        progress <= 0 ? { position: 'sticky', top: -1 } : undefined
-      )
-    })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  const { scrollRef, anchorRef, tabsHeaderSx } = useTabsHeaderScroll()
 
   const [tabIndex, setTabIndex] = useState(0)
 
@@ -465,8 +450,8 @@ export const EvmTransaction = ({
           <Divider />
         </Box>
 
-        {isContract && (
-          <Box ref={anchorRef} w="full" bg={bg} zIndex={1} sx={tabsHeaderSx}>
+        <Box ref={anchorRef} w="full" bg={bg} zIndex={1} sx={tabsHeaderSx}>
+          {isContract && (
             <Tabs w="full" px={6} index={tabIndex} onChange={setTabIndex}>
               <TabList>
                 <Tab>DETAILS</Tab>
@@ -474,8 +459,8 @@ export const EvmTransaction = ({
                 <Tab>HEX</Tab>
               </TabList>
             </Tabs>
-          </Box>
-        )}
+          )}
+        </Box>
 
         <Stack w="full" px={6} pt={6} spacing={8}>
           <Tabs index={tabIndex}>
