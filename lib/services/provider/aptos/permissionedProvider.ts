@@ -1,3 +1,4 @@
+import { hexlify } from '@ethersproject/bytes'
 import {
   AptosClient,
   BCS,
@@ -298,6 +299,9 @@ export class AptosPermissionedProvider extends BasePermissionedProvider {
   ): Promise<Types.PendingTransaction> {
     assert(this.account)
 
+    const serializer = new BCS.Serializer()
+    rawTransaction.serialize(serializer)
+
     return CONSENT_SERVICE.requestConsent(
       {
         networkId: this.network.id,
@@ -305,7 +309,7 @@ export class AptosPermissionedProvider extends BasePermissionedProvider {
         type: ConsentType.TRANSACTION,
         origin: this.origin,
         payload: {
-          txParams: rawTransaction,
+          txParams: hexlify(serializer.getBytes()),
           populatedParams: userTransaction
         } as TransactionPayload
       },

@@ -1,6 +1,7 @@
 import { NetworkKind } from '~lib/network'
 import { IChainAccount, INetwork } from '~lib/schema'
 import { AptosProvider } from '~lib/services/provider/aptos/provider'
+import { formatAptosTxParams } from '~lib/services/provider/aptos/types'
 import { EvmProvider } from '~lib/services/provider/evm/provider'
 import { formatEvmTxParams } from '~lib/services/provider/evm/types'
 
@@ -57,12 +58,12 @@ export type TransactionPayload = {
 export function formatTxPayload(
   network: INetwork,
   payload: TransactionPayload
-) {
+): TransactionPayload {
   switch (network.kind) {
     case NetworkKind.EVM:
-      return formatEvmTxParams(payload.txParams, payload.populatedParams)
+      return formatEvmTxParams(payload)
     case NetworkKind.APTOS:
-      return
+      return formatAptosTxParams(payload)
   }
   throw new Error(`provider for network ${network.kind} is not implemented`)
 }
