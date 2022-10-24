@@ -30,7 +30,7 @@ import { getSigningWallet } from '~lib/wallet'
 import {
   SignMessagePayload,
   SignMessageResponse,
-  isEntryFunctionPayload
+  isAptosEntryFunctionPayload
 } from './types'
 
 export class AptosPermissionedProvider extends BasePermissionedProvider {
@@ -213,7 +213,7 @@ export class AptosPermissionedProvider extends BasePermissionedProvider {
     if (!this.account?.address) {
       throw ethErrors.provider.unauthorized()
     }
-    if (!isEntryFunctionPayload(payload)) {
+    if (!isAptosEntryFunctionPayload(payload)) {
       throw ethErrors.rpc.invalidRequest(
         'now only support entry function payload'
       )

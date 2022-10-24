@@ -18,7 +18,7 @@ import { getAptosClient } from './client'
 import {
   FakeAptosAccount,
   SignMessageResponse,
-  isEntryFunctionPayload
+  isAptosEntryFunctionPayload
 } from './types'
 
 export const DEFAULT_MAX_GAS_AMOUNT = 20000
@@ -71,7 +71,7 @@ export class AptosProvider implements Provider {
     account: IChainAccount,
     payload: Types.TransactionPayload
   ): Promise<string> {
-    assert(isEntryFunctionPayload(payload))
+    assert(isAptosEntryFunctionPayload(payload))
 
     const { populatedParams: userTx } = await this.populateTransaction(
       account,
@@ -117,7 +117,7 @@ export class AptosProvider implements Provider {
     account: IChainAccount,
     transaction: Types.TransactionPayload
   ): Promise<TransactionPayload> {
-    assert(isEntryFunctionPayload(transaction))
+    assert(isAptosEntryFunctionPayload(transaction))
 
     const sequenceNumber = await getNonce(this, account)
 

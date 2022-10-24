@@ -9,21 +9,21 @@ export enum AptosPayloadType {
   MODULE_BUNDLE = 'moduleBundle'
 }
 
-export function isEntryFunctionPayload(
+export function isAptosEntryFunctionPayload(
   payload: Types.TransactionPayload
 ): payload is Types.TransactionPayload_EntryFunctionPayload {
   return payload.type === 'entry_function_payload'
   // return !!(payload as Types.TransactionPayload_EntryFunctionPayload).function
 }
 
-export function isScriptPayload(
+export function isAptosScriptPayload(
   payload: Types.TransactionPayload
 ): payload is Types.TransactionPayload_ScriptPayload {
   return payload.type === 'script_payload'
   // return !!(payload as Types.TransactionPayload_ScriptPayload).code
 }
 
-export function isModuleBundlePayload(
+export function isAptosModuleBundlePayload(
   payload: Types.TransactionPayload
 ): payload is Types.TransactionPayload_ModuleBundlePayload {
   return payload.type === 'module_bundle_payload'

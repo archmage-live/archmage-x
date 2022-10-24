@@ -1,35 +1,127 @@
-import { Stack } from '@chakra-ui/react'
+import {
+  Box,
+  Divider,
+  HStack,
+  Stack,
+  Text,
+  chakra,
+  useColorModeValue
+} from '@chakra-ui/react'
 import { Types } from 'aptos'
+import * as React from 'react'
+import ReactJson from 'react-json-view'
 
-export enum AptosDataType {
-  PAYLOAD,
-  EVENTS,
-  CHANGES
-}
-
-export const AptosTransactionData = ({
-  tx,
-  type
-}: {
-  tx: Types.Transaction_UserTransaction
-  type: AptosDataType
-}) => {
-  switch (type) {
-    case AptosDataType.PAYLOAD:
-      return <AptosTransactionPayload tx={tx} />
-    case AptosDataType.EVENTS:
-      return <AptosTransactionEvents tx={tx} />
-    case AptosDataType.CHANGES:
-      return <AptosTransactionChanges tx={tx} />
-  }
-}
+import { CopyArea } from '~components/CopyIcon'
+import { IChainAccount } from '~lib/schema'
+import { isAptosEntryFunctionPayload } from '~lib/services/provider/aptos/types'
+import {
+  AptosTxInfo,
+  extractAptosIdentifier
+} from '~lib/services/transaction/aptosParse'
+import { useAptosTxInfo } from '~lib/services/transaction/aptosService'
+import { shortenAddress } from '~lib/utils'
 
 export const AptosTransactionPayload = ({
+  account,
   tx
 }: {
+  account: IChainAccount
   tx: Types.Transaction_UserTransaction
 }) => {
-  return <Stack spacing={6}></Stack>
+  const payload = tx.payload
+
+  const rjvTheme = useColorModeValue('rjv-default', 'brewer')
+  const rjvBg = useColorModeValue('gray.50', 'rgb(12, 13, 14)')
+
+  if (isAptosEntryFunctionPayload(payload)) {
+    const [moduleAddr, moduleName, funcName] = extractAptosIdentifier(
+      payload.function
+    )
+
+    return (
+      <Stack spacing={6}>
+        <Stack spacing={2}>
+          <Text>Function</Text>
+          <Stack spacing={1} color="gray.500" fontSize="md">
+            <HStack justify="space-between">
+              <Text>Address:</Text>
+              <Text noOfLines={3} color="blue.500" maxW="calc(100% - 120px)">
+                {moduleAddr}
+              </Text>
+            </HStack>
+            <HStack justify="space-between">
+              <Text>Module Name:</Text>
+              <Text noOfLines={2} color="orange.500" maxW="calc(100% - 120px)">
+                {moduleName}
+              </Text>
+            </HStack>
+            <HStack justify="space-between">
+              <Text>Function Name:</Text>
+              <Text noOfLines={2} color="green.500" maxW="calc(100% - 120px)">
+                {funcName}
+              </Text>
+            </HStack>
+          </Stack>
+        </Stack>
+
+        <Divider />
+
+        <Stack spacing={2}>
+          <Text>Type Arguments</Text>
+          <Box
+            maxH="full"
+            w="full"
+            overflow="auto"
+            borderRadius="8px"
+            borderWidth="1px"
+            borderColor="gray.500"
+            px={4}
+            py={2}
+            bg={rjvBg}>
+            <ReactJson
+              src={payload.type_arguments}
+              name={false}
+              theme={rjvTheme}
+              iconStyle="triangle"
+              collapsed={3}
+              enableClipboard={false}
+              displayDataTypes={false}
+              displayArrayKey={false}
+            />
+          </Box>
+        </Stack>
+
+        <Divider />
+
+        <Stack spacing={2}>
+          <Text>Arguments</Text>
+          <Box
+            maxH="full"
+            w="full"
+            overflow="auto"
+            borderRadius="8px"
+            borderWidth="1px"
+            borderColor="gray.500"
+            px={4}
+            py={2}
+            bg={rjvBg}>
+            <ReactJson
+              src={payload.arguments}
+              name={false}
+              theme={rjvTheme}
+              iconStyle="triangle"
+              collapsed={3}
+              enableClipboard={false}
+              displayDataTypes={false}
+              displayArrayKey={false}
+            />
+          </Box>
+        </Stack>
+      </Stack>
+    )
+  } else {
+    return <></>
+  }
 }
 
 export const AptosTransactionEvents = ({
@@ -37,7 +129,75 @@ export const AptosTransactionEvents = ({
 }: {
   tx: Types.Transaction_UserTransaction
 }) => {
-  return <Stack spacing={6}></Stack>
+  const rjvTheme = useColorModeValue('rjv-default', 'brewer')
+  const rjvBg = useColorModeValue('gray.50', 'rgb(12, 13, 14)')
+
+  return (
+    <Stack spacing={6}>
+      {tx.events.map((event, index) => {
+        return (
+          <>
+            <Stack key={index} color="gray.500" fontSize="md">
+              <HStack justify="space-between">
+                <Text>Index:</Text>
+                <Text maxW="calc(100% - 120px)">{index}</Text>
+              </HStack>
+              <HStack justify="space-between">
+                <Text>Account Address:</Text>
+                <CopyArea
+                  name="Address"
+                  copy={event.guid.account_address}
+                  area={shortenAddress(event.guid.account_address)}
+                  props={{ maxW: 'calc(100% - 120px)' }}
+                />
+              </HStack>
+              <HStack justify="space-between">
+                <Text>Creation Number:</Text>
+                <Text maxW="calc(100% - 120px)">
+                  {event.guid.creation_number}
+                </Text>
+              </HStack>
+              <HStack justify="space-between">
+                <Text>Sequence Number:</Text>
+                <Text maxW="calc(100% - 120px)">{event.sequence_number}</Text>
+              </HStack>
+              <HStack justify="space-between">
+                <Text>Type:</Text>
+                <Text noOfLines={6} maxW="calc(100% - 120px)">
+                  {event.type}
+                </Text>
+              </HStack>
+              <HStack justify="space-between" pt={2}>
+                <Text>Data:</Text>
+                <Box
+                  maxH="full"
+                  w="full"
+                  overflow="auto"
+                  borderRadius="8px"
+                  borderWidth="1px"
+                  borderColor="gray.500"
+                  px={4}
+                  py={2}
+                  bg={rjvBg}>
+                  <ReactJson
+                    src={event.data}
+                    name={false}
+                    theme={rjvTheme}
+                    iconStyle="triangle"
+                    collapsed={3}
+                    enableClipboard={false}
+                    displayDataTypes={false}
+                    displayArrayKey={false}
+                  />
+                </Box>
+              </HStack>
+            </Stack>
+            {index < tx.events.length - 1 && <Divider />}
+          </>
+        )
+      })}
+    </Stack>
+  )
 }
 
 export const AptosTransactionChanges = ({
@@ -45,11 +205,131 @@ export const AptosTransactionChanges = ({
 }: {
   tx: Types.Transaction_UserTransaction
 }) => {
+  const rjvTheme = useColorModeValue('rjv-default', 'brewer')
+  const rjvBg = useColorModeValue('gray.50', 'rgb(12, 13, 14)')
+
   return (
     <Stack spacing={6}>
-      {tx.changes.map((change) => {
-        return <></>
+      {tx.changes.map((change, index) => {
+        const items = itemsForChange(change)
+        return (
+          <>
+            <Stack key={index} color="gray.500" fontSize="md">
+              {items.map(({ name, value, isArea, isJson, noOfLines }) => {
+                return (
+                  <HStack key={name} justify="space-between">
+                    <Text>{name}:</Text>
+                    {isArea ? (
+                      <CopyArea
+                        name="Address"
+                        copy={value as string}
+                        area={shortenAddress(value as string)}
+                        props={{ maxW: 'calc(100% - 120px)' }}
+                      />
+                    ) : isJson ? (
+                      <Box
+                        maxH="full"
+                        w="full"
+                        overflow="auto"
+                        borderRadius="8px"
+                        borderWidth="1px"
+                        borderColor="gray.500"
+                        px={4}
+                        py={2}
+                        bg={rjvBg}>
+                        <ReactJson
+                          src={value as object}
+                          name={false}
+                          theme={rjvTheme}
+                          iconStyle="triangle"
+                          collapsed={3}
+                          enableClipboard={false}
+                          displayDataTypes={false}
+                          displayArrayKey={false}
+                        />
+                      </Box>
+                    ) : (
+                      <Text maxW="calc(100% - 120px)" noOfLines={noOfLines}>
+                        {value as string}
+                      </Text>
+                    )}
+                  </HStack>
+                )
+              })}
+            </Stack>
+            {index < tx.changes.length - 1 && <Divider />}
+          </>
+        )
       })}
     </Stack>
   )
+}
+
+interface Item {
+  name: string
+  value: string | object
+  isArea?: boolean
+  isJson?: boolean
+  noOfLines?: number
+}
+
+function itemsForChange(change: Types.WriteSetChange) {
+  let items: Item[] = [
+    { name: 'Type', value: change.type },
+    { name: 'State Key Hash', value: change.state_key_hash }
+  ]
+
+  switch (change.type) {
+    case 'delete_module': {
+      const c = change as Types.WriteSetChange_DeleteModule
+      items.push(
+        { name: 'Address', value: c.address, isArea: true },
+        { name: 'Module', value: c.module, noOfLines: 3 }
+      )
+      break
+    }
+    case 'delete_resource': {
+      const c = change as Types.WriteSetChange_DeleteResource
+      items.push(
+        { name: 'Address', value: c.address, isArea: true },
+        { name: 'Resource', value: c.resource, noOfLines: 3 }
+      )
+      break
+    }
+    case 'delete_table_item': {
+      const c = change as Types.WriteSetChange_DeleteTableItem
+      items.push(
+        { name: 'Handle', value: c.handle, noOfLines: 3 },
+        { name: 'Key', value: c.key, noOfLines: 3 }
+      )
+      if (c.data) {
+        items.push({ name: 'Data', value: c.data, isJson: true })
+      }
+      break
+    }
+    case 'write_module': {
+      const c = change as Types.WriteSetChange_WriteModule
+      items.push({ name: 'Data', value: c.data, isJson: true })
+      break
+    }
+    case 'write_resource': {
+      const c = change as Types.WriteSetChange_WriteResource
+      items.push({ name: 'Data', value: c.data, isJson: true })
+      break
+    }
+    case 'write_table_item': {
+      const c = change as Types.WriteSetChange_WriteTableItem
+      items.push(
+        { name: 'Handle', value: c.handle, noOfLines: 3 },
+        { name: 'Key', value: c.key, noOfLines: 3 },
+        { name: 'Value', value: c.value, noOfLines: 3 }
+      )
+      if (c.data) {
+        items.push({ name: 'Data', value: c.data, isJson: true })
+      }
+      break
+    }
+  }
+
+  return items
 }

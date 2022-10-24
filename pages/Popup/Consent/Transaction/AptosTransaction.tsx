@@ -40,9 +40,14 @@ import { DEFAULT_TXN_EXP_SEC_FROM_NOW } from '~lib/services/provider/aptos/provi
 import { Balance } from '~lib/services/token'
 import { TransactionType } from '~lib/services/transaction'
 import {
-  extractAptosFunctionIdentifier,
+  AptosTxInfo,
+  extractAptosIdentifier,
   parseAptosTxInfo
 } from '~lib/services/transaction/aptosParse'
+import {
+  useAptosTxCoinInfos,
+  useAptosTxInfo
+} from '~lib/services/transaction/aptosService'
 import { shortenAddress } from '~lib/utils'
 import {
   AptosTransactionChanges,
@@ -81,7 +86,6 @@ export const AptosTransaction = ({
     txParams: TxnBuilderTypes.RawTransaction
     populatedParams: Types.UserTransaction
   }
-  console.log(txParams, populatedParams)
 
   const userTx = useMemo(
     () => ({
@@ -91,13 +95,13 @@ export const AptosTransaction = ({
     [populatedParams]
   )
 
-  const txInfo = useMemo(
-    () => parseAptosTxInfo(account.address!, userTx),
-    [account, userTx]
-  )
-  const [moduleAddr, moduleName, funcName] = extractAptosFunctionIdentifier(
+  const txInfo = useAptosTxInfo(account, userTx) as AptosTxInfo
+  const [moduleAddr, moduleName, funcName] = extractAptosIdentifier(
     txInfo.function
   )
+
+  const coinInfos = useAptosTxCoinInfos(network, userTx)
+  const coinChanges = coinInfos?.get(account.address!)
 
   const [ignoreEstimateError, setIgnoreEstimateError] = useState(false)
 
@@ -220,40 +224,76 @@ export const AptosTransaction = ({
               </HStack>
             </HStack>
 
-            <Stack>
-              <HStack>
+            {value && (
+              <Stack>
+                <HStack>
+                  {price && (
+                    <Image
+                      borderRadius="full"
+                      boxSize="30px"
+                      fit="cover"
+                      src={price.imageUrl}
+                      fallback={
+                        <Center
+                          w="30px"
+                          h="30px"
+                          borderRadius="full"
+                          borderWidth="1px"
+                          borderColor="gray.500">
+                          <Icon as={BiQuestionMark} fontSize="3xl" />
+                        </Center>
+                      }
+                      alt="Currency Logo"
+                    />
+                  )}
+
+                  <Text fontSize="2xl" fontWeight="medium">
+                    {formatNumber(value)} {networkInfo.currencySymbol}
+                  </Text>
+                </HStack>
+
                 {price && (
-                  <Image
-                    borderRadius="full"
-                    boxSize="30px"
-                    fit="cover"
-                    src={price.imageUrl}
-                    fallback={
-                      <Center
-                        w="30px"
-                        h="30px"
-                        borderRadius="full"
-                        borderWidth="1px"
-                        borderColor="gray.500">
-                        <Icon as={BiQuestionMark} fontSize="3xl" />
-                      </Center>
-                    }
-                    alt="Currency Logo"
-                  />
+                  <Text ps="15px">
+                    {price.currencySymbol}&nbsp;
+                    {formatNumber(value.mul(price.price || 0))}
+                  </Text>
                 )}
+              </Stack>
+            )}
 
-                <Text fontSize="2xl" fontWeight="medium">
-                  {formatNumber(value)} {networkInfo.currencySymbol}
-                </Text>
-              </HStack>
-
-              {price && value && (
-                <Text ps="15px">
-                  {price.currencySymbol}&nbsp;
-                  {formatNumber(value.mul(price.price || 0))}
-                </Text>
-              )}
-            </Stack>
+            {coinChanges && (
+              <Stack
+                spacing={1}
+                px={2}
+                py={1}
+                borderRadius="4px"
+                borderWidth="1px"
+                maxW="full">
+                <Text color="gray.500">Coin Changes:</Text>
+                <Box pl={4}>
+                  {Array.from(coinChanges.entries()).map(
+                    ([coinType, balance]) => {
+                      return (
+                        <Text
+                          key={coinType}
+                          fontSize="lg"
+                          color={
+                            !balance.amount.startsWith('-')
+                              ? 'green.500'
+                              : 'red.500'
+                          }>
+                          {new Decimal(balance.amount)
+                            .toDecimalPlaces(balance.decimals)
+                            .toString()}
+                          &nbsp;
+                          {balance.symbol}
+                        </Text>
+                      )
+                    }
+                  )}
+                </Box>
+              </Stack>
+            )}
           </Stack>
           <Divider />
         </Box>
@@ -463,7 +503,7 @@ export const AptosTransaction = ({
                 </Stack>
               </TabPanel>
               <TabPanel p={0}>
-                <AptosTransactionPayload tx={userTx} />
+                <AptosTransactionPayload account={account} tx={userTx} />
               </TabPanel>
               <TabPanel p={0}>
                 <AptosTransactionEvents tx={userTx} />
