@@ -6,6 +6,8 @@ import {
   Types
 } from 'aptos'
 import assert from 'assert'
+import { useMemo } from 'react'
+import { useAsync } from 'react-use'
 
 import { DB } from '~lib/db'
 import { ENV } from '~lib/env'
@@ -14,6 +16,7 @@ import { SERVICE_WORKER_CLIENT, SERVICE_WORKER_SERVER } from '~lib/rpc'
 import {
   IAptosEvent,
   IChainAccount,
+  INetwork,
   IPendingTx,
   ITransaction
 } from '~lib/schema'
@@ -21,10 +24,13 @@ import { NETWORK_SERVICE } from '~lib/services/network'
 import { getAptosClient } from '~lib/services/provider/aptos/client'
 import {
   FakeAptosAccount,
-  isEntryFunctionPayload,
-  isScriptPayload
+  isAptosEntryFunctionPayload,
+  isAptosScriptPayload
 } from '~lib/services/provider/aptos/types'
-import { parseAptosTxInfo } from '~lib/services/transaction/aptosParse'
+import {
+  parseAptosTxCoinEvents,
+  parseAptosTxInfo
+} from '~lib/services/transaction/aptosParse'
 
 import {
   ITransactionService,
@@ -340,7 +346,7 @@ async function fetchTxs(client: AptosClient, account: IChainAccount) {
         const aptosAccount = new FakeAptosAccount(
           HexString.ensure(account.address!) // TODO
         )
-        if (isEntryFunctionPayload(tx.payload)) {
+        if (isAptosEntryFunctionPayload(tx.payload)) {
           const txBuilder = new TransactionBuilderRemoteABI(client, {
             sender: account.address!,
             sequenceNumber: tx.sequence_number,
@@ -361,7 +367,7 @@ async function fetchTxs(client: AptosClient, account: IChainAccount) {
             rawTx
           )
           simulatedTx = simulatedTxs.length ? simulatedTxs[0] : undefined
-        } else if (isScriptPayload(tx.payload)) {
+        } else if (isAptosScriptPayload(tx.payload)) {
           // TODO
         }
 
@@ -598,3 +604,33 @@ function createAptosTransactionService(): ITransactionService {
 }
 
 export const APTOS_TRANSACTION_SERVICE = createAptosTransactionService()
+
+export function useAptosTxInfo(
+  account?: IChainAccount,
+  tx?: Types.Transaction_UserTransaction
+) {
+  return useMemo(() => {
+    if (!account || !tx) {
+      return
+    }
+    return parseAptosTxInfo(account.address!, tx)
+  }, [account, tx])
+}
+
+export function useAptosTxCoinInfos(
+  network?: INetwork,
+  tx?: Types.Transaction_UserTransaction
+) {
+  const { value } = useAsync(async () => {
+    if (!network || !tx) {
+      return
+    }
+    const client = await getAptosClient(network)
+    if (!client) {
+      return
+    }
+    return parseAptosTxCoinEvents(client, tx)
+  }, [network, tx])
+
+  return value
+}
