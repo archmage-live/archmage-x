@@ -4,28 +4,23 @@ import {
   HStack,
   Stack,
   Text,
-  chakra,
   useColorModeValue
 } from '@chakra-ui/react'
 import { Types } from 'aptos'
-import * as React from 'react'
+import React from 'react'
 import ReactJson from 'react-json-view'
 
 import { CopyArea } from '~components/CopyIcon'
-import { IChainAccount } from '~lib/schema'
-import { isAptosEntryFunctionPayload } from '~lib/services/provider/aptos/types'
 import {
-  AptosTxInfo,
-  extractAptosIdentifier
-} from '~lib/services/transaction/aptosParse'
-import { useAptosTxInfo } from '~lib/services/transaction/aptosService'
+  isAptosEntryFunctionPayload,
+  isAptosScriptPayload
+} from '~lib/services/provider/aptos/types'
+import { extractAptosIdentifier } from '~lib/services/transaction/aptosParse'
 import { shortenAddress } from '~lib/utils'
 
 export const AptosTransactionPayload = ({
-  account,
   tx
 }: {
-  account: IChainAccount
   tx: Types.Transaction_UserTransaction
 }) => {
   const payload = tx.payload
@@ -33,38 +28,84 @@ export const AptosTransactionPayload = ({
   const rjvTheme = useColorModeValue('rjv-default', 'brewer')
   const rjvBg = useColorModeValue('gray.50', 'rgb(12, 13, 14)')
 
-  if (isAptosEntryFunctionPayload(payload)) {
-    const [moduleAddr, moduleName, funcName] = extractAptosIdentifier(
-      payload.function
+  if (isAptosEntryFunctionPayload(payload) || isAptosScriptPayload(payload)) {
+    const [moduleAddr, moduleName, funcName] = isAptosEntryFunctionPayload(
+      payload
     )
+      ? extractAptosIdentifier(payload.function)
+      : []
 
     return (
       <Stack spacing={6}>
-        <Stack spacing={2}>
-          <Text>Function</Text>
-          <Stack spacing={1} color="gray.500" fontSize="md">
-            <HStack justify="space-between">
-              <Text>Address:</Text>
-              <Text noOfLines={3} color="blue.500" maxW="calc(100% - 120px)">
-                {moduleAddr}
-              </Text>
-            </HStack>
-            <HStack justify="space-between">
-              <Text>Module Name:</Text>
-              <Text noOfLines={2} color="orange.500" maxW="calc(100% - 120px)">
-                {moduleName}
-              </Text>
-            </HStack>
-            <HStack justify="space-between">
-              <Text>Function Name:</Text>
-              <Text noOfLines={2} color="green.500" maxW="calc(100% - 120px)">
-                {funcName}
-              </Text>
-            </HStack>
-          </Stack>
-        </Stack>
+        {isAptosEntryFunctionPayload(payload) && (
+          <>
+            <Stack spacing={2}>
+              <Text>Function</Text>
+              <Stack spacing={1} color="gray.500" fontSize="md">
+                <HStack justify="space-between">
+                  <Text>Address:</Text>
+                  <Text
+                    noOfLines={3}
+                    color="blue.500"
+                    maxW="calc(100% - 120px)">
+                    {moduleAddr}
+                  </Text>
+                </HStack>
+                <HStack justify="space-between">
+                  <Text>Module Name:</Text>
+                  <Text
+                    noOfLines={2}
+                    color="purple.500"
+                    maxW="calc(100% - 120px)">
+                    {moduleName}
+                  </Text>
+                </HStack>
+                <HStack justify="space-between">
+                  <Text>Function Name:</Text>
+                  <Text
+                    noOfLines={2}
+                    color="orange.500"
+                    maxW="calc(100% - 120px)">
+                    {funcName}
+                  </Text>
+                </HStack>
+              </Stack>
+            </Stack>
 
-        <Divider />
+            <Divider />
+          </>
+        )}
+
+        {isAptosScriptPayload(payload) && (
+          <>
+            <Stack spacing={2}>
+              <Text>Code</Text>
+              <Box
+                maxH="full"
+                w="full"
+                overflow="auto"
+                borderRadius="8px"
+                borderWidth="1px"
+                borderColor="gray.500"
+                px={4}
+                py={2}
+                bg={rjvBg}>
+                <ReactJson
+                  src={payload.code}
+                  name={false}
+                  theme={rjvTheme}
+                  iconStyle="triangle"
+                  collapsed={3}
+                  enableClipboard={false}
+                  displayDataTypes={false}
+                  displayArrayKey={false}
+                />
+              </Box>
+            </Stack>
+
+            <Divider />
+          </>
+        )}
 
         <Stack spacing={2}>
           <Text>Type Arguments</Text>
@@ -120,7 +161,34 @@ export const AptosTransactionPayload = ({
       </Stack>
     )
   } else {
-    return <></>
+    return (
+      <Stack spacing={6}>
+        <Stack spacing={2}>
+          <Text>Modules</Text>
+          <Box
+            maxH="full"
+            w="full"
+            overflow="auto"
+            borderRadius="8px"
+            borderWidth="1px"
+            borderColor="gray.500"
+            px={4}
+            py={2}
+            bg={rjvBg}>
+            <ReactJson
+              src={payload.modules}
+              name={false}
+              theme={rjvTheme}
+              iconStyle="triangle"
+              collapsed={3}
+              enableClipboard={false}
+              displayDataTypes={false}
+              displayArrayKey={false}
+            />
+          </Box>
+        </Stack>
+      </Stack>
+    )
   }
 }
 
@@ -136,8 +204,8 @@ export const AptosTransactionEvents = ({
     <Stack spacing={6}>
       {tx.events.map((event, index) => {
         return (
-          <>
-            <Stack key={index} color="gray.500" fontSize="md">
+          <React.Fragment key={index}>
+            <Stack color="gray.500" fontSize="md">
               <HStack justify="space-between">
                 <Text>Index:</Text>
                 <Text maxW="calc(100% - 120px)">{index}</Text>
@@ -193,7 +261,7 @@ export const AptosTransactionEvents = ({
               </HStack>
             </Stack>
             {index < tx.events.length - 1 && <Divider />}
-          </>
+          </React.Fragment>
         )
       })}
     </Stack>
@@ -213,8 +281,13 @@ export const AptosTransactionChanges = ({
       {tx.changes.map((change, index) => {
         const items = itemsForChange(change)
         return (
-          <>
-            <Stack key={index} color="gray.500" fontSize="md">
+          <React.Fragment key={index}>
+            <Stack color="gray.500" fontSize="md">
+              <HStack justify="space-between">
+                <Text>Index:</Text>
+                <Text maxW="calc(100% - 120px)">{index}</Text>
+              </HStack>
+
               {items.map(({ name, value, isArea, isJson, noOfLines }) => {
                 return (
                   <HStack key={name} justify="space-between">
@@ -258,7 +331,7 @@ export const AptosTransactionChanges = ({
               })}
             </Stack>
             {index < tx.changes.length - 1 && <Divider />}
-          </>
+          </React.Fragment>
         )
       })}
     </Stack>

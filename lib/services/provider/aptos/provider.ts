@@ -115,27 +115,32 @@ export class AptosProvider implements Provider {
 
   async populateTransaction(
     account: IChainAccount,
-    transaction: Types.TransactionPayload
+    transaction: Types.TransactionPayload | TxnBuilderTypes.RawTransaction
   ): Promise<TransactionPayload> {
-    assert(isAptosEntryFunctionPayload(transaction))
+    let rawTransaction
+    if (transaction instanceof TxnBuilderTypes.RawTransaction) {
+      rawTransaction = transaction
+    } else {
+      assert(isAptosEntryFunctionPayload(transaction))
 
-    const sequenceNumber = await getNonce(this, account)
+      const { gas_estimate: gasEstimate } = await this.client.estimateGasPrice()
 
-    const { gas_estimate: gasEstimate } = await this.client.estimateGasPrice()
+      const sequenceNumber = await getNonce(this, account)
 
-    const expireTimestamp =
-      Math.floor(Date.now() / 1000) + DEFAULT_TXN_EXP_SEC_FROM_NOW
+      const expireTimestamp =
+        Math.floor(Date.now() / 1000) + DEFAULT_TXN_EXP_SEC_FROM_NOW
 
-    const rawTransaction = await this.client.generateTransaction(
-      HexString.ensure(account.address!),
-      transaction as Types.TransactionPayload_EntryFunctionPayload,
-      {
-        max_gas_amount: DEFAULT_MAX_GAS_AMOUNT.toString(),
-        gas_unit_price: gasEstimate.toString(),
-        expiration_timestamp_secs: expireTimestamp.toString(),
-        sequence_number: sequenceNumber.toString()
-      } as Types.SubmitTransactionRequest
-    )
+      rawTransaction = await this.client.generateTransaction(
+        HexString.ensure(account.address!),
+        transaction as Types.TransactionPayload_EntryFunctionPayload,
+        {
+          max_gas_amount: DEFAULT_MAX_GAS_AMOUNT.toString(),
+          gas_unit_price: gasEstimate.toString(),
+          expiration_timestamp_secs: expireTimestamp.toString(),
+          sequence_number: sequenceNumber.toString()
+        } as Types.SubmitTransactionRequest
+      )
+    }
 
     const userTxs = await this.simulateTransaction(account, rawTransaction, {
       estimateGasUnitPrice: false,

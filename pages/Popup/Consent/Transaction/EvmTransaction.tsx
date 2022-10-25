@@ -652,7 +652,7 @@ export const EvmTransaction = ({
           {insufficientBalance === true && (
             <AlertBox level="error">
               You do not have enough {networkInfo.currencySymbol} in your
-              account to pay for transaction fees on Ethereum Mainnet network.
+              account to pay for transaction fees on network {networkInfo.name}.
               Buy {networkInfo.currencySymbol} or deposit from another account.
             </AlertBox>
           )}

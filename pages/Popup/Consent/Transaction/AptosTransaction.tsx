@@ -22,7 +22,8 @@ import {
   chakra,
   useColorModeValue
 } from '@chakra-ui/react'
-import { TxnBuilderTypes, Types } from 'aptos'
+import { hexlify } from '@ethersproject/bytes'
+import { BCS, TxnBuilderTypes, Types } from 'aptos'
 import Decimal from 'decimal.js'
 import * as React from 'react'
 import { ReactNode, useCallback, useEffect, useMemo, useState } from 'react'
@@ -35,14 +36,18 @@ import { IChainAccount, INetwork, ISubWallet, IWallet } from '~lib/schema'
 import { CONSENT_SERVICE, ConsentRequest } from '~lib/services/consentService'
 import { useCryptoComparePrice } from '~lib/services/datasource/cryptocompare'
 import { NetworkInfo } from '~lib/services/network'
-import { formatTxPayload, useNonce } from '~lib/services/provider'
+import {
+  TransactionPayload,
+  formatTxPayload,
+  useNonce
+} from '~lib/services/provider'
+import { useAptosTransaction } from '~lib/services/provider/aptos/hooks'
 import { DEFAULT_TXN_EXP_SEC_FROM_NOW } from '~lib/services/provider/aptos/provider'
 import { Balance } from '~lib/services/token'
 import { TransactionType } from '~lib/services/transaction'
 import {
   AptosTxInfo,
-  extractAptosIdentifier,
-  parseAptosTxInfo
+  extractAptosIdentifier
 } from '~lib/services/transaction/aptosParse'
 import {
   useAptosTxCoinInfos,
@@ -87,22 +92,6 @@ export const AptosTransaction = ({
     populatedParams: Types.UserTransaction
   }
 
-  const userTx = useMemo(
-    () => ({
-      ...populatedParams,
-      type: 'user_transaction'
-    }),
-    [populatedParams]
-  )
-
-  const txInfo = useAptosTxInfo(account, userTx) as AptosTxInfo
-  const [moduleAddr, moduleName, funcName] = extractAptosIdentifier(
-    txInfo.function
-  )
-
-  const coinInfos = useAptosTxCoinInfos(network, userTx)
-  const coinChanges = coinInfos?.get(account.address!)
-
   const [ignoreEstimateError, setIgnoreEstimateError] = useState(false)
 
   const [gasPrice, setGasPrice] = useState(
@@ -111,6 +100,10 @@ export const AptosTransaction = ({
       .toDecimalPlaces(networkInfo.decimals)
       .toNumber()
   )
+  const [gasPriceStr, setGasPriceStr] = useState(gasPrice.toString())
+  useEffect(() => {
+    setGasPriceStr(gasPrice.toString())
+  }, [gasPrice])
   const [sequenceNumber, setSequenceNumber] = useState(
     +populatedParams.sequence_number
   )
@@ -124,13 +117,76 @@ export const AptosTransaction = ({
   const [editGasLimit, setEditGasLimit] = useState(false)
   const [editExpirationSecs, setEditExpirationSecs] = useState(false)
 
-  const gasUsed = +populatedParams.gas_used
-  const gasFee = useMemo(() => {
-    return new Decimal(populatedParams.gas_used)
-      .mul(gasPrice)
-      .toDecimalPlaces(networkInfo.decimals)
-      .toString()
-  }, [networkInfo, populatedParams, gasPrice])
+  const [rawTransaction, setRawTransaction] = useState(txParams)
+
+  const { userTransaction } =
+    useAptosTransaction(
+      network,
+      account,
+      rawTransaction,
+      editGasPrice,
+      editGasLimit,
+      expirationSecs
+    ) || {}
+
+  const userTx = useMemo(
+    () => ({
+      ...(userTransaction || populatedParams),
+      type: 'user_transaction'
+    }),
+    [populatedParams, userTransaction]
+  )
+
+  const txInfo = useAptosTxInfo(account, userTx) as AptosTxInfo
+  const [moduleAddr, moduleName, funcName] = extractAptosIdentifier(
+    txInfo.function
+  )
+
+  const coinInfos = useAptosTxCoinInfos(network, userTx)
+  const coinChanges = coinInfos?.get(account.address!)
+
+  useEffect(() => {
+    if (editGasPrice || !userTransaction) {
+      return
+    }
+    setGasPrice(
+      new Decimal(+userTransaction.gas_unit_price)
+        .div(new Decimal(10).pow(networkInfo.decimals))
+        .toDecimalPlaces(networkInfo.decimals)
+        .toNumber()
+    )
+  }, [editGasPrice, userTransaction, networkInfo])
+  useEffect(() => {
+    if (!editGasPrice) {
+      return
+    }
+    setRawTransaction((rawTransaction) => {
+      const gasUnitPrice = new Decimal(gasPrice)
+        .mul(new Decimal(10).pow(networkInfo.decimals))
+        .toDecimalPlaces(0)
+        .toNumber()
+      if (rawTransaction.gas_unit_price === BigInt(gasUnitPrice)) {
+        return rawTransaction
+      }
+      const {
+        sender,
+        sequence_number,
+        payload,
+        max_gas_amount,
+        expiration_timestamp_secs,
+        chain_id
+      } = rawTransaction
+      return new TxnBuilderTypes.RawTransaction(
+        sender,
+        sequence_number,
+        payload,
+        max_gas_amount,
+        BigInt(gasUnitPrice),
+        expiration_timestamp_secs,
+        chain_id
+      )
+    })
+  }, [editGasPrice, gasPrice, networkInfo])
 
   const managedSequenceNumber = useNonce(network, account)
   useEffect(() => {
@@ -139,6 +195,75 @@ export const AptosTransaction = ({
     }
     setSequenceNumber(managedSequenceNumber)
   }, [editSequenceNumber, managedSequenceNumber])
+  useEffect(() => {
+    if (!editSequenceNumber) {
+      return
+    }
+    setRawTransaction((rawTransaction) => {
+      if (rawTransaction.sequence_number === BigInt(sequenceNumber)) {
+        return rawTransaction
+      }
+      const {
+        sender,
+        payload,
+        max_gas_amount,
+        gas_unit_price,
+        expiration_timestamp_secs,
+        chain_id
+      } = rawTransaction
+      return new TxnBuilderTypes.RawTransaction(
+        sender,
+        BigInt(sequenceNumber),
+        payload,
+        max_gas_amount,
+        gas_unit_price,
+        expiration_timestamp_secs,
+        chain_id
+      )
+    })
+  }, [editSequenceNumber, sequenceNumber])
+
+  useEffect(() => {
+    if (editGasLimit || !userTransaction) {
+      return
+    }
+    setGasLimit(+userTransaction.max_gas_amount)
+  }, [editGasLimit, userTransaction])
+  useEffect(() => {
+    if (!editGasLimit) {
+      return
+    }
+    setRawTransaction((rawTransaction) => {
+      if (rawTransaction.max_gas_amount === BigInt(gasLimit)) {
+        return rawTransaction
+      }
+      const {
+        sender,
+        sequence_number,
+        payload,
+        gas_unit_price,
+        expiration_timestamp_secs,
+        chain_id
+      } = rawTransaction
+      return new TxnBuilderTypes.RawTransaction(
+        sender,
+        sequence_number,
+        payload,
+        BigInt(gasLimit),
+        gas_unit_price,
+        expiration_timestamp_secs,
+        chain_id
+      )
+    })
+  }, [editGasLimit, gasLimit])
+
+  const gasUsed = +userTx.gas_used
+  const gasFee = useMemo(() => {
+    return new Decimal(userTx.gas_used)
+      .mul(gasPrice)
+      .toDecimalPlaces(networkInfo.decimals)
+      .toString()
+  }, [networkInfo, userTx, gasPrice])
 
   const bg = useColorModeValue('purple.50', 'gray.800')
   const bannerBg = useColorModeValue('white', 'black')
@@ -161,9 +286,55 @@ export const AptosTransaction = ({
     [txInfo, networkInfo]
   )
 
-  const insufficientBalance = !balance
+  const onConfirm = useCallback(async () => {
+    setSpinning(true)
 
-  const onConfirm = useCallback(async () => {}, [])
+    let { sender, payload, chain_id } = rawTransaction
+
+    const gasUnitPrice = new Decimal(gasPrice)
+      .mul(new Decimal(10).pow(networkInfo.decimals))
+      .toDecimalPlaces(0)
+      .toNumber()
+
+    const expireTimestamp = Math.floor(Date.now() / 1000) + expirationSecs
+
+    const rawTx = new TxnBuilderTypes.RawTransaction(
+      sender,
+      BigInt(sequenceNumber),
+      payload,
+      BigInt(gasLimit),
+      BigInt(gasUnitPrice),
+      BigInt(expireTimestamp),
+      chain_id
+    )
+
+    const serializer = new BCS.Serializer()
+    rawTx.serialize(serializer)
+
+    await CONSENT_SERVICE.processRequest(
+      {
+        ...request,
+        payload: {
+          txParams: hexlify(serializer.getBytes()),
+          populatedParams: userTransaction
+        } as TransactionPayload
+      },
+      true
+    )
+
+    onComplete()
+    setSpinning(false)
+  }, [
+    request,
+    onComplete,
+    networkInfo,
+    rawTransaction,
+    userTransaction,
+    gasPrice,
+    sequenceNumber,
+    gasLimit,
+    expirationSecs
+  ])
 
   return (
     <>
@@ -181,7 +352,7 @@ export const AptosTransaction = ({
         <Box px={6}>
           <FromToWithCheck
             subWallet={subWallet}
-            from={populatedParams.sender}
+            from={userTx.sender}
             to={txInfo.to}
           />
         </Box>
@@ -215,8 +386,8 @@ export const AptosTransaction = ({
                       {shortenAddress(moduleAddr)}
                     </chakra.span>
                     <chakra.span color="gray.500">&nbsp;::&nbsp;</chakra.span>
-                    <chakra.span color="orange.500">{moduleName}</chakra.span>
-                    <chakra.span color="gray.500">
+                    <chakra.span color="purple.500">{moduleName}</chakra.span>
+                    <chakra.span color="orange.500">
                       &nbsp;::&nbsp;{funcName}
                     </chakra.span>
                   </Text>
@@ -313,13 +484,18 @@ export const AptosTransaction = ({
           <Tabs index={tabIndex}>
             <TabPanels>
               <TabPanel p={0}>
-                <Stack spacing={16}>
-                  <Stack spacing={8}>
+                <Stack spacing={8}>
+                  {userTransaction?.success === false && (
                     <AlertBox level="error" nowrap>
                       <Text>
-                        We were not able to estimate gas. There might be an
-                        error in the contract and this transaction may fail.
+                        We were not able to simulate transaction. There might be
+                        an error in the module and this transaction may fail.
                       </Text>
+                      {userTransaction.vm_status && (
+                        <Text color="yellow.500">
+                          Reason: {userTransaction.vm_status}
+                        </Text>
+                      )}
                       {!ignoreEstimateError && (
                         <Text
                           color="purple.500"
@@ -332,7 +508,7 @@ export const AptosTransaction = ({
                         </Text>
                       )}
                     </AlertBox>
-                  </Stack>
+                  )}
 
                   <Stack spacing={6}>
                     <HStack justify="space-between">
@@ -375,8 +551,17 @@ export const AptosTransaction = ({
                             keepWithinRange
                             allowMouseWheel
                             precision={networkInfo.decimals}
-                            value={gasPrice}
-                            onChange={(_, val) => setGasPrice(val)}>
+                            value={gasPriceStr}
+                            onChange={(str) => {
+                              setGasPriceStr(str)
+                            }}
+                            onBlur={() => {
+                              if (Number.isNaN(+gasPriceStr)) {
+                                setGasPriceStr(gasPrice.toString())
+                              } else {
+                                setGasPrice(+gasPriceStr)
+                              }
+                            }}>
                             <NumberInputField />
                             <NumberInputStepper>
                               <NumberIncrementStepper />
@@ -503,7 +688,7 @@ export const AptosTransaction = ({
                 </Stack>
               </TabPanel>
               <TabPanel p={0}>
-                <AptosTransactionPayload account={account} tx={userTx} />
+                <AptosTransactionPayload tx={userTx} />
               </TabPanel>
               <TabPanel p={0}>
                 <AptosTransactionEvents tx={userTx} />
@@ -515,14 +700,6 @@ export const AptosTransaction = ({
           </Tabs>
 
           <Divider />
-
-          {insufficientBalance === true && (
-            <AlertBox level="error">
-              You do not have enough {networkInfo.currencySymbol} in your
-              account to pay for transaction fees on Ethereum Mainnet network.
-              Buy {networkInfo.currencySymbol} or deposit from another account.
-            </AlertBox>
-          )}
 
           <HStack justify="center" spacing={12}>
             <Button
@@ -542,7 +719,7 @@ export const AptosTransaction = ({
               size="lg"
               w={36}
               colorScheme="purple"
-              isDisabled={!ignoreEstimateError || insufficientBalance !== false}
+              isDisabled={!userTransaction?.success && !ignoreEstimateError}
               onClick={onConfirm}>
               Confirm
             </Button>
