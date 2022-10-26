@@ -8,7 +8,10 @@ import { usePassword } from '~lib/password'
 
 import { StepAddWalletDone } from './StepAddWalletDone'
 import { StepAddWalletSelect } from './StepAddWalletSelect'
-import { StepConnectHardwareWallet } from './StepConnectHardwareWallet'
+import {
+  StepConnectHardwareWallet,
+  StepConnectHardwareWalletAccounts
+} from './StepConnectHardwareWallet'
 import { StepCreatePassword } from './StepCreatePassword'
 import { StepGenerateMnemonic } from './StepGenerateMnemonic'
 import { StepImportWallet } from './StepImportWallet'
@@ -50,6 +53,10 @@ export default function AddWallet() {
           )}
 
           {addWalletKind === AddWalletKind.NEW_HD && <StepRememberMnemonic />}
+
+          {addWalletKind === AddWalletKind.CONNECT_HARDWARE && (
+            <StepConnectHardwareWalletAccounts />
+          )}
 
           <StepAddWalletDone />
         </ActionWizard>

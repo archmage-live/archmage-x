@@ -7,9 +7,9 @@ import { ethers } from 'ethers'
 import { KEYSTORE } from '~lib/keystore'
 import { DerivePosition } from '~lib/schema'
 
-import { SigningWallet, WalletOpts, WalletType, generatePath } from '.'
+import { KeystoreSigningWallet, WalletOpts, WalletType, generatePath } from '.'
 
-export class EvmWallet implements SigningWallet {
+export class EvmWallet implements KeystoreSigningWallet {
   static defaultPath = "m/44'/60'/0'/0/0"
 
   private constructor(private wallet: ethers.utils.HDNode | ethers.Wallet) {}

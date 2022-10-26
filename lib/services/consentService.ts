@@ -11,18 +11,14 @@ import { CONNECTED_SITE_SERVICE } from '~lib/services/connectedSiteService'
 import { NETWORK_SERVICE } from '~lib/services/network'
 import { PASSWORD_SERVICE } from '~lib/services/passwordService'
 import { getProvider } from '~lib/services/provider/provider'
-import {
-  Provider,
-  TransactionPayload,
-  formatTxPayload
-} from '~lib/services/provider/provider'
+import { Provider, formatTxPayload } from '~lib/services/provider/provider'
 import { TOKEN_SERVICE } from '~lib/services/token'
 import { APTOS_TRANSACTION_SERVICE } from '~lib/services/transaction/aptosService'
 import { EVM_TRANSACTION_SERVICE } from '~lib/services/transaction/evmService'
 import { WALLET_SERVICE } from '~lib/services/walletService'
 import { SESSION_STORE, StoreKey, useSessionStorage } from '~lib/store'
 import { createWindow } from '~lib/util'
-import { hasWalletKeystore } from '~lib/wallet'
+import { canWalletSign } from '~lib/wallet'
 
 export enum Permission {
   ACCOUNT = 'account'
@@ -180,7 +176,7 @@ class ConsentService implements IConsentService {
         assert(account)
         const wallet = await WALLET_SERVICE.getWallet(account.masterId)
         assert(wallet)
-        if (!hasWalletKeystore(wallet.type)) {
+        if (!canWalletSign(wallet.type)) {
           throw ethErrors.provider.userRejectedRequest()
         }
         break

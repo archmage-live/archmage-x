@@ -66,7 +66,7 @@ export const ExportPrivateKey = ({
   const [privateKey, setPrivateKey] = useState('')
   useAsync(async () => {
     const signingWallet = await getSigningWallet(account)
-    if (!signingWallet) {
+    if (!signingWallet?.privateKey) {
       return
     }
     setPrivateKey(signingWallet.privateKey)

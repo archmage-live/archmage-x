@@ -2,8 +2,13 @@ import { atom, useAtom } from 'jotai'
 import { useCallback } from 'react'
 
 import { NetworkKind } from '~lib/network'
+import { DerivePosition } from '~lib/schema'
 import { NewWalletOpts, WALLET_SERVICE } from '~lib/services/walletService'
-import { WalletType } from '~lib/wallet'
+import {
+  HardwareWalletAccount,
+  HardwareWalletType,
+  WalletType
+} from '~lib/wallet'
 
 export enum AddWalletKind {
   NEW_HD,
@@ -12,7 +17,8 @@ export enum AddWalletKind {
   IMPORT_PRIVATE_KEY,
   IMPORT_WATCH_ADDRESS,
   IMPORT_WATCH_ADDRESS_GROUP,
-  CONNECT_HARDWARE
+  CONNECT_HARDWARE,
+  CONNECT_HARDWARE_GROUP
 }
 
 const addWalletKindAtom = atom<AddWalletKind>(AddWalletKind.NEW_HD)
@@ -20,9 +26,12 @@ const nameAtom = atom('')
 const mnemonicAtom = atom<string[]>([])
 const mnemonicNotBackedUpAtom = atom<boolean>(false)
 const hdPathAtom = atom('')
+const derivePositionAtom = atom<DerivePosition | undefined>(undefined)
 const privateKeyAtom = atom('')
 const networkKindAtom = atom<NetworkKind>(NetworkKind.EVM)
+const hwTypeAtom = atom<HardwareWalletType | undefined>(undefined)
 const addressesAtom = atom<string[]>([])
+const hwAccountsAtom = atom<HardwareWalletAccount[]>([])
 const createdAtom = atom(false)
 
 export function useAddWalletKind() {
@@ -45,6 +54,10 @@ export function useHdPath() {
   return useAtom(hdPathAtom)
 }
 
+export function useDerivePosition() {
+  return useAtom(derivePositionAtom)
+}
+
 export function usePrivateKey() {
   return useAtom(privateKeyAtom)
 }
@@ -53,8 +66,16 @@ export function useNetworkKind() {
   return useAtom(networkKindAtom)
 }
 
+export function useHwType() {
+  return useAtom(hwTypeAtom)
+}
+
 export function useAddresses() {
   return useAtom(addressesAtom)
+}
+
+export function useHwAccounts() {
+  return useAtom(hwAccountsAtom)
 }
 
 export function useCreated() {
@@ -65,19 +86,25 @@ export function useClear() {
   const [, setMnemonic] = useMnemonic()
   const [, setMnemonicNotBackedUp] = useMnemonicNotBackedUp()
   const [, setHdPath] = useHdPath()
+  const [, setDerivePosition] = useDerivePosition()
   const [, setPrivateKey] = usePrivateKey()
   const [, setName] = useName()
   const [, setNetworkKind] = useNetworkKind()
+  const [, setHwType] = useHwType()
   const [, setAddresses] = useAddresses()
+  const [, setHwAccounts] = useHwAccounts()
   const [, setCreated] = useCreated()
   return useCallback(() => {
     setMnemonic([])
     setMnemonicNotBackedUp(false)
     setHdPath('')
+    setDerivePosition(undefined)
     setPrivateKey('')
     setName('')
     setNetworkKind(NetworkKind.EVM)
+    setHwType(undefined)
     setAddresses([])
+    setHwAccounts([])
     setCreated(false)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -88,10 +115,13 @@ export function useAddWallet() {
   const [mnemonic] = useMnemonic()
   const [notBackedUp] = useMnemonicNotBackedUp()
   const [hdPath] = useHdPath()
+  const [derivePosition] = useDerivePosition()
   const [privateKey] = usePrivateKey()
   const [name] = useName()
   const [networkKind] = useNetworkKind()
+  const [hwType] = useHwType()
   const [addresses] = useAddresses()
+  const [hwAccounts] = useHwAccounts()
   const [, setCreated] = useCreated()
 
   return useCallback(async (): Promise<{ error?: string }> => {
@@ -126,6 +156,20 @@ export function useAddWallet() {
         opts.networkKind = networkKind
         opts.addresses = addresses
         break
+      case AddWalletKind.CONNECT_HARDWARE:
+        opts.type = WalletType.HW
+        opts.networkKind = networkKind
+        opts.hwType = hwType
+        opts.hwAccounts = hwAccounts
+        break
+      case AddWalletKind.CONNECT_HARDWARE_GROUP:
+        opts.type = WalletType.HW_GROUP
+        opts.networkKind = networkKind
+        opts.path = hdPath
+        opts.derivePosition = derivePosition
+        opts.hwType = hwType
+        opts.hwAccounts = hwAccounts
+        break
       default:
         throw new Error('unknown wallet type')
     }
@@ -153,6 +197,8 @@ export function useAddWallet() {
     addWalletKind,
     addresses,
     hdPath,
+    hwAccounts,
+    hwType,
     mnemonic,
     name,
     networkKind,

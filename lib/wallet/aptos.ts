@@ -8,9 +8,9 @@ import { HDNode, HardenedBit } from '~lib/crypto/ed25519'
 import { KEYSTORE } from '~lib/keystore'
 import { DerivePosition } from '~lib/schema'
 
-import { SigningWallet, WalletOpts, WalletType, generatePath } from '.'
+import { KeystoreSigningWallet, WalletOpts, WalletType, generatePath } from '.'
 
-export class AptosWallet implements SigningWallet {
+export class AptosWallet implements KeystoreSigningWallet {
   static defaultPath = "m/44'/637'/0'/0'/0'"
 
   private constructor(private wallet: HDNode | AptosAccount) {}

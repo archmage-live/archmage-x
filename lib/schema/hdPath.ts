@@ -1,5 +1,6 @@
 import { NetworkKind } from '~lib/network'
 
+// Only for HD wallets
 export interface IHdPath {
   id: number
   masterId: number // master wallet id

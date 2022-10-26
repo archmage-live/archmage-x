@@ -6,14 +6,18 @@ import { IChainAccount } from '~lib/schema'
 import { IWallet } from '~lib/schema/wallet'
 import { NETWORK_SERVICE } from '~lib/services/network'
 import { WALLET_SERVICE } from '~lib/services/walletService'
+import { EvmHwWallet } from '~lib/wallet/evmHw'
 
 import { AptosWallet } from './aptos'
 import {
+  KeystoreSigningWallet,
   SigningWallet,
   WalletOpts,
   WalletType,
+  canWalletSign,
   getDerivePosition,
-  hasWalletKeystore
+  hasWalletKeystore,
+  isWalletHardware
 } from './base'
 import { CosmWallet } from './cosm'
 import { EvmWallet } from './evm'
@@ -80,14 +84,14 @@ export async function getMasterSigningWallet(
   wallet: IWallet,
   networkKind: NetworkKind,
   chainId: number | string
-): Promise<SigningWallet | undefined> {
+): Promise<KeystoreSigningWallet | undefined> {
   if (!hasWalletKeystore(wallet.type)) {
     return undefined
   }
   const opts: WalletOpts = {
     id: wallet.id,
     type: wallet.type,
-    path: wallet.path
+    path: wallet.info.path
   }
   switch (networkKind) {
     case NetworkKind.EVM:
@@ -108,33 +112,58 @@ export async function getMasterSigningWallet(
   }
 }
 
+export async function getHardwareSigningWallet(
+  wallet: IWallet,
+  account: IChainAccount
+): Promise<SigningWallet | undefined> {
+  if (hasWalletKeystore(wallet.type) || !canWalletSign(wallet.type)) {
+    return undefined
+  }
+  switch (account.networkKind) {
+    case NetworkKind.EVM:
+      return new EvmHwWallet(
+        account.address!,
+        wallet.info.path!,
+        account.index,
+        wallet.info.derivePosition
+      )
+  }
+}
+
 export async function getSigningWallet(
   account: IChainAccount
 ): Promise<SigningWallet | undefined> {
   const master = await WALLET_SERVICE.getWallet(account.masterId)
   assert(master)
-  let signingWallet = await getMasterSigningWallet(
-    master,
-    account.networkKind,
-    account.chainId
-  )
-  if (!signingWallet) {
-    return undefined
-  }
-  if (master.type === WalletType.HD) {
-    const hdPath = await WALLET_SERVICE.getHdPath(
-      account.masterId,
-      account.networkKind
+
+  if (hasWalletKeystore(master.type)) {
+    let signingWallet = await getMasterSigningWallet(
+      master,
+      account.networkKind,
+      account.chainId
     )
-    if (!hdPath) {
+    if (!signingWallet) {
       return undefined
     }
-    signingWallet = await signingWallet.derive(
-      hdPath.path,
-      account.index,
-      getDerivePosition(hdPath, account.networkKind)
-    )
+
+    if (master.type === WalletType.HD) {
+      const hdPath = await WALLET_SERVICE.getHdPath(
+        account.masterId,
+        account.networkKind
+      )
+      if (!hdPath) {
+        return undefined
+      }
+      signingWallet = await signingWallet.derive(
+        hdPath.path,
+        account.index,
+        getDerivePosition(hdPath, account.networkKind)
+      )
+    }
+
+    assert(signingWallet.address === account.address)
+    return signingWallet
+  } else if (isWalletHardware(master.type)) {
+    return getHardwareSigningWallet(master, account)
   }
-  assert(signingWallet.address === account.address)
-  return signingWallet
 }
