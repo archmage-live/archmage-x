@@ -42,6 +42,21 @@ export function hasWalletKeystore(type: WalletType) {
   }
 }
 
+export function isWalletHardware(type: WalletType) {
+  switch (type) {
+    case WalletType.HW:
+    // pass through
+    case WalletType.HW_GROUP:
+      return true
+    default:
+      return false
+  }
+}
+
+export function canWalletSign(type: WalletType) {
+  return isWalletHardware(type) || hasWalletKeystore(type)
+}
+
 export function getWalletTypeIdentifier(type: WalletType) {
   switch (type) {
     case WalletType.HD:
@@ -53,9 +68,9 @@ export function getWalletTypeIdentifier(type: WalletType) {
     case WalletType.WATCH_GROUP:
       return 'Watch Group'
     case WalletType.HW:
-      return 'HW'
+      return 'Hardware'
     case WalletType.HW_GROUP:
-      return 'HG'
+      return 'Hardware Group'
   }
 }
 
@@ -76,6 +91,16 @@ export function getWalletTypeTitle(type: WalletType) {
   }
 }
 
+export enum HardwareWalletType {
+  LEDGER = 'Ledger'
+}
+
+export interface HardwareWalletAccount {
+  address: string
+  index: number
+  publicKey?: string
+}
+
 export interface WalletOpts {
   id: number // wallet id in db
   type: WalletType
@@ -85,6 +110,17 @@ export interface WalletOpts {
 
 export interface SigningWallet {
   address: string
+  privateKey?: string
+  publicKey?: string
+
+  signTransaction(transaction: any): Promise<any>
+
+  signMessage(message: any): Promise<string>
+
+  signTypedData(typedData: any): Promise<string>
+}
+
+export interface KeystoreSigningWallet extends SigningWallet {
   privateKey: string
   publicKey: string
 
@@ -92,13 +128,7 @@ export interface SigningWallet {
     pathTemplate: string,
     index: number,
     derivePosition?: DerivePosition
-  ): Promise<SigningWallet>
-
-  signTransaction(transaction: any): Promise<any>
-
-  signMessage(message: any): Promise<string>
-
-  signTypedData(typedData: any): Promise<string>
+  ): Promise<KeystoreSigningWallet>
 }
 
 export function getDefaultDerivePosition(

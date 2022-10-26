@@ -49,6 +49,12 @@
     "@ethersproject/wordlists": "^5.6.1",
     "@keplr-wallet/cosmos": "^0.10.15",
     "@keplr-wallet/types": "^0.10.15",
+    "@ledgerhq/devices": "^7.0.3",
+    "@ledgerhq/hw-app-cosmos": "^6.27.6",
+    "@ledgerhq/hw-app-eth": "^6.29.10",
+    "@ledgerhq/hw-transport-web-ble": "^6.27.6",
+    "@ledgerhq/hw-transport-webhid": "^6.27.6",
+    "@ledgerhq/logs": "^6.10.1",
     "@mysten/sui.js": "^0.6.0",
     "@openzeppelin/contracts": "^4.7.3",
     "@plasmohq/storage": "^0.8.1",
@@ -163,6 +169,7 @@
     "eslint": ">=7.23.0 <8.0.0 || >=8.0.0-0 <8.0.0 || >=8.0.0 <9.0.0"
   },
   "resolutions": {
+    "axios": "0.27.2",
     "@parcel/source-map": "2.1.0",
     "libsodium": "file:./resolutions/noop",
     "libsodium-wrappers": "file:./resolutions/noop",

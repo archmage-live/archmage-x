@@ -11,13 +11,13 @@ import { ethers } from 'ethers'
 import { KEYSTORE } from '~lib/keystore'
 import { DerivePosition } from '~lib/schema'
 
-import { SigningWallet, WalletOpts, WalletType, generatePath } from '.'
+import { KeystoreSigningWallet, WalletOpts, WalletType, generatePath } from '.'
 
 interface AccountDataWithPrivkey extends AccountData {
   readonly privkey: Uint8Array
 }
 
-export class CosmWallet implements SigningWallet {
+export class CosmWallet implements KeystoreSigningWallet {
   static defaultPath = "m/44'/118'/0'/0/0"
 
   wallet!: DirectSecp256k1HdWallet | DirectSecp256k1Wallet

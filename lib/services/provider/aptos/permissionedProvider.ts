@@ -196,7 +196,7 @@ export class AptosPermissionedProvider extends BasePermissionedProvider {
     const signingWallet = await getSigningWallet(this.account)
     return {
       address: this.account.address!,
-      publicKey: signingWallet ? [signingWallet.publicKey] : []
+      publicKey: signingWallet?.publicKey ? [signingWallet.publicKey] : []
     } as PublicAccount
   }
 

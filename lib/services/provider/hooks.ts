@@ -71,26 +71,26 @@ export function useIsContract(network?: INetwork, address?: string) {
 
 export function useBalance(
   network?: INetwork,
-  account?: IChainAccount
+  account?: IChainAccount | string
 ): Balance | undefined {
+  const address = typeof account === 'object' ? account.address : account
+
   const { data } = useQuery(
-    [QueryService.PROVIDER, network?.id, account?.address, 'getBalance'],
+    [QueryService.PROVIDER, network?.id, address, 'getBalance'],
     async () =>
-      network &&
-      account?.address &&
-      (await getProvider(network)).getBalance(account.address)
+      network && address && (await getProvider(network)).getBalance(address)
   )
 
   const balance = useCache3(
     CacheCategory.PROVIDER,
     network?.id,
     'balance',
-    account?.address,
+    address,
     data
   )
 
   return useMemo(() => {
-    if (!network || !account) return undefined
+    if (!network) return undefined
 
     const info = getNetworkInfo(network)
     return {
@@ -103,7 +103,7 @@ export function useBalance(
         : '0',
       amountParticle: balance || '0'
     } as Balance
-  }, [balance, network, account])
+  }, [balance, network])
 }
 
 export function useBalances(

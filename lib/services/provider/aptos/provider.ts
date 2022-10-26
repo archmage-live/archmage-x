@@ -49,7 +49,7 @@ export class AptosProvider implements Provider {
     }
   ): Promise<Types.UserTransaction[]> {
     const signingWallet = await getSigningWallet(account)
-    if (!signingWallet) {
+    if (!signingWallet?.publicKey) {
       throw ethErrors.provider.unauthorized()
     }
     const aptosAccount = new FakeAptosAccount(

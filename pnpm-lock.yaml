@@ -1,6 +1,7 @@
 lockfileVersion: 5.4
 
 overrides:
+  axios: 0.27.2
   '@parcel/source-map': 2.1.0
   libsodium: file:./resolutions/noop
   libsodium-wrappers: file:./resolutions/noop
@@ -46,6 +47,12 @@ specifiers:
   '@ethersproject/wordlists': ^5.6.1
   '@keplr-wallet/cosmos': ^0.10.15
   '@keplr-wallet/types': ^0.10.15
+  '@ledgerhq/devices': ^7.0.3
+  '@ledgerhq/hw-app-cosmos': ^6.27.6
+  '@ledgerhq/hw-app-eth': ^6.29.10
+  '@ledgerhq/hw-transport-web-ble': ^6.27.6
+  '@ledgerhq/hw-transport-webhid': ^6.27.6
+  '@ledgerhq/logs': ^6.10.1
   '@lingui/cli': ^3.14.0
   '@lingui/core': ^3.13.0
   '@lingui/macro': ^3.14.0
@@ -80,7 +87,7 @@ specifiers:
   aptos: ^1.3.15
   assert: ^2.0.0
   avvvatars-react: ^0.4.2
-  axios: ^1.1.2
+  axios: 0.27.2
   babel-plugin-macros: ^3.1.0
   bs58: ^5.0.0
   buffer: ^6.0.3
@@ -164,6 +171,12 @@ dependencies:
   '@ethersproject/wordlists': 5.6.1
   '@keplr-wallet/cosmos': 0.10.15
   '@keplr-wallet/types': 0.10.15
+  '@ledgerhq/devices': 7.0.3
+  '@ledgerhq/hw-app-cosmos': 6.27.6
+  '@ledgerhq/hw-app-eth': 6.29.10
+  '@ledgerhq/hw-transport-web-ble': 6.27.6
+  '@ledgerhq/hw-transport-webhid': 6.27.6
+  '@ledgerhq/logs': 6.10.1
   '@mysten/sui.js': 0.6.0
   '@openzeppelin/contracts': 4.7.3
   '@plasmohq/storage': 0.8.1_react@18.2.0
@@ -173,16 +186,16 @@ dependencies:
   '@tanstack/react-query-persist-client': 4.0.10
   '@tanstack/react-virtual': 3.0.0-beta.18_react@18.2.0
   '@uniswap/token-lists': 1.0.0-beta.30
-  '@vespaiach/axios-fetch-adapter': 0.3.1_axios@1.1.2
+  '@vespaiach/axios-fetch-adapter': 0.3.1_axios@0.27.2
   '@zxcvbn-ts/core': 2.0.3
   '@zxcvbn-ts/language-common': 2.0.1
   '@zxcvbn-ts/language-en': 2.0.1
   ajv: 8.11.0
-  ajv-formats: 2.1.1_ajv@8.11.0
+  ajv-formats: 2.1.1
   aptos: 1.3.15
   assert: 2.0.0
   avvvatars-react: 0.4.2_owo25xnefcwdq3zjgtohz6dbju
-  axios: 1.1.2
+  axios: 0.27.2
   bs58: 5.0.0
   buffer: 6.0.3
   crypto-browserify: 3.12.0
@@ -227,7 +240,7 @@ dependencies:
 devDependencies:
   '@babel/core': 7.18.6
   '@chakra-ui/system': 2.1.3_fdnqutfacy7v3gmlcm66flps3q
-  '@lingui/cli': 3.14.0_43o5khemdyr5crtk7hq2x6wzza
+  '@lingui/cli': 3.14.0_u4pnq6aitzjyryj6xisyu635ni
   '@lingui/core': 3.14.0
   '@lingui/macro': 3.14.0_bz7tcuoqry2du7tl4zkex425e4
   '@lingui/react': 3.14.0_react@18.2.0
@@ -1516,7 +1529,7 @@ packages:
       '@cosmjs/encoding': 0.24.1
       '@cosmjs/math': 0.24.1
       '@cosmjs/utils': 0.24.1
-      axios: 0.21.4
+      axios: 0.27.2
       fast-deep-equal: 3.1.3
     transitivePeerDependencies:
       - debug
@@ -2505,7 +2518,7 @@ packages:
       '@keplr-wallet/proto-types': 0.10.15
       '@keplr-wallet/types': 0.10.15
       '@keplr-wallet/unit': 0.10.15
-      axios: 0.21.4
+      axios: 0.27.2
       bech32: 1.1.4
       buffer: 6.0.3
       long: 4.0.0
@@ -2538,7 +2551,7 @@ packages:
     dependencies:
       '@cosmjs/launchpad': 0.24.1
       '@cosmjs/proto-signing': 0.24.1
-      axios: 0.21.4
+      axios: 0.27.2
       long: 4.0.0
       secretjs: 0.17.5
     transitivePeerDependencies:
@@ -2553,6 +2566,87 @@ packages:
       utility-types: 3.10.0
     transitivePeerDependencies:
       - debug
+    dev: false
+
+  /@ledgerhq/cryptoassets/6.36.0:
+    resolution: {integrity: sha512-oQwP4ToVz6FT6cN2WcTgyEDYZ/keDVNlW1s2AD+cgi2Xbb74kd/732iY6dE5NG5ZWxiSv2tpAgfce0kzStOb/Q==}
+    dependencies:
+      invariant: 2.2.4
+    dev: false
+
+  /@ledgerhq/devices/7.0.3:
+    resolution: {integrity: sha512-URlcgq6yKklWxj35nIu/eTF0UpGLGUOp69xp8uHeyoMK2wqVC0GNGeD2MvKyJ+ul83edqMEI98GycA98Y7trsg==}
+    dependencies:
+      '@ledgerhq/errors': 6.11.1
+      '@ledgerhq/logs': 6.10.1
+      rxjs: 6.6.7
+      semver: 7.3.8
+    dev: false
+
+  /@ledgerhq/errors/6.11.1:
+    resolution: {integrity: sha512-HT1PFvNrejcN5z3ba6xikacIdHWMkjBeE9U5FFoGHhaKBKGjC74mnCeEo0/oJunyuVId+9mhGnv6lrBl6Mkqdg==}
+    dev: false
+
+  /@ledgerhq/hw-app-cosmos/6.27.6:
+    resolution: {integrity: sha512-cWfFz9W+Gn/MDPmqcc6h7abZhcgu0P+6a8fNQOwYycwUG0HhNNuLHg2j27X3gaZbwXQUYNNBLbTFS++DiSyMAQ==}
+    dependencies:
+      '@ledgerhq/errors': 6.11.1
+      '@ledgerhq/hw-transport': 6.27.6
+      bip32-path: 0.4.2
+    dev: false
+
+  /@ledgerhq/hw-app-eth/6.29.10:
+    resolution: {integrity: sha512-MYamd2mqQTkPaFO0GWPXyTAjlCrocLAvyK4Tio+IRMUG9LeSBTRRF9y20U5z7oS/R7HYe66FmdwcalI2b5mzQA==}
+    dependencies:
+      '@ethersproject/abi': 5.7.0
+      '@ethersproject/rlp': 5.7.0
+      '@ledgerhq/cryptoassets': 6.36.0
+      '@ledgerhq/errors': 6.11.1
+      '@ledgerhq/hw-transport': 6.27.6
+      '@ledgerhq/hw-transport-mocker': 6.27.6
+      '@ledgerhq/logs': 6.10.1
+      axios: 0.27.2
+      bignumber.js: 9.1.0
+    transitivePeerDependencies:
+      - debug
+    dev: false
+
+  /@ledgerhq/hw-transport-mocker/6.27.6:
+    resolution: {integrity: sha512-qSG+be63tXqGvheUSoRYPL2STESqgXujxhiFNTaww/A3GcFPspCPx5tkXLcWPp99dzoNZ6s9SsXlAXleNUZx1g==}
+    dependencies:
+      '@ledgerhq/hw-transport': 6.27.6
+      '@ledgerhq/logs': 6.10.1
+    dev: false
+
+  /@ledgerhq/hw-transport-web-ble/6.27.6:
+    resolution: {integrity: sha512-3xiANojX2MligN+H47UsfPYeAwEibY/cLnKonvW/AbFZTtIMVikMImsc2jMik28CrFFlNcMqlS7r2XzzLLMg4A==}
+    dependencies:
+      '@ledgerhq/devices': 7.0.3
+      '@ledgerhq/errors': 6.11.1
+      '@ledgerhq/hw-transport': 6.27.6
+      '@ledgerhq/logs': 6.10.1
+      rxjs: 6.6.7
+    dev: false
+
+  /@ledgerhq/hw-transport-webhid/6.27.6:
+    resolution: {integrity: sha512-CYkxc9xM283RXqOOmnAV1FdsUUh0veWBEp37Ebe0z/drpTT+gqgaVwEBtWsZoEHtD1cQJDKAcjYbmEBatb13NQ==}
+    dependencies:
+      '@ledgerhq/devices': 7.0.3
+      '@ledgerhq/errors': 6.11.1
+      '@ledgerhq/hw-transport': 6.27.6
+      '@ledgerhq/logs': 6.10.1
+    dev: false
+
+  /@ledgerhq/hw-transport/6.27.6:
+    resolution: {integrity: sha512-DRGUsB8WfbeEPuU42nAtwYpA5D6Bq3q1CvC2VjDinkukLcf6XMc22YUJl9mxt+h+/cLTU1Ff/pz+fqYqeELLEA==}
+    dependencies:
+      '@ledgerhq/devices': 7.0.3
+      '@ledgerhq/errors': 6.11.1
+      events: 3.3.0
+    dev: false
+
+  /@ledgerhq/logs/6.10.1:
+    resolution: {integrity: sha512-z+ILK8Q3y+nfUl43ctCPuR4Y2bIxk/ooCQFwZxhtci1EhAtMDzMAx2W25qx8G1PPL9UUOdnUax19+F0OjXoj4w==}
     dev: false
 
   /@lezer/common/0.15.12:
@@ -2577,13 +2671,12 @@ packages:
       - typescript
     dev: true
 
-  /@lingui/cli/3.14.0_43o5khemdyr5crtk7hq2x6wzza:
+  /@lingui/cli/3.14.0_u4pnq6aitzjyryj6xisyu635ni:
     resolution: {integrity: sha512-QZURsIf7A97tf28b/ffpeL0DekA6tBmcwnj4FBui1SbQqJw1d4IPg2bUM5VRn3/25vhqpi9Uhx5m9x7Vv8QfCQ==}
     engines: {node: '>=10.0.0'}
     hasBin: true
     peerDependencies:
       '@babel/core': ^7.0.0
-      babel-plugin-macros: "2 ||\_3"
       typescript: 2 || 3 || 4
     dependencies:
       '@babel/core': 7.18.6
@@ -4586,7 +4679,7 @@ packages:
       debug: 4.3.4
       globby: 11.1.0
       is-glob: 4.0.3
-      semver: 7.3.7
+      semver: 7.3.8
       tsutils: 3.21.0_typescript@4.7.4
       typescript: 4.7.4
     transitivePeerDependencies:
@@ -4606,12 +4699,12 @@ packages:
     engines: {node: '>=10'}
     dev: false
 
-  /@vespaiach/axios-fetch-adapter/0.3.1_axios@1.1.2:
+  /@vespaiach/axios-fetch-adapter/0.3.1_axios@0.27.2:
     resolution: {integrity: sha512-+1F52VWXmQHSRFSv4/H0wtnxfvjRMPK5531e880MIjypPdUSX6QZuoDgEVeCE1vjhzDdxCVX7rOqkub7StEUwQ==}
     peerDependencies:
       axios: '>=0.26.0'
     dependencies:
-      axios: 1.1.2
+      axios: 0.27.2
     dev: false
 
   /@vue/compiler-core/3.2.40:
@@ -4745,10 +4838,8 @@ packages:
       minimist: 1.2.6
     dev: true
 
-  /ajv-formats/2.1.1_ajv@8.11.0:
+  /ajv-formats/2.1.1:
     resolution: {integrity: sha512-Wx0Kx52hxE7C18hkMEggYlEifqWZtYaRgouJor+WMdPnQyEK13vgEWyVNup7SoeeoLMsr4kf5h6dOW11I15MUA==}
-    peerDependencies:
-      ajv: ^8.0.0
     peerDependenciesMeta:
       ajv:
         optional: true
@@ -5029,37 +5120,11 @@ packages:
     engines: {node: '>=12'}
     dev: false
 
-  /axios/0.21.1:
-    resolution: {integrity: sha512-dKQiRHxGD9PPRIUNIWvZhPTPpl1rf/OxTYKsqKUDjBwYylTvV7SjSHJb9ratfyzM6wCdLCOYLzs73qpg5c4iGA==}
-    dependencies:
-      follow-redirects: 1.15.1
-    transitivePeerDependencies:
-      - debug
-    dev: false
-
-  /axios/0.21.4:
-    resolution: {integrity: sha512-ut5vewkiu8jjGBdqpM44XxjuCjq9LAKeHVmoVfHVzy8eHgxxq8SbAVQNovDA8mVi05kP0Ea/n/UzcSHcTJQfNg==}
-    dependencies:
-      follow-redirects: 1.15.1
-    transitivePeerDependencies:
-      - debug
-    dev: false
-
   /axios/0.27.2:
     resolution: {integrity: sha512-t+yRIyySRTp/wua5xEr+z1q60QmLq8ABsS5O9Me1AsE5dfKqgnCFzwiCZZ/cGNd1lq4/7akDWMxdhVlucjmnOQ==}
     dependencies:
       follow-redirects: 1.15.1
       form-data: 4.0.0
-    transitivePeerDependencies:
-      - debug
-    dev: false
-
-  /axios/1.1.2:
-    resolution: {integrity: sha512-bznQyETwElsXl2RK7HLLwb5GPpOLlycxHCtrpDR/4RqqBzjARaOTo3jz4IgtntWUYee7Ne4S8UHd92VCuzPaWA==}
-    dependencies:
-      follow-redirects: 1.15.1
-      form-data: 4.0.0
-      proxy-from-env: 1.1.0
     transitivePeerDependencies:
       - debug
     dev: false
@@ -5218,6 +5283,10 @@ packages:
     resolution: {integrity: sha512-p2q/t/mhvuOj/UeLlV6566GD/guowlr0hHxClI0W9m7MWYkL1F0hLo+0Aexs9HSPCtR1SXQ0TD3MMKrXZajbiQ==}
     dependencies:
       file-uri-to-path: 1.0.0
+    dev: false
+
+  /bip32-path/0.4.2:
+    resolution: {integrity: sha512-ZBMCELjJfcNMkz5bDuJ1WrYvjlhEF5k6mQ8vUr4N7MbVRsXei7ZOg8VhhwMfNiW68NWmLkgkc6WvTickrLGprQ==}
     dev: false
 
   /bip32/2.0.6:
@@ -6619,7 +6688,7 @@ packages:
       eslint: 8.19.0
       eslint-import-resolver-node: 0.3.6
       eslint-import-resolver-typescript: 2.7.1_q2xwze32dd33a2fc2qubwr4ie4
-      eslint-plugin-import: 2.26.0_eslint@8.19.0
+      eslint-plugin-import: 2.26.0_6o2fuefo7gfpbr7nbqwgu7w4mq
       eslint-plugin-jsx-a11y: 6.6.0_eslint@8.19.0
       eslint-plugin-react: 7.30.1_eslint@8.19.0
       eslint-plugin-react-hooks: 4.6.0_eslint@8.19.0
@@ -6656,7 +6725,7 @@ packages:
     dependencies:
       debug: 4.3.4
       eslint: 8.19.0
-      eslint-plugin-import: 2.26.0_eslint@8.19.0
+      eslint-plugin-import: 2.26.0_6o2fuefo7gfpbr7nbqwgu7w4mq
       glob: 7.2.3
       is-glob: 4.0.3
       resolve: 1.22.1
@@ -6665,7 +6734,7 @@ packages:
       - supports-color
     dev: false
 
-  /eslint-module-utils/2.7.3_ulu2225r2ychl26a37c6o2rfje:
+  /eslint-module-utils/2.7.3_ngc5pgxzrdnldt43xbcfncn6si:
     resolution: {integrity: sha512-088JEC7O3lDZM9xGe0RerkOMd0EjFl+Yvd1jPWIkMT5u3H9+HC34mWWPnqPrN13gieT9pBOO+Qt07Nb/6TresQ==}
     engines: {node: '>=4'}
     peerDependencies:
@@ -6683,14 +6752,16 @@ packages:
       eslint-import-resolver-webpack:
         optional: true
     dependencies:
+      '@typescript-eslint/parser': 5.30.5_4x5o4skxv6sl53vpwefgt23khm
       debug: 3.2.7
       eslint-import-resolver-node: 0.3.6
+      eslint-import-resolver-typescript: 2.7.1_q2xwze32dd33a2fc2qubwr4ie4
       find-up: 2.1.0
     transitivePeerDependencies:
       - supports-color
     dev: false
 
-  /eslint-plugin-import/2.26.0_eslint@8.19.0:
+  /eslint-plugin-import/2.26.0_6o2fuefo7gfpbr7nbqwgu7w4mq:
     resolution: {integrity: sha512-hYfi3FXaM8WPLf4S1cikh/r4IxnO6zrhZbEGz2b660EJRbuxgpDS5gkCuYgGWg2xxh2rBuIr4Pvhve/7c31koA==}
     engines: {node: '>=4'}
     peerDependencies:
@@ -6700,13 +6771,14 @@ packages:
       '@typescript-eslint/parser':
         optional: true
     dependencies:
+      '@typescript-eslint/parser': 5.30.5_4x5o4skxv6sl53vpwefgt23khm
       array-includes: 3.1.5
       array.prototype.flat: 1.3.0
       debug: 2.6.9
       doctrine: 2.1.0
       eslint: 8.19.0
       eslint-import-resolver-node: 0.3.6
-      eslint-module-utils: 2.7.3_ulu2225r2ychl26a37c6o2rfje
+      eslint-module-utils: 2.7.3_ngc5pgxzrdnldt43xbcfncn6si
       has: 1.0.3
       is-core-module: 2.9.0
       is-glob: 4.0.3
@@ -8373,13 +8445,13 @@ packages:
       '@types/lodash': 4.14.182
       '@types/node': 12.20.55
       '@types/ws': 7.4.7
-      JSONStream: 1.3.5
       commander: 2.20.3
       delay: 5.0.0
       es6-promisify: 5.0.0
       eyes: 0.1.8
       isomorphic-ws: 4.0.1_ws@7.4.6
       json-stringify-safe: 5.0.1
+      JSONStream: 1.3.5
       lodash: 4.17.21
       uuid: 8.3.2
       ws: 7.4.6
@@ -8727,7 +8799,7 @@ packages:
       jest-util: 28.1.1
       natural-compare: 1.4.0
       pretty-format: 28.1.1
-      semver: 7.3.7
+      semver: 7.3.8
     transitivePeerDependencies:
       - supports-color
     dev: true
@@ -10474,10 +10546,6 @@ packages:
       ipaddr.js: 1.9.1
     dev: false
 
-  /proxy-from-env/1.1.0:
-    resolution: {integrity: sha512-D+zkORCbA9f1tdWRK0RaCR3GPv50cMxcrz4X8k5LTSUD1Dkw47mKJEZQNunItRTkWwgtaUSo1RVFRIG9ZXiFYg==}
-    dev: false
-
   /prr/1.0.1:
     resolution: {integrity: sha512-yPw4Sng1gWghHQWj0B3ZggWUm4qVbPwPFcRG8KyxiU7J2OHFSoEHKS+EZ3fv5l1t9CyCiop6l/ZYeWbrgoQejw==}
     dev: false
@@ -11190,7 +11258,6 @@ packages:
     engines: {npm: '>=2.0.0'}
     dependencies:
       tslib: 1.14.1
-    dev: true
 
   /rxjs/7.5.7:
     resolution: {integrity: sha512-z9MzKh/UcOqB3i20H6rtrlaE/CgjLOvheWK/9ILrbhROGTweAi1BaFsTT9FbwZi5Trr1qNRs+MXkhmR06awzQA==}
@@ -11253,7 +11320,7 @@ packages:
       '@iov/crypto': 2.1.0
       '@iov/encoding': 2.1.0
       '@iov/utils': 2.0.2
-      axios: 0.21.1
+      axios: 0.27.2
       curve25519-js: 0.0.4
       fast-deep-equal: 3.1.1
       js-crypto-hkdf: 0.7.3
@@ -11284,6 +11351,7 @@ packages:
     hasBin: true
     dependencies:
       lru-cache: 6.0.0
+    dev: true
 
   /semver/7.3.8:
     resolution: {integrity: sha512-NB1ctGL5rlHrPJtFDVIVzTyQylMLu9N9VICA6HSFJo8MCGVTMW6gfpicwKmmK/dAjTOrqu5l63JJOpDSrAis3A==}
@@ -11291,7 +11359,6 @@ packages:
     hasBin: true
     dependencies:
       lru-cache: 6.0.0
-    dev: false
 
   /send/0.18.0:
     resolution: {integrity: sha512-qqWzuOjSFOuqPjFe4NOsMLafToQQwBSOEpS+FwEt3A2V3vKubTquT3vmLTQpFgMXp8AlFWFuP1qKaJZOtPpVXg==}
