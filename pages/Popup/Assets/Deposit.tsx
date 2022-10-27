@@ -12,9 +12,11 @@ import { atom } from 'jotai'
 import { QRCodeSVG } from 'qrcode.react'
 import * as React from 'react'
 
+import { AlertBox } from '~components/AlertBox'
 import { CopyArea } from '~components/CopyIcon'
 import { useActive } from '~lib/active'
 import { getNetworkInfo } from '~lib/services/network'
+import { canWalletSign } from '~lib/wallet'
 import { useModalBox } from '~pages/Popup/ModalBox'
 
 const isOpenAtom = atom<boolean>(false)
@@ -24,7 +26,7 @@ export function useDepositModal() {
 }
 
 export const Deposit = ({ onClose }: { onClose: () => void }) => {
-  const { network, account } = useActive()
+  const { network, wallet, account } = useActive()
 
   const qrCodeBg = useColorModeValue('white', 'black')
   const qrCodeFg = useColorModeValue('black', 'white')
@@ -66,10 +68,17 @@ export const Deposit = ({ onClose }: { onClose: () => void }) => {
 
             <CopyArea name="Address" copy={account.address} props={{ w: 64 }} />
 
-            <Text color="gray.500" textAlign="center">
-              This address can be used to receive tokens on&nbsp;
-              {getNetworkInfo(network).name}.
-            </Text>
+            {wallet && !canWalletSign(wallet.type) ? (
+              <AlertBox level="error">
+                Don&apos;t use this watch-only wallet to receive tokens.
+                Otherwise you may lose your assets.
+              </AlertBox>
+            ) : (
+              <Text color="gray.500" textAlign="center">
+                This address can be used to receive tokens on&nbsp;
+                {getNetworkInfo(network).name}.
+              </Text>
+            )}
           </Stack>
         </Stack>
       </Stack>

@@ -180,7 +180,9 @@ export function useAddWallet() {
       case AddWalletKind.CONNECT_HARDWARE:
         opts.type = WalletType.HW
         opts.networkKind = networkKind
+        opts.path = hdPath
         opts.hwType = hwType
+        opts.hash = hwHash
         opts.hwAccounts = hwAccounts
         break
       case AddWalletKind.CONNECT_HARDWARE_GROUP:
@@ -196,7 +198,6 @@ export function useAddWallet() {
         throw new Error('unknown wallet type')
     }
 
-    console.log(opts)
     const { wallet, decrypted } = await WALLET_SERVICE.newWallet(opts)
 
     if (await WALLET_SERVICE.existsSecret(wallet)) {

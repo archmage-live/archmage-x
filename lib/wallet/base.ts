@@ -70,7 +70,7 @@ export function getWalletTypeIdentifier(wallet: IWallet) {
     case WalletType.HW:
       return wallet.info.hwType
     case WalletType.HW_GROUP:
-      return wallet.info.hwType
+      return wallet.info.hwType + ' Group'
   }
 }
 
