@@ -6,16 +6,24 @@ import {
   FormControl,
   FormLabel,
   HStack,
+  Popover,
+  PopoverArrow,
+  PopoverBody,
+  PopoverContent,
+  PopoverTrigger,
   Select,
   Spinner,
   Stack,
-  Text
+  Text,
+  chakra
 } from '@chakra-ui/react'
 import { stringToPath } from '@cosmjs/crypto'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import assert from 'assert'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import * as React from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useAsyncRetry, useInterval } from 'react-use'
+import { useWizard } from 'react-use-wizard'
 
 import { AccountAvatar } from '~components/AccountAvatar'
 import { AlertBox } from '~components/AlertBox'
@@ -27,33 +35,38 @@ import {
   clearLedgerTransport,
   getLedgerEthApp
 } from '~lib/hardware/ledger'
-import {
-  NETWORK_SCOPES,
-  NetworkKind,
-  getNetworkKind,
-  getNetworkScope
-} from '~lib/network'
+import { NETWORK_SCOPES, getNetworkKind, getNetworkScope } from '~lib/network'
 import { INetwork } from '~lib/schema'
 import { getNetworkInfo, useNetwork, useNetworks } from '~lib/services/network'
 import { useBalance } from '~lib/services/provider'
+import { useChainAccountsAux, useWallet } from '~lib/services/walletService'
 import { shortenAddress } from '~lib/utils'
-import { generatePath } from '~lib/wallet'
+import { HardwareWalletAccount, generatePath } from '~lib/wallet'
 import {
+  AddWalletKind,
+  useAddSubWallets,
+  useAddWallet,
   useAddWalletKind,
   useDerivePosition,
+  useExistingWallet,
   useHdPath,
   useHwAccounts,
-  useHwType,
+  useHwHash,
   useNetworkKind
 } from '~pages/AddWallet/addWallet'
 
+import { NameInput } from '../NameInput'
+
 export const StepConnectLedger = ({}: {}) => {
+  const { nextStep } = useWizard()
+
   const [connectError, setConnectError] = useState('')
 
   const [networkKind, setNetworkKind] = useNetworkKind()
   const [addWalletKind, setAddWalletKind] = useAddWalletKind()
-  const [hdPath, setHdPath] = useHdPath()
-  const [derivePosition, setDerivePosition] = useDerivePosition()
+  const [, setHdPath] = useHdPath()
+  const [, setDerivePosition] = useDerivePosition()
+  const [hwHash, setHwHash] = useHwHash()
   const [hwAccounts, setHwAccounts] = useHwAccounts()
 
   const networksOfKind = useNetworks(networkKind)
@@ -96,7 +109,10 @@ export const StepConnectLedger = ({}: {}) => {
 
       const addrs = addresses.slice()
       try {
-        const appEth = await getLedgerEthApp('hid')
+        const [appEth, hwHash] = await getLedgerEthApp('hid')
+
+        setHwHash(hwHash)
+
         for (let index = start; index < end; index++) {
           if (addrs.length !== index) {
             continue
@@ -113,13 +129,14 @@ export const StepConnectLedger = ({}: {}) => {
         if (addrs.length > addresses.length) {
           setAddresses(addrs)
         }
+
         setConnectError('')
       } catch (err: any) {
         clearLedgerTransport('hid')
         setConnectError(err.toString())
       }
     },
-    [addresses, pathSchema]
+    [addresses, pathSchema, setHwHash]
   )
 
   useEffect(() => {
@@ -139,7 +156,105 @@ export const StepConnectLedger = ({}: {}) => {
 
   const [checked, setChecked] = useState<Set<string>>(new Set())
 
-  const onConfirm = useCallback(async () => {}, [])
+  useEffect(() => {
+    if (addWalletKind === AddWalletKind.CONNECT_HARDWARE) {
+      if (checked.size <= 1) {
+        return
+      }
+      const checkedAddrs = new Set(checked.values())
+      let firstFound = false
+      for (const addr of addresses) {
+        if (checkedAddrs.has(addr)) {
+          if (firstFound) {
+            checkedAddrs.delete(addr)
+          } else {
+            firstFound = true
+          }
+        }
+      }
+      setChecked(checkedAddrs)
+    }
+  }, [addWalletKind, addresses, checked])
+
+  const onClicked = useCallback(
+    (addr: string, isChecked: boolean) => {
+      const checkedAddrs = new Set(checked.values())
+      if (isChecked) {
+        if (addWalletKind === AddWalletKind.CONNECT_HARDWARE) {
+          checkedAddrs.clear()
+        }
+        checkedAddrs.add(addr)
+      } else {
+        checkedAddrs.delete(addr)
+      }
+      setChecked(checkedAddrs)
+    },
+    [addWalletKind, checked]
+  )
+
+  useEffect(() => {
+    const accounts: HardwareWalletAccount[] = []
+    addresses.forEach((address, index) => {
+      if (checked.has(address)) {
+        accounts.push({
+          address,
+          index
+        })
+      }
+    })
+    setHwAccounts(accounts)
+  }, [addresses, checked, setHwAccounts])
+
+  const existingWallet = useWallet(
+    undefined,
+    addWalletKind === AddWalletKind.CONNECT_HARDWARE
+      ? hwAccounts[0]?.address
+      : hwHash
+  )
+  const existingAccounts = useChainAccountsAux(existingWallet?.id, networkKind)
+  const existingAddresses = useMemo(
+    () => new Set(existingAccounts?.map(({ address }) => address)),
+    [existingAccounts]
+  )
+
+  const [, setExistingWallet] = useExistingWallet()
+  useEffect(() => {
+    setExistingWallet(existingWallet)
+  }, [existingWallet, setExistingWallet])
+
+  const [name, setName] = useState('')
+  useEffect(() => {
+    setName(existingWallet ? existingWallet.name : '')
+  }, [existingWallet])
+
+  const [alert, setAlert] = useState('')
+
+  useEffect(() => {
+    setAlert('')
+  }, [addWalletKind, pathSchema, checked, name])
+
+  const addWallet = useAddWallet()
+  const addSubWallets = useAddSubWallets()
+
+  const onNext = useCallback(async () => {
+    if (!existingWallet) {
+      const { error } = await addWallet()
+      if (error) {
+        setAlert(error)
+        return
+      }
+    } else if (addWalletKind === AddWalletKind.CONNECT_HARDWARE_GROUP) {
+      const { error } = await addSubWallets()
+      if (error) {
+        setAlert(error)
+        return
+      }
+    } else {
+      return
+    }
+
+    await nextStep()
+  }, [addSubWallets, addWallet, addWalletKind, existingWallet, nextStep])
 
   return (
     <Stack p="4" pt="16" spacing={8}>
@@ -234,26 +349,46 @@ export const StepConnectLedger = ({}: {}) => {
               addresses={addresses}
               setAddressCount={setAddressCount}
               checked={checked}
-              onChecked={(addr: string, isChecked: boolean) => {
-                const checkedAddrs = new Set(checked.values())
-                if (isChecked) checkedAddrs.add(addr)
-                else checkedAddrs.delete(addr)
-                setChecked(checkedAddrs)
-              }}
+              onChecked={onClicked}
+              existingAddresses={existingAddresses}
             />
           )}
+
+          <Checkbox
+            size="lg"
+            colorScheme="purple"
+            isChecked={addWalletKind === AddWalletKind.CONNECT_HARDWARE}
+            onChange={(e) =>
+              setAddWalletKind(
+                e.target.checked
+                  ? AddWalletKind.CONNECT_HARDWARE
+                  : AddWalletKind.CONNECT_HARDWARE_GROUP
+              )
+            }>
+            <chakra.span color="gray.500" fontSize="xl">
+              Only select one account without creating group.
+            </chakra.span>
+          </Checkbox>
+
+          <NameInput
+            value={name}
+            onChange={setName}
+            isDisabled={!!existingWallet}
+          />
         </>
       )}
 
       <AlertBox>{connectError}</AlertBox>
+
+      <AlertBox>{alert}</AlertBox>
 
       <Button
         h="14"
         size="lg"
         colorScheme="purple"
         borderRadius="8px"
-        disabled={!addresses.length}
-        onClick={onConfirm}>
+        disabled={!hwAccounts.length}
+        onClick={onNext}>
         Connect
       </Button>
     </Stack>
@@ -266,7 +401,8 @@ const SelectAddresses = ({
   addresses,
   setAddressCount,
   checked,
-  onChecked
+  onChecked,
+  existingAddresses
 }: {
   network: INetwork
   pathSchema: LedgerPathSchema
@@ -274,6 +410,7 @@ const SelectAddresses = ({
   setAddressCount: (count: number) => void
   checked: Set<string>
   onChecked: (addr: string, checked: boolean) => void
+  existingAddresses: Set<string>
 }) => {
   const parentRef = useRef(null)
   const addressesVirtualizer = useVirtualizer({
@@ -326,7 +463,7 @@ const SelectAddresses = ({
                     fontSize="sm"
                     fontWeight="medium"
                     color="gray.500">
-                    Load More...
+                    Load...
                   </Text>
                 </HStack>
               </Box>
@@ -355,7 +492,10 @@ const SelectAddresses = ({
                 index={item.index}
                 path={path}
                 address={address}
-                isChecked={checked.has(address)}
+                isDisabled={existingAddresses.has(address)}
+                isChecked={
+                  checked.has(address) || existingAddresses.has(address)
+                }
                 onChecked={(checked) => onChecked(address, checked)}
               />
             </Box>
@@ -371,6 +511,7 @@ const AddressItem = ({
   index,
   path,
   address,
+  isDisabled,
   isChecked,
   onChecked
 }: {
@@ -378,6 +519,7 @@ const AddressItem = ({
   index: number
   path: string
   address: string
+  isDisabled: boolean
   isChecked: boolean
   onChecked: (checked: boolean) => void
 }) => {
@@ -393,11 +535,31 @@ const AddressItem = ({
       px={4}
       justifyContent="start"
       onClick={() => {
-        onChecked(!isChecked)
+        if (!isDisabled) {
+          onChecked(!isChecked)
+        }
       }}>
       <Box w="full">
         <HStack w="full" spacing={4}>
-          <Checkbox mb="-12px" isChecked={isChecked} pointerEvents="none" />
+          <Popover isLazy trigger="hover" placement="right">
+            <PopoverTrigger>
+              <Box onClick={(e) => e.stopPropagation()} h={4}>
+                <Checkbox
+                  isChecked={isChecked}
+                  isDisabled={isDisabled}
+                  onChange={(e) => onChecked(e.target.checked)}
+                />
+              </Box>
+            </PopoverTrigger>
+            {isDisabled && (
+              <PopoverContent w="auto">
+                <PopoverArrow />
+                <PopoverBody fontSize="sm">
+                  This account has been connected to Archmage
+                </PopoverBody>
+              </PopoverContent>
+            )}
+          </Popover>
 
           <HStack flex={1} spacing={4}>
             <AccountAvatar text={address} scale={0.8} />

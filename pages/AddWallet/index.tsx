@@ -34,7 +34,7 @@ export default function AddWallet() {
     <>
       <TitleBar />
 
-      <Container centerContent mt="16">
+      <Container centerContent my="16">
         <ActionWizard hideLastStepBackButton>
           {!passwordExists && <StepCreatePassword />}
 
@@ -54,7 +54,8 @@ export default function AddWallet() {
 
           {addWalletKind === AddWalletKind.NEW_HD && <StepRememberMnemonic />}
 
-          {addWalletKind === AddWalletKind.CONNECT_HARDWARE && (
+          {(addWalletKind === AddWalletKind.CONNECT_HARDWARE ||
+            addWalletKind === AddWalletKind.CONNECT_HARDWARE_GROUP) && (
             <StepConnectHardwareWalletAccounts />
           )}
 

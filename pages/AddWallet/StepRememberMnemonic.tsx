@@ -42,7 +42,7 @@ export const StepRememberMnemonic = () => {
       return
     }
 
-    nextStep()
+    await nextStep()
   }, [addWallet, nextStep])
 
   return (
@@ -71,7 +71,7 @@ export const StepRememberMnemonic = () => {
         colorScheme="purple"
         isChecked={skipRemember}
         onChange={(e) => setSkipRemember(e.target.checked)}>
-        <chakra.span color="gray.400" fontSize="xl">
+        <chakra.span color="gray.500" fontSize="xl">
           Temporarily skip confirmation
         </chakra.span>
       </Checkbox>

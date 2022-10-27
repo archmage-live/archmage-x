@@ -122,6 +122,7 @@ export async function getHardwareSigningWallet(
   switch (account.networkKind) {
     case NetworkKind.EVM:
       return new EvmHwWallet(
+        wallet.hash,
         account.address!,
         wallet.info.path!,
         account.index,

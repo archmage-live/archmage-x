@@ -64,7 +64,7 @@ export const WalletEdit = ({ network, wallet, onDelete }: WalletEditProps) => {
     <Stack spacing="12" fontSize="md">
       <WalletNameEdit wallet={wallet} />
 
-      <Text fontWeight="medium">Type: {getWalletTypeTitle(wallet.type)}</Text>
+      <Text fontWeight="medium">Type: {getWalletTypeTitle(wallet)}</Text>
 
       {wallet.type === WalletType.HD && hdPath && (
         <FormControl>

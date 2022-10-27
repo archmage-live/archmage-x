@@ -28,7 +28,7 @@ function getResult(result: {
     return result.result
   }
 
-  if (result.status != 1 || result.message != 'OK') {
+  if (result.status != 1 || !result.message?.startsWith('OK')) {
     const error: any = new Error('invalid response')
     error.result = JSON.stringify(result)
     if ((result.result || '').toLowerCase().indexOf('rate limit') >= 0) {
@@ -155,43 +155,68 @@ class CachedEtherscanProvider extends EtherscanProvider {
     )
   }
 
+  getUrlWithoutApiKey(module: string, params: Record<string, string>): string {
+    const url = super.getUrl(module, params)
+    const u = new URL(url)
+    u.searchParams.delete('apikey')
+    return u.toString()
+  }
+
   async fetch(
     module: string,
     params: Record<string, any>,
     post?: boolean
   ): Promise<any> {
-    const url = post ? this.getPostUrl() : this.getUrl(module, params)
-    const payload = post ? this.getPostData(module, params) : null
-    const procFunc = module === 'proxy' ? getJsonResult : getResult
+    let url = post ? this.getPostUrl() : this.getUrl(module, params)
 
-    const connection: ConnectionInfo = {
-      url: url,
-      throttleSlotInterval: 1000,
-      throttleCallback: (attempt: number, url: string) => {
-        return Promise.resolve(true)
+    const _fetch = async () => {
+      const payload = post ? this.getPostData(module, params) : null
+      const procFunc = module === 'proxy' ? getJsonResult : getResult
+
+      const connection: ConnectionInfo = {
+        url: url,
+        throttleSlotInterval: 1000,
+        throttleCallback: (attempt: number, url: string) => {
+          return Promise.resolve(true)
+        }
+      }
+
+      let payloadStr: string | null = null
+      if (payload) {
+        connection.headers = {
+          'content-type': 'application/x-www-form-urlencoded; charset=UTF-8'
+        }
+        payloadStr = Object.keys(payload)
+          .map((key) => {
+            return `${key}=${payload[key]}`
+          })
+          .join('&')
+      }
+
+      if (payloadStr) {
+        return await fetchJson(
+          connection,
+          payloadStr,
+          procFunc || getJsonResult
+        )
+      } else {
+        return await fetchJsonWithCache(
+          connection,
+          1000 * 10,
+          procFunc || getJsonResult
+        )
       }
     }
 
-    let payloadStr: string | null = null
-    if (payload) {
-      connection.headers = {
-        'content-type': 'application/x-www-form-urlencoded; charset=UTF-8'
+    try {
+      return await _fetch()
+    } catch (err: any) {
+      if (err.toString().includes('Invalid API Key')) {
+        url = this.getUrlWithoutApiKey(module, params)
+        return await _fetch()
+      } else {
+        throw err
       }
-      payloadStr = Object.keys(payload)
-        .map((key) => {
-          return `${key}=${payload[key]}`
-        })
-        .join('&')
-    }
-
-    if (payloadStr) {
-      return await fetchJson(connection, payloadStr, procFunc || getJsonResult)
-    } else {
-      return await fetchJsonWithCache(
-        connection,
-        1000 * 10,
-        procFunc || getJsonResult
-      )
     }
   }
 

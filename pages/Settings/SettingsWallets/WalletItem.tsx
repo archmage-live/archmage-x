@@ -68,7 +68,7 @@ export const WalletItem = ({
     }
   }, [infoVisible])
 
-  const typeIdentifier = getWalletTypeIdentifier(wallet.type)
+  const typeIdentifier = getWalletTypeIdentifier(wallet)
 
   return (
     <Box ref={elRef}>

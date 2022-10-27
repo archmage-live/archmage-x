@@ -56,7 +56,7 @@ export const StepAddWalletSelect = () => {
           variant="outline"
           borderRadius="8px"
           onClick={() => {
-            setAddWalletKind(AddWalletKind.CONNECT_HARDWARE)
+            setAddWalletKind(AddWalletKind.CONNECT_HARDWARE_GROUP)
             nextStep()
           }}>
           Connect hardware wallet

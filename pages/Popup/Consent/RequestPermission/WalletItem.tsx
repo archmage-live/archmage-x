@@ -61,7 +61,7 @@ export const WalletItem = ({
     setIsIndeterminate(!none && !all)
   }, [onChecked, wallet, subWallets, subWallet])
 
-  const typeIdentifier = getWalletTypeIdentifier(wallet.type)
+  const typeIdentifier = getWalletTypeIdentifier(wallet)
 
   return (
     <Box ref={elRef}>

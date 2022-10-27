@@ -18,7 +18,6 @@ import { IoMdSettings } from 'react-icons/io'
 import { useNavigate } from 'react-router-dom'
 import { useDebounce } from 'react-use'
 
-import { INetwork } from '~lib/schema'
 import { useNetworks } from '~lib/services/network'
 import { PASSWORD_SERVICE } from '~lib/services/passwordService'
 import { createTab } from '~lib/util'
@@ -34,7 +33,7 @@ export const NetworkDrawer = ({ onClose }: { onClose(): void }) => {
 
   const allNetworks = useNetworks()
 
-  const btnColorScheme = useColorModeValue('purple', undefined)
+  const btnColor = useColorModeValue('gray.600', undefined)
 
   const [search, setSearch] = useState('')
   const [_search, _setSearch] = useState('')
@@ -84,12 +83,11 @@ export const NetworkDrawer = ({ onClose }: { onClose(): void }) => {
 
           <Button
             variant="ghost"
-            colorScheme={btnColorScheme}
             size="lg"
             w="full"
             justifyContent="start"
             onClick={() => createTab('#/tab/settings/networks')}>
-            <HStack spacing="3">
+            <HStack spacing="3" color={btnColor}>
               <DragHandleIcon />
               <Text fontSize="lg">Manage Networks</Text>
             </HStack>
@@ -99,12 +97,11 @@ export const NetworkDrawer = ({ onClose }: { onClose(): void }) => {
 
           <Button
             variant="ghost"
-            colorScheme={btnColorScheme}
             size="lg"
             w="full"
             justifyContent="start"
             onClick={lock}>
-            <HStack spacing="3">
+            <HStack spacing="3" color={btnColor}>
               <LockIcon />
               <Text fontSize="lg">Lock</Text>
             </HStack>
@@ -112,14 +109,13 @@ export const NetworkDrawer = ({ onClose }: { onClose(): void }) => {
 
           <Button
             variant="ghost"
-            colorScheme={btnColorScheme}
             size="lg"
             w="full"
             justifyContent="start"
             onClick={async () => {
               await createTab('#/tab/settings/general')
             }}>
-            <HStack spacing="3">
+            <HStack spacing="3" color={btnColor}>
               <Icon as={IoMdSettings} />
               <Text fontSize="lg">Settings</Text>
             </HStack>

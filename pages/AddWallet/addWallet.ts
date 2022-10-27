@@ -1,9 +1,14 @@
+import assert from 'assert'
 import { atom, useAtom } from 'jotai'
 import { useCallback } from 'react'
 
 import { NetworkKind } from '~lib/network'
-import { DerivePosition } from '~lib/schema'
-import { NewWalletOpts, WALLET_SERVICE } from '~lib/services/walletService'
+import { DerivePosition, IWallet } from '~lib/schema'
+import {
+  AddSubWalletsOpts,
+  NewWalletOpts,
+  WALLET_SERVICE
+} from '~lib/services/walletService'
 import {
   HardwareWalletAccount,
   HardwareWalletType,
@@ -15,6 +20,7 @@ export enum AddWalletKind {
   IMPORT_HD,
   IMPORT_MNEMONIC_PRIVATE_KEY,
   IMPORT_PRIVATE_KEY,
+  IMPORT_PRIVATE_KEY_GROUP,
   IMPORT_WATCH_ADDRESS,
   IMPORT_WATCH_ADDRESS_GROUP,
   CONNECT_HARDWARE,
@@ -31,7 +37,9 @@ const privateKeyAtom = atom('')
 const networkKindAtom = atom<NetworkKind>(NetworkKind.EVM)
 const hwTypeAtom = atom<HardwareWalletType | undefined>(undefined)
 const addressesAtom = atom<string[]>([])
+const hwHash = atom<string>('')
 const hwAccountsAtom = atom<HardwareWalletAccount[]>([])
+const existingWallet = atom<IWallet | undefined>(undefined)
 const createdAtom = atom(false)
 
 export function useAddWalletKind() {
@@ -74,8 +82,16 @@ export function useAddresses() {
   return useAtom(addressesAtom)
 }
 
+export function useHwHash() {
+  return useAtom(hwHash)
+}
+
 export function useHwAccounts() {
   return useAtom(hwAccountsAtom)
+}
+
+export function useExistingWallet() {
+  return useAtom(existingWallet)
 }
 
 export function useCreated() {
@@ -92,7 +108,9 @@ export function useClear() {
   const [, setNetworkKind] = useNetworkKind()
   const [, setHwType] = useHwType()
   const [, setAddresses] = useAddresses()
+  const [, setHwHash] = useHwHash()
   const [, setHwAccounts] = useHwAccounts()
+  const [, setExistingWallet] = useExistingWallet()
   const [, setCreated] = useCreated()
   return useCallback(() => {
     setMnemonic([])
@@ -104,7 +122,9 @@ export function useClear() {
     setNetworkKind(NetworkKind.EVM)
     setHwType(undefined)
     setAddresses([])
+    setHwHash('')
     setHwAccounts([])
+    setExistingWallet(undefined)
     setCreated(false)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -121,6 +141,7 @@ export function useAddWallet() {
   const [networkKind] = useNetworkKind()
   const [hwType] = useHwType()
   const [addresses] = useAddresses()
+  const [hwHash] = useHwHash()
   const [hwAccounts] = useHwAccounts()
   const [, setCreated] = useCreated()
 
@@ -168,12 +189,14 @@ export function useAddWallet() {
         opts.path = hdPath
         opts.derivePosition = derivePosition
         opts.hwType = hwType
+        opts.hash = hwHash
         opts.hwAccounts = hwAccounts
         break
       default:
         throw new Error('unknown wallet type')
     }
 
+    console.log(opts)
     const { wallet, decrypted } = await WALLET_SERVICE.newWallet(opts)
 
     if (await WALLET_SERVICE.existsSecret(wallet)) {
@@ -187,6 +210,7 @@ export function useAddWallet() {
       decrypted,
       networkKind,
       addresses,
+      hwAccounts,
       notBackedUp
     }).finally(() => {
       setCreated(true)
@@ -196,8 +220,10 @@ export function useAddWallet() {
   }, [
     addWalletKind,
     addresses,
+    derivePosition,
     hdPath,
     hwAccounts,
+    hwHash,
     hwType,
     mnemonic,
     name,
@@ -206,4 +232,37 @@ export function useAddWallet() {
     privateKey,
     setCreated
   ])
+}
+
+export function useAddSubWallets() {
+  const [addWalletKind] = useAddWalletKind()
+  const [networkKind] = useNetworkKind()
+  const [addresses] = useAddresses()
+  const [hwAccounts] = useHwAccounts()
+  const [wallet] = useExistingWallet()
+  const [, setCreated] = useCreated()
+
+  return useCallback(async (): Promise<{ error?: string }> => {
+    assert(wallet)
+    const opts = { wallet } as AddSubWalletsOpts
+
+    switch (addWalletKind) {
+      case AddWalletKind.IMPORT_PRIVATE_KEY_GROUP:
+        break
+      case AddWalletKind.IMPORT_WATCH_ADDRESS_GROUP:
+        break
+      case AddWalletKind.CONNECT_HARDWARE_GROUP:
+        opts.networkKind = networkKind
+        opts.hwAccounts = hwAccounts
+        break
+      default:
+        throw new Error('unknown wallet type')
+    }
+
+    WALLET_SERVICE.addSubWallets(opts).finally(() => {
+      setCreated(true)
+    })
+
+    return {}
+  }, [addWalletKind, hwAccounts, networkKind, setCreated, wallet])
 }
