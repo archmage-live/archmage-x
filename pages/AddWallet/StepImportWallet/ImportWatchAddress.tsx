@@ -105,7 +105,7 @@ export const ImportWatchAddress = () => {
           colorScheme="purple"
           isChecked={isWatchGroupChecked}
           onChange={(e) => setIsWatchGroupChecked(e.target.checked)}>
-          <chakra.span color="gray.400" fontSize="xl">
+          <chakra.span color="gray.500" fontSize="xl">
             Create group to watch multiple addresses.
           </chakra.span>
         </Checkbox>

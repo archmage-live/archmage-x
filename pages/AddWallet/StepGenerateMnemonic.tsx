@@ -45,7 +45,7 @@ export const StepGenerateMnemonic = () => {
         colorScheme="purple"
         isChecked={isChecked}
         onChange={(e) => setIsChecked(e.target.checked)}>
-        <chakra.span color="gray.400" fontSize="xl">
+        <chakra.span color="gray.500" fontSize="xl">
           I saved my Secret Recovery Phrase
         </chakra.span>
       </Checkbox>

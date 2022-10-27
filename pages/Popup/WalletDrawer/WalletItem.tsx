@@ -62,7 +62,7 @@ export const WalletItem = ({
   const subWallet = !isWalletGroup(wallet.type) ? subWallets[0] : undefined
   const account = subWallet?.account
 
-  const typeIdentifier = getWalletTypeIdentifier(wallet.type)
+  const typeIdentifier = getWalletTypeIdentifier(wallet)
 
   const [scrollIndex, setScrollIndex] = useState<number>()
 

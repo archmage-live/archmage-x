@@ -2,7 +2,7 @@ import { Slip10RawIndex, pathToString, stringToPath } from '@cosmjs/crypto'
 import assert from 'assert'
 
 import { NetworkKind } from '~lib/network'
-import { DerivePosition, IHdPath } from '~lib/schema'
+import { DerivePosition, IHdPath, IWallet } from '~lib/schema'
 
 export enum WalletType {
   HD = 'hd', // Hierarchical Deterministic, derived from mnemonic
@@ -57,8 +57,8 @@ export function canWalletSign(type: WalletType) {
   return isWalletHardware(type) || hasWalletKeystore(type)
 }
 
-export function getWalletTypeIdentifier(type: WalletType) {
-  switch (type) {
+export function getWalletTypeIdentifier(wallet: IWallet) {
+  switch (wallet.type) {
     case WalletType.HD:
       return 'HD'
     case WalletType.PRIVATE_KEY:
@@ -68,14 +68,14 @@ export function getWalletTypeIdentifier(type: WalletType) {
     case WalletType.WATCH_GROUP:
       return 'Watch Group'
     case WalletType.HW:
-      return 'Hardware'
+      return wallet.info.hwType
     case WalletType.HW_GROUP:
-      return 'Hardware Group'
+      return wallet.info.hwType
   }
 }
 
-export function getWalletTypeTitle(type: WalletType) {
-  switch (type) {
+export function getWalletTypeTitle(wallet: IWallet) {
+  switch (wallet.type) {
     case WalletType.HD:
       return 'Hierarchical Deterministic (HD)'
     case WalletType.PRIVATE_KEY:
@@ -85,9 +85,9 @@ export function getWalletTypeTitle(type: WalletType) {
     case WalletType.WATCH_GROUP:
       return 'Watch Address Group'
     case WalletType.HW:
-      return 'Connected Hardware'
+      return 'Connected ' + wallet.info.hwType
     case WalletType.HW_GROUP:
-      return 'Connected Hardware Group'
+      return 'Connected ' + wallet.info.hwType
   }
 }
 

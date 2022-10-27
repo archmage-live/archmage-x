@@ -49,7 +49,7 @@ export const WalletDrawer = ({
     navigate('/', { replace: true })
   }
 
-  const btnColorScheme = useColorModeValue('purple', undefined)
+  const btnColor = useColorModeValue('gray.600', undefined)
 
   const [search, _setSearch] = useState('')
 
@@ -98,28 +98,26 @@ export const WalletDrawer = ({
 
           <Button
             variant="ghost"
-            colorScheme={btnColorScheme}
             size="lg"
             w="full"
             justifyContent="start"
-            onClick={() => {
-              createTab('#/tab/add-wallet')
+            onClick={async () => {
+              await createTab('#/tab/add-wallet')
             }}>
-            <HStack spacing="3">
+            <HStack spacing="3" color={btnColor}>
               <AddIcon />
               <Text fontSize="lg">Create / Import Wallet</Text>
             </HStack>
           </Button>
           <Button
             variant="ghost"
-            colorScheme={btnColorScheme}
             size="lg"
             w="full"
             justifyContent="start"
-            onClick={() => {
-              createTab('#/tab/settings/wallets')
+            onClick={async () => {
+              await createTab('#/tab/settings/wallets')
             }}>
-            <HStack spacing="3">
+            <HStack spacing="3" color={btnColor}>
               <DragHandleIcon />
               <Text fontSize="lg">Manage Wallets</Text>
             </HStack>
@@ -129,12 +127,11 @@ export const WalletDrawer = ({
 
           <Button
             variant="ghost"
-            colorScheme={btnColorScheme}
             size="lg"
             w="full"
             justifyContent="start"
             onClick={lock}>
-            <HStack spacing="3">
+            <HStack spacing="3" color={btnColor}>
               <LockIcon />
               <Text fontSize="lg">Lock</Text>
             </HStack>
@@ -142,14 +139,13 @@ export const WalletDrawer = ({
 
           <Button
             variant="ghost"
-            colorScheme={btnColorScheme}
             size="lg"
             w="full"
             justifyContent="start"
-            onClick={() => {
-              createTab('#/tab/settings/general')
+            onClick={async () => {
+              await createTab('#/tab/settings/general')
             }}>
-            <HStack spacing="3">
+            <HStack spacing="3" color={btnColor}>
               <Icon as={IoMdSettings} />
               <Text fontSize="lg">Settings</Text>
             </HStack>
@@ -157,7 +153,6 @@ export const WalletDrawer = ({
 
           <Button
             variant="ghost"
-            colorScheme={btnColorScheme}
             size="lg"
             w="full"
             justifyContent="start"
@@ -178,7 +173,7 @@ export const WalletDrawer = ({
               } as Context
               await createWindow(ctx, '/')
             }}>
-            <HStack spacing="3">
+            <HStack spacing="3" color={btnColor}>
               <Icon as={FaWindowMaximize} />
               <Text fontSize="lg">Popup</Text>
             </HStack>

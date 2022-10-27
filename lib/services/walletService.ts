@@ -66,6 +66,12 @@ export type CreateWalletOpts = {
   notBackedUp?: boolean
 }
 
+export type AddSubWalletsOpts = {
+  wallet: IWallet
+  networkKind?: NetworkKind
+  hwAccounts?: HardwareWalletAccount[] // for WalletType.HW_GROUP
+}
+
 export interface WalletInfo {
   path?: string
   notBackedUp?: boolean
@@ -94,13 +100,15 @@ export interface IWalletService {
 
   createWallet(opts: CreateWalletOpts): Promise<void>
 
+  addSubWallets(opts: AddSubWalletsOpts): Promise<void>
+
   backUpWallet(id: number): Promise<void>
 
   deleteWallet(id: number): Promise<void>
 
   deleteSubWallet(id: number): Promise<void>
 
-  getWallet(id: number): Promise<IWallet | undefined>
+  getWallet(id?: number, hash?: string): Promise<IWallet | undefined>
 
   getSubWallet(id: number | SubIndex): Promise<ISubWallet | undefined>
 
@@ -118,6 +126,11 @@ export interface IWalletService {
           subIndices?: SubIndex[]
         }
   ): Promise<IChainAccount[]>
+
+  getChainAccountsAux(query: {
+    masterId: number
+    networkKind: NetworkKind
+  }): Promise<IChainAccountAux[]>
 
   getSubWallets(query?: number | SubIndex[]): Promise<ISubWallet[]>
 
@@ -173,8 +186,13 @@ class WalletServicePartial implements IWalletService {
     return (await DB.wallets.where('hash').equals(wallet.hash).count()) > 0
   }
 
-  async getWallet(id: number): Promise<IWallet | undefined> {
-    return DB.wallets.get(id)
+  async getWallet(id?: number, hash?: string): Promise<IWallet | undefined> {
+    if (typeof id === 'number') {
+      return DB.wallets.get(id)
+    }
+    if (hash) {
+      return DB.wallets.where('hash').equals(hash).first()
+    }
   }
 
   async getSubWallet(id: number | SubIndex): Promise<ISubWallet | undefined> {
@@ -275,6 +293,17 @@ class WalletServicePartial implements IWalletService {
           .toArray()
       }
     }
+  }
+
+  async getChainAccountsAux(query: {
+    masterId: number
+    networkKind: NetworkKind
+  }): Promise<IChainAccountAux[]> {
+    const { masterId, networkKind } = query
+    return DB.chainAccountsAux
+      .where('[masterId+networkKind]')
+      .equals([masterId, networkKind])
+      .toArray()
   }
 
   async getSubWallets(query?: number | SubIndex[]): Promise<ISubWallet[]> {
@@ -460,7 +489,7 @@ class WalletService extends WalletServicePartial {
         break
       }
       case WalletType.HW: {
-        assert(hwType && path && derivePosition)
+        assert(hwType)
         assert(networkKind)
         assert(hwAccounts && hwAccounts.length === 1)
         hash = checkAddresses(
@@ -607,9 +636,6 @@ class WalletService extends WalletServicePartial {
           }
           case WalletType.HW_GROUP: {
             assert(networkKind)
-            assert(addresses && addresses.length >= 1)
-
-            assert(networkKind)
             assert(hwAccounts && hwAccounts.length >= 1)
             addresses = checkAddresses(
               networkKind,
@@ -642,6 +668,42 @@ class WalletService extends WalletServicePartial {
       // time-consuming, so do not wait for it
       KEYSTORE.persist(wallet)
     }
+  }
+
+  async addSubWallets({
+    wallet,
+    networkKind,
+    hwAccounts
+  }: AddSubWalletsOpts): Promise<void> {
+    await DB.transaction(
+      'rw',
+      [DB.wallets, DB.subWallets, DB.hdPaths, DB.chainAccountsAux],
+      async () => {
+        switch (wallet.type) {
+          case WalletType.HW_GROUP: {
+            assert(networkKind)
+            assert(hwAccounts && hwAccounts.length >= 1)
+            const addresses = checkAddresses(
+              networkKind,
+              hwAccounts.map(({ address }) => address)
+            )
+            const indices = hwAccounts.map(({ index }) => index)
+            assert(new Set(indices).size === hwAccounts.length)
+            const subWallets = await this.deriveSubWallets(
+              wallet.id,
+              addresses.length,
+              indices
+            )
+            await this.createChainAccountsAux(
+              wallet.id,
+              subWallets.map((w) => w.index),
+              networkKind,
+              addresses
+            )
+          }
+        }
+      }
+    )
   }
 
   async backUpWallet(id: number) {
@@ -1018,13 +1080,25 @@ export function useChainAccountByIndex(
   }, [masterId, networkKind, chainId, index])
 }
 
-export function useWallet(id?: number) {
-  return useLiveQuery(() => {
-    if (id === undefined) {
+export function useChainAccountsAux(id?: number, networkKind?: NetworkKind) {
+  return useLiveQuery(async () => {
+    if (id === undefined || networkKind === undefined) {
       return undefined
     }
-    return WALLET_SERVICE.getWallet(id)
-  }, [id])
+    return WALLET_SERVICE.getChainAccountsAux({
+      masterId: id,
+      networkKind
+    })
+  }, [id, networkKind])
+}
+
+export function useWallet(id?: number, hash?: string) {
+  return useLiveQuery(() => {
+    if (id === undefined && !hash) {
+      return undefined
+    }
+    return WALLET_SERVICE.getWallet(id, hash)
+  }, [id, hash])
 }
 
 export function useSubWallet(id?: number) {

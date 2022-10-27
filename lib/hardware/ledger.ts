@@ -49,7 +49,9 @@ export function clearLedgerTransport(type: 'hid' | 'ble') {
   }
 }
 
-export async function getLedgerEthApp(type: 'hid' | 'ble' = 'hid') {
+export async function getLedgerEthApp(
+  type: 'hid' | 'ble' = 'hid'
+): Promise<[LedgerAppEth, string]> {
   const transport = await getLedgerTransport(type)
   const appEth = new LedgerAppEth(transport)
   const appCfg = await Promise.race([appEth.getAppConfiguration(), stall(3000)])
@@ -57,18 +59,13 @@ export async function getLedgerEthApp(type: 'hid' | 'ble' = 'hid') {
     throw new Error('TransportStatusError: Ledger device: UNKNOWN_ERROR')
   }
   console.log('ledger app configuration:', appCfg)
-  return appEth
+  const { address: hash } = await appEth.getAddress("m/44'/60'")
+  return [appEth, hash]
 }
 
 export async function getLedgerCosmApp(type: 'hid' | 'ble' = 'hid') {
   const transport = await getLedgerTransport(type)
   return new LedgerAppCosmos(transport)
-}
-
-export async function getLedgerEthHash(type: 'hid' | 'ble' = 'hid') {
-  const appEth = await getLedgerEthApp(type)
-  const { address } = await appEth.getAddress("m/44'/60'")
-  return address
 }
 
 export interface LedgerPathSchema {

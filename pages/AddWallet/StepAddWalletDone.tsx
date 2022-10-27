@@ -20,7 +20,7 @@ export const StepAddWalletDone = () => {
           )}
         </Text>
         <Text fontSize="lg" color="gray.500" textAlign="center">
-          You can check your new wallet by clicking the Archmage X extension.
+          You can check your wallet by clicking the Archmage extension.
         </Text>
       </Stack>
 

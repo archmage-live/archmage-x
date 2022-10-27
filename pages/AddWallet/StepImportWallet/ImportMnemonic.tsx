@@ -155,7 +155,7 @@ export const ImportMnemonic = () => {
             colorScheme="purple"
             isChecked={isOneAccountChecked}
             onChange={(e) => setIsOneAccountChecked(e.target.checked)}>
-            <chakra.span color="gray.400" fontSize="xl">
+            <chakra.span color="gray.500" fontSize="xl">
               Import only one account at specified HD path.
             </chakra.span>
           </Checkbox>

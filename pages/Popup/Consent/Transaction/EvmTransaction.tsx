@@ -68,6 +68,7 @@ import {
 import { Balance } from '~lib/services/token'
 import { useTransactionDescription } from '~lib/services/transaction/evmService'
 import { shortenAddress } from '~lib/utils'
+import { isWalletHardware } from '~lib/wallet'
 import { EvmGasFeeEditSection } from '~pages/Popup/Consent/Transaction/EvmGasFeeEditSection'
 
 import { EvmAdvancedGasFeeModal } from './EvmAdvancedGasFeeModal'
@@ -654,6 +655,13 @@ export const EvmTransaction = ({
               You do not have enough {networkInfo.currencySymbol} in your
               account to pay for transaction fees on network {networkInfo.name}.
               Buy {networkInfo.currencySymbol} or deposit from another account.
+            </AlertBox>
+          )}
+
+          {isWalletHardware(wallet.type) && (
+            <AlertBox level="info">
+              Prior to clicking confirm, you should plug in your hardware wallet
+              device and select the appropriate app.
             </AlertBox>
           )}
 
