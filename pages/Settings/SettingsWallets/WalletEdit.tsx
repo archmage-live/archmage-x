@@ -66,23 +66,26 @@ export const WalletEdit = ({ network, wallet, onDelete }: WalletEditProps) => {
 
       <Text fontWeight="medium">Type: {getWalletTypeTitle(wallet)}</Text>
 
-      {wallet.type === WalletType.HD && hdPath && (
-        <FormControl>
-          <FormLabel>HD Path Schema</FormLabel>
+      {(wallet.type === WalletType.HD || wallet.type === WalletType.HW_GROUP) &&
+        hdPath && (
+          <FormControl>
+            <FormLabel>HD Path Schema</FormLabel>
 
-          <HStack spacing={12}>
-            <HdPathInput
-              forcePrefixLength={stringToPath(hdPath).length}
-              fixedLength
-              derivePosition={derivePosition}
-              value={hdPath}
-            />
-            <Button colorScheme="purple" onClick={onChangeHdPathOpen}>
-              Change
-            </Button>
-          </HStack>
-        </FormControl>
-      )}
+            <HStack spacing={12}>
+              <HdPathInput
+                forcePrefixLength={stringToPath(hdPath).length}
+                fixedLength
+                derivePosition={derivePosition}
+                value={hdPath}
+              />
+              {wallet.type === WalletType.HD && (
+                <Button colorScheme="purple" onClick={onChangeHdPathOpen}>
+                  Change
+                </Button>
+              )}
+            </HStack>
+          </FormControl>
+        )}
 
       <Stack spacing={6}>
         <FormControl>
@@ -98,28 +101,32 @@ export const WalletEdit = ({ network, wallet, onDelete }: WalletEditProps) => {
           </HStack>
         </FormControl>
 
-        <FormControl>
-          <FormLabel>Derive New Accounts</FormLabel>
-          <SaveInput
-            isNumber
-            hideSaveIfNoChange
-            stretchInput
-            saveTitle="Derive"
-            value={deriveNum + ''}
-            validate={(value: string) => {
-              if (isNaN(+value)) {
-                return false
-              }
-              return Math.min(Math.max(+value, 0), 1000) + ''
-            }}
-            onChange={(value: string) => {
-              setDeriveNum(+value)
-              WALLET_SERVICE.deriveSubWallets(wallet.id, +value).finally(() => {
-                setDeriveNum(0)
-              })
-            }}
-          />
-        </FormControl>
+        {wallet.type === WalletType.HD && (
+          <FormControl>
+            <FormLabel>Derive New Accounts</FormLabel>
+            <SaveInput
+              isNumber
+              hideSaveIfNoChange
+              stretchInput
+              saveTitle="Derive"
+              value={deriveNum + ''}
+              validate={(value: string) => {
+                if (isNaN(+value)) {
+                  return false
+                }
+                return Math.min(Math.max(+value, 0), 1000) + ''
+              }}
+              onChange={(value: string) => {
+                setDeriveNum(+value)
+                WALLET_SERVICE.deriveSubWallets(wallet.id, +value).finally(
+                  () => {
+                    setDeriveNum(0)
+                  }
+                )
+              }}
+            />
+          </FormControl>
+        )}
       </Stack>
 
       <HStack justify="end" spacing={6}>
@@ -137,12 +144,14 @@ export const WalletEdit = ({ network, wallet, onDelete }: WalletEditProps) => {
         </Button>
       </HStack>
 
-      <ChangeHdPathModal
-        isOpen={isChangeHdPathOpen}
-        onClose={onChangeHdPathClose}
-        network={network}
-        wallet={wallet}
-      />
+      {wallet.type === WalletType.HD && (
+        <ChangeHdPathModal
+          isOpen={isChangeHdPathOpen}
+          onClose={onChangeHdPathClose}
+          network={network}
+          wallet={wallet}
+        />
+      )}
 
       <ExportMnemonicModal
         walletId={wallet.id}

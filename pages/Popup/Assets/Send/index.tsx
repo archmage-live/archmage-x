@@ -45,7 +45,7 @@ import { AptosProvider } from '~lib/services/provider/aptos/provider'
 import { EvmProvider } from '~lib/services/provider/evm/provider'
 import { EvmTxParams } from '~lib/services/provider/evm/types'
 import { NativeToken, getTokenBrief, useTokenById } from '~lib/services/token'
-import { checkAddress } from '~lib/wallet'
+import { canWalletSign, checkAddress } from '~lib/wallet'
 import { TokenItem, TokenItemStyle } from '~pages/Popup/Assets/TokenItem'
 import { useConsentModal } from '~pages/Popup/Consent'
 import { useModalBox } from '~pages/Popup/ModalBox'
@@ -73,7 +73,7 @@ export const Send = ({
 }) => {
   const { onOpen: onConsentOpen } = useConsentModal()
 
-  const { network, account } = useActive()
+  const { network, wallet, account } = useActive()
 
   useEffect(() => {
     onClose()
@@ -380,6 +380,9 @@ export const Send = ({
                 placeholder="0.0"
                 errorBorderColor="red.500"
                 isInvalid={!!amountAlert}
+                min={Number.MIN_VALUE}
+                max={Number.MAX_VALUE}
+                step={Number.MAX_VALUE}
                 value={amountInput}
                 onChange={(e) => {
                   setAmountAlert('')
@@ -475,8 +478,16 @@ export const Send = ({
                 </Text>
               </AlertBox>
             )}
+
             <AlertBox>{addrAlert}</AlertBox>
+
             <AlertBox>{amountAlert}</AlertBox>
+
+            {wallet && !canWalletSign(wallet.type) && (
+              <AlertBox level="error">
+                You can&apos;t send tokens using the watch-only wallet.
+              </AlertBox>
+            )}
           </Stack>
         </Stack>
       </Stack>
@@ -489,7 +500,7 @@ export const Send = ({
           colorScheme="purple"
           size="lg"
           flex={1}
-          isDisabled={!nextEnabled}
+          isDisabled={!nextEnabled || (wallet && !canWalletSign(wallet.type))}
           isLoading={isLoading}
           onClick={onNext}>
           Next

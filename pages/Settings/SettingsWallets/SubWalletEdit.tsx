@@ -68,7 +68,7 @@ export const SubWalletEdit = ({
   const { onOpen: onOpenDeleteWallet } = useDeleteWalletModal()
 
   return (
-    <Stack spacing="12">
+    <Stack spacing="12" fontSize="md">
       {isWalletGroup(wallet.type) ? (
         <>
           <SubWalletNameEdit wallet={wallet} subWallet={subWallet} />
@@ -104,7 +104,7 @@ export const SubWalletEdit = ({
         )}
       </Stack>
 
-      <Text fontSize="md" fontWeight="medium">
+      <Text fontWeight="medium">
         Balance:&nbsp;
         {formatNumber(balance?.amount)} {balance?.symbol}
       </Text>

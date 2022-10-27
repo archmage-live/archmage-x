@@ -124,9 +124,13 @@ export async function getHardwareSigningWallet(
       return new EvmHwWallet(
         wallet.hash,
         account.address!,
-        wallet.info.path!,
-        account.index,
-        wallet.info.derivePosition
+        wallet.type === WalletType.HW
+          ? wallet.info.path!
+          : {
+              pathTemplate: wallet.info.path!,
+              index: account.index,
+              derivePosition: wallet.info.derivePosition
+            }
       )
   }
 }

@@ -93,11 +93,6 @@ export const StepConnectLedger = ({}: {}) => {
     }
   }, [pathSchemas, pathSchemaIndex])
 
-  useEffect(() => {
-    setHdPath(pathSchema ? pathSchema.pathSchema : '')
-    setDerivePosition(pathSchema ? pathSchema.derivePosition : undefined)
-  }, [pathSchema, setHdPath, setDerivePosition])
-
   const [addresses, setAddresses] = useState<string[]>([])
   const [addressCount, setAddressCount] = useState(0)
 
@@ -146,7 +141,6 @@ export const StepConnectLedger = ({}: {}) => {
   }, [pathSchema])
 
   const { retry, loading } = useAsyncRetry(async () => {
-    console.log(addressCount, addresses.length)
     if (addressCount > addresses.length) {
       await getAddresses(addresses.length, addressCount)
     }
@@ -204,6 +198,25 @@ export const StepConnectLedger = ({}: {}) => {
     })
     setHwAccounts(accounts)
   }, [addresses, checked, setHwAccounts])
+
+  useEffect(() => {
+    if (!pathSchema) {
+      setHdPath('')
+      setDerivePosition(undefined)
+      return
+    }
+    if (addWalletKind === AddWalletKind.CONNECT_HARDWARE_GROUP) {
+      setHdPath(pathSchema.pathSchema)
+      setDerivePosition(pathSchema.derivePosition)
+    } else if (hwAccounts.length) {
+      const path = generatePath(
+        pathSchema.pathSchema,
+        hwAccounts[0].index,
+        pathSchema.derivePosition
+      )
+      setHdPath(path)
+    }
+  }, [pathSchema, setHdPath, setDerivePosition, addWalletKind, hwAccounts])
 
   const existingWallet = useWallet(
     undefined,

@@ -18,17 +18,29 @@ export class EvmHwWallet implements SigningWallet {
   constructor(
     public hwHash: string,
     public address: string,
-    pathTemplate: string,
-    index: number,
-    derivePosition?: DerivePosition,
+    path:
+      | {
+          pathTemplate: string
+          index: number
+          derivePosition?: DerivePosition
+        }
+      | string,
     public publicKey?: string
   ) {
-    this.path = generatePath(pathTemplate, index, derivePosition)
+    this.path =
+      typeof path === 'object'
+        ? generatePath(path.pathTemplate, path.index, path.derivePosition)
+        : path
   }
 
   private async getLedgerApp() {
     const [appEth, hwHash] = await getLedgerEthApp()
-    assert(hwHash === this.hwHash, HARDWARE_MISMATCH)
+    assert(
+      this.hwHash === this.address || hwHash === this.hwHash,
+      HARDWARE_MISMATCH
+    )
+    const { address } = await appEth.getAddress(this.path)
+    assert(address === this.address, HARDWARE_MISMATCH)
     return appEth
   }
 

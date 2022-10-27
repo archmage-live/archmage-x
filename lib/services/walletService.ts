@@ -1126,9 +1126,26 @@ export function useHdPath(
 ): [string | undefined, DerivePosition | undefined] {
   return (
     useLiveQuery(async () => {
-      if (!networkKind || !wallet || typeof index !== 'number') {
+      if (
+        !networkKind ||
+        !wallet ||
+        (wallet.type !== WalletType.HD &&
+          wallet.type !== WalletType.HW &&
+          wallet.type !== WalletType.HW_GROUP) ||
+        typeof index !== 'number'
+      ) {
         return
       }
+
+      if (wallet.type === WalletType.HW) {
+        return [wallet.info.path!, undefined]
+      } else if (wallet.type === WalletType.HW_GROUP) {
+        return [
+          generatePath(wallet.info.path!, index, wallet.info.derivePosition),
+          wallet.info.derivePosition
+        ]
+      }
+
       const hdPath = await WALLET_SERVICE.getHdPath(wallet.id, networkKind)
       if (!hdPath) {
         return
