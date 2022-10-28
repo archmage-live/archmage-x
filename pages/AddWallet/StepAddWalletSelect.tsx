@@ -1,4 +1,5 @@
-import { Button, HStack, Stack, Text } from '@chakra-ui/react'
+import { Button, HStack, Image, Stack, Text } from '@chakra-ui/react'
+import walletConnectLogo from 'data-base64:~assets/thirdparty/walletconnect.svg'
 import { useEffect } from 'react'
 import { useWizard } from 'react-use-wizard'
 
@@ -60,6 +61,26 @@ export const StepAddWalletSelect = () => {
             nextStep()
           }}>
           Connect hardware wallet
+        </Button>
+        <Button
+          w="full"
+          h="14"
+          size="lg"
+          variant="outline"
+          borderRadius="8px"
+          onClick={() => {
+            setAddWalletKind(AddWalletKind.WALLET_CONNECT)
+            nextStep()
+          }}>
+          <HStack>
+            <Text>Connect with WallectConnect</Text>
+            <Image
+              w={8}
+              fit="cover"
+              src={walletConnectLogo}
+              alt="WallectConnect Logo"
+            />
+          </HStack>
         </Button>
       </Stack>
 
