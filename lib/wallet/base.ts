@@ -1,5 +1,6 @@
 import { Slip10RawIndex, pathToString, stringToPath } from '@cosmjs/crypto'
 import assert from 'assert'
+import walletConnectLogo from 'data-base64:~assets/thirdparty/walletconnect.svg'
 
 import { NetworkKind } from '~lib/network'
 import { DerivePosition, IHdPath, IWallet } from '~lib/schema'
@@ -11,7 +12,9 @@ export enum WalletType {
   WATCH = 'watch', // only watch, no signing
   WATCH_GROUP = 'watch_group', // ditto, but in group
   HW = 'hw', // hardware
-  HW_GROUP = 'hw_group' // ditto, but in group
+  HW_GROUP = 'hw_group', // ditto, but in group
+  WALLET_CONNECT = 'wallet_connect', // WalletConnect protocol
+  WALLET_CONNECT_GROUP = 'wallet_connect' // ditto, but in group
 }
 
 export function isWalletGroup(type: WalletType) {
@@ -23,6 +26,8 @@ export function isWalletGroup(type: WalletType) {
     case WalletType.WATCH_GROUP:
     // pass through
     case WalletType.HW_GROUP:
+    // pass through
+    case WalletType.WALLET_CONNECT_GROUP:
       return true
     default:
       return false
@@ -53,8 +58,23 @@ export function isWalletHardware(type: WalletType) {
   }
 }
 
+export function isWalletConnectProtocol(type: WalletType) {
+  switch (type) {
+    case WalletType.WALLET_CONNECT:
+    // pass through
+    case WalletType.WALLET_CONNECT_GROUP:
+      return true
+    default:
+      return false
+  }
+}
+
 export function canWalletSign(type: WalletType) {
-  return isWalletHardware(type) || hasWalletKeystore(type)
+  return (
+    hasWalletKeystore(type) ||
+    isWalletHardware(type) ||
+    isWalletConnectProtocol(type)
+  )
 }
 
 export function getWalletTypeIdentifier(wallet: IWallet) {
@@ -71,6 +91,10 @@ export function getWalletTypeIdentifier(wallet: IWallet) {
       return wallet.info.hwType
     case WalletType.HW_GROUP:
       return wallet.info.hwType + ' Group'
+    case WalletType.WALLET_CONNECT:
+    // pass through
+    case WalletType.WALLET_CONNECT_GROUP:
+      return walletConnectLogo
   }
 }
 
@@ -88,6 +112,10 @@ export function getWalletTypeTitle(wallet: IWallet) {
       return 'Connected ' + wallet.info.hwType
     case WalletType.HW_GROUP:
       return 'Connected ' + wallet.info.hwType
+    case WalletType.WALLET_CONNECT:
+    // pass through
+    case WalletType.WALLET_CONNECT_GROUP:
+      return walletConnectLogo
   }
 }
 

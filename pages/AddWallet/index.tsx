@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom'
 import { ActionWizard } from '~components/ActionWizard'
 import { TitleBar } from '~components/TitleBar'
 import { usePassword } from '~lib/password'
+import { StepWalletConnect } from '~pages/AddWallet/StepWalletConnect'
 
 import { StepAddWalletDone } from './StepAddWalletDone'
 import { StepAddWalletSelect } from './StepAddWalletSelect'
@@ -48,8 +49,11 @@ export default function AddWallet() {
             addWalletKind === AddWalletKind.IMPORT_WATCH_ADDRESS ||
             addWalletKind === AddWalletKind.IMPORT_WATCH_ADDRESS_GROUP ? (
             <StepImportWallet />
-          ) : (
+          ) : addWalletKind === AddWalletKind.CONNECT_HARDWARE ||
+            addWalletKind === AddWalletKind.CONNECT_HARDWARE_GROUP ? (
             <StepConnectHardwareWallet />
+          ) : (
+            <StepWalletConnect />
           )}
 
           {addWalletKind === AddWalletKind.NEW_HD && <StepRememberMnemonic />}
