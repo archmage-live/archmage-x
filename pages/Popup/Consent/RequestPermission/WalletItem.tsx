@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { AccountAvatar } from '~components/AccountAvatar'
 import { Badge } from '~components/Badge'
+import { TypeBadge } from '~components/TypeBadge'
 import { WalletId } from '~lib/active'
 import { formatNumber } from '~lib/formatNumber'
 import { INetwork } from '~lib/schema/network'
@@ -137,7 +138,10 @@ export const WalletItem = ({
               )}
               {typeIdentifier && (
                 <Text textAlign="start">
-                  <Badge>{typeIdentifier}</Badge>
+                  <TypeBadge
+                    identifier={typeIdentifier.identifier}
+                    logo={typeIdentifier.logo}
+                  />
                 </Text>
               )}
             </HStack>

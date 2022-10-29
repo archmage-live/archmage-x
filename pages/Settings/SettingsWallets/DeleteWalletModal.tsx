@@ -171,6 +171,12 @@ export const DeleteWalletModal = ({
                   You can import watch accounts again from the account
                   drop-down.
                 </>
+              ) : wallet.type === WalletType.WALLET_CONNECT ||
+                wallet.type === WalletType.WALLET_CONNECT_GROUP ? (
+                <>
+                  You can connect accounts with WalletConnect again from the
+                  account drop-down.
+                </>
               ) : wallet.type === WalletType.HW ||
                 wallet.type === WalletType.HW_GROUP ? (
                 <>

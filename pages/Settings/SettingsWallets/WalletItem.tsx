@@ -6,6 +6,7 @@ import { useDebounce } from 'react-use'
 
 import { AccountAvatar } from '~components/AccountAvatar'
 import { Badge } from '~components/Badge'
+import { TypeBadge } from '~components/TypeBadge'
 import { dayjs } from '~lib/dayjs'
 import { shortenAddress } from '~lib/utils'
 import { getWalletTypeIdentifier, isWalletGroup } from '~lib/wallet'
@@ -106,7 +107,10 @@ export const WalletItem = ({
               </Text>
               {typeIdentifier && (
                 <Text mt="-4px" mb="-7px">
-                  <Badge>{typeIdentifier}</Badge>
+                  <TypeBadge
+                    identifier={typeIdentifier.identifier}
+                    logo={typeIdentifier.logo}
+                  />
                 </Text>
               )}
             </Box>

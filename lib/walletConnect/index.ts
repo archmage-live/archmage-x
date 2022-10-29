@@ -2,12 +2,13 @@ import { Web3Provider } from '@ethersproject/providers'
 import { IClientMeta } from '@walletconnect/types'
 import WalletConnectProvider from '@walletconnect/web3-provider'
 import assert from 'assert'
-import { useMemo, useState } from 'react'
-import { useAsync } from 'react-use'
+import { useCallback, useMemo, useState } from 'react'
+import { useAsync, useAsyncRetry } from 'react-use'
 
 import { NetworkKind } from '~lib/network'
 import { INetwork } from '~lib/schema'
 import { getNetworkInfo } from '~lib/services/network'
+import { checkAddress, checkAddressMayThrow } from '~lib/wallet'
 
 const metadata: IClientMeta = {
   name: 'Archmage',
@@ -25,7 +26,11 @@ export function useWalletConnect(
   const [chainId, setChainId] = useState<number | undefined>()
   const [accounts, setAccounts] = useState<string[] | undefined>()
 
-  const { value: provider } = useAsync(async () => {
+  const {
+    value: provider,
+    loading,
+    retry
+  } = useAsyncRetry(async () => {
     setChainId(undefined)
     setAccounts(undefined)
 
@@ -42,6 +47,7 @@ export function useWalletConnect(
 
     const provider = new WalletConnectProvider({
       clientMeta: metadata,
+      bridge: 'https://bridge.walletconnect.org',
       rpc: { [network.chainId]: info.rpcUrl },
       chainId: +network.chainId,
       qrcode: false
@@ -54,12 +60,29 @@ export function useWalletConnect(
     })
 
     provider.on('accountsChanged', (accounts: string[]) => {
-      setAccounts(accounts)
+      setAccounts(
+        accounts.map((addr) => checkAddressMayThrow(network.kind, addr))
+      )
     })
 
     provider.on('chainChanged', (chainId: number) => {
       setChainId(chainId)
     })
+
+    provider.on('session_update', (error: any, payload: any) => {
+      console.log(error, payload)
+    })
+
+    provider.on('disconnect', (error: any, payload: any) => {
+      console.log(error, payload)
+    })
+
+    await provider.disconnect()
+    provider
+      .enable()
+      .then((accounts) =>
+        accounts.map((addr) => checkAddressMayThrow(network.kind, addr))
+      )
 
     return provider
   }, [network, onUrl])
@@ -79,9 +102,16 @@ export function useWalletConnect(
     setAccounts(accounts)
   }, [web3Provider])
 
+  const reconnect = useCallback(async () => {
+    if (!loading) {
+      retry()
+    }
+  }, [loading, retry])
+
   return {
     provider,
     web3Provider,
+    reconnect,
     chainId,
     accounts
   }
