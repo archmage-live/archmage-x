@@ -470,13 +470,35 @@ class WalletService extends WalletServicePartial {
         hash = account.address
         break
       }
-      case WalletType.WATCH: {
+      case WalletType.WATCH:
+      // pass through
+      case WalletType.WALLET_CONNECT: {
         assert(networkKind)
         assert(addresses && addresses.length === 1)
         hash = checkAddresses(networkKind, addresses)[0]
         break
       }
-      case WalletType.WATCH_GROUP: {
+      case WalletType.WATCH_GROUP:
+      // pass through
+      case WalletType.WALLET_CONNECT_GROUP: {
+        assert(networkKind)
+        assert(addresses && addresses.length >= 1)
+        checkAddresses(networkKind, addresses)
+        hash = ethers.utils.getAddress(
+          ethers.utils.hexDataSlice(
+            ethers.utils.keccak256(ethers.utils.randomBytes(32)),
+            12
+          )
+        )
+        break
+      }
+      case WalletType.WALLET_CONNECT: {
+        assert(networkKind)
+        assert(addresses && addresses.length === 1)
+        hash = checkAddresses(networkKind, addresses)[0]
+        break
+      }
+      case WalletType.WALLET_CONNECT_GROUP: {
         assert(networkKind)
         assert(addresses && addresses.length >= 1)
         checkAddresses(networkKind, addresses)
@@ -579,7 +601,9 @@ class WalletService extends WalletServicePartial {
             } as ISubWallet)
             break
           }
-          case WalletType.WATCH: {
+          case WalletType.WATCH:
+          // pass through
+          case WalletType.WALLET_CONNECT: {
             assert(networkKind)
             assert(addresses && addresses.length === 1)
             addresses = checkAddresses(networkKind, addresses)
@@ -597,7 +621,9 @@ class WalletService extends WalletServicePartial {
             )
             break
           }
-          case WalletType.WATCH_GROUP: {
+          case WalletType.WATCH_GROUP:
+          // pass through
+          case WalletType.WALLET_CONNECT_GROUP: {
             assert(networkKind)
             assert(addresses && addresses.length >= 1)
             addresses = checkAddresses(networkKind, addresses)
@@ -1319,6 +1345,8 @@ async function ensureChainAccounts(
         }
         case WalletType.WATCH_GROUP:
         // pass through
+        case WalletType.WALLET_CONNECT_GROUP:
+        // pass through
         case WalletType.HW_GROUP: {
           assert(accountsAuxMap)
           const aux = accountsAuxMap.get(subWallet.index)
@@ -1429,6 +1457,8 @@ async function ensureChainAccount(
     }
     case WalletType.WATCH:
     // pass through
+    case WalletType.WALLET_CONNECT:
+    // pass through
     case WalletType.HW: {
       const aux = await DB.chainAccountsAux
         .where('[masterId+index+networkKind]')
@@ -1438,6 +1468,8 @@ async function ensureChainAccount(
       break
     }
     case WalletType.WATCH_GROUP:
+    // pass through
+    case WalletType.WALLET_CONNECT_GROUP:
     // pass through
     case WalletType.HW_GROUP: {
       const aux = await DB.chainAccountsAux

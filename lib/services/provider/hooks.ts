@@ -120,10 +120,9 @@ export function useBalances(
 
   const getBalances = useCallback(async () => {
     if (!network || !addresses.length) {
-      return
+      return new Map<string, string>()
     }
     const balances = await (await getProvider(network)).getBalances(addresses)
-    // console.log(addresses, balances)
     if (!balances) {
       return null
     }

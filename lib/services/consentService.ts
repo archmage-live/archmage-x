@@ -118,6 +118,12 @@ class ConsentServicePartial implements IConsentService {
           `Transaction encountered an error. (${err})`
         )
       }
+      if (err instanceof Error) {
+        err = Object.getOwnPropertyNames(err).reduce((o, k) => {
+          o[k] = err[k]
+          return o
+        }, {} as any)
+      }
       reject = err
     }
 
@@ -419,6 +425,13 @@ class ConsentService extends ConsentServicePartial {
     }
 
     if (rejectData) {
+      if ('message' in rejectData) {
+        const err = new Error(rejectData['message'])
+        Object.getOwnPropertyNames(rejectData).forEach(
+          (k) => ((err as any)[k] = rejectData[k])
+        )
+        rejectData = err
+      }
       reject?.(rejectData)
     } else {
       resolve?.(resolveData)

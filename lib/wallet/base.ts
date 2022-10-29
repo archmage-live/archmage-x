@@ -14,7 +14,7 @@ export enum WalletType {
   HW = 'hw', // hardware
   HW_GROUP = 'hw_group', // ditto, but in group
   WALLET_CONNECT = 'wallet_connect', // WalletConnect protocol
-  WALLET_CONNECT_GROUP = 'wallet_connect' // ditto, but in group
+  WALLET_CONNECT_GROUP = 'wallet_connect_group' // ditto, but in group
 }
 
 export function isWalletGroup(type: WalletType) {
@@ -77,25 +77,37 @@ export function canWalletSign(type: WalletType) {
   )
 }
 
-export function getWalletTypeIdentifier(wallet: IWallet) {
+export function getWalletTypeIdentifier(wallet: IWallet): {
+  identifier?: string
+  logo?: string
+} {
+  let identifier = undefined
+  let logo = undefined
   switch (wallet.type) {
     case WalletType.HD:
-      return 'HD'
+      identifier = 'HD'
+      break
     case WalletType.PRIVATE_KEY:
-      return '' // empty for simple wallet
+      identifier = '' // empty for simple wallet
+      break
     case WalletType.WATCH:
-      return 'Watch'
+      identifier = 'Watch'
+      break
     case WalletType.WATCH_GROUP:
-      return 'Watch Group'
+      identifier = 'Watch Group'
+      break
     case WalletType.HW:
-      return wallet.info.hwType
+      identifier = wallet.info.hwType as string
+      break
     case WalletType.HW_GROUP:
-      return wallet.info.hwType + ' Group'
+      identifier = wallet.info.hwType + ' Group'
+      break
     case WalletType.WALLET_CONNECT:
     // pass through
     case WalletType.WALLET_CONNECT_GROUP:
-      return walletConnectLogo
+      logo = walletConnectLogo
   }
+  return { identifier, logo }
 }
 
 export function getWalletTypeTitle(wallet: IWallet) {
@@ -113,9 +125,9 @@ export function getWalletTypeTitle(wallet: IWallet) {
     case WalletType.HW_GROUP:
       return 'Connected ' + wallet.info.hwType
     case WalletType.WALLET_CONNECT:
-    // pass through
+      return 'WalletConnect'
     case WalletType.WALLET_CONNECT_GROUP:
-      return walletConnectLogo
+      return 'WalletConnect Group'
   }
 }
 

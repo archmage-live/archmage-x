@@ -179,6 +179,16 @@ export function useAddWallet() {
         opts.networkKind = networkKind
         opts.addresses = addresses
         break
+      case AddWalletKind.WALLET_CONNECT:
+        opts.type = WalletType.WALLET_CONNECT
+        opts.networkKind = networkKind
+        opts.addresses = addresses
+        break
+      case AddWalletKind.WALLET_CONNECT_GROUP:
+        opts.type = WalletType.WALLET_CONNECT_GROUP
+        opts.networkKind = networkKind
+        opts.addresses = addresses
+        break
       case AddWalletKind.CONNECT_HARDWARE:
         opts.type = WalletType.HW
         opts.networkKind = networkKind
@@ -200,6 +210,7 @@ export function useAddWallet() {
         throw new Error('unknown wallet type')
     }
 
+    console.log(opts)
     const { wallet, decrypted } = await WALLET_SERVICE.newWallet(opts)
 
     if (await WALLET_SERVICE.existsSecret(wallet)) {

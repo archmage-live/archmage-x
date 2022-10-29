@@ -1,28 +1,27 @@
+import { MinusIcon } from '@chakra-ui/icons'
 import {
   Button,
   Checkbox,
   Divider,
   FormControl,
   FormLabel,
+  HStack,
+  IconButton,
+  Input,
   Select,
   Stack,
-  Tab,
-  TabList,
-  TabPanel,
-  TabPanels,
-  Tabs,
   Text,
-  chakra,
-  useColorModeValue
+  chakra
 } from '@chakra-ui/react'
-import { QRCodeSVG } from 'qrcode.react'
 import * as React from 'react'
 import { useCallback, useEffect, useState } from 'react'
+import { useAsync } from 'react-use'
 import { useWizard } from 'react-use-wizard'
 
 import { AlertBox } from '~components/AlertBox'
-import { CopyArea } from '~components/CopyIcon'
+import { WallectConnectQRCode } from '~components/WalletConnectQRCode'
 import { NETWORK_SCOPES, NetworkKind, getNetworkKind } from '~lib/network'
+import { NETWORK_SERVICE } from '~lib/services/network'
 import { checkAddress } from '~lib/wallet'
 import { useWalletConnect } from '~lib/walletConnect'
 import { NameInput } from '~pages/AddWallet/NameInput'
@@ -45,21 +44,21 @@ export const StepWalletConnect = () => {
   useEffect(() => {
     setAddWalletKind(AddWalletKind.WALLET_CONNECT)
     setNetworkKind(NetworkKind.EVM)
-    setAddresses([''])
+    setAddresses([])
     setName('')
   }, [setAddWalletKind, setNetworkKind, setAddresses, setName])
 
-  const [isWatchGroupChecked, setIsWatchGroupChecked] = useState(false)
+  const [isGroupChecked, setIsGroupChecked] = useState(false)
   useEffect(() => {
-    if (!isWatchGroupChecked) {
-      setAddresses((addresses) => [addresses[0]])
+    if (!isGroupChecked) {
+      setAddresses((addresses) => addresses.slice(0, 1))
     }
     setAddWalletKind(
-      !isWatchGroupChecked
+      !isGroupChecked
         ? AddWalletKind.WALLET_CONNECT
         : AddWalletKind.WALLET_CONNECT_GROUP
     )
-  }, [isWatchGroupChecked, setAddWalletKind, setAddresses])
+  }, [isGroupChecked, setAddWalletKind, setAddresses])
 
   const [alert, setAlert] = useState('')
   useEffect(() => {
@@ -88,7 +87,47 @@ export const StepWalletConnect = () => {
     nextStep()
   }, [addresses, addWallet, nextStep, networkKind])
 
-  useWalletConnect()
+  // WalletConnect 1.0 only supports Ethereum networks
+  // Here we only connect it with Ethereum mainnet
+  const { value: network } = useAsync(async () => {
+    return await NETWORK_SERVICE.getNetwork({
+      kind: NetworkKind.EVM,
+      chainId: 1 // Ethereum mainnet
+    })
+  }, [])
+
+  const [url, setUrl] = useState('')
+
+  const { accounts, reconnect } = useWalletConnect(network, setUrl)
+
+  useEffect(() => {
+    if (!accounts?.length) {
+      return
+    }
+    setAddresses((addresses) => {
+      let addrs = addresses.slice()
+      if (isGroupChecked) {
+        let update = false
+        const existing = new Set(addrs)
+        for (const addr of accounts) {
+          if (!existing.has(addr)) {
+            addrs.push(addr)
+            update = true
+          }
+        }
+        if (!update) {
+          return addresses
+        }
+      } else {
+        if (addresses[0] === accounts[0]) {
+          return addresses
+        }
+        addrs = [accounts[0]]
+      }
+      reconnect()
+      return addrs
+    })
+  }, [accounts, reconnect, setAddresses, isGroupChecked])
 
   return (
     <Stack p="4" pt="16" spacing={8}>
@@ -122,24 +161,47 @@ export const StepWalletConnect = () => {
 
       {networkKind === NetworkKind.EVM ? (
         <>
-          <WallectConnectQRCode url={''} />
+          <WallectConnectQRCode url={url} refresh={reconnect} />
 
           <Checkbox
             size="lg"
             colorScheme="purple"
-            isChecked={isWatchGroupChecked}
-            onChange={(e) => setIsWatchGroupChecked(e.target.checked)}>
+            isChecked={isGroupChecked}
+            onChange={(e) => setIsGroupChecked(e.target.checked)}>
             <chakra.span color="gray.500" fontSize="xl">
               Create group to connect multiple addresses.
             </chakra.span>
           </Checkbox>
 
+          <Stack spacing={3}>
+            {addresses.map((address, i) => {
+              return (
+                <HStack key={i}>
+                  <Input size="lg" value={address} readOnly />
+
+                  {isGroupChecked && (
+                    <IconButton
+                      size="xs"
+                      aria-label="Remove address"
+                      icon={<MinusIcon />}
+                      visibility={addresses.length > 1 ? 'visible' : 'hidden'}
+                      onClick={() =>
+                        setAddresses([
+                          ...addresses.slice(0, i),
+                          ...addresses.slice(i + 1)
+                        ])
+                      }
+                    />
+                  )}
+                </HStack>
+              )
+            })}
+          </Stack>
+
           <NameInput
             value={name}
             onChange={setName}
-            placeholder={
-              isWatchGroupChecked ? 'Group Name (Optional)' : undefined
-            }
+            placeholder={isGroupChecked ? 'Group Name (Optional)' : undefined}
           />
 
           <AlertBox>{alert}</AlertBox>
@@ -157,46 +219,6 @@ export const StepWalletConnect = () => {
         onClick={onImport}>
         Connect
       </Button>
-    </Stack>
-  )
-}
-
-const WallectConnectQRCode = ({ url }: { url: string }) => {
-  const [tabIndex, setTabIndex] = useState(0)
-
-  const qrCodeBg = useColorModeValue('white', 'black')
-  const qrCodeFg = useColorModeValue('black', 'white')
-
-  return (
-    <Stack spacing={6}>
-      <Tabs
-        align="center"
-        variant="unstyled"
-        index={tabIndex}
-        onChange={setTabIndex}>
-        <TabList justifyContent="center">
-          <Tab _selected={{ color: 'white', bg: 'blue.500' }}>QR Code</Tab>
-          <Tab _selected={{ color: 'white', bg: 'blue.500' }}>URL</Tab>
-        </TabList>
-      </Tabs>
-
-      <Tabs align="center" index={tabIndex}>
-        <TabPanels justifyContent="center">
-          <TabPanel p={0}>
-            <QRCodeSVG
-              value={url}
-              size={200}
-              bgColor={qrCodeBg}
-              fgColor={qrCodeFg}
-              level={'L'}
-              includeMargin={false}
-            />
-          </TabPanel>
-          <TabPanel p={0}>
-            <CopyArea name="URL" copy={url} />
-          </TabPanel>
-        </TabPanels>
-      </Tabs>
     </Stack>
   )
 }
