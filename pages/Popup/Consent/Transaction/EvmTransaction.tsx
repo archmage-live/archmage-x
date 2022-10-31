@@ -68,8 +68,12 @@ import {
 import { Balance } from '~lib/services/token'
 import { useTransactionDescription } from '~lib/services/transaction/evmService'
 import { shortenAddress } from '~lib/utils'
-import { isWalletHardware } from '~lib/wallet'
+import { isWalletConnectProtocol, isWalletHardware } from '~lib/wallet'
 import { EvmGasFeeEditSection } from '~pages/Popup/Consent/Transaction/EvmGasFeeEditSection'
+import {
+  WalletConnectSigningModel,
+  useWalletConnectSigning
+} from '~pages/Popup/Consent/WallectConnectSigningModel'
 
 import { EvmAdvancedGasFeeModal } from './EvmAdvancedGasFeeModal'
 import {
@@ -263,6 +267,15 @@ export const EvmTransaction = ({
 
   const insufficientBalance = balance && normalTotal?.gt(balance.amount)
 
+  const {
+    isWcOpen,
+    onWcOpen,
+    onWcClose,
+    wcPayload,
+    setWcPayload,
+    onWcSignedRef
+  } = useWalletConnectSigning()
+
   const onConfirm = useCallback(async () => {
     if (!gasFeeEstimation || !activeOption) {
       return
@@ -295,47 +308,65 @@ export const EvmTransaction = ({
       }
     }
 
-    setSpinning(true)
+    const tx = {
+      ...payload.txParams,
+      nonce,
+      gasLimit,
+      gasPrice: gasPrice && parseGwei(gasPrice).toDecimalPlaces(0).toString(),
+      maxPriorityFeePerGas:
+        maxPriorityFeePerGas &&
+        parseGwei(maxPriorityFeePerGas).toDecimalPlaces(0).toString(),
+      maxFeePerGas:
+        maxFeePerGas && parseGwei(maxFeePerGas).toDecimalPlaces(0).toString()
+    } as EvmTxParams
 
-    await CONSENT_SERVICE.processRequest(
-      {
-        ...request,
-        payload: {
-          txParams: {
-            ...payload.txParams,
-            nonce,
-            gasLimit,
-            gasPrice:
-              gasPrice && parseGwei(gasPrice).toDecimalPlaces(0).toString(),
-            maxPriorityFeePerGas:
-              maxPriorityFeePerGas &&
-              parseGwei(maxPriorityFeePerGas).toDecimalPlaces(0).toString(),
-            maxFeePerGas:
-              maxFeePerGas &&
-              parseGwei(maxFeePerGas).toDecimalPlaces(0).toString()
-          } as EvmTxParams,
-          populatedParams: {
-            ...payload.populatedParams,
-            functionSig
-          } as EvmTxPopulatedParams
-        } as TransactionPayload
-      },
-      true
-    )
+    const process = async (signed?: any) => {
+      setSpinning(true)
 
-    onComplete()
-    setSpinning(false)
+      await CONSENT_SERVICE.processRequest(
+        {
+          ...request,
+          payload: {
+            txParams: tx,
+            populatedParams: {
+              ...payload.populatedParams,
+              functionSig
+            } as EvmTxPopulatedParams,
+            ...signed
+          } as TransactionPayload
+        },
+        true
+      )
+
+      onComplete()
+      setSpinning(false)
+    }
+
+    if (isWalletConnectProtocol(wallet.type)) {
+      setWcPayload({ tx })
+      onWcSignedRef.current = ({ signedTx, txHash }) => {
+        console.log(signedTx, txHash)
+        process({ signedTx, txHash })
+      }
+      onWcOpen()
+    } else {
+      await process()
+    }
   }, [
     gasFeeEstimation,
     activeOption,
-    request,
     payload,
     nonce,
     gasLimit,
+    wallet,
+    request,
     functionSig,
     onComplete,
     customGasFeePerGas,
-    siteSuggestedGasFeePerGas
+    siteSuggestedGasFeePerGas,
+    setWcPayload,
+    onWcSignedRef,
+    onWcOpen
   ])
 
   return (
@@ -731,6 +762,17 @@ export const EvmTransaction = ({
         </>
       ) : (
         <></>
+      )}
+
+      {isWalletConnectProtocol(wallet.type) && (
+        <WalletConnectSigningModel
+          isOpen={isWcOpen}
+          onClose={onWcClose}
+          network={network}
+          account={account}
+          payload={wcPayload}
+          onSigned={onWcSignedRef.current}
+        />
       )}
     </>
   )

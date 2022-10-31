@@ -11,7 +11,7 @@ import {
   useColorModeValue
 } from '@chakra-ui/react'
 import * as React from 'react'
-import { ReactNode, useState } from 'react'
+import { ReactNode, useCallback, useState } from 'react'
 import { FaGlobeAmericas } from 'react-icons/fa'
 import ReactJson from 'react-json-view'
 
@@ -27,6 +27,11 @@ import {
   useWallet
 } from '~lib/services/walletService'
 import { useSiteIconUrl } from '~lib/util'
+import { isWalletConnectProtocol } from '~lib/wallet'
+import {
+  WalletConnectSigningModel,
+  useWalletConnectSigning
+} from '~pages/Popup/Consent/WallectConnectSigningModel'
 
 export const SignTypedData = ({
   request,
@@ -46,13 +51,54 @@ export const SignTypedData = ({
 
   const networkInfo = network && getNetworkInfo(network)
 
-  const { metadata, typedData } = request.payload as SignTypedDataPayload
+  const payload = request.payload as SignTypedDataPayload
+  const { metadata, typedData } = payload
   const { domain, types, primaryType, message } = typedData
 
   const rjvTheme = useColorModeValue('rjv-default', 'brewer')
   const rjvBg = useColorModeValue('gray.50', 'rgb(12, 13, 14)')
 
   const [isLoading, setIsLoading] = useState(false)
+
+  const {
+    isWcOpen,
+    onWcOpen,
+    onWcClose,
+    wcPayload,
+    setWcPayload,
+    onWcSignedRef
+  } = useWalletConnectSigning()
+
+  const onConfirm = useCallback(async () => {
+    const process = async (signature?: any) => {
+      setIsLoading(true)
+      if (signature) {
+        payload.signature = signature
+      }
+      await CONSENT_SERVICE.processRequest(request, true)
+      onComplete()
+      setIsLoading(false)
+    }
+
+    if (wallet && isWalletConnectProtocol(wallet.type)) {
+      setWcPayload({ typedData: payload.originalTypedData })
+      onWcSignedRef.current = ({ signature }) => {
+        console.log(signature)
+        process(signature)
+      }
+      onWcOpen()
+    } else {
+      await process()
+    }
+  }, [
+    onComplete,
+    onWcOpen,
+    onWcSignedRef,
+    request,
+    setWcPayload,
+    payload,
+    wallet
+  ])
 
   return (
     <Box w="full" h="full" overflowY="auto">
@@ -156,12 +202,7 @@ export const SignTypedData = ({
               w={40}
               colorScheme="purple"
               isLoading={isLoading}
-              onClick={async () => {
-                setIsLoading(true)
-                await CONSENT_SERVICE.processRequest(request, true)
-                onComplete()
-                setIsLoading(false)
-              }}>
+              onClick={onConfirm}>
               Sign
             </Button>
           </HStack>
@@ -169,6 +210,17 @@ export const SignTypedData = ({
           {rejectAllButton}
         </Stack>
       </Stack>
+
+      {network && wallet && account && isWalletConnectProtocol(wallet.type) && (
+        <WalletConnectSigningModel
+          isOpen={isWcOpen}
+          onClose={onWcClose}
+          network={network}
+          account={account}
+          payload={wcPayload}
+          onSigned={onWcSignedRef.current}
+        />
+      )}
     </Box>
   )
 }

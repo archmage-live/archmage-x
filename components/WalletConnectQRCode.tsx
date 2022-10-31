@@ -1,5 +1,6 @@
 import { RepeatIcon } from '@chakra-ui/icons'
 import {
+  Box,
   HStack,
   IconButton,
   Stack,
@@ -33,8 +34,8 @@ export const WallectConnectQRCode = ({
       <Tabs
         align="center"
         variant="unstyled"
-        index={tabIndex}
-        onChange={setTabIndex}>
+        index={url ? tabIndex : 0}
+        onChange={url ? setTabIndex : undefined}>
         <HStack justify="center">
           <TabList>
             <Tab _selected={{ color: 'white', bg: 'blue.500' }}>QR Code</Tab>
@@ -51,14 +52,19 @@ export const WallectConnectQRCode = ({
       <Tabs align="center" index={tabIndex}>
         <TabPanels>
           <TabPanel p={0}>
-            <QRCodeSVG
-              value={url}
-              size={200}
-              bgColor={qrCodeBg}
-              fgColor={qrCodeFg}
-              level={'L'}
-              includeMargin={false}
-            />
+            <Box
+              filter="auto"
+              blur={url ? '0' : '4px'}
+              transition="filter 0.2s">
+              <QRCodeSVG
+                value={url}
+                size={200}
+                bgColor={qrCodeBg}
+                fgColor={qrCodeFg}
+                level={'L'}
+                includeMargin={false}
+              />
+            </Box>
           </TabPanel>
           <TabPanel p={0}>
             <CopyArea name="URL" copy={url} />

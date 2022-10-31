@@ -13,7 +13,7 @@ import {
 import { arrayify } from '@ethersproject/bytes'
 import { Utf8ErrorFuncs, toUtf8String } from '@ethersproject/strings'
 import * as React from 'react'
-import { ReactNode, useState } from 'react'
+import { ReactNode, useCallback, useState } from 'react'
 import { FaGlobeAmericas } from 'react-icons/fa'
 
 import {
@@ -28,6 +28,11 @@ import {
   useWallet
 } from '~lib/services/walletService'
 import { useSiteIconUrl } from '~lib/util'
+import { isWalletConnectProtocol } from '~lib/wallet'
+import {
+  WalletConnectSigningModel,
+  useWalletConnectSigning
+} from '~pages/Popup/Consent/WallectConnectSigningModel'
 
 export const SignMessage = ({
   request,
@@ -53,6 +58,40 @@ export const SignMessage = ({
   const bg = useColorModeValue('gray.50', 'rgb(12, 13, 14)')
 
   const [isLoading, setIsLoading] = useState(false)
+
+  const {
+    isWcOpen,
+    onWcOpen,
+    onWcClose,
+    wcPayload,
+    setWcPayload,
+    onWcSignedRef
+  } = useWalletConnectSigning()
+
+  const onConfirm = useCallback(async () => {
+    const payload = request.payload as SignMsgPayload
+
+    const process = async (signature?: any) => {
+      setIsLoading(true)
+      if (signature) {
+        payload.signature = signature
+      }
+      await CONSENT_SERVICE.processRequest(request, true)
+      onComplete()
+      setIsLoading(false)
+    }
+
+    if (wallet && isWalletConnectProtocol(wallet.type)) {
+      setWcPayload({ message: payload.message })
+      onWcSignedRef.current = ({ signature }) => {
+        console.log(signature)
+        process(signature)
+      }
+      onWcOpen()
+    } else {
+      await process()
+    }
+  }, [onComplete, onWcOpen, onWcSignedRef, request, setWcPayload, wallet])
 
   return (
     <Box w="full" h="full" overflowY="auto">
@@ -134,12 +173,7 @@ export const SignMessage = ({
               w={40}
               colorScheme="purple"
               isLoading={isLoading}
-              onClick={async () => {
-                setIsLoading(true)
-                await CONSENT_SERVICE.processRequest(request, true)
-                onComplete()
-                setIsLoading(false)
-              }}>
+              onClick={onConfirm}>
               Sign
             </Button>
           </HStack>
@@ -147,6 +181,17 @@ export const SignMessage = ({
           {rejectAllButton}
         </Stack>
       </Stack>
+
+      {network && wallet && account && isWalletConnectProtocol(wallet.type) && (
+        <WalletConnectSigningModel
+          isOpen={isWcOpen}
+          onClose={onWcClose}
+          network={network}
+          account={account}
+          payload={wcPayload}
+          onSigned={onWcSignedRef.current}
+        />
+      )}
     </Box>
   )
 }
