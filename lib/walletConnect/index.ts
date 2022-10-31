@@ -3,12 +3,13 @@ import { IClientMeta } from '@walletconnect/types'
 import WalletConnectProvider from '@walletconnect/web3-provider'
 import assert from 'assert'
 import { useCallback, useMemo, useState } from 'react'
-import { useAsync, useAsyncRetry } from 'react-use'
+import { useAsyncRetry } from 'react-use'
 
 import { NetworkKind } from '~lib/network'
 import { INetwork } from '~lib/schema'
 import { getNetworkInfo } from '~lib/services/network'
-import { checkAddress, checkAddressMayThrow } from '~lib/wallet'
+import { stall } from '~lib/util'
+import { checkAddressMayThrow } from '~lib/wallet'
 
 const metadata: IClientMeta = {
   name: 'Archmage',
@@ -23,6 +24,8 @@ export function useWalletConnect(
   network?: INetwork,
   onUrl?: (url: string) => void
 ) {
+  const [waitConnected, setWaitConnected] = useState<Promise<void>>()
+
   const [chainId, setChainId] = useState<number | undefined>()
   const [accounts, setAccounts] = useState<string[] | undefined>()
 
@@ -77,12 +80,24 @@ export function useWalletConnect(
       console.log(error, payload)
     })
 
-    await provider.disconnect()
+    let resolve: Function, reject: Function
+    const promise = new Promise<void>((res, rej) => {
+      resolve = res
+      reject = rej
+    })
+    setWaitConnected(promise)
+
     provider
       .enable()
-      .then((accounts) =>
-        accounts.map((addr) => checkAddressMayThrow(network.kind, addr))
-      )
+      .then((accounts) => {
+        setAccounts(
+          accounts.map((addr) => checkAddressMayThrow(network!.kind, addr))
+        )
+        resolve()
+      })
+      .catch((err) => {
+        reject(err)
+      })
 
     return provider
   }, [network, onUrl])
@@ -92,26 +107,26 @@ export function useWalletConnect(
     [provider]
   )
 
-  useAsync(async () => {
-    if (!web3Provider) {
-      return
-    }
-    const { chainId } = await web3Provider.getNetwork()
-    const accounts = await web3Provider.listAccounts()
-    setChainId(chainId)
-    setAccounts(accounts)
-  }, [web3Provider])
-
-  const reconnect = useCallback(async () => {
+  const refresh = useCallback(async () => {
     if (!loading) {
+      if (provider?.connected) {
+        await provider.disconnect()
+        while (true) {
+          await stall(100)
+          if (!provider.connected) {
+            break
+          }
+        }
+      }
       retry()
     }
-  }, [loading, retry])
+  }, [loading, retry, provider])
 
   return {
     provider,
     web3Provider,
-    reconnect,
+    waitConnected,
+    refresh,
     chainId,
     accounts
   }

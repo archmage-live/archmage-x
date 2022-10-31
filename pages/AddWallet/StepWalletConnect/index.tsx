@@ -98,7 +98,7 @@ export const StepWalletConnect = () => {
 
   const [url, setUrl] = useState('')
 
-  const { accounts, reconnect } = useWalletConnect(network, setUrl)
+  const { accounts, refresh } = useWalletConnect(network, setUrl)
 
   useEffect(() => {
     if (!accounts?.length) {
@@ -124,10 +124,10 @@ export const StepWalletConnect = () => {
         }
         addrs = [accounts[0]]
       }
-      reconnect()
+      refresh()
       return addrs
     })
-  }, [accounts, reconnect, setAddresses, isGroupChecked])
+  }, [accounts, refresh, setAddresses, isGroupChecked])
 
   return (
     <Stack p="4" pt="16" spacing={8}>
@@ -161,7 +161,7 @@ export const StepWalletConnect = () => {
 
       {networkKind === NetworkKind.EVM ? (
         <>
-          <WallectConnectQRCode url={url} refresh={reconnect} />
+          <WallectConnectQRCode url={url} refresh={refresh} />
 
           <Checkbox
             size="lg"

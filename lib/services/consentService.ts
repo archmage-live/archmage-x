@@ -1,3 +1,4 @@
+import { poll } from '@ethersproject/web'
 import assert from 'assert'
 import { ethErrors } from 'eth-rpc-errors'
 import browser from 'webextension-polyfill'
@@ -11,6 +12,7 @@ import { ChainId, IChainAccount, INetwork, TokenVisibility } from '~lib/schema'
 import { CONNECTED_SITE_SERVICE } from '~lib/services/connectedSiteService'
 import { NETWORK_SERVICE } from '~lib/services/network'
 import { PASSWORD_SERVICE } from '~lib/services/passwordService'
+import { EvmProvider } from '~lib/services/provider/evm'
 import {
   Provider,
   formatTxPayload,
@@ -46,11 +48,14 @@ export type WatchAssetPayload = {
 
 export type SignMsgPayload = {
   message: string // hex string
+  signature?: any
 }
 
 export type SignTypedDataPayload = {
   metadata: [string, string][]
   typedData: any
+  originalTypedData?: any
+  signature?: any
 }
 
 export enum ConsentType {
@@ -98,14 +103,15 @@ class ConsentServicePartial implements IConsentService {
         throw ethErrors.provider.userRejectedRequest()
       }
 
-      const signedTx =
+      const { signedTx, txHash } =
         req.type === ConsentType.TRANSACTION
           ? await this.processRequestSignTx(req)
-          : undefined
+          : ({} as any)
 
       resolve = await (CONSENT_SERVICE as any).processRequestIntermediate(
         req,
-        signedTx
+        signedTx,
+        txHash
       )
     } catch (err: any) {
       console.error(err)
@@ -150,7 +156,17 @@ class ConsentServicePartial implements IConsentService {
 
     const payload = formatTxPayload(network!, req.payload)
 
-    return await provider!.signTransaction(account!, payload.txParams)
+    let { signedTx, txHash } = payload as any
+    if (signedTx || txHash) {
+      assert(network!.kind === NetworkKind.EVM)
+    } else {
+      signedTx = await provider!.signTransaction(account!, payload.txParams)
+    }
+
+    return {
+      signedTx,
+      txHash
+    }
   }
 }
 
@@ -303,7 +319,11 @@ class ConsentService extends ConsentServicePartial {
     await this.initPromise
   }
 
-  async processRequestIntermediate(req: ConsentRequest, signedTx?: any) {
+  async processRequestIntermediate(
+    req: ConsentRequest,
+    signedTx?: any,
+    txHash?: string
+  ) {
     if (req.type === ConsentType.UNLOCK) {
       return
     }
@@ -337,17 +357,48 @@ class ConsentService extends ConsentServicePartial {
       case ConsentType.TRANSACTION: {
         const payload = formatTxPayload(network!, req.payload)
 
-        const txResponse = await provider!.sendTransaction(signedTx)
+        let txResponse
+        if (signedTx) {
+          txResponse = await provider!.sendTransaction(signedTx)
+        } else {
+          assert(network!.kind === NetworkKind.EVM)
+          try {
+            const evmProvider = provider as EvmProvider
+            const blockNumber =
+              await evmProvider.provider._getInternalBlockNumber(
+                100 + 2 * evmProvider.provider.pollingInterval
+              )
+            txResponse = await poll(
+              async () => {
+                const tx = await evmProvider.provider.getTransaction(txHash!)
+                if (tx === null) {
+                  return undefined
+                }
+                return evmProvider.provider._wrapTransaction(
+                  tx,
+                  txHash,
+                  blockNumber
+                )
+              },
+              { oncePoll: evmProvider.provider }
+            )
+          } catch (error: any) {
+            console.error(error)
+            // here do not throw
+          }
+        }
 
         switch (network!.kind) {
           case NetworkKind.EVM:
-            await EVM_TRANSACTION_SERVICE.addPendingTx(
-              account!,
-              payload.txParams,
-              txResponse,
-              req.origin,
-              payload.populatedParams?.functionSig
-            )
+            if (txResponse) {
+              await EVM_TRANSACTION_SERVICE.addPendingTx(
+                account!,
+                payload.txParams,
+                txResponse,
+                req.origin,
+                payload.populatedParams?.functionSig
+              )
+            }
             break
           case NetworkKind.APTOS:
             await APTOS_TRANSACTION_SERVICE.addPendingTx(
@@ -359,16 +410,29 @@ class ConsentService extends ConsentServicePartial {
             break
         }
 
-        response = txResponse
+        if (txResponse) {
+          response = txResponse
+        } else {
+          assert(network!.kind === NetworkKind.EVM)
+          response = { hash: txHash }
+        }
         break
       }
       case ConsentType.SIGN_MSG:
-        const { message } = req.payload as SignMsgPayload
-        response = await provider!.signMessage(account!, message)
+        const { message, signature } = req.payload as SignMsgPayload
+        if (!signature) {
+          response = await provider!.signMessage(account!, message)
+        } else {
+          response = signature
+        }
         break
       case ConsentType.SIGN_TYPED_DATA: {
-        const { typedData } = req.payload as SignTypedDataPayload
-        response = await provider!.signTypedData(account!, typedData)
+        const { typedData, signature } = req.payload as SignTypedDataPayload
+        if (!signature) {
+          response = await provider!.signTypedData(account!, typedData)
+        } else {
+          response = signature
+        }
         break
       }
       case ConsentType.WATCH_ASSET: {

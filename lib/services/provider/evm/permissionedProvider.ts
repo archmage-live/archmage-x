@@ -192,7 +192,8 @@ export class EvmPermissionedProvider extends BasePermissionedProvider {
     }
 
     const provider = new EvmProvider(this.provider)
-    typedData = await provider.getTypedData(JSON.parse(typedData))
+    const originalTypedData = JSON.parse(typedData)
+    typedData = await provider.getTypedData(originalTypedData)
 
     const { chainId, name, version, verifyingContract } = typedData.domain
 
@@ -212,7 +213,8 @@ export class EvmPermissionedProvider extends BasePermissionedProvider {
             ['Version', version],
             ['Contract', verifyingContract]
           ],
-          typedData
+          typedData,
+          originalTypedData
         } as SignTypedDataPayload
       } as any as ConsentRequest,
       ctx
