@@ -12,7 +12,7 @@ import {
   Text
 } from '@chakra-ui/react'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { GrLinkTop } from 'react-icons/gr'
+import { GrLinkBottom, GrLinkDown, GrLinkTop, GrLinkUp } from 'react-icons/gr'
 
 import { AccountAvatar } from '~components/AccountAvatar'
 import { TypeBadge } from '~components/TypeBadge'
@@ -20,10 +20,14 @@ import { WalletId } from '~lib/active'
 import { formatNumber } from '~lib/formatNumber'
 import { INetwork } from '~lib/schema/network'
 import { Balance } from '~lib/services/token'
-import { WALLET_SERVICE } from '~lib/services/walletService'
+import { WALLET_SERVICE } from '~lib/services/wallet'
+import {
+  localReorderSubWallets,
+  persistReorderSubWallets
+} from '~lib/services/wallet/reorder'
+import { SubWalletEntry, WalletEntry } from '~lib/services/wallet/tree'
 import { shortenAddress } from '~lib/utils'
 import { WalletType, getWalletTypeIdentifier, isWalletGroup } from '~lib/wallet'
-import { WalletEntry } from '~pages/Popup/WalletDrawer/tree'
 import { useDeleteWalletModal } from '~pages/Settings/SettingsWallets/DeleteWalletModal'
 
 import { MenuBtn } from './SubWalletItem'
@@ -37,6 +41,10 @@ interface WalletItemProps {
   onSelected: (selected: WalletId) => void
   onClose: () => void
   measureElement?: (element?: HTMLElement | null) => any
+  reorderWallets: (
+    network: WalletEntry,
+    placement: 'top' | 'up' | 'down' | 'bottom'
+  ) => void
 }
 
 export const WalletItem = ({
@@ -46,7 +54,8 @@ export const WalletItem = ({
   onToggleOpen,
   onSelected,
   onClose,
-  measureElement
+  measureElement,
+  reorderWallets
 }: WalletItemProps) => {
   const { wallet, isOpen, subWallets } = walletEntry
 
@@ -84,6 +93,50 @@ export const WalletItem = ({
   }, [network, wallet])
 
   const { onOpen: onDeleteWallet } = useDeleteWalletModal()
+
+  const reorderSubWallets = useCallback(
+    async (
+      subWallet: SubWalletEntry,
+      placement: 'top' | 'up' | 'down' | 'bottom'
+    ) => {
+      if (subWallets.length <= 1) {
+        return
+      }
+      const sourceIndex = subWallets.findIndex(
+        (w) => w.subWallet.id === subWallet.subWallet.id
+      )
+      if (sourceIndex < 0) {
+        return
+      }
+      let destinationIndex
+      switch (placement) {
+        case 'top':
+          if (sourceIndex === 0) return
+          destinationIndex = 0
+          break
+        case 'up':
+          if (sourceIndex === 0) return
+          destinationIndex = sourceIndex - 1
+          break
+        case 'down':
+          if (sourceIndex === subWallets.length - 1) return
+          destinationIndex = sourceIndex + 1
+          break
+        case 'bottom':
+          if (sourceIndex === subWallets.length - 1) return
+          destinationIndex = subWallets.length - 1
+          break
+      }
+
+      const [, startSortId, endSortId] = localReorderSubWallets(
+        subWallets,
+        sourceIndex,
+        destinationIndex
+      )
+      await persistReorderSubWallets(wallet.id, startSortId, endSortId)
+    },
+    [wallet, subWallets]
+  )
 
   return (
     <Box ref={elRef}>
@@ -188,9 +241,6 @@ export const WalletItem = ({
                           Select
                         </MenuItem>
                       )}
-                      <MenuItem icon={<GrLinkTop />} iconSpacing={2}>
-                        Top
-                      </MenuItem>
                       {wallet.type === WalletType.HD && (
                         <MenuItem
                           icon={<AddIcon w={3} h={3} />}
@@ -209,6 +259,30 @@ export const WalletItem = ({
                           })
                         }>
                         Remove {subWallet ? 'account' : 'wallet'}
+                      </MenuItem>
+                      <MenuItem
+                        icon={<GrLinkTop />}
+                        iconSpacing={2}
+                        onClick={() => reorderWallets(walletEntry, 'top')}>
+                        Top
+                      </MenuItem>
+                      <MenuItem
+                        icon={<GrLinkUp />}
+                        iconSpacing={2}
+                        onClick={() => reorderWallets(walletEntry, 'up')}>
+                        Up
+                      </MenuItem>
+                      <MenuItem
+                        icon={<GrLinkDown />}
+                        iconSpacing={2}
+                        onClick={() => reorderWallets(walletEntry, 'down')}>
+                        Down
+                      </MenuItem>
+                      <MenuItem
+                        icon={<GrLinkBottom />}
+                        iconSpacing={2}
+                        onClick={() => reorderWallets(walletEntry, 'bottom')}>
+                        Bottom
                       </MenuItem>
                     </MenuGroup>
                   </MenuList>
@@ -231,6 +305,7 @@ export const WalletItem = ({
           }}
           onDelete={onDeleteWallet}
           measure={measure}
+          reorderSubWallets={reorderSubWallets}
         />
       )}
     </Box>

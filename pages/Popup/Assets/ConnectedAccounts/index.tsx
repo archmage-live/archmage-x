@@ -22,14 +22,14 @@ import { FaGlobeAmericas } from 'react-icons/fa'
 import { useActive, useActiveNetwork } from '~lib/active'
 import { IChainAccount, ISubWallet, IWallet, mapBySubIndex } from '~lib/schema'
 import { useConnectedAccountsBySite } from '~lib/services/connectedSiteService'
-import { useCurrentSiteUrl, useSiteIconUrl } from '~lib/util'
 import {
   WalletEntry,
   isSameAccount,
   isSameSubWallet,
   isSameWallet,
   useReadonlyWalletTree
-} from '~pages/Popup/WalletDrawer/tree'
+} from '~lib/services/wallet/tree'
+import { useCurrentSiteUrl, useSiteIconUrl } from '~lib/util'
 
 import { WalletItem } from './WalletItem'
 import { WalletList } from './WalletList'

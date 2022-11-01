@@ -6,7 +6,7 @@ import { useAsync } from 'react-use'
 import { useStorage } from '@plasmohq/storage'
 
 import { ENV } from '~lib/env'
-import { useSubWalletsCount } from '~lib/services/walletService'
+import { useSubWalletsCount } from '~lib/services/wallet'
 import { LOCAL_STORE, SESSION_STORE, StoreArea, StoreKey } from '~lib/store'
 
 class Password {

@@ -21,7 +21,7 @@ import {
   WalletInfo,
   useHdPath,
   useSubWallets
-} from '~lib/services/walletService'
+} from '~lib/services/wallet'
 import { WalletType, getWalletTypeTitle } from '~lib/wallet'
 import { ChangeHdPathModal } from '~pages/Settings/SettingsWallets/ChangeHdPathModal'
 

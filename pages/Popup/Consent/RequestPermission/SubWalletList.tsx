@@ -4,7 +4,7 @@ import { useEffect, useRef } from 'react'
 
 import { WalletId } from '~lib/active'
 import { INetwork } from '~lib/schema'
-import { SubWalletEntry } from '~pages/Popup/WalletDrawer/tree'
+import { SubWalletEntry } from '~lib/services/wallet/tree'
 
 import { SubWalletItem } from './SubWalletItem'
 

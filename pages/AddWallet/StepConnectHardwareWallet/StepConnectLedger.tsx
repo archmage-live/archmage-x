@@ -39,7 +39,7 @@ import { NETWORK_SCOPES, getNetworkKind, getNetworkScope } from '~lib/network'
 import { INetwork } from '~lib/schema'
 import { getNetworkInfo, useNetwork, useNetworks } from '~lib/services/network'
 import { useBalance } from '~lib/services/provider'
-import { useChainAccountsAux, useWallet } from '~lib/services/walletService'
+import { useChainAccountsAux, useWallet } from '~lib/services/wallet'
 import { shortenAddress } from '~lib/utils'
 import { HardwareWalletAccount, generatePath } from '~lib/wallet'
 import {

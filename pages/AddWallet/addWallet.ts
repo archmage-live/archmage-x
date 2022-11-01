@@ -8,7 +8,7 @@ import {
   AddSubWalletsOpts,
   NewWalletOpts,
   WALLET_SERVICE
-} from '~lib/services/walletService'
+} from '~lib/services/wallet'
 import {
   HardwareWalletAccount,
   HardwareWalletType,

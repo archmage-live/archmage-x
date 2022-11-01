@@ -1198,60 +1198,6 @@ export function useHdPaths(
   }, [walletId])
 }
 
-export async function reorderWallets(startSortId: number, endSortId: number) {
-  const clockwise = startSortId < endSortId
-  const [lower, upper] = clockwise
-    ? [startSortId, endSortId]
-    : [endSortId, startSortId]
-
-  await DB.transaction('rw', [DB.wallets], async () => {
-    const items = await DB.wallets
-      .where('sortId')
-      .between(lower, upper, true, true)
-      .sortBy('sortId')
-    if (!items.length) {
-      return
-    }
-
-    for (let i = 0; i < items.length; i++) {
-      let sortId = items[i].sortId + (clockwise ? -1 : 1)
-      if (sortId > upper) sortId = lower
-      else if (sortId < lower) sortId = upper
-
-      await DB.wallets.update(items[i], { sortId })
-    }
-  })
-}
-
-export async function reorderSubWallets(
-  masterId: number,
-  startSortId: number,
-  endSortId: number
-) {
-  const clockwise = startSortId < endSortId
-  const [lower, upper] = clockwise
-    ? [startSortId, endSortId]
-    : [endSortId, startSortId]
-
-  await DB.transaction('rw', [DB.subWallets], async () => {
-    const items = await DB.subWallets
-      .where('[masterId+sortId]')
-      .between([masterId, lower], [masterId, upper], true, true)
-      .sortBy('sortId')
-    if (!items.length) {
-      return
-    }
-
-    for (let i = 0; i < items.length; i++) {
-      let sortId = items[i].sortId + (clockwise ? -1 : 1)
-      if (sortId > upper) sortId = lower
-      else if (sortId < lower) sortId = upper
-
-      await DB.subWallets.update(items[i], { sortId })
-    }
-  })
-}
-
 async function ensureChainAccounts(
   wallet: IWallet,
   networkKind: NetworkKind,

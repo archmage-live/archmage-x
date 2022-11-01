@@ -17,7 +17,7 @@ import { AlertBox } from '~components/AlertBox'
 import { HdPathInput } from '~components/HdPathInput'
 import { getNetworkScope } from '~lib/network'
 import { DerivePosition, INetwork, IWallet } from '~lib/schema'
-import { WALLET_SERVICE, useHdPath } from '~lib/services/walletService'
+import { WALLET_SERVICE, useHdPath } from '~lib/services/wallet'
 import {
   getDefaultDerivePosition,
   getDefaultPath,

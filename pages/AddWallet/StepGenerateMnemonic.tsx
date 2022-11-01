@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { useWizard } from 'react-use-wizard'
 
 import { MnemonicDisplay } from '~components/MnemonicDisplay'
-import { WALLET_SERVICE } from '~lib/services/walletService'
+import { WALLET_SERVICE } from '~lib/services/wallet'
 
 import { useMnemonic } from './addWallet'
 

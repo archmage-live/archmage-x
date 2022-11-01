@@ -8,9 +8,9 @@ import { WalletId } from '~lib/active'
 import { formatNumber } from '~lib/formatNumber'
 import { INetwork } from '~lib/schema/network'
 import { useBalance } from '~lib/services/provider'
+import { WalletEntry } from '~lib/services/wallet/tree'
 import { shortenAddress } from '~lib/utils'
 import { getWalletTypeIdentifier, isWalletGroup } from '~lib/wallet'
-import { WalletEntry } from '~pages/Popup/WalletDrawer/tree'
 
 import { SubWalletList } from './SubWalletList'
 

@@ -7,7 +7,7 @@ import stableHash from 'stable-hash'
 
 import { WalletId, useActiveWalletId } from '~lib/active'
 import { IChainAccount, INetwork, ISubWallet, IWallet } from '~lib/schema'
-import { WALLET_SERVICE } from '~lib/services/walletService'
+import { WALLET_SERVICE } from '~lib/services/wallet'
 
 export interface WalletEntry {
   wallet: IWallet
@@ -182,14 +182,10 @@ export function useWalletTree<
     const entries = await fetchWalletTree(network)
 
     setWalletEntries((oldEntries) => {
-      const oldEntryMap = new Map(
-        oldEntries?.map((entry) => [entry.wallet.id, entry])
-      )
-
       let changed = entries.length !== oldEntries?.length
 
-      const newEntries = entries.map((entry) => {
-        const oldEntry = oldEntryMap.get(entry.wallet.id)
+      const newEntries = entries.map((entry, index) => {
+        const oldEntry = oldEntries?.[index]
         if (!oldEntry) {
           changed = true
           return entry
@@ -197,14 +193,10 @@ export function useWalletTree<
 
         const walletChanged = !isSameWallet(entry.wallet, oldEntry.wallet)
 
-        const oldSubEntryMap = new Map(
-          oldEntry.subWallets?.map((entry) => [entry.subWallet.id, entry])
-        )
-
         let subChanged = entry.subWallets.length !== oldEntry.subWallets.length
 
-        const subEntries = entry.subWallets.map((subEntry) => {
-          const oldSubEntry = oldSubEntryMap.get(subEntry.subWallet.id)
+        const subEntries = entry.subWallets.map((subEntry, index) => {
+          const oldSubEntry = oldEntry.subWallets[index]
           if (
             oldSubEntry &&
             isSameSubWallet(subEntry.subWallet, oldSubEntry.subWallet) &&

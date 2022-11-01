@@ -4,8 +4,8 @@ import { useRef } from 'react'
 
 import { WalletId } from '~lib/active'
 import { INetwork } from '~lib/schema'
+import { WalletEntry } from '~lib/services/wallet/tree'
 import { isWalletGroup } from '~lib/wallet'
-import { WalletEntry } from '~pages/Popup/WalletDrawer/tree'
 
 import { WalletItem } from './WalletItem'
 

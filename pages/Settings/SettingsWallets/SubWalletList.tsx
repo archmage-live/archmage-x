@@ -10,11 +10,11 @@ import {
   DroppableProvided
 } from 'react-beautiful-dnd'
 
-import { reorderSubWallets } from '~lib/services/walletService'
 import {
-  SelectedWalletId,
-  SubWalletEntry
-} from '~pages/Popup/WalletDrawer/tree'
+  localReorderSubWallets,
+  persistReorderSubWallets
+} from '~lib/services/wallet/reorder'
+import { SelectedWalletId, SubWalletEntry } from '~lib/services/wallet/tree'
 
 import { SubWalletItem } from './SubWalletItem'
 
@@ -66,24 +66,14 @@ export const SubWalletList = ({
 
       const masterId = wallets[0].subWallet.masterId
 
-      const [startSortId, endSortId] = [
-        wallets[source.index].subWallet.sortId,
-        wallets[destination.index].subWallet.sortId
-      ]
-      const ws = wallets.slice()
-      const [lower, upper] = [
-        Math.min(source.index, destination.index),
-        Math.max(source.index, destination.index)
-      ]
-      const sortIds = ws.slice(lower, upper + 1).map((w) => w.subWallet.sortId)
-      const [removed] = ws.splice(source.index, 1)
-      ws.splice(destination.index, 0, removed)
-      for (let index = lower; index <= upper; ++index) {
-        ws[index].subWallet.sortId = sortIds[index - lower]
-      }
+      const [ws, startSortId, endSortId] = localReorderSubWallets(
+        wallets,
+        source.index,
+        destination.index
+      )
       setWallets(ws)
 
-      await reorderSubWallets(masterId, startSortId, endSortId)
+      await persistReorderSubWallets(masterId, startSortId, endSortId)
     },
     [wallets]
   )

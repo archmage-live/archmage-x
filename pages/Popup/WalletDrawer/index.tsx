@@ -12,7 +12,7 @@ import {
   Text,
   useColorModeValue
 } from '@chakra-ui/react'
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { FaWindowMaximize } from 'react-icons/fa'
 import { FiSearch } from 'react-icons/fi'
 import { IoMdSettings } from 'react-icons/io'
@@ -23,9 +23,13 @@ import { WalletId } from '~lib/active'
 import { Context } from '~lib/rpc'
 import { INetwork } from '~lib/schema'
 import { PASSWORD_SERVICE } from '~lib/services/passwordService'
+import {
+  localReorderWallets,
+  persistReorderWallets
+} from '~lib/services/wallet/reorder'
+import { WalletEntry } from '~lib/services/wallet/tree'
 import { createTab, createWindow } from '~lib/util'
 import { WalletList } from '~pages/Popup/WalletDrawer/WalletList'
-import { WalletEntry } from '~pages/Popup/WalletDrawer/tree'
 
 export const WalletDrawer = ({
   network,
@@ -61,6 +65,50 @@ export const WalletDrawer = ({
     [search]
   )
 
+  const reorderWallets = useCallback(
+    async (
+      wallet: WalletEntry,
+      placement: 'top' | 'up' | 'down' | 'bottom'
+    ) => {
+      if (!wallets || wallets.length <= 1) {
+        return
+      }
+      const sourceIndex = wallets.findIndex(
+        (w) => w.wallet.id === wallet.wallet.id
+      )
+      if (sourceIndex < 0) {
+        return
+      }
+      let destinationIndex
+      switch (placement) {
+        case 'top':
+          if (sourceIndex === 0) return
+          destinationIndex = 0
+          break
+        case 'up':
+          if (sourceIndex === 0) return
+          destinationIndex = sourceIndex - 1
+          break
+        case 'down':
+          if (sourceIndex === wallets.length - 1) return
+          destinationIndex = sourceIndex + 1
+          break
+        case 'bottom':
+          if (sourceIndex === wallets.length - 1) return
+          destinationIndex = wallets.length - 1
+          break
+      }
+
+      const [, startSortId, endSortId] = localReorderWallets(
+        wallets,
+        sourceIndex,
+        destinationIndex
+      )
+      await persistReorderWallets(startSortId, endSortId)
+    },
+    [wallets]
+  )
+
   if (!wallets) {
     return <></>
   }
@@ -91,6 +139,7 @@ export const WalletDrawer = ({
               onToggleOpen={toggleOpen}
               onSelected={setSelected}
               onClose={onClose}
+              reorderWallets={reorderWallets}
             />
           </Stack>
 

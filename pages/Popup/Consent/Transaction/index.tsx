@@ -9,7 +9,7 @@ import {
   useChainAccount,
   useSubWalletByIndex,
   useWallet
-} from '~lib/services/walletService'
+} from '~lib/services/wallet'
 
 import { AptosTransaction } from './AptosTransaction'
 import { EvmTransaction } from './EvmTransaction'

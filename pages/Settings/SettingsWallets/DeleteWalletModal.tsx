@@ -30,7 +30,7 @@ import {
   useChainAccountByIndex,
   useSubWalletsCount,
   useWallet
-} from '~lib/services/walletService'
+} from '~lib/services/wallet'
 import { shortenAddress } from '~lib/utils'
 import { WalletType } from '~lib/wallet'
 

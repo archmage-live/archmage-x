@@ -21,7 +21,7 @@ import {
 import { TOKEN_SERVICE } from '~lib/services/token'
 import { APTOS_TRANSACTION_SERVICE } from '~lib/services/transaction/aptosService'
 import { EVM_TRANSACTION_SERVICE } from '~lib/services/transaction/evmService'
-import { WALLET_SERVICE } from '~lib/services/walletService'
+import { WALLET_SERVICE } from '~lib/services/wallet'
 import { SESSION_STORE, StoreKey, useSessionStorage } from '~lib/store'
 import { createWindow } from '~lib/util'
 import { canWalletSign } from '~lib/wallet'

@@ -23,7 +23,7 @@ import {
   WalletEntry,
   filterWalletTreeBySearch,
   useWalletTree
-} from '~pages/Popup/WalletDrawer/tree'
+} from '~lib/services/wallet/tree'
 import { WrappedDeleteWalletModal } from '~pages/Settings/SettingsWallets/DeleteWalletModal'
 
 import { NetworkDrawer } from './NetworkDrawer'

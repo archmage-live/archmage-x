@@ -7,7 +7,7 @@ import '~lib/services/provider/aptos/providerService'
 import '~lib/services/provider/evm/providerService'
 import { TokenService } from '~lib/services/token'
 import '~lib/services/transaction'
-import '~lib/services/walletService'
+import '~lib/services/wallet'
 
 async function init() {
   SERVICE_WORKER_SERVER.listen()

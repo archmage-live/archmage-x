@@ -10,9 +10,12 @@ import {
   DroppableProvided
 } from 'react-beautiful-dnd'
 
-import { reorderWallets } from '~lib/services/walletService'
+import {
+  localReorderWallets,
+  persistReorderWallets
+} from '~lib/services/wallet/reorder'
+import { SelectedWalletId, WalletEntry } from '~lib/services/wallet/tree'
 import { isWalletGroup } from '~lib/wallet'
-import { SelectedWalletId, WalletEntry } from '~pages/Popup/WalletDrawer/tree'
 
 import { WalletItem } from './WalletItem'
 
@@ -71,24 +74,14 @@ export const WalletList = ({
         return
       }
 
-      const [startSortId, endSortId] = [
-        wallets[source.index].wallet.sortId,
-        wallets[destination.index].wallet.sortId
-      ]
-      const ws = wallets.slice()
-      const [lower, upper] = [
-        Math.min(source.index, destination.index),
-        Math.max(source.index, destination.index)
-      ]
-      const sortIds = ws.slice(lower, upper + 1).map((w) => w.wallet.sortId)
-      const [removed] = ws.splice(source.index, 1)
-      ws.splice(destination.index, 0, removed)
-      for (let index = lower; index <= upper; ++index) {
-        ws[index].wallet.sortId = sortIds[index - lower]
-      }
+      const [ws, startSortId, endSortId] = localReorderWallets(
+        wallets,
+        source.index,
+        destination.index
+      )
       setWallets(ws)
 
-      await reorderWallets(startSortId, endSortId)
+      await persistReorderWallets(startSortId, endSortId)
     },
     [wallets]
   )

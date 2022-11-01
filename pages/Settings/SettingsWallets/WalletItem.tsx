@@ -8,9 +8,9 @@ import { AccountAvatar } from '~components/AccountAvatar'
 import { Badge } from '~components/Badge'
 import { TypeBadge } from '~components/TypeBadge'
 import { dayjs } from '~lib/dayjs'
+import { SelectedWalletId, WalletEntry } from '~lib/services/wallet/tree'
 import { shortenAddress } from '~lib/utils'
 import { getWalletTypeIdentifier, isWalletGroup } from '~lib/wallet'
-import { SelectedWalletId, WalletEntry } from '~pages/Popup/WalletDrawer/tree'
 
 import { SubWalletList } from './SubWalletList'
 

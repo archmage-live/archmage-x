@@ -15,7 +15,7 @@ import { useEffect, useState } from 'react'
 import { MnemonicDisplay } from '~components/MnemonicDisplay'
 import { MnemonicRemember } from '~components/MnemonicRemember'
 import { ValidatedAction } from '~components/ValidatedAction'
-import { WALLET_SERVICE } from '~lib/services/walletService'
+import { WALLET_SERVICE } from '~lib/services/wallet'
 
 interface ExportMnemonicModalProps {
   walletId: number

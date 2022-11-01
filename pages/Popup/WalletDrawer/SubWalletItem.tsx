@@ -15,7 +15,7 @@ import {
   forwardRef,
   useColorModeValue
 } from '@chakra-ui/react'
-import { GrLinkTop } from 'react-icons/gr'
+import { GrLinkBottom, GrLinkDown, GrLinkTop, GrLinkUp } from 'react-icons/gr'
 import { MdOutlineMoreHoriz } from 'react-icons/md'
 
 import { AccountAvatar } from '~components/AccountAvatar'
@@ -23,8 +23,8 @@ import { BtnBox } from '~components/BtnBox'
 import { formatNumber } from '~lib/formatNumber'
 import { INetwork } from '~lib/schema'
 import { Balance } from '~lib/services/token'
+import { SubWalletEntry } from '~lib/services/wallet/tree'
 import { shortenAddress } from '~lib/utils'
-import { SubWalletEntry } from '~pages/Popup/WalletDrawer/tree'
 import { DeleteWalletOpts } from '~pages/Settings/SettingsWallets/DeleteWalletModal'
 
 export const SubWalletItem = ({
@@ -32,13 +32,18 @@ export const SubWalletItem = ({
   subWallet,
   balance,
   onSelected,
-  onDelete
+  onDelete,
+  reorderSubWallets
 }: {
   network: INetwork
   subWallet: SubWalletEntry
   balance?: Balance
   onSelected: () => void
   onDelete: (opts: DeleteWalletOpts) => void
+  reorderSubWallets: (
+    network: SubWalletEntry,
+    placement: 'top' | 'up' | 'down' | 'bottom'
+  ) => void
 }) => {
   const { subWallet: wallet, account, isSelected } = subWallet
 
@@ -106,9 +111,6 @@ export const SubWalletItem = ({
                       onClick={onSelected}>
                       Select
                     </MenuItem>
-                    <MenuItem icon={<GrLinkTop />} iconSpacing={2}>
-                      Top
-                    </MenuItem>
                     <MenuItem
                       icon={<DeleteIcon />}
                       iconSpacing={2}
@@ -116,6 +118,30 @@ export const SubWalletItem = ({
                         onDelete({ subWallet: wallet })
                       }}>
                       Remove account
+                    </MenuItem>
+                    <MenuItem
+                      icon={<GrLinkTop />}
+                      iconSpacing={2}
+                      onClick={() => reorderSubWallets(subWallet, 'top')}>
+                      Top
+                    </MenuItem>
+                    <MenuItem
+                      icon={<GrLinkUp />}
+                      iconSpacing={2}
+                      onClick={() => reorderSubWallets(subWallet, 'up')}>
+                      Up
+                    </MenuItem>
+                    <MenuItem
+                      icon={<GrLinkDown />}
+                      iconSpacing={2}
+                      onClick={() => reorderSubWallets(subWallet, 'down')}>
+                      Down
+                    </MenuItem>
+                    <MenuItem
+                      icon={<GrLinkBottom />}
+                      iconSpacing={2}
+                      onClick={() => reorderSubWallets(subWallet, 'bottom')}>
+                      Bottom
                     </MenuItem>
                   </MenuGroup>
                 </MenuList>

@@ -20,7 +20,7 @@ import { formatNumber } from '~lib/formatNumber'
 import { INetwork, ISubWallet, IWallet, isSubNameInvalid } from '~lib/schema'
 import { getAccountUrl } from '~lib/services/network'
 import { useBalance } from '~lib/services/provider'
-import { useChainAccountByIndex, useHdPath } from '~lib/services/walletService'
+import { useChainAccountByIndex, useHdPath } from '~lib/services/wallet'
 import {
   getWalletTypeTitle,
   hasWalletKeystore,

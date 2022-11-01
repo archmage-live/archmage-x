@@ -20,8 +20,8 @@ import {
   getNetworkKind
 } from '~lib/network'
 import { getNetworkInfo, useNetwork, useNetworks } from '~lib/services/network'
+import { useWalletTree } from '~lib/services/wallet/tree'
 import { createTab } from '~lib/util'
-import { useWalletTree } from '~pages/Popup/WalletDrawer/tree'
 import { SubWalletEdit } from '~pages/Settings/SettingsWallets/SubWalletEdit'
 import { WalletEdit } from '~pages/Settings/SettingsWallets/WalletEdit'
 

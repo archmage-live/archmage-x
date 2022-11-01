@@ -5,7 +5,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { AlertBox } from '~components/AlertBox'
 import { usePassword } from '~lib/password'
 import { PASSWORD_SERVICE } from '~lib/services/passwordService'
-import { useSubWalletsCount } from '~lib/services/walletService'
+import { useSubWalletsCount } from '~lib/services/wallet'
 import { createTab } from '~lib/util'
 import { Overlay } from '~pages/Popup/Overlay'
 

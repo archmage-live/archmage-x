@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 
-import { useSubWallet, useWallet } from '~lib/services/walletService'
+import { useSubWallet, useWallet } from '~lib/services/wallet'
 
 export function useSelectedWallet() {
   const [id, setId] = useState<number>()

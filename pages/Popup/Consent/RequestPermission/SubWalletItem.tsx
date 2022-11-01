@@ -5,8 +5,8 @@ import { AccountAvatar } from '~components/AccountAvatar'
 import { formatNumber } from '~lib/formatNumber'
 import { INetwork } from '~lib/schema'
 import { useBalance } from '~lib/services/provider'
+import { SubWalletEntry } from '~lib/services/wallet/tree'
 import { shortenAddress } from '~lib/utils'
-import { SubWalletEntry } from '~pages/Popup/WalletDrawer/tree'
 
 export const SubWalletItem = ({
   network,

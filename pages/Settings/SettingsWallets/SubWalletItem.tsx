@@ -5,8 +5,8 @@ import { MdDragIndicator } from 'react-icons/md'
 
 import { AccountAvatar } from '~components/AccountAvatar'
 import { IChainAccount, ISubWallet } from '~lib/schema'
+import { SubWalletEntry } from '~lib/services/wallet/tree'
 import { shortenAddress } from '~lib/utils'
-import { SubWalletEntry } from '~pages/Popup/WalletDrawer/tree'
 
 export const SubWalletItem = ({
   subWallet,

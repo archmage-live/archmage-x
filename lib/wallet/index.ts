@@ -5,7 +5,7 @@ import { CosmChainInfo } from '~lib/network/cosm'
 import { IChainAccount } from '~lib/schema'
 import { IWallet } from '~lib/schema/wallet'
 import { NETWORK_SERVICE } from '~lib/services/network'
-import { WALLET_SERVICE } from '~lib/services/walletService'
+import { WALLET_SERVICE } from '~lib/services/wallet'
 import { EvmHwWallet } from '~lib/wallet/evmHw'
 
 import { AptosWallet } from './aptos'

@@ -1,12 +1,12 @@
 import { Box } from '@chakra-ui/react'
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { useMemo, useRef } from 'react'
+import { useRef } from 'react'
 
 import { WalletId } from '~lib/active'
 import { INetwork } from '~lib/schema'
+import { WalletEntry } from '~lib/services/wallet/tree'
 import { isWalletGroup } from '~lib/wallet'
 import { usePaginatedBalances } from '~pages/Popup/WalletDrawer/SubWalletList'
-import { WalletEntry } from '~pages/Popup/WalletDrawer/tree'
 
 import { WalletItem } from './WalletItem'
 
@@ -19,6 +19,10 @@ interface WalletListProps {
   renderItems?: number
   px?: number | string
   py?: number | string
+  reorderWallets: (
+    network: WalletEntry,
+    placement: 'top' | 'up' | 'down' | 'bottom'
+  ) => void
 }
 
 export const WalletList = ({
@@ -29,7 +33,8 @@ export const WalletList = ({
   onClose,
   renderItems = 6,
   px,
-  py = '14px'
+  py = '14px',
+  reorderWallets
 }: WalletListProps) => {
   const itemSize = 56
 
@@ -52,13 +57,12 @@ export const WalletList = ({
 
   const virtualItems = walletsVirtualizer.getVirtualItems()
 
-  // const balanceMap = usePaginatedBalances(
-  //   network,
-  //   wallets,
-  //   virtualItems[0]?.index,
-  //   virtualItems[0]?.index + virtualItems.length
-  // )
-  const balanceMap = useMemo(() => new Map(), [])
+  const balanceMap = usePaginatedBalances(
+    network,
+    wallets,
+    virtualItems[0]?.index,
+    virtualItems[0]?.index + virtualItems.length
+  )
 
   return (
     <Box py={py}>
@@ -98,6 +102,7 @@ export const WalletList = ({
                     item.measureElement(el)
                     ;(walletsVirtualizer as any).calculateRange()
                   }}
+                  reorderWallets={reorderWallets}
                 />
               </Box>
             )

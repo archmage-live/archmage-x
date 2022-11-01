@@ -7,8 +7,8 @@ import { WalletId } from '~lib/active'
 import { INetwork } from '~lib/schema'
 import { useBalances } from '~lib/services/provider'
 import { Balance } from '~lib/services/token'
+import { SubWalletEntry, WalletEntry } from '~lib/services/wallet/tree'
 import { isWalletGroup } from '~lib/wallet'
-import { SubWalletEntry, WalletEntry } from '~pages/Popup/WalletDrawer/tree'
 import { DeleteWalletOpts } from '~pages/Settings/SettingsWallets/DeleteWalletModal'
 
 import { SubWalletItem } from './SubWalletItem'
@@ -21,6 +21,10 @@ interface SubWalletListProps {
   onSelectedId: (selected: WalletId) => void
   onDelete: (opts: DeleteWalletOpts) => void
   measure: () => void
+  reorderSubWallets: (
+    network: SubWalletEntry,
+    placement: 'top' | 'up' | 'down' | 'bottom'
+  ) => void
 }
 
 export const SubWalletList = ({
@@ -30,7 +34,8 @@ export const SubWalletList = ({
   setScrollIndex,
   onSelectedId,
   onDelete,
-  measure
+  measure,
+  reorderSubWallets
 }: SubWalletListProps) => {
   useEffect(measure, [measure, subWallets])
 
@@ -104,6 +109,7 @@ export const SubWalletList = ({
                       })
                     }
                     onDelete={onDelete}
+                    reorderSubWallets={reorderSubWallets}
                   />
                 )}
               </Box>

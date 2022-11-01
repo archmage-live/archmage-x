@@ -16,7 +16,7 @@ import { AlertBox } from '~components/AlertBox'
 import { getActiveNetwork, getActiveWallet } from '~lib/active'
 import { INetwork } from '~lib/schema'
 import { NETWORK_SERVICE, getNetworkInfo } from '~lib/services/network'
-import { WALLET_SERVICE } from '~lib/services/walletService'
+import { WALLET_SERVICE } from '~lib/services/wallet'
 
 interface DeleteNetworkModalProps {
   network?: INetwork

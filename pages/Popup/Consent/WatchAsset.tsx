@@ -23,7 +23,7 @@ import {
 import { useCoinGeckoTokenPrice } from '~lib/services/datasource/coingecko'
 import { getNetworkInfo, useNetwork } from '~lib/services/network'
 import { useToken } from '~lib/services/token'
-import { useChainAccount } from '~lib/services/walletService'
+import { useChainAccount } from '~lib/services/wallet'
 import { useSiteIconUrl } from '~lib/util'
 import { TokenItem, TokenItemStyle } from '~pages/Popup/Assets/TokenItem'
 

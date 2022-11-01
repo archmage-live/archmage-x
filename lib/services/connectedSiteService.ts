@@ -14,7 +14,7 @@ import {
   mapBySubIndex
 } from '~lib/schema'
 import { IConnectedSite } from '~lib/schema/connectedSite'
-import { WALLET_SERVICE, useChainAccounts } from '~lib/services/walletService'
+import { WALLET_SERVICE, useChainAccounts } from '~lib/services/wallet'
 import { getCurrentTab, getTab, isUrlSupported } from '~lib/util'
 
 interface IConnectedSiteService {

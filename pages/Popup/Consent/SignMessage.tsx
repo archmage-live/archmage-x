@@ -26,7 +26,7 @@ import {
   useChainAccount,
   useSubWalletByIndex,
   useWallet
-} from '~lib/services/walletService'
+} from '~lib/services/wallet'
 import { useSiteIconUrl } from '~lib/util'
 import { isWalletConnectProtocol } from '~lib/wallet'
 import {
