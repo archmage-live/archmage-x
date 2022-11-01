@@ -17,6 +17,7 @@ export interface NetworkInfo {
   name: string
   description?: string
   chainId: number | string
+  isTestnet?: boolean
   currencyName: string
   currencySymbol: string
   decimals: number
@@ -32,6 +33,7 @@ export function getNetworkInfo(network: INetwork): NetworkInfo {
         name: info.name,
         description: info.title || info.name,
         chainId: info.chainId,
+        isTestnet: info.network === 'testnet',
         currencyName: info.nativeCurrency.name,
         currencySymbol: info.nativeCurrency.symbol,
         decimals: info.nativeCurrency.decimals,
@@ -45,6 +47,7 @@ export function getNetworkInfo(network: INetwork): NetworkInfo {
         name: info.chainName,
         description: info.chainName,
         chainId: info.chainId,
+        isTestnet: info.isTestnet,
         currencyName: info.feeCurrencies?.[0].coinDenom,
         currencySymbol: info.feeCurrencies?.[0].coinDenom,
         decimals: info.feeCurrencies?.[0].coinDecimals
@@ -56,6 +59,7 @@ export function getNetworkInfo(network: INetwork): NetworkInfo {
         name: info.name,
         description: info.name,
         chainId: info.chainId,
+        isTestnet: info.isTestnet,
         currencyName: info.currency.name,
         currencySymbol: info.currency.symbol,
         decimals: info.currency.decimals,
@@ -169,9 +173,9 @@ export class NetworkService {
 
   async getNetworks(kind?: NetworkKind) {
     if (!kind) {
-      return DB.networks.toArray()
+      return DB.networks.orderBy('sortId').toArray()
     } else {
-      return DB.networks.where('kind').equals(kind).toArray()
+      return DB.networks.where('kind').equals(kind).sortBy('sortId')
     }
   }
 
@@ -259,7 +263,33 @@ export function useNetwork(id?: number) {
   }, [id])
 }
 
-export async function reorderNetworks(startSortId: number, endSortId: number) {
+export function reorderNetworks(
+  networks: INetwork[],
+  startIndex: number,
+  endIndex: number
+): [INetwork[], number, number] {
+  const [startSortId, endSortId] = [
+    networks[startIndex].sortId,
+    networks[endIndex].sortId
+  ]
+  const nets = networks.slice()
+  const [lower, upper] = [
+    Math.min(startIndex, endIndex),
+    Math.max(startIndex, endIndex)
+  ]
+  const sortIds = nets.slice(lower, upper + 1).map((net) => net.sortId)
+  const [removed] = nets.splice(startIndex, 1)
+  nets.splice(endIndex, 0, removed)
+  for (let index = lower; index <= upper; ++index) {
+    nets[index].sortId = sortIds[index - lower]
+  }
+  return [nets, startSortId, endSortId]
+}
+
+export async function persistReorderNetworks(
+  startSortId: number,
+  endSortId: number
+) {
   const clockwise = startSortId < endSortId
   const [lower, upper] = clockwise
     ? [startSortId, endSortId]

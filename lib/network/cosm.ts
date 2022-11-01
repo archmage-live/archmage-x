@@ -35,7 +35,9 @@ export interface AppChainInfo extends ChainInfo {
   }
 }
 
-export type CosmChainInfo = AppChainInfo
+export type CosmChainInfo = AppChainInfo & {
+  isTestnet?: boolean
+}
 
 export const EmbedChainInfos: CosmChainInfo[] = [
   {

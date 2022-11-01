@@ -1,4 +1,5 @@
 import {
+  ApiError,
   AptosAccount,
   AptosClient,
   CoinClient,
@@ -83,12 +84,21 @@ export class AptosProvider implements Provider {
 
   async getBalance(address: string): Promise<string> {
     const account = new AptosAccount(undefined, address)
-    const balance = await new CoinClient(this.client).checkBalance(account)
-    return balance.toString()
+    try {
+      const balance = await new CoinClient(this.client).checkBalance(account)
+      return balance.toString()
+    } catch (e) {
+      if (
+        e instanceof ApiError &&
+        e.errorCode === Types.AptosErrorCode.ACCOUNT_NOT_FOUND
+      ) {
+        return '0'
+      }
+      throw e
+    }
   }
 
-  async getBalances(addresses: string[]): Promise<string[] | undefined> {
-    // TODO: retry when error
+  async getBalances(addresses: string[]): Promise<string[]> {
     const queue = new PQueue({ concurrency: 3 })
     return await queue.addAll(
       addresses.map((addr) => () => this.getBalance(addr))

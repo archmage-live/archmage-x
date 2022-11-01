@@ -183,7 +183,7 @@ export function useCryptoComparePrice(
     async () =>
       currency
         ? CRYPTO_COMPARE_SERVICE.multiFullPrices([currency], quoteCurrency)
-        : undefined
+        : null
   )
 
   const result: typeof data = useCache2(

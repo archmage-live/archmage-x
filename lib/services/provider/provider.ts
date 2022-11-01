@@ -14,7 +14,7 @@ export interface Provider {
 
   getBalance(address: string): Promise<string>
 
-  getBalances(addresses: string[]): Promise<string[] | undefined>
+  getBalances(addresses: string[]): Promise<string[]>
 
   estimateGasPrice(): Promise<any>
 

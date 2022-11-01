@@ -327,7 +327,7 @@ export function useCache3(
 export function useCachesByKeys1(
   category: CacheCategory,
   key1s?: Key[],
-  dataByKey1?: Map<Key, any | undefined>
+  dataByKey1?: Map<Key, any | undefined> | null
 ) {
   const { value } = useAsync(async () => {
     if (!key1s) {
@@ -358,7 +358,7 @@ export function useCachesByKeys2(
   category: CacheCategory,
   key1?: Key,
   key2s?: Key[],
-  dataByKey2?: Map<Key, any | undefined>
+  dataByKey2?: Map<Key, any | undefined> | null
 ) {
   const { value } = useAsync(async () => {
     if (key1 === undefined || !key2s) {
@@ -390,7 +390,7 @@ export function useCachesByKeys3(
   key1?: Key,
   key2?: Key,
   key3s?: Key[],
-  dataByKey3?: Map<Key, any | undefined>
+  dataByKey3?: Map<Key, any | undefined> | null
 ) {
   const { value } = useAsync(async () => {
     if (key1 === undefined || key2 === undefined || !key3s) {

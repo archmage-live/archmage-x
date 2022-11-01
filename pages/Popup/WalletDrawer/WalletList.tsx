@@ -1,6 +1,6 @@
 import { Box } from '@chakra-ui/react'
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { useRef } from 'react'
+import { useMemo, useRef } from 'react'
 
 import { WalletId } from '~lib/active'
 import { INetwork } from '~lib/schema'
@@ -52,12 +52,13 @@ export const WalletList = ({
 
   const virtualItems = walletsVirtualizer.getVirtualItems()
 
-  const balanceMap = usePaginatedBalances(
-    network,
-    wallets,
-    virtualItems[0]?.index,
-    virtualItems[0]?.index + virtualItems.length
-  )
+  // const balanceMap = usePaginatedBalances(
+  //   network,
+  //   wallets,
+  //   virtualItems[0]?.index,
+  //   virtualItems[0]?.index + virtualItems.length
+  // )
+  const balanceMap = useMemo(() => new Map(), [])
 
   return (
     <Box py={py}>

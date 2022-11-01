@@ -46,7 +46,7 @@ export const APTOS_NETWORKS_PRESET: AptosChainInfo[] = [
   {
     name: 'Aptos Devnet',
     isTestnet: true,
-    chainId: 33,
+    chainId: 0, // it will be set when accessing rpc
     currency: {
       name: 'Aptos',
       symbol: 'APT',

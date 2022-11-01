@@ -15,6 +15,7 @@ import {
   forwardRef,
   useColorModeValue
 } from '@chakra-ui/react'
+import { GrLinkTop } from 'react-icons/gr'
 import { MdOutlineMoreHoriz } from 'react-icons/md'
 
 import { AccountAvatar } from '~components/AccountAvatar'
@@ -105,6 +106,9 @@ export const SubWalletItem = ({
                       onClick={onSelected}>
                       Select
                     </MenuItem>
+                    <MenuItem icon={<GrLinkTop />} iconSpacing={2}>
+                      Top
+                    </MenuItem>
                     <MenuItem
                       icon={<DeleteIcon />}
                       iconSpacing={2}
@@ -125,7 +129,7 @@ export const SubWalletItem = ({
 }
 
 export const MenuBtn = forwardRef<BoxProps, 'div'>((props, ref) => (
-  <BtnBox ref={ref} {...props}>
+  <BtnBox ref={ref} {...props} fontSize="xl" height="1em">
     <Icon
       as={MdOutlineMoreHoriz}
       color={useColorModeValue('gray.500', 'gray.500')}

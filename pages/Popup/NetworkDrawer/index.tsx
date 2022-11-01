@@ -12,13 +12,18 @@ import {
   Text,
   useColorModeValue
 } from '@chakra-ui/react'
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { FiSearch } from 'react-icons/fi'
 import { IoMdSettings } from 'react-icons/io'
 import { useNavigate } from 'react-router-dom'
 import { useDebounce } from 'react-use'
 
-import { useNetworks } from '~lib/services/network'
+import { INetwork } from '~lib/schema'
+import {
+  persistReorderNetworks,
+  reorderNetworks,
+  useNetworks
+} from '~lib/services/network'
 import { PASSWORD_SERVICE } from '~lib/services/passwordService'
 import { createTab } from '~lib/util'
 
@@ -56,6 +61,44 @@ export const NetworkDrawer = ({ onClose }: { onClose(): void }) => {
     )
   }, [allNetworks, _search])
 
+  const reorder = useCallback(
+    async (network: INetwork, placement: 'top' | 'up' | 'down' | 'bottom') => {
+      if (networks.length <= 1) {
+        return
+      }
+      const sourceIndex = networks.findIndex((net) => net.id === network.id)
+      if (sourceIndex < 0) {
+        return
+      }
+      let destinationIndex
+      switch (placement) {
+        case 'top':
+          if (sourceIndex === 0) return
+          destinationIndex = 0
+          break
+        case 'up':
+          if (sourceIndex === 0) return
+          destinationIndex = sourceIndex - 1
+          break
+        case 'down':
+          if (sourceIndex === networks.length - 1) return
+          destinationIndex = sourceIndex + 1
+          break
+        case 'bottom':
+          if (sourceIndex === networks.length - 1) return
+          destinationIndex = networks.length - 1
+          break
+      }
+      const [, startSortId, endSortId] = reorderNetworks(
+        networks,
+        sourceIndex,
+        destinationIndex
+      )
+      await persistReorderNetworks(startSortId, endSortId)
+    },
+    [networks]
+  )
+
   return (
     <Stack pt={2} pb={4} h="full">
       <Box ps={4} pe={8} me="32px">
@@ -76,7 +119,11 @@ export const NetworkDrawer = ({ onClose }: { onClose(): void }) => {
       <Stack overflowY="auto">
         <Stack>
           <Stack spacing="4">
-            <NetworkList networks={networks} onSelected={onClose} />
+            <NetworkList
+              networks={networks}
+              onSelected={onClose}
+              reorder={reorder}
+            />
           </Stack>
 
           <Divider />

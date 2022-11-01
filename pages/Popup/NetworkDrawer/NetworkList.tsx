@@ -9,10 +9,15 @@ import { NetworkItem } from '~pages/Popup/NetworkDrawer/NetworkItem'
 
 export const NetworkList = ({
   networks,
-  onSelected
+  onSelected,
+  reorder
 }: {
   networks: INetwork[]
   onSelected(): void
+  reorder: (
+    network: INetwork,
+    placement: 'top' | 'up' | 'down' | 'bottom'
+  ) => void
 }) => {
   const { networkId, setNetworkId } = useActiveNetworkId()
 
@@ -54,6 +59,7 @@ export const NetworkList = ({
                   onSelected={() => {
                     setNetworkId(net.id!).finally(onSelected)
                   }}
+                  reorder={reorder}
                 />
               </Box>
             )

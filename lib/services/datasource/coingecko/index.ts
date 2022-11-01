@@ -1011,15 +1011,15 @@ export function useCoinGeckoTokensPrice(
     ],
     async () => {
       if (!network || !tokens?.length) {
-        return
+        return null
       }
       const chains = PLATFORMS.get(network.kind)
       if (!chains) {
-        return
+        return null
       }
       const chain = chains.get(network.chainId)
       if (!chain) {
-        return
+        return null
       }
       const result = (await COIN_GECKO_SERVICE.simple.fetchTokenPrice(
         {

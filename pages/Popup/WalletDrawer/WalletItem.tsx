@@ -12,9 +12,9 @@ import {
   Text
 } from '@chakra-ui/react'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { GrLinkTop } from 'react-icons/gr'
 
 import { AccountAvatar } from '~components/AccountAvatar'
-import { Badge } from '~components/Badge'
 import { TypeBadge } from '~components/TypeBadge'
 import { WalletId } from '~lib/active'
 import { formatNumber } from '~lib/formatNumber'
@@ -188,6 +188,9 @@ export const WalletItem = ({
                           Select
                         </MenuItem>
                       )}
+                      <MenuItem icon={<GrLinkTop />} iconSpacing={2}>
+                        Top
+                      </MenuItem>
                       {wallet.type === WalletType.HD && (
                         <MenuItem
                           icon={<AddIcon w={3} h={3} />}

@@ -1,5 +1,5 @@
 import { AddressZero } from '@ethersproject/constants'
-import { useQueries, useQuery } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import assert from 'assert'
 import Decimal from 'decimal.js'
 import { useLiveQuery } from 'dexie-react-hooks'
@@ -77,8 +77,12 @@ export function useBalance(
 
   const { data } = useQuery(
     [QueryService.PROVIDER, network?.id, address, 'getBalance'],
-    async () =>
-      network && address && (await getProvider(network)).getBalance(address)
+    async () => {
+      if (!network || !address) {
+        return null
+      }
+      return (await getProvider(network)).getBalance(address)
+    }
   )
 
   const balance = useCache3(
@@ -123,51 +127,13 @@ export function useBalances(
       return new Map<string, string>()
     }
     const balances = await (await getProvider(network)).getBalances(addresses)
-    if (!balances) {
-      return null
-    }
     return new Map(addresses.map((addr, i) => [addr, balances[i]]))
   }, [network, addresses])
 
-  const { data: balances1, error: error } = useQuery(
+  const { data: balanceByAddr } = useQuery(
     [QueryService.ETH_BALANCE_CHECKER, network?.id, addresses],
     getBalances
   )
-
-  if (error) {
-    console.error(error)
-  }
-
-  const getBalance = useCallback(
-    async (address: string) =>
-      network && (await getProvider(network)).getBalance(address),
-    [network]
-  )
-
-  const balances2 = useQueries({
-    queries: addresses.map((address) => {
-      return {
-        queryKey: [QueryService.PROVIDER, network?.id, address, 'getBalance'],
-        queryFn: async () => await getBalance(address),
-        enabled: balances1 === null
-      }
-    })
-  })
-
-  const balanceByAddr = useMemo(() => {
-    if (balances1) {
-      return balances1
-    }
-    return new Map(
-      addresses.map((addr, i) => {
-        const { data, error } = balances2[i]
-        if (error) {
-          console.error(error)
-        }
-        return [addr, data]
-      })
-    )
-  }, [addresses, balances1, balances2])
 
   const balanceMap = useCachesByKeys3(
     CacheCategory.PROVIDER,

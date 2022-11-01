@@ -4,6 +4,7 @@ import { _TypedDataEncoder } from '@ethersproject/hash'
 import { Logger } from '@ethersproject/logger'
 import { shallowCopy } from '@ethersproject/properties'
 import { ethErrors } from 'eth-rpc-errors'
+import PQueue from 'p-queue'
 
 import { IChainAccount, INetwork } from '~lib/schema'
 import { ETH_BALANCE_CHECKER_API } from '~lib/services/datasource/ethBalanceChecker'
@@ -55,21 +56,24 @@ export class EvmProvider implements Provider {
     return balance.toString()
   }
 
-  async getBalances(addresses: string[]): Promise<string[] | undefined> {
+  async getBalances(addresses: string[]): Promise<string[]> {
     const balances = await ETH_BALANCE_CHECKER_API.getAddressesBalances(
       this.provider,
       addresses
     )
-    if (!balances) {
-      return
+    if (balances) {
+      const result = balances.map(
+        (item) => item[ETH_BALANCE_CHECKER_API.NATIVE_TOKEN]
+      )
+      if (!result.some((item) => !item)) {
+        return result
+      }
     }
-    const result = balances.map(
-      (item) => item[ETH_BALANCE_CHECKER_API.NATIVE_TOKEN]
+
+    const queue = new PQueue({ concurrency: 3 })
+    return await queue.addAll(
+      addresses.map((addr) => () => this.getBalance(addr))
     )
-    if (result.some((item) => !item)) {
-      return
-    }
-    return result
   }
 
   async estimateGasPrice(): Promise<any> {

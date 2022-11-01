@@ -11,7 +11,11 @@ import {
 } from 'react-beautiful-dnd'
 
 import { INetwork } from '~lib/schema/network'
-import { getNetworkInfo, reorderNetworks } from '~lib/services/network'
+import {
+  getNetworkInfo,
+  persistReorderNetworks,
+  reorderNetworks
+} from '~lib/services/network'
 
 import { NetworkItem } from './NetworkItem'
 
@@ -57,25 +61,15 @@ export const NetworkList = ({
       }
 
       // local sort
-      const [startSortId, endSortId] = [
-        networks[source.index].sortId,
-        networks[destination.index].sortId
-      ]
-      const nets = networks.slice()
-      const [lower, upper] = [
-        Math.min(source.index, destination.index),
-        Math.max(source.index, destination.index)
-      ]
-      const sortIds = nets.slice(lower, upper + 1).map((net) => net.sortId)
-      const [removed] = nets.splice(source.index, 1)
-      nets.splice(destination.index, 0, removed)
-      for (let index = lower; index <= upper; ++index) {
-        nets[index].sortId = sortIds[index - lower]
-      }
+      const [nets, startSortId, endSortId] = reorderNetworks(
+        networks,
+        source.index,
+        destination.index
+      )
       setNetworks(nets)
 
       // async persist sort
-      await reorderNetworks(startSortId, endSortId)
+      await persistReorderNetworks(startSortId, endSortId)
     },
     [networks]
   )

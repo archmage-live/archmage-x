@@ -6,7 +6,7 @@ export enum NetworkKind {
 }
 
 export const NETWORK_SCOPES = [
-  'EVM',
+  'Ethereum',
   // 'Cosmos',
   'Aptos'
   // 'Solana'
@@ -18,7 +18,7 @@ export type NetworkScope = typeof NETWORK_SCOPES[number]
 const NETWORK_KINDS: {
   [key in NetworkScope]: NetworkKind | undefined
 } = {
-  EVM: NetworkKind.EVM,
+  Ethereum: NetworkKind.EVM,
   Cosmos: NetworkKind.COSM,
   Aptos: NetworkKind.APTOS,
   Solana: NetworkKind.SOL
@@ -31,7 +31,7 @@ export function getNetworkKind(scope?: NetworkScope): NetworkKind {
 export function getNetworkScope(kind: NetworkKind): NetworkScope {
   switch (kind) {
     case NetworkKind.EVM:
-      return 'EVM'
+      return 'Ethereum'
     case NetworkKind.COSM:
       return 'Cosmos'
     case NetworkKind.APTOS:

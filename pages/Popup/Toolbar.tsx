@@ -76,7 +76,7 @@ export const Toolbar = () => {
           <Image boxSize="48px" my="-4px" src={icon} alt="Logo" />
         </Box>
 
-        <Button variant="outline" maxW={64} onClick={onNetworkToggle}>
+        <Button variant="outline" minW={32} maxW={64} onClick={onNetworkToggle}>
           <HStack>
             <Image
               borderRadius="full"
