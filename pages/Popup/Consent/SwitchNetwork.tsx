@@ -14,8 +14,11 @@ import { FaAngleRight, FaGlobeAmericas } from 'react-icons/fa'
 
 import { useActiveNetwork } from '~lib/active'
 import { CONSENT_SERVICE, ConsentRequest } from '~lib/services/consentService'
-import { useEvmChainLogoUrl } from '~lib/services/datasource/chainlist'
-import { getNetworkInfo, useNetwork } from '~lib/services/network'
+import {
+  getNetworkInfo,
+  useNetwork,
+  useNetworkLogoUrl
+} from '~lib/services/network'
 import { useSiteIconUrl } from '~lib/util'
 
 export const SwitchNetwork = ({
@@ -33,8 +36,8 @@ export const SwitchNetwork = ({
 
   const network = useNetwork(request.networkId)
 
-  const activeNetworkLogoUrl = useEvmChainLogoUrl(activeNetwork?.chainId)
-  const networkLogoUrl = useEvmChainLogoUrl(network?.chainId)
+  const activeNetworkLogoUrl = useNetworkLogoUrl(activeNetwork)
+  const networkLogoUrl = useNetworkLogoUrl(network)
 
   const borderColor = useColorModeValue('gray.300', 'gray.500')
   const bg = useColorModeValue('blackAlpha.100', 'gray.900')

@@ -4,10 +4,11 @@ import { useEffect, useState } from 'react'
 import { DraggableProvidedDragHandleProps } from 'react-beautiful-dnd'
 import { MdDragIndicator } from 'react-icons/md'
 
-import { useEvmChainLogoUrl } from '~lib/services/datasource/chainlist'
-import { NetworkInfo } from '~lib/services/network'
+import { INetwork } from '~lib/schema'
+import { NetworkInfo, useNetworkLogoUrl } from '~lib/services/network'
 
 export const NetworkItem = ({
+  network,
   info,
   bg,
   hoverBg,
@@ -15,6 +16,7 @@ export const NetworkItem = ({
   onClick,
   dragHandleProps = {} as DraggableProvidedDragHandleProps
 }: {
+  network: INetwork
   info: NetworkInfo
   bg?: string
   hoverBg?: string
@@ -37,7 +39,7 @@ export const NetworkItem = ({
     }
   }, [infoVisible])
 
-  const networkLogoUrl = useEvmChainLogoUrl(info.chainId)
+  const networkLogoUrl = useNetworkLogoUrl(network)
 
   return (
     <Box py={1}>

@@ -17,8 +17,7 @@ import { GrLinkBottom, GrLinkDown, GrLinkTop, GrLinkUp } from 'react-icons/gr'
 
 import { Badge } from '~components/Badge'
 import { INetwork } from '~lib/schema/network'
-import { useEvmChainLogoUrl } from '~lib/services/datasource/chainlist'
-import { NetworkInfo } from '~lib/services/network'
+import { NetworkInfo, useNetworkLogoUrl } from '~lib/services/network'
 import { MenuBtn } from '~pages/Popup/WalletDrawer/SubWalletItem'
 
 interface NetworkItemProps {
@@ -39,7 +38,7 @@ export const NetworkItem = ({
   onSelected,
   reorder
 }: NetworkItemProps) => {
-  const networkLogoUrl = useEvmChainLogoUrl(network.chainId)
+  const networkLogoUrl = useNetworkLogoUrl(network)
 
   return (
     <Button

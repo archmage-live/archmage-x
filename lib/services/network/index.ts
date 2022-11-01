@@ -8,6 +8,8 @@ import { AptosChainInfo } from '~lib/network/aptos'
 import { CosmChainInfo } from '~lib/network/cosm'
 import { EvmChainInfo } from '~lib/network/evm'
 import { ChainId, IChainAccount, INetwork, IToken } from '~lib/schema'
+import { useEvmChainLogoUrl } from '~lib/services/datasource/chainlist'
+import { useCryptoComparePrice } from '~lib/services/datasource/cryptocompare'
 
 import { AptosNetworkService } from './aptosService'
 import { CosmNetworkService } from './cosmService'
@@ -261,6 +263,20 @@ export function useNetwork(id?: number) {
     }
     return DB.networks.get(id)
   }, [id])
+}
+
+export function useNetworkLogoUrl(network?: INetwork) {
+  const info = network && getNetworkInfo(network)
+
+  const evmChainLogoUrl = useEvmChainLogoUrl(
+    network?.kind === NetworkKind.EVM ? network?.chainId : undefined
+  )
+
+  const result = useCryptoComparePrice(
+    network?.kind !== NetworkKind.EVM ? info?.currencySymbol : undefined
+  )
+
+  return network?.kind === NetworkKind.EVM ? evmChainLogoUrl : result?.imageUrl
 }
 
 export function reorderNetworks(

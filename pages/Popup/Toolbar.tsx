@@ -17,8 +17,7 @@ import { useCallback, useState } from 'react'
 
 import { AccountAvatar } from '~components/AccountAvatar'
 import { WalletId, useActive } from '~lib/active'
-import { useEvmChainLogoUrl } from '~lib/services/datasource/chainlist'
-import { getNetworkInfo } from '~lib/services/network'
+import { getNetworkInfo, useNetworkLogoUrl } from '~lib/services/network'
 import {
   WalletEntry,
   filterWalletTreeBySearch,
@@ -33,7 +32,7 @@ export const Toolbar = () => {
   const { network, account } = useActive()
 
   const networkInfo = network && getNetworkInfo(network)
-  const networkLogoUrl = useEvmChainLogoUrl(network?.chainId)
+  const networkLogoUrl = useNetworkLogoUrl(network)
 
   const bg = useColorModeValue('gray.50', 'blackAlpha.400')
   const blockieBg = useColorModeValue('purple.50', 'gray.800')

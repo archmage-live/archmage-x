@@ -96,6 +96,7 @@ export const NetworkList = ({
                 {...provided.dragHandleProps}
                 {...provided.draggableProps}>
                 <NetworkItem
+                  network={net}
                   info={info}
                   bg={hoverBg}
                   infoVisible={
@@ -134,6 +135,7 @@ export const NetworkList = ({
                             {...provided.draggableProps}
                             h="full">
                             <NetworkItem
+                              network={net}
                               info={info}
                               bg={net.id === selectedId ? hoverBg : undefined}
                               hoverBg={hoverBg}
