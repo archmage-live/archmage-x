@@ -1,3 +1,5 @@
+import { NativeCurrency } from './evm'
+
 export interface AptosChainInfo {
   name: string
   isTestnet?: boolean
@@ -6,12 +8,6 @@ export interface AptosChainInfo {
   rpc: string[]
   explorers: string[]
   faucets?: string[]
-}
-
-export interface NativeCurrency {
-  name: string
-  symbol: string
-  decimals: number
 }
 
 export const APTOS_NETWORKS_PRESET: AptosChainInfo[] = [

@@ -153,7 +153,7 @@ export interface SigningWallet {
   privateKey?: string
   publicKey?: string
 
-  signTransaction(transaction: any): Promise<any>
+  signTransaction(transaction: any, ...args: any[]): Promise<any>
 
   signMessage(message: any): Promise<string>
 
