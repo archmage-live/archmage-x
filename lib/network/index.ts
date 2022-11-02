@@ -2,13 +2,15 @@ export enum NetworkKind {
   EVM = 'evm',
   COSM = 'cosm',
   APTOS = 'aptos',
+  SUI = 'sui',
   SOL = 'sol'
 }
 
 export const NETWORK_SCOPES = [
   'Ethereum',
   // 'Cosmos',
-  'Aptos'
+  'Aptos',
+  'Sui'
   // 'Solana'
 ]
 export const NETWORK_SCOPE_ANY = 'Any Network Kind'
@@ -21,6 +23,7 @@ const NETWORK_KINDS: {
   Ethereum: NetworkKind.EVM,
   Cosmos: NetworkKind.COSM,
   Aptos: NetworkKind.APTOS,
+  Sui: NetworkKind.SUI,
   Solana: NetworkKind.SOL
 }
 
@@ -36,6 +39,8 @@ export function getNetworkScope(kind: NetworkKind): NetworkScope {
       return 'Cosmos'
     case NetworkKind.APTOS:
       return 'Aptos'
+    case NetworkKind.SUI:
+      return 'Sui'
     case NetworkKind.SOL:
       return 'Solana'
   }

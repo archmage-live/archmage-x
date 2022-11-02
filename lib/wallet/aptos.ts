@@ -121,6 +121,7 @@ export class AptosWallet implements KeystoreSigningWallet {
   }
 
   static checkAddress(address: string): string | false {
+    // TODO
     try {
       address = HexString.fromUint8Array(
         new HexString(address).toUint8Array()

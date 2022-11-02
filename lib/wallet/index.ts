@@ -7,6 +7,7 @@ import { IWallet } from '~lib/schema/wallet'
 import { NETWORK_SERVICE } from '~lib/services/network'
 import { WALLET_SERVICE } from '~lib/services/wallet'
 import { EvmHwWallet } from '~lib/wallet/evmHw'
+import { SuiWallet } from '~lib/wallet/sui'
 
 import { AptosWallet } from './aptos'
 import {
@@ -50,6 +51,8 @@ export function getDefaultPath(networkKind: NetworkKind): string {
       return CosmWallet.defaultPath
     case NetworkKind.APTOS:
       return AptosWallet.defaultPath
+    case NetworkKind.SUI:
+      return SuiWallet.defaultPath
     case NetworkKind.SOL:
       return SolWallet.defaultPath
   }
@@ -66,6 +69,8 @@ export function checkAddress(
       return CosmWallet.checkAddress(address)
     case NetworkKind.APTOS:
       return AptosWallet.checkAddress(address)
+    case NetworkKind.SUI:
+      return SuiWallet.checkAddress(address)
     default:
       return false
   }
@@ -107,6 +112,8 @@ export async function getMasterSigningWallet(
       return CosmWallet.from(opts)
     case NetworkKind.APTOS:
       return AptosWallet.from(opts)
+    case NetworkKind.SUI:
+      return SuiWallet.from(opts)
     case NetworkKind.SOL:
       return SolWallet.from(opts)
   }
