@@ -7,9 +7,11 @@ import { NetworkKind } from '~lib/network'
 import { AptosChainInfo } from '~lib/network/aptos'
 import { CosmChainInfo } from '~lib/network/cosm'
 import { EvmChainInfo } from '~lib/network/evm'
+import { StarknetChainInfo } from '~lib/network/starknet'
 import { ChainId, IChainAccount, INetwork, IToken } from '~lib/schema'
 import { useEvmChainLogoUrl } from '~lib/services/datasource/chainlist'
 import { useCryptoComparePrice } from '~lib/services/datasource/cryptocompare'
+import { StarknetNetworkService } from '~lib/services/network/starknetService'
 
 import { AptosNetworkService } from './aptosService'
 import { CosmNetworkService } from './cosmService'
@@ -55,6 +57,20 @@ export function getNetworkInfo(network: INetwork): NetworkInfo {
         decimals: info.feeCurrencies?.[0].coinDecimals
       }
     }
+    case NetworkKind.STARKNET: {
+      const info = network.info as StarknetChainInfo
+      return {
+        name: info.name,
+        description: info.name,
+        chainId: info.chainId,
+        isTestnet: info.isTestnet,
+        currencyName: info.currency.name,
+        currencySymbol: info.currency.symbol,
+        decimals: info.currency.decimals,
+        rpcUrl: info.rpc.at(0),
+        explorerUrl: info.explorers.at(0)
+      }
+    }
     case NetworkKind.APTOS: {
       const info = network.info as AptosChainInfo
       return {
@@ -90,6 +106,9 @@ export function getAccountUrl(
       case NetworkKind.EVM:
         pathPrefix = 'address'
         break
+      case NetworkKind.STARKNET:
+        pathPrefix = 'contract'
+        break
       case NetworkKind.APTOS:
         pathPrefix = !url.host.includes('aptoscan.com') ? 'account' : 'address'
         break
@@ -118,6 +137,9 @@ export function getTransactionUrl(
     let pathPrefix
     switch (network.kind) {
       case NetworkKind.EVM:
+        pathPrefix = 'tx'
+        break
+      case NetworkKind.STARKNET:
         pathPrefix = 'tx'
         break
       case NetworkKind.APTOS:
@@ -150,6 +172,9 @@ export function getTokenUrl(
       case NetworkKind.EVM:
         pathPrefix = 'token'
         break
+      case NetworkKind.STARKNET:
+        pathPrefix = 'contract'
+        break
       case NetworkKind.APTOS:
         // TODO
         return undefined
@@ -169,6 +194,7 @@ export class NetworkService {
     if (ENV.inServiceWorker) {
       await EvmNetworkService.init()
       await CosmNetworkService.init()
+      await StarknetNetworkService.init()
       await AptosNetworkService.init()
     }
   }
@@ -200,6 +226,9 @@ export class NetworkService {
     switch (kind) {
       case NetworkKind.EVM:
         network = EvmNetworkService.buildNetwork(chainId, info)
+        break
+      case NetworkKind.STARKNET:
+        network = StarknetNetworkService.buildNetwork(chainId, info)
         break
       case NetworkKind.APTOS:
         network = AptosNetworkService.buildNetwork(chainId, info)

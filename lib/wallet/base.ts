@@ -155,9 +155,9 @@ export interface SigningWallet {
 
   signTransaction(transaction: any, ...args: any[]): Promise<any>
 
-  signMessage(message: any): Promise<string>
+  signMessage(message: any): Promise<any>
 
-  signTypedData(typedData: any): Promise<string>
+  signTypedData(typedData: any): Promise<any>
 }
 
 export interface KeystoreSigningWallet extends SigningWallet {
