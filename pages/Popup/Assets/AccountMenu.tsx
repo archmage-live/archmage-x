@@ -27,9 +27,11 @@ import {
   useColorModeValue,
   useDisclosure
 } from '@chakra-ui/react'
+import { FaExpandAlt } from '@react-icons/all-files/fa/FaExpandAlt'
+import { FaPlug } from '@react-icons/all-files/fa/FaPlug'
+import { MdMoreVert } from '@react-icons/all-files/md/MdMoreVert'
+import { MdQrCode } from '@react-icons/all-files/md/MdQrCode'
 import { QRCodeSVG } from 'qrcode.react'
-import { FaExpandAlt, FaPlug } from 'react-icons/fa'
-import { MdMoreVert, MdQrCode } from 'react-icons/md'
 import browser from 'webextension-polyfill'
 
 import { AccountAvatar } from '~components/AccountAvatar'

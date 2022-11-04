@@ -6,8 +6,8 @@ import {
   Text,
   useDisclosure
 } from '@chakra-ui/react'
+import { MdOutlineFormatListBulleted } from '@react-icons/all-files/md/MdOutlineFormatListBulleted'
 import { ReactNode } from 'react'
-import { MdOutlineFormatListBulleted } from 'react-icons/md'
 
 import { useActive } from '~lib/active'
 import { IToken, TokenVisibility } from '~lib/schema'

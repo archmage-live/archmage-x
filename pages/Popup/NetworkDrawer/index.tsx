@@ -12,9 +12,9 @@ import {
   Text,
   useColorModeValue
 } from '@chakra-ui/react'
+import { FiSearch } from '@react-icons/all-files/fi/FiSearch'
+import { IoMdSettings } from '@react-icons/all-files/io/IoMdSettings'
 import { useCallback, useMemo, useState } from 'react'
-import { FiSearch } from 'react-icons/fi'
-import { IoMdSettings } from 'react-icons/io'
 import { useNavigate } from 'react-router-dom'
 import { useDebounce } from 'react-use'
 

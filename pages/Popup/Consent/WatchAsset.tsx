@@ -9,9 +9,9 @@ import {
   Stack,
   Text
 } from '@chakra-ui/react'
+import { FaGlobeAmericas } from '@react-icons/all-files/fa/FaGlobeAmericas'
 import * as React from 'react'
 import { ReactNode } from 'react'
-import { FaGlobeAmericas } from 'react-icons/fa'
 
 import { AlertBox } from '~components/AlertBox'
 import { IToken, TokenVisibility } from '~lib/schema'

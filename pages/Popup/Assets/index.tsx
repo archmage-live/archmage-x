@@ -15,11 +15,12 @@ import {
   useColorModeValue,
   useDisclosure
 } from '@chakra-ui/react'
+import { BiQuestionMark } from '@react-icons/all-files/bi/BiQuestionMark'
+import { FiCheckCircle } from '@react-icons/all-files/fi/FiCheckCircle'
+import { FiCopy } from '@react-icons/all-files/fi/FiCopy'
+import { MdOutlineSignalCellularConnectedNoInternet4Bar } from '@react-icons/all-files/md/MdOutlineSignalCellularConnectedNoInternet4Bar'
 import Decimal from 'decimal.js'
 import { useEffect } from 'react'
-import { BiQuestionMark } from 'react-icons/bi'
-import { FiCheckCircle, FiCopy } from 'react-icons/fi'
-import { MdOutlineSignalCellularConnectedNoInternet4Bar } from 'react-icons/md'
 import { useNetworkState } from 'react-use'
 
 import { useActive } from '~lib/active'

@@ -11,8 +11,8 @@ import {
   TabPanels,
   Tabs
 } from '@chakra-ui/react'
+import { FiSearch } from '@react-icons/all-files/fi/FiSearch'
 import { useCallback, useEffect, useState } from 'react'
-import { FiSearch } from 'react-icons/fi'
 import { useDebounce } from 'react-use'
 import { useWizard } from 'react-use-wizard'
 

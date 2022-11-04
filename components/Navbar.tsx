@@ -5,11 +5,11 @@ import {
   IconButton,
   useColorModeValue
 } from '@chakra-ui/react'
+import { IoFlashSharp } from '@react-icons/all-files/io5/IoFlashSharp'
+import { IoMdSettings } from '@react-icons/all-files/io/IoMdSettings'
+import { RiMoneyDollarCircleFill } from '@react-icons/all-files/ri/RiMoneyDollarCircleFill'
 import { motion } from 'framer-motion'
 import { ReactElement, useCallback, useState } from 'react'
-import { IoMdSettings, IoMdSwap } from 'react-icons/io'
-import { IoFlashSharp, IoGrid } from 'react-icons/io5'
-import { RiMoneyDollarCircleFill } from 'react-icons/ri'
 
 export type NavTarget = 'Assets' | 'NFTs' | 'Swap' | 'Activity' | 'Settings'
 

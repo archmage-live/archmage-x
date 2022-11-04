@@ -7,10 +7,11 @@ import {
   Text,
   Tooltip
 } from '@chakra-ui/react'
+import { GrDeploy } from '@react-icons/all-files/gr/GrDeploy'
+import { IoIosSend } from '@react-icons/all-files/io/IoIosSend'
+import { MdAutoFixHigh } from '@react-icons/all-files/md/MdAutoFixHigh'
+import { MdCallReceived } from '@react-icons/all-files/md/MdCallReceived'
 import Decimal from 'decimal.js'
-import { GrDeploy } from 'react-icons/gr'
-import { IoIosSend } from 'react-icons/io'
-import { MdAutoFixHigh, MdCallReceived } from 'react-icons/md'
 
 import { dayjs } from '~lib/dayjs'
 import { formatNumber } from '~lib/formatNumber'

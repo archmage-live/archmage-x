@@ -16,10 +16,10 @@ import {
   Text,
   useColorModeValue
 } from '@chakra-ui/react'
+import { BiQuestionMark } from '@react-icons/all-files/bi/BiQuestionMark'
+import { FiCheckCircle } from '@react-icons/all-files/fi/FiCheckCircle'
+import { MdOutlineSettings } from '@react-icons/all-files/md/MdOutlineSettings'
 import { useEffect, useState } from 'react'
-import { BiQuestionMark } from 'react-icons/bi'
-import { FiCheckCircle } from 'react-icons/fi'
-import { MdOutlineSettings } from 'react-icons/md'
 import browser from 'webextension-polyfill'
 
 import { INetwork, ITokenList } from '~lib/schema'

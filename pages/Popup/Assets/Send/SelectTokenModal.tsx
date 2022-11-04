@@ -11,10 +11,10 @@ import {
   Stack,
   Text
 } from '@chakra-ui/react'
+import { FiSearch } from '@react-icons/all-files/fi/FiSearch'
+import { MdOutlineFormatListBulleted } from '@react-icons/all-files/md/MdOutlineFormatListBulleted'
 import * as React from 'react'
 import { ReactNode, useEffect, useState } from 'react'
-import { FiSearch } from 'react-icons/fi'
-import { MdOutlineFormatListBulleted } from 'react-icons/md'
 import { useWizard } from 'react-use-wizard'
 
 import { IToken } from '~lib/schema'

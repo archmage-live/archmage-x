@@ -1,6 +1,6 @@
 import { Button, Center, Divider, Icon, Stack, Text } from '@chakra-ui/react'
+import { MdReadMore } from '@react-icons/all-files/md/MdReadMore'
 import { useEffect } from 'react'
-import { MdReadMore } from 'react-icons/md'
 
 import { createTab } from '~lib/util'
 import { useForPopupSettings } from '~pages/Settings/SettingItem'

@@ -14,9 +14,9 @@ import {
   Stack,
   Text
 } from '@chakra-ui/react'
+import { FaGlobeAmericas } from '@react-icons/all-files/fa/FaGlobeAmericas'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { useRef } from 'react'
-import { FaGlobeAmericas } from 'react-icons/fa'
 
 import { useActive } from '~lib/active'
 import { IConnectedSite } from '~lib/schema'

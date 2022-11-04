@@ -16,10 +16,11 @@ import {
 } from '@chakra-ui/react'
 import { TransactionReceipt } from '@ethersproject/abstract-provider'
 import { BigNumber } from '@ethersproject/bignumber'
+import { FiCheckCircle } from '@react-icons/all-files/fi/FiCheckCircle'
+import { FiCopy } from '@react-icons/all-files/fi/FiCopy'
 import Decimal from 'decimal.js'
 import { ethers } from 'ethers'
 import { useMemo, useState } from 'react'
-import { FiCheckCircle, FiCopy } from 'react-icons/fi'
 import { useAsync } from 'react-use'
 import browser from 'webextension-polyfill'
 

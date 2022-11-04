@@ -13,6 +13,8 @@ import {
   Text,
   useDisclosure
 } from '@chakra-ui/react'
+import { BiQuestionMark } from '@react-icons/all-files/bi/BiQuestionMark'
+import { IoSwapVertical } from '@react-icons/all-files/io5/IoSwapVertical'
 import { CoinClient } from 'aptos'
 import { APTOS_COIN } from 'aptos/src/utils'
 import assert from 'assert'
@@ -20,8 +22,6 @@ import Decimal from 'decimal.js'
 import { atom, useAtom } from 'jotai'
 import * as React from 'react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { BiQuestionMark } from 'react-icons/bi'
-import { IoSwapVertical } from 'react-icons/io5'
 import { useAsync, useInterval } from 'react-use'
 
 import { AlertBox } from '~components/AlertBox'

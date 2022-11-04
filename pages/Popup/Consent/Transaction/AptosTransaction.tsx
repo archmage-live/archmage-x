@@ -23,11 +23,11 @@ import {
   useColorModeValue
 } from '@chakra-ui/react'
 import { hexlify } from '@ethersproject/bytes'
+import { BiQuestionMark } from '@react-icons/all-files/bi/BiQuestionMark'
 import { BCS, TxnBuilderTypes, Types } from 'aptos'
 import Decimal from 'decimal.js'
 import * as React from 'react'
 import { ReactNode, useCallback, useEffect, useMemo, useState } from 'react'
-import { BiQuestionMark } from 'react-icons/bi'
 
 import { AlertBox } from '~components/AlertBox'
 import { SpinningOverlay } from '~components/SpinningOverlay'

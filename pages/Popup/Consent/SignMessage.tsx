@@ -12,9 +12,9 @@ import {
 } from '@chakra-ui/react'
 import { arrayify } from '@ethersproject/bytes'
 import { Utf8ErrorFuncs, toUtf8String } from '@ethersproject/strings'
+import { FaGlobeAmericas } from '@react-icons/all-files/fa/FaGlobeAmericas'
 import * as React from 'react'
 import { ReactNode, useCallback, useState } from 'react'
-import { FaGlobeAmericas } from 'react-icons/fa'
 
 import {
   CONSENT_SERVICE,

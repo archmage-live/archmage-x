@@ -1,7 +1,7 @@
 import { Box, HStack, Icon, Stack, Text } from '@chakra-ui/react'
+import { MdDragIndicator } from '@react-icons/all-files/md/MdDragIndicator'
 import { useEffect, useState } from 'react'
 import { DraggableProvidedDragHandleProps } from 'react-beautiful-dnd'
-import { MdDragIndicator } from 'react-icons/md'
 
 import { AccountAvatar } from '~components/AccountAvatar'
 import { IChainAccount, ISubWallet } from '~lib/schema'

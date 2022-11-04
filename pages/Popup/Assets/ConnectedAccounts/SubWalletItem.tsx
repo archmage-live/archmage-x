@@ -12,8 +12,8 @@ import {
   Text,
   Tooltip
 } from '@chakra-ui/react'
-import { MdMoreVert } from 'react-icons/md'
-import { VscDebugDisconnect } from 'react-icons/vsc'
+import { MdMoreVert } from '@react-icons/all-files/md/MdMoreVert'
+import { VscDebugDisconnect } from '@react-icons/all-files/vsc/VscDebugDisconnect'
 
 import { AccountAvatar } from '~components/AccountAvatar'
 import { setActiveWallet } from '~lib/active'

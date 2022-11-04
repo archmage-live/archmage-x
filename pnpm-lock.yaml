@@ -65,6 +65,7 @@ specifiers:
   '@mysten/sui.js': ^0.14.0
   '@openzeppelin/contracts': ^4.7.3
   '@plasmohq/storage': ^0.8.1
+  '@react-icons/all-files': https://github.com/react-icons/react-icons/releases/download/v4.6.0/react-icons-all-files-4.6.0.tgz
   '@solana/web3.js': ^1.47.3
   '@tanstack/query-core': ^4.13.4
   '@tanstack/react-query': ^4.13.5
@@ -130,7 +131,6 @@ specifiers:
   react-beautiful-dnd: ^13.1.0
   react-blockies: ^1.4.1
   react-dom: 18.2.0
-  react-icons: ^4.4.0
   react-json-view: ^1.21.3
   react-router-dom: ^6.3.0
   react-select: ^5.4.0
@@ -200,6 +200,7 @@ dependencies:
   '@mysten/sui.js': 0.14.0
   '@openzeppelin/contracts': 4.7.3
   '@plasmohq/storage': 0.8.1_react@18.2.0
+  '@react-icons/all-files': '@github.com/react-icons/react-icons/releases/download/v4.6.0/react-icons-all-files-4.6.0.tgz_react@18.2.0'
   '@solana/web3.js': 1.47.3
   '@tanstack/query-core': 4.13.4
   '@tanstack/react-query': 4.13.5_biqbaboplfbrettd7655fr4n2y
@@ -247,7 +248,6 @@ dependencies:
   react-beautiful-dnd: 13.1.0_biqbaboplfbrettd7655fr4n2y
   react-blockies: 1.4.1_react@18.2.0
   react-dom: 18.2.0_react@18.2.0
-  react-icons: 4.4.0_react@18.2.0
   react-json-view: 1.21.3_twyhzqqpkwvvgrmyeapdo6i4my
   react-router-dom: 6.3.0_biqbaboplfbrettd7655fr4n2y
   react-select: 5.4.0_htxn4kwkfgevexeqvqmeooemhe
@@ -11841,14 +11841,6 @@ packages:
       use-sidecar: 1.1.2_luyos4mouogwq6z3wafb3re4ce
     dev: false
 
-  /react-icons/4.4.0_react@18.2.0:
-    resolution: {integrity: sha512-fSbvHeVYo/B5/L4VhB7sBA1i2tS8MkT0Hb9t2H1AVPkwGfVHLJCqyr2Py9dKMxsyM63Eng1GkdZfbWj+Fmv8Rg==}
-    peerDependencies:
-      react: '*'
-    dependencies:
-      react: 18.2.0
-    dev: false
-
   /react-is/16.13.1:
     resolution: {integrity: sha512-24e6ynE2H+OKt4kqsOvNd8kBpV65zoxbA4BVsEOB3ARVWQki/DHzaUoC5KuON/BiccDaCCTZBuOcfZs70kR8bQ==}
 
@@ -14332,6 +14324,17 @@ packages:
       readable-stream: 4.1.0
     dev: false
 
+  '@github.com/react-icons/react-icons/releases/download/v4.6.0/react-icons-all-files-4.6.0.tgz_react@18.2.0':
+    resolution: {tarball: https://github.com/react-icons/react-icons/releases/download/v4.6.0/react-icons-all-files-4.6.0.tgz}
+    id: '@github.com/react-icons/react-icons/releases/download/v4.6.0/react-icons-all-files-4.6.0.tgz'
+    name: '@react-icons/all-files'
+    version: 4.6.0
+    peerDependencies:
+      react: '*'
+    dependencies:
+      react: 18.2.0
+    dev: false
+
   file:resolutions/@cosmjs/crypto:
     resolution: {directory: resolutions/@cosmjs/crypto, type: directory}
     name: '@cosmjs/crypto'
@@ -14397,7 +14400,7 @@ packages:
     dev: false
 
   github.com/ethereumjs/ethereumjs-abi/ee3994657fa7a427238e6ba92a84d0b529bbcde0:
-    resolution: {tarball: https://codeload.github.com/ethereumjs/ethereumjs-abi/tar.gz/ee3994657fa7a427238e6ba92a84d0b529bbcde0}
+    resolution: {commit: ee3994657fa7a427238e6ba92a84d0b529bbcde0, repo: git+ssh://git@github.com/ethereumjs/ethereumjs-abi.git, type: git}
     name: ethereumjs-abi
     version: 0.6.8
     dependencies:

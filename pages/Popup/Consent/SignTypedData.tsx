@@ -10,9 +10,9 @@ import {
   Text,
   useColorModeValue
 } from '@chakra-ui/react'
+import { FaGlobeAmericas } from '@react-icons/all-files/fa/FaGlobeAmericas'
 import * as React from 'react'
 import { ReactNode, useCallback, useState } from 'react'
-import { FaGlobeAmericas } from 'react-icons/fa'
 import ReactJson from 'react-json-view'
 
 import {

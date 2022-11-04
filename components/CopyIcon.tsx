@@ -10,7 +10,8 @@ import {
   useClipboard,
   useColorModeValue
 } from '@chakra-ui/react'
-import { FiCheckCircle, FiCopy } from 'react-icons/fi'
+import { FiCheckCircle } from '@react-icons/all-files/fi/FiCheckCircle'
+import { FiCopy } from '@react-icons/all-files/fi/FiCopy'
 
 interface CopyProps {
   name: string
