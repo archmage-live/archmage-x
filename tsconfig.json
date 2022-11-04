@@ -1,5 +1,5 @@
 {
-  "extends": "plasmo/templates/tsconfig.base",
+  "extends": "@archmagelive/plasmo/templates/tsconfig.base",
   "exclude": [
     "node_modules"
   ],

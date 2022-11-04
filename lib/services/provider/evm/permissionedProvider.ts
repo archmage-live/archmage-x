@@ -387,7 +387,7 @@ export class EvmPermissionedProvider extends BasePermissionedProvider {
   }
 }
 
-interface AddEthereumChainParameter {
+export interface AddEthereumChainParameter {
   chainId: string
   blockExplorerUrls?: string[]
   chainName: string
@@ -396,11 +396,11 @@ interface AddEthereumChainParameter {
   rpcUrls: string[]
 }
 
-interface SwitchEthereumChainParameter {
+export interface SwitchEthereumChainParameter {
   chainId: string
 }
 
-interface WatchAssetParameters {
+export interface WatchAssetParameters {
   type: string // The asset's interface, e.g. 'ERC20'
   options: {
     address: string // The hexadecimal Ethereum address of the token contract
