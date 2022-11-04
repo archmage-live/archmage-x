@@ -15,8 +15,11 @@ import {
   forwardRef,
   useColorModeValue
 } from '@chakra-ui/react'
-import { GrLinkBottom, GrLinkDown, GrLinkTop, GrLinkUp } from 'react-icons/gr'
-import { MdOutlineMoreHoriz } from 'react-icons/md'
+import { GrLinkBottom } from '@react-icons/all-files/gr/GrLinkBottom'
+import { GrLinkDown } from '@react-icons/all-files/gr/GrLinkDown'
+import { GrLinkTop } from '@react-icons/all-files/gr/GrLinkTop'
+import { GrLinkUp } from '@react-icons/all-files/gr/GrLinkUp'
+import { MdOutlineMoreHoriz } from '@react-icons/all-files/md/MdOutlineMoreHoriz'
 
 import { AccountAvatar } from '~components/AccountAvatar'
 import { BtnBox } from '~components/BtnBox'

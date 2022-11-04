@@ -1,6 +1,7 @@
 import { Flex, Stack } from '@chakra-ui/react'
-import { FaPlug } from 'react-icons/fa'
-import { IoMdSettings, IoMdWallet } from 'react-icons/io'
+import { FaPlug } from '@react-icons/all-files/fa/FaPlug'
+import { IoMdSettings } from '@react-icons/all-files/io/IoMdSettings'
+import { IoMdWallet } from '@react-icons/all-files/io/IoMdWallet'
 
 import { MenuButton, MenuButtonProps } from './MenuButton'
 

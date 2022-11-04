@@ -8,8 +8,8 @@ import {
   Stack,
   UnorderedList
 } from '@chakra-ui/react'
+import { MdDragIndicator } from '@react-icons/all-files/md/MdDragIndicator'
 import { useEffect, useMemo, useState } from 'react'
-import { MdDragIndicator } from 'react-icons/md'
 import { useTimeout } from 'react-use'
 
 import {

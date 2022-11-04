@@ -11,11 +11,11 @@ import {
   chakra,
   useColorModeValue
 } from '@chakra-ui/react'
+import { BiQuestionMark } from '@react-icons/all-files/bi/BiQuestionMark'
 import Decimal from 'decimal.js'
 import { atom, useAtom } from 'jotai'
 import * as React from 'react'
 import { useEffect } from 'react'
-import { BiQuestionMark } from 'react-icons/bi'
 
 import { useActive } from '~lib/active'
 import { formatNumber } from '~lib/formatNumber'

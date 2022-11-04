@@ -9,8 +9,9 @@ import {
   Text,
   useColorModeValue
 } from '@chakra-ui/react'
+import { FaAngleRight } from '@react-icons/all-files/fa/FaAngleRight'
+import { FaGlobeAmericas } from '@react-icons/all-files/fa/FaGlobeAmericas'
 import { ReactNode } from 'react'
-import { FaAngleRight, FaGlobeAmericas } from 'react-icons/fa'
 
 import { useActiveNetwork } from '~lib/active'
 import { CONSENT_SERVICE, ConsentRequest } from '~lib/services/consentService'

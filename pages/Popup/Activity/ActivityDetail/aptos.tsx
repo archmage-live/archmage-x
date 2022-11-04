@@ -9,10 +9,11 @@ import {
   Tooltip,
   useClipboard
 } from '@chakra-ui/react'
+import { FiCheckCircle } from '@react-icons/all-files/fi/FiCheckCircle'
+import { FiCopy } from '@react-icons/all-files/fi/FiCopy'
 import { Types } from 'aptos'
 import Decimal from 'decimal.js'
 import { useMemo } from 'react'
-import { FiCheckCircle, FiCopy } from 'react-icons/fi'
 import browser from 'webextension-polyfill'
 
 import { dayjs } from '~lib/dayjs'

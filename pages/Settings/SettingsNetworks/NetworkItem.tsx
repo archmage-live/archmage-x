@@ -1,8 +1,8 @@
 import { Box, HStack, Icon, Image, Stack, Text } from '@chakra-ui/react'
+import { MdDragIndicator } from '@react-icons/all-files/md/MdDragIndicator'
 import Avvvatars from 'avvvatars-react'
 import { useEffect, useState } from 'react'
 import { DraggableProvidedDragHandleProps } from 'react-beautiful-dnd'
-import { MdDragIndicator } from 'react-icons/md'
 
 import { INetwork } from '~lib/schema'
 import { NetworkInfo, useNetworkLogoUrl } from '~lib/services/network'

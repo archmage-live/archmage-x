@@ -16,8 +16,8 @@ import {
   Text,
   useDisclosure
 } from '@chakra-ui/react'
+import { FaGlobeAmericas } from '@react-icons/all-files/fa/FaGlobeAmericas'
 import { useCallback, useEffect, useState } from 'react'
-import { FaGlobeAmericas } from 'react-icons/fa'
 
 import { useActive, useActiveNetwork } from '~lib/active'
 import { IChainAccount, ISubWallet, IWallet, mapBySubIndex } from '~lib/schema'

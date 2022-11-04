@@ -8,9 +8,9 @@ import {
   Stack,
   Text
 } from '@chakra-ui/react'
+import { FaGlobeAmericas } from '@react-icons/all-files/fa/FaGlobeAmericas'
 import { atom, useAtom } from 'jotai'
 import { ReactNode, useEffect, useState } from 'react'
-import { FaGlobeAmericas } from 'react-icons/fa'
 
 import { AlertBox } from '~components/AlertBox'
 import { NetworkKind } from '~lib/network'

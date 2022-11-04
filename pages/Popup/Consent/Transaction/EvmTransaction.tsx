@@ -24,6 +24,7 @@ import {
   useDisclosure
 } from '@chakra-ui/react'
 import { BigNumber } from '@ethersproject/bignumber'
+import { BiQuestionMark } from '@react-icons/all-files/bi/BiQuestionMark'
 import Decimal from 'decimal.js'
 import { useScroll } from 'framer-motion'
 import * as React from 'react'
@@ -35,7 +36,6 @@ import {
   useRef,
   useState
 } from 'react'
-import { BiQuestionMark } from 'react-icons/bi'
 
 import { AlertBox } from '~components/AlertBox'
 import { SpinningOverlay } from '~components/SpinningOverlay'

@@ -8,8 +8,8 @@ import {
   Text,
   chakra
 } from '@chakra-ui/react'
+import { FaGlobeAmericas } from '@react-icons/all-files/fa/FaGlobeAmericas'
 import { ReactNode, useEffect, useState } from 'react'
-import { FaGlobeAmericas } from 'react-icons/fa'
 import { useAsync } from 'react-use'
 
 import { useActive } from '~lib/active'

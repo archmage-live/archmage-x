@@ -12,10 +12,10 @@ import {
   Text,
   useColorModeValue
 } from '@chakra-ui/react'
+import { FaWindowMaximize } from '@react-icons/all-files/fa/FaWindowMaximize'
+import { FiSearch } from '@react-icons/all-files/fi/FiSearch'
+import { IoMdSettings } from '@react-icons/all-files/io/IoMdSettings'
 import { useCallback, useState } from 'react'
-import { FaWindowMaximize } from 'react-icons/fa'
-import { FiSearch } from 'react-icons/fi'
-import { IoMdSettings } from 'react-icons/io'
 import { useNavigate } from 'react-router-dom'
 import { useDebounce } from 'react-use'
 

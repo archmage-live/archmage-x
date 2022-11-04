@@ -11,8 +11,11 @@ import {
   Portal,
   Text
 } from '@chakra-ui/react'
+import { GrLinkBottom } from '@react-icons/all-files/gr/GrLinkBottom'
+import { GrLinkDown } from '@react-icons/all-files/gr/GrLinkDown'
+import { GrLinkTop } from '@react-icons/all-files/gr/GrLinkTop'
+import { GrLinkUp } from '@react-icons/all-files/gr/GrLinkUp'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { GrLinkBottom, GrLinkDown, GrLinkTop, GrLinkUp } from 'react-icons/gr'
 
 import { AccountAvatar } from '~components/AccountAvatar'
 import { TypeBadge } from '~components/TypeBadge'

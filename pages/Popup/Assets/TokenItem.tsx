@@ -23,18 +23,16 @@ import {
   forwardRef,
   useDisclosure
 } from '@chakra-ui/react'
+import { BiQuestionMark } from '@react-icons/all-files/bi/BiQuestionMark'
+import { FiCheckCircle } from '@react-icons/all-files/fi/FiCheckCircle'
+import { IoMdSwap } from '@react-icons/all-files/io/IoMdSwap'
+import { MdBlockFlipped } from '@react-icons/all-files/md/MdBlockFlipped'
+import { MdMoreVert } from '@react-icons/all-files/md/MdMoreVert'
+import { MdOutlineCheckCircle } from '@react-icons/all-files/md/MdOutlineCheckCircle'
+import { VscQuestion } from '@react-icons/all-files/vsc/VscQuestion'
 import Decimal from 'decimal.js'
 import { useCallback } from 'react'
 import * as React from 'react'
-import { BiQuestionMark } from 'react-icons/bi'
-import { FiCheckCircle } from 'react-icons/fi'
-import { IoMdSwap } from 'react-icons/io'
-import {
-  MdBlockFlipped,
-  MdMoreVert,
-  MdOutlineCheckCircle
-} from 'react-icons/md'
-import { VscQuestion } from 'react-icons/vsc'
 import browser from 'webextension-polyfill'
 
 import { BtnBox } from '~components/BtnBox'

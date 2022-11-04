@@ -21,8 +21,9 @@ import {
   useColorModeValue,
   useDisclosure
 } from '@chakra-ui/react'
+import { FiCheckCircle } from '@react-icons/all-files/fi/FiCheckCircle'
+import { FiCopy } from '@react-icons/all-files/fi/FiCopy'
 import { useEffect, useState } from 'react'
-import { FiCheckCircle, FiCopy } from 'react-icons/fi'
 
 interface MnemonicDisplayProps {
   mnemonic: string[]
