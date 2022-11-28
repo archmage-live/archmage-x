@@ -5,7 +5,7 @@ import { Index } from '~lib/schema/subWallet'
 export interface IToken {
   id: number
   masterId: number // master wallet id
-  index: Index // derived wallet index
+  index: Index // sub wallet index
   networkKind: NetworkKind
   chainId: ChainId
   address: string

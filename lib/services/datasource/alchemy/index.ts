@@ -1,4 +1,9 @@
-import { AlchemySettings, Network, Alchemy as _Alchemy } from 'alchemy-sdk'
+import {
+  AlchemySettings,
+  Network,
+  OwnedNft,
+  Alchemy as _Alchemy
+} from 'alchemy-sdk'
 import assert from 'assert'
 
 import { NetworkKind } from '~lib/network'
@@ -18,9 +23,15 @@ const networkByChain = new Map([
   [592, Network.ASTAR_MAINNET]
 ])
 
+export type AlchemyNft = OwnedNft
+
 class Alchemy extends _Alchemy {
   constructor(settings?: AlchemySettings) {
     super(settings)
+  }
+
+  getNFTs(address: string) {
+    return this.nft.getNftsForOwner(address)
   }
 }
 

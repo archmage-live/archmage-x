@@ -56,6 +56,7 @@
     "@ledgerhq/hw-transport-web-ble": "^6.27.6",
     "@ledgerhq/hw-transport-webhid": "^6.27.6",
     "@ledgerhq/logs": "^6.10.1",
+    "@lottiefiles/react-lottie-player": "^3.4.7",
     "@moralisweb3/api-utils": "^2.7.0",
     "@moralisweb3/core": "^2.7.0",
     "@moralisweb3/evm-api": "^2.7.0",
@@ -127,7 +128,8 @@
     "tweetnacl": "^1.0.3",
     "unique-names-generator": "^4.7.1",
     "url": "^0.11.0",
-    "webextension-polyfill": "^0.9.0"
+    "webextension-polyfill": "^0.9.0",
+    "zksync-web3": "^0.11.1"
   },
   "devDependencies": {
     "@babel/core": "^7.18.6",

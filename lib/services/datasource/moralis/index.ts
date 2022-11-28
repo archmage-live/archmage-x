@@ -25,6 +25,24 @@ const networkByChain = new Map([
   [338, EvmChain.CRONOS_TESTNET]
 ])
 
+export interface MoralisNft {
+  tokenAddress: string
+  chain: string | number
+  ownerOf?: string
+  blockNumberMinted?: string
+  blockNumber?: string
+  tokenId: string | number
+  contractType?: string
+  tokenUri?: string
+  tokenHash?: string
+  metadata?: object
+  name?: string
+  symbol?: string
+  lastMetadataSync?: Date
+  lastTokenUriSync?: Date
+  amount?: number
+}
+
 class Moralis {
   constructor(private core: MoralisCore) {}
 
