@@ -5,7 +5,7 @@ import { DB, getNextField } from '~lib/db'
 import { ENV } from '~lib/env'
 import { NetworkKind } from '~lib/network'
 import { AptosChainInfo } from '~lib/network/aptos'
-import { CosmChainInfo } from '~lib/network/cosm'
+import { CosmAppChainInfo } from '~lib/network/cosm'
 import { EvmChainInfo } from '~lib/network/evm'
 import { StarknetChainInfo } from '~lib/network/starknet'
 import { ChainId, IChainAccount, INetwork, IToken } from '~lib/schema'
@@ -46,7 +46,7 @@ export function getNetworkInfo(network: INetwork): NetworkInfo {
       }
     }
     case NetworkKind.COSM: {
-      const info = network.info as CosmChainInfo
+      const info = network.info as CosmAppChainInfo
       return {
         name: info.chainName,
         description: info.chainName,

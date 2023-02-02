@@ -157,6 +157,10 @@ export class BasePermissionedProvider {
       )
     }
 
+    if (network.id === this.network.id) {
+      return
+    }
+
     await CONSENT_SERVICE.requestConsent(
       {
         networkId: network.id,

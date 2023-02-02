@@ -63,9 +63,21 @@ export async function getLedgerEthApp(
   return [appEth, hash]
 }
 
-export async function getLedgerCosmApp(type: 'hid' | 'ble' = 'hid') {
+export async function getLedgerCosmApp(
+  type: 'hid' | 'ble' = 'hid'
+): Promise<[LedgerAppCosmos, string]> {
   const transport = await getLedgerTransport(type)
-  return new LedgerAppCosmos(transport)
+  const appCosm = new LedgerAppCosmos(transport)
+  const appCfg = await Promise.race([
+    appCosm.getAppConfiguration(),
+    stall(3000)
+  ])
+  if (!appCfg) {
+    throw new Error('TransportStatusError: Ledger device: UNKNOWN_ERROR')
+  }
+  console.log('ledger app configuration:', appCfg)
+  const { address: hash } = await appCosm.getAddress("m/44'/118'", 'cosmos')
+  return [appCosm, hash]
 }
 
 export interface LedgerPathSchema {
@@ -92,6 +104,16 @@ export const LEDGER_PATH_SCHEMAS = new Map<NetworkKind, LedgerPathSchema[]>([
         description: 'Legacy (MEW / MyCrypto)',
         pathSchema: "m/44'/60'/0'/0",
         derivePosition: DerivePosition.CHANGE
+      }
+    ]
+  ],
+  [
+    NetworkKind.COSM,
+    [
+      {
+        description: 'BIP44 Standard',
+        pathSchema: "m/44'/118'/0'/0/0",
+        derivePosition: DerivePosition.ADDRESS_INDEX
       }
     ]
   ]

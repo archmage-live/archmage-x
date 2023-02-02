@@ -9,7 +9,7 @@ import { DerivePosition } from '~lib/schema'
 
 import { SigningWallet, generatePath } from '.'
 
-const HARDWARE_MISMATCH =
+export const HARDWARE_MISMATCH =
   'Connected hardware wallet has a different secret recovery phrase'
 
 export class EvmHwWallet implements SigningWallet {

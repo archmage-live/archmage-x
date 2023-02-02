@@ -61,7 +61,8 @@ export type SignTypedDataPayload = {
 export enum ConsentType {
   UNLOCK = 'unlock',
   REQUEST_PERMISSION = 'requestPermission',
-  TRANSACTION = 'transaction',
+  TRANSACTION = 'transaction', // sign and send tx
+  SIGN_TRANSACTION = 'signTransaction', // only sign tx, for Cosmos chains
   SIGN_MSG = 'signMessage',
   SIGN_TYPED_DATA = 'signTypedData',
   WATCH_ASSET = 'watchAsset',

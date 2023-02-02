@@ -1,13 +1,11 @@
 import assert from 'assert'
 
 import { NetworkKind } from '~lib/network'
-import { CosmChainInfo } from '~lib/network/cosm'
+import { CosmAppChainInfo } from '~lib/network/cosm'
 import { IChainAccount } from '~lib/schema'
 import { IWallet } from '~lib/schema/wallet'
 import { NETWORK_SERVICE } from '~lib/services/network'
 import { WALLET_SERVICE } from '~lib/services/wallet'
-import { EvmHwWallet } from '~lib/wallet/evmHw'
-import { SuiWallet } from '~lib/wallet/sui'
 
 import { AptosWallet } from './aptos'
 import {
@@ -22,7 +20,10 @@ import {
 } from './base'
 import { CosmWallet } from './cosm'
 import { EvmWallet } from './evm'
+import { EvmHwWallet } from './evmHw'
 import { SolWallet } from './sol'
+import { StarknetWallet } from './starknet'
+import { SuiWallet } from './sui'
 
 export * from './base'
 export * from './evm'
@@ -49,6 +50,8 @@ export function getDefaultPath(networkKind: NetworkKind): string {
       return EvmWallet.defaultPath
     case NetworkKind.COSM:
       return CosmWallet.defaultPath
+    case NetworkKind.STARKNET:
+      return StarknetWallet.defaultPath
     case NetworkKind.APTOS:
       return AptosWallet.defaultPath
     case NetworkKind.SUI:
@@ -107,7 +110,7 @@ export async function getMasterSigningWallet(
         chainId
       })
       assert(network !== undefined)
-      const info = network.info as CosmChainInfo
+      const info = network.info as CosmAppChainInfo
       opts.prefix = info.bech32Config.bech32PrefixAccAddr
       return CosmWallet.from(opts)
     case NetworkKind.APTOS:

@@ -1,11 +1,19 @@
+import {
+  AminoSignResponse,
+  Secp256k1HdWallet,
+  Secp256k1Wallet,
+  StdSignDoc
+} from '@cosmjs/amino'
 import { stringToPath } from '@cosmjs/crypto'
 import { normalizeBech32 } from '@cosmjs/encoding'
 import {
   AccountData,
   DirectSecp256k1HdWallet,
-  DirectSecp256k1Wallet
+  DirectSecp256k1Wallet,
+  DirectSignResponse
 } from '@cosmjs/proto-signing'
 import assert from 'assert'
+import { SignDoc } from 'cosmjs-types/cosmos/tx/v1beta1/tx'
 import { ethers } from 'ethers'
 
 import { KEYSTORE } from '~lib/keystore'
@@ -20,9 +28,13 @@ interface AccountDataWithPrivkey extends AccountData {
 export class CosmWallet implements KeystoreSigningWallet {
   static defaultPath = "m/44'/118'/0'/0/0"
 
-  wallet!: DirectSecp256k1HdWallet | DirectSecp256k1Wallet
+  wallet!:
+    | DirectSecp256k1HdWallet
+    | DirectSecp256k1Wallet
+    | Secp256k1HdWallet
+    | Secp256k1Wallet
   mnemonic?: string
-  prefix?: string
+  prefix?: string // address prefix
 
   address!: string
   privateKey!: string
@@ -57,9 +69,11 @@ export class CosmWallet implements KeystoreSigningWallet {
           prefix
         })
         wallet.wallet = w
+        wallet.prefix = prefix
         const account = (await (
           w as any
         ).getAccountsWithPrivkeys()[0]) as AccountDataWithPrivkey
+        assert(account.algo === 'secp256k1')
         wallet.address = account.address
         wallet.privateKey = ethers.utils.hexlify(account.privkey)
         wallet.publicKey = ethers.utils.hexlify(account.pubkey)
@@ -70,7 +84,9 @@ export class CosmWallet implements KeystoreSigningWallet {
           prefix
         )
         wallet.wallet = w
+        wallet.prefix = prefix
         const account = (await w.getAccounts())[0]
+        assert(account.algo === 'secp256k1')
         wallet.address = account.address
         wallet.privateKey = ks.privateKey
         wallet.publicKey = ethers.utils.hexlify(account.pubkey)
@@ -92,9 +108,11 @@ export class CosmWallet implements KeystoreSigningWallet {
       hdPaths: [hdPath],
       prefix: this.prefix
     })
+
     const ws = new CosmWallet()
 
     ws.wallet = wallet
+    ws.prefix = this.prefix
     const account = (await (
       wallet as any
     ).getAccountsWithPrivkeys()[0]) as AccountDataWithPrivkey
@@ -104,9 +122,27 @@ export class CosmWallet implements KeystoreSigningWallet {
     return ws
   }
 
-  async signTransaction(transaction: any): Promise<string> {
-    // TODO
-    throw new Error('not implemented')
+  async signTransaction(
+    transaction: SignDoc | StdSignDoc
+  ): Promise<DirectSignResponse | AminoSignResponse> {
+    let wallet = this.wallet
+    if (isStdSignDoc(transaction)) {
+      if (!(wallet instanceof Secp256k1Wallet)) {
+        wallet = await Secp256k1Wallet.fromKey(
+          ethers.utils.arrayify(this.privateKey),
+          this.prefix
+        )
+      }
+      return wallet.signAmino(this.address, transaction)
+    } else {
+      if (!(wallet instanceof DirectSecp256k1Wallet)) {
+        wallet = await DirectSecp256k1Wallet.fromKey(
+          ethers.utils.arrayify(this.privateKey),
+          this.prefix
+        )
+      }
+      return wallet.signDirect(this.address, transaction)
+    }
   }
 
   async signMessage(message: any): Promise<string> {
@@ -126,4 +162,12 @@ export class CosmWallet implements KeystoreSigningWallet {
       return false
     }
   }
+}
+
+export function isStdSignDoc(signDoc: SignDoc | StdSignDoc): signDoc is StdSignDoc {
+  return (
+    (signDoc as StdSignDoc).msgs &&
+    (signDoc as StdSignDoc).fee &&
+    !(signDoc as SignDoc).bodyBytes
+  )
 }

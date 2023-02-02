@@ -1,11 +1,11 @@
 import { JsonRpcProvider } from '@mysten/sui.js'
 
 import { SuiChainInfo } from '~lib/network/sui'
-import { INetwork } from '~lib/schema'
+import { ChainId, INetwork } from '~lib/schema'
 
 export type SuiClient = JsonRpcProvider
 
-const SUI_CLIENTS = new Map<number, SuiClient>()
+const SUI_CLIENTS = new Map<ChainId, SuiClient>()
 
 export async function getSuiClient(network: INetwork) {
   let client = SUI_CLIENTS.get(network.id)

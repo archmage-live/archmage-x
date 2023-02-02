@@ -34,52 +34,25 @@ export class AptosProvider implements Provider {
     return new AptosProvider(client)
   }
 
+  async isOk(): Promise<boolean> {
+    try {
+      await this.client.getLedgerInfo()
+      return true
+    } catch (err) {
+      console.error(err)
+      return false
+    }
+  }
+
+  isContract(address: string): Promise<boolean> {
+    throw new Error('not implemented')
+  }
+
   async getNextNonce(address: string, tag?: string | number): Promise<number> {
     const { sequence_number: sequenceNumber } = await this.client.getAccount(
       address
     )
     return +sequenceNumber
-  }
-
-  async simulateTransaction(
-    account: IChainAccount,
-    rawTransaction: TxnBuilderTypes.RawTransaction,
-    query?: {
-      estimateGasUnitPrice?: boolean
-      estimateMaxGasAmount?: boolean
-    }
-  ): Promise<Types.UserTransaction[]> {
-    const signingWallet = await getSigningWallet(account)
-    if (!signingWallet?.publicKey) {
-      throw ethErrors.provider.unauthorized()
-    }
-    const aptosAccount = new FakeAptosAccount(
-      HexString.ensure(signingWallet.publicKey)
-    )
-    return this.client.simulateTransaction(
-      aptosAccount as unknown as AptosAccount,
-      rawTransaction,
-      query
-    )
-  }
-
-  async estimateGasPrice(): Promise<number> {
-    const estimation = await this.client.estimateGasPrice()
-    return estimation.gas_estimate
-  }
-
-  async estimateGas(
-    account: IChainAccount,
-    payload: Types.TransactionPayload
-  ): Promise<string> {
-    assert(isAptosEntryFunctionPayload(payload))
-
-    const { populatedParams: userTx } = await this.populateTransaction(
-      account,
-      payload
-    )
-
-    return (userTx as Types.UserTransaction).max_gas_amount
   }
 
   async getBalance(address: string): Promise<string> {
@@ -105,23 +78,47 @@ export class AptosProvider implements Provider {
     )
   }
 
-  getTypedData(typedData: any): Promise<any> {
-    throw new Error('not implemented')
+  async estimateGasPrice(): Promise<number> {
+    const estimation = await this.client.estimateGasPrice()
+    return estimation.gas_estimate
   }
 
-  isContract(address: string): Promise<boolean> {
-    throw new Error('not implemented')
+  async estimateGas(
+    account: IChainAccount,
+    payload: Types.TransactionPayload
+  ): Promise<string> {
+    assert(isAptosEntryFunctionPayload(payload))
+
+    const { populatedParams: userTx } = await this.populateTransaction(
+      account,
+      payload
+    )
+
+    return (userTx as Types.UserTransaction).max_gas_amount
   }
 
-  async isOk(): Promise<boolean> {
-    try {
-      await this.client.getLedgerInfo()
-      return true
-    } catch (err) {
-      console.error(err)
-      return false
+  async simulateTransaction(
+    account: IChainAccount,
+    rawTransaction: TxnBuilderTypes.RawTransaction,
+    query?: {
+      estimateGasUnitPrice?: boolean
+      estimateMaxGasAmount?: boolean
     }
+  ): Promise<Types.UserTransaction[]> {
+    const signingWallet = await getSigningWallet(account)
+    if (!signingWallet?.publicKey) {
+      throw ethErrors.provider.unauthorized()
+    }
+    const aptosAccount = new FakeAptosAccount(
+      HexString.ensure(signingWallet.publicKey)
+    )
+    return this.client.simulateTransaction(
+      aptosAccount as unknown as AptosAccount,
+      rawTransaction,
+      query
+    )
   }
+
 
   async populateTransaction(
     account: IChainAccount,
@@ -181,6 +178,10 @@ export class AptosProvider implements Provider {
   }
 
   signMessage(account: IChainAccount, message: any): Promise<any> {
+    throw new Error('not implemented')
+  }
+
+  getTypedData(typedData: any): Promise<any> {
     throw new Error('not implemented')
   }
 

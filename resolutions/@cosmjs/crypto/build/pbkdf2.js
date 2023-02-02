@@ -1,7 +1,11 @@
 "use strict";
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
 }) : (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     o[k2] = m[k];
@@ -36,14 +40,18 @@ async function getCryptoModule() {
 }
 exports.getCryptoModule = getCryptoModule;
 async function getSubtle() {
-    const g = globalThis;
-    let subtle = g.crypto && g.crypto.subtle;
-    if (!subtle) {
-        const crypto = await getCryptoModule();
-        if (crypto && crypto.webcrypto && crypto.webcrypto.subtle) {
-            subtle = crypto.webcrypto.subtle;
-        }
-    }
+    // From Node.js 15 onwards, webcrypto is available in globalThis.
+    // In version 15 and 16 this was stored under the webcrypto key.
+    // With Node.js 17 it was moved to the same locations where browsers
+    // make it available.
+    // Loading `require("crypto")` here seems unnecessary since it only
+    // causes issues with bundlers and does not increase compatibility.
+    var _a, _b, _c;
+    // Browsers and Node.js 17+
+    let subtle = (_a = globalThis === null || globalThis === void 0 ? void 0 : globalThis.crypto) === null || _a === void 0 ? void 0 : _a.subtle;
+    // Node.js 15+
+    if (!subtle)
+        subtle = (_c = (_b = globalThis === null || globalThis === void 0 ? void 0 : globalThis.crypto) === null || _b === void 0 ? void 0 : _b.webcrypto) === null || _c === void 0 ? void 0 : _c.subtle;
     return subtle;
 }
 exports.getSubtle = getSubtle;

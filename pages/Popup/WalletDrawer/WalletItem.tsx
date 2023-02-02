@@ -11,10 +11,10 @@ import {
   Portal,
   Text
 } from '@chakra-ui/react'
-import { GrLinkBottom } from '@react-icons/all-files/gr/GrLinkBottom'
-import { GrLinkDown } from '@react-icons/all-files/gr/GrLinkDown'
-import { GrLinkTop } from '@react-icons/all-files/gr/GrLinkTop'
-import { GrLinkUp } from '@react-icons/all-files/gr/GrLinkUp'
+import { MdOutlineArrowDownward } from '@react-icons/all-files/md/MdOutlineArrowDownward'
+import { MdOutlineArrowUpward } from '@react-icons/all-files/md/MdOutlineArrowUpward'
+import { MdOutlineVerticalAlignBottom } from '@react-icons/all-files/md/MdOutlineVerticalAlignBottom'
+import { MdOutlineVerticalAlignTop } from '@react-icons/all-files/md/MdOutlineVerticalAlignTop'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { AccountAvatar } from '~components/AccountAvatar'
@@ -264,25 +264,25 @@ export const WalletItem = ({
                         Remove {subWallet ? 'account' : 'wallet'}
                       </MenuItem>
                       <MenuItem
-                        icon={<GrLinkTop />}
+                        icon={<MdOutlineVerticalAlignTop />}
                         iconSpacing={2}
                         onClick={() => reorderWallets(walletEntry, 'top')}>
                         Top
                       </MenuItem>
                       <MenuItem
-                        icon={<GrLinkUp />}
+                        icon={<MdOutlineArrowUpward />}
                         iconSpacing={2}
                         onClick={() => reorderWallets(walletEntry, 'up')}>
                         Up
                       </MenuItem>
                       <MenuItem
-                        icon={<GrLinkDown />}
+                        icon={<MdOutlineArrowDownward />}
                         iconSpacing={2}
                         onClick={() => reorderWallets(walletEntry, 'down')}>
                         Down
                       </MenuItem>
                       <MenuItem
-                        icon={<GrLinkBottom />}
+                        icon={<MdOutlineVerticalAlignBottom />}
                         iconSpacing={2}
                         onClick={() => reorderWallets(walletEntry, 'bottom')}>
                         Bottom
