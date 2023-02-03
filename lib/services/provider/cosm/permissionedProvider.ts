@@ -100,6 +100,9 @@ export class CosmPermissionedProvider extends BasePermissionedProvider {
           params[2],
           params[3]
         )
+      case 'signEthereum':
+        // TODO: https://docs.keplr.app/api/#request-ethereum-signature
+        return this.signArbitrary(ctx, params[0], params[1], params[2])
     }
 
     throw ethErrors.rpc.methodNotSupported()

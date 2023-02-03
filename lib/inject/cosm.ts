@@ -16,6 +16,7 @@ import { ENV } from '~lib/env'
 import {
   Context,
   EventEmitter,
+  Listener,
   RpcClientInjected,
   isMsgEventMethod
 } from './client'
@@ -44,8 +45,17 @@ if (
       COSM_PROVIDER_NAME
     )
 
+  const onAccountChange = (listener: Listener) => {
+    service.on('accountsChanged', listener)
+  }
+
   const cosm = new Proxy(service, {
     get: (service, method: string) => {
+      switch (method) {
+        case 'keplr_keystorechange':
+          return onAccountChange
+      }
+
       if (isMsgEventMethod(method)) {
         return service[method]
       }
@@ -61,9 +71,11 @@ if (
           }
         case 'getOfflineSignerAuto':
           return async (...params: any[]) => {
-            if (await service.request({
-              method: 'isProtobufSignerSupported',
-            })) {
+            if (
+              await service.request({
+                method: 'isProtobufSignerSupported'
+              })
+            ) {
               return new CosmOfflineSigner(service, params[0])
             } else {
               return new CosmOfflineAminoSigner(service, params[0])

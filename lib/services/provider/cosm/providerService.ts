@@ -3,7 +3,8 @@ import { COSM_PROVIDER_NAME, ICosmProviderService } from '~lib/inject/cosm'
 import { NetworkKind } from '~lib/network'
 import { SERVICE_WORKER_SERVER } from '~lib/rpc'
 import { BaseProviderService } from '~lib/services/provider/base'
-import { CosmPermissionedProvider } from "./permissionedProvider";
+
+import { CosmPermissionedProvider } from './permissionedProvider'
 
 class CosmProviderService
   extends BaseProviderService

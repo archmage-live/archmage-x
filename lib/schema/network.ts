@@ -19,7 +19,7 @@ export function createSearchString(...args: (string | undefined)[]) {
     if (!arg) {
       continue
     }
-    const parts = arg.split(' ').filter((a) => a)
+    const parts = arg.split(' ').filter(Boolean)
     for (const part of parts) {
       if (search.indexOf(part) < 0) {
         search.push(part)

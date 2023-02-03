@@ -1,7 +1,7 @@
 import assert from 'assert'
 
 import { DB, getNextField } from '~lib/db'
-import { NetworkKind } from '~lib/network'
+import { NetworkKind, checkNetworkKindInitialized } from '~lib/network'
 import { APTOS_NETWORKS_PRESET, AptosChainInfo } from '~lib/network/aptos'
 import { ChainId, INetwork, createSearchString } from '~lib/schema'
 
@@ -14,7 +14,7 @@ export class AptosNetworkService {
       return
     }
 
-    if (await DB.networks.where('kind').equals(NetworkKind.APTOS).count()) {
+    if (await checkNetworkKindInitialized(NetworkKind.APTOS)) {
       return
     }
 

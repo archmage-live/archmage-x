@@ -1,17 +1,56 @@
-import { ChainId, INetwork } from "~lib/schema";
-import { StargateClient as CosmClient } from "@cosmjs/stargate";
-import { CosmAppChainInfo } from "~lib/network/cosm";
+import {
+  AuthExtension,
+  BankExtension,
+  HttpEndpoint,
+  QueryClient,
+  StakingExtension,
+  StargateClient,
+  StargateClientOptions,
+  setupAuthExtension,
+  setupBankExtension,
+  setupStakingExtension
+} from '@cosmjs/stargate'
+import { Tendermint34Client } from '@cosmjs/tendermint-rpc'
 
-export { StargateClient as CosmClient } from "@cosmjs/stargate";
+import { CosmAppChainInfo } from '~lib/network/cosm'
+import {
+  TxExtension,
+  setupTxExtension
+} from '~lib/network/cosm/modules/tx/queries'
+import { ChainId, INetwork } from '~lib/schema'
 
-const COSM_CLIENTS = new Map<ChainId, CosmClient>;
+export class CosmClient extends StargateClient {
+  static async connect(
+    endpoint: string | HttpEndpoint,
+    options: StargateClientOptions = {}
+  ): Promise<CosmClient> {
+    const tmClient = await Tendermint34Client.connect(endpoint)
+    return new CosmClient(tmClient, options)
+  }
+
+  getQueryClient(): QueryClient &
+    AuthExtension &
+    BankExtension &
+    StakingExtension &
+    TxExtension {
+    return QueryClient.withExtensions(
+      this.forceGetTmClient(),
+      setupAuthExtension,
+      setupBankExtension,
+      setupStakingExtension,
+      setupTxExtension
+    )
+  }
+}
+
+const COSM_CLIENTS = new Map<ChainId, CosmClient>()
 
 export async function getCosmClient(network: INetwork) {
-  let client = COSM_CLIENTS.get(network.id);
+  let client = COSM_CLIENTS.get(network.id)
   if (!client) {
-    const info = network.info as CosmAppChainInfo;
-    client = await CosmClient.connect(info.rest);
-    COSM_CLIENTS.set(network.id, client);
+    const info = network.info as CosmAppChainInfo
+    client = await CosmClient.connect(info.rest)
+    COSM_CLIENTS.set(network.id, client)
   }
-  return client;
+  return client
 }

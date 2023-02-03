@@ -1,17 +1,17 @@
+import { AminoSignResponse, StdSignDoc } from '@cosmjs/amino'
+import { DirectSignResponse } from '@cosmjs/proto-signing'
 import { DeliverTxResponse } from '@cosmjs/stargate'
 import assert from 'assert'
+import { SignDoc } from 'cosmjs-types/cosmos/tx/v1beta1/tx'
 import { ethErrors } from 'eth-rpc-errors'
 import PQueue from 'p-queue'
 
 import { CosmAppChainInfo } from '~lib/network/cosm'
 import { IChainAccount, INetwork } from '~lib/schema'
 import { Provider, TransactionPayload } from '~lib/services/provider'
-import { getSigningWallet, isStdSignDoc } from "~lib/wallet";
+import { getSigningWallet, isStdSignDoc } from '~lib/wallet'
 
 import { CosmClient, getCosmClient } from './client'
-import { SignDoc } from "cosmjs-types/cosmos/tx/v1beta1/tx";
-import { AminoSignResponse, StdSignDoc } from "@cosmjs/amino";
-import { DirectSignResponse } from "@cosmjs/proto-signing";
 
 export class CosmProvider implements Provider {
   constructor(public client: CosmClient, private network: INetwork) {}
@@ -113,37 +113,35 @@ export function makeADR36AminoSignDoc(
   signer: string,
   data: string | Uint8Array
 ): StdSignDoc {
-  data = Buffer.from(data).toString("base64");
+  data = Buffer.from(data).toString('base64')
 
   return {
-    chain_id: "",
-    account_number: "0",
-    sequence: "0",
+    chain_id: '',
+    account_number: '0',
+    sequence: '0',
     fee: {
-      gas: "0",
-      amount: [],
+      gas: '0',
+      amount: []
     },
     msgs: [
       {
-        type: "sign/MsgSignData",
+        type: 'sign/MsgSignData',
         value: {
           signer,
-          data,
-        },
-      },
+          data
+        }
+      }
     ],
-    memo: "",
-  };
+    memo: ''
+  }
 }
 
-export function isADR36AminoSignDoc(
-  signDoc: StdSignDoc,
-): boolean {
+export function isADR36AminoSignDoc(signDoc: StdSignDoc): boolean {
   return signDoc.msgs[0].type === 'sign/MsgSignData'
 }
 
 export function checkAndValidateADR36AminoSignDoc(
-  signDoc: StdSignDoc,
+  signDoc: StdSignDoc
 ): boolean {
   const hasOnlyMsgSignData = (() => {
     if (
@@ -152,64 +150,64 @@ export function checkAndValidateADR36AminoSignDoc(
       Array.isArray(signDoc.msgs) &&
       signDoc.msgs.length === 1
     ) {
-      const msg = signDoc.msgs[0];
-      return msg.type === "sign/MsgSignData";
+      const msg = signDoc.msgs[0]
+      return msg.type === 'sign/MsgSignData'
     } else {
-      return false;
+      return false
     }
-  })();
+  })()
 
   if (!hasOnlyMsgSignData) {
-    return false;
+    return false
   }
 
-  if (signDoc.chain_id !== "") {
-    throw new Error("Chain id should be empty string for ADR-36 signing");
+  if (signDoc.chain_id !== '') {
+    throw new Error('Chain id should be empty string for ADR-36 signing')
   }
 
-  if (signDoc.memo !== "") {
-    throw new Error("Memo should be empty string for ADR-36 signing");
+  if (signDoc.memo !== '') {
+    throw new Error('Memo should be empty string for ADR-36 signing')
   }
 
-  if (signDoc.account_number !== "0") {
-    throw new Error('Account number should be "0" for ADR-36 signing');
+  if (signDoc.account_number !== '0') {
+    throw new Error('Account number should be "0" for ADR-36 signing')
   }
 
-  if (signDoc.sequence !== "0") {
-    throw new Error('Sequence should be "0" for ADR-36 signing');
+  if (signDoc.sequence !== '0') {
+    throw new Error('Sequence should be "0" for ADR-36 signing')
   }
 
-  if (signDoc.fee.gas !== "0") {
-    throw new Error('Gas should be "0" for ADR-36 signing');
+  if (signDoc.fee.gas !== '0') {
+    throw new Error('Gas should be "0" for ADR-36 signing')
   }
 
   if (signDoc.fee.amount.length !== 0) {
-    throw new Error("Fee amount should be empty array for ADR-36 signing");
+    throw new Error('Fee amount should be empty array for ADR-36 signing')
   }
 
-  const msg = signDoc.msgs[0];
-  if (msg.type !== "sign/MsgSignData") {
-    throw new Error(`Invalid type of ADR-36 sign msg: ${msg.type}`);
+  const msg = signDoc.msgs[0]
+  if (msg.type !== 'sign/MsgSignData') {
+    throw new Error(`Invalid type of ADR-36 sign msg: ${msg.type}`)
   }
   if (!msg.value) {
-    throw new Error("Empty value in the msg");
+    throw new Error('Empty value in the msg')
   }
-  const signer = msg.value.signer;
+  const signer = msg.value.signer
   if (!signer) {
-    throw new Error("Empty signer in the ADR-36 msg");
+    throw new Error('Empty signer in the ADR-36 msg')
   }
-  const data = msg.value.data;
+  const data = msg.value.data
   if (!data) {
-    throw new Error("Empty data in the ADR-36 msg");
+    throw new Error('Empty data in the ADR-36 msg')
   }
-  const rawData = Buffer.from(data, "base64");
+  const rawData = Buffer.from(data, 'base64')
   // Validate the data is encoded as base64.
-  if (rawData.toString("base64") !== data) {
-    throw new Error("Data is not encoded by base64");
+  if (rawData.toString('base64') !== data) {
+    throw new Error('Data is not encoded by base64')
   }
   if (rawData.length === 0) {
-    throw new Error("Empty data in the ADR-36 msg");
+    throw new Error('Empty data in the ADR-36 msg')
   }
 
-  return true;
+  return true
 }

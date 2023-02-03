@@ -164,7 +164,9 @@ export class CosmWallet implements KeystoreSigningWallet {
   }
 }
 
-export function isStdSignDoc(signDoc: SignDoc | StdSignDoc): signDoc is StdSignDoc {
+export function isStdSignDoc(
+  signDoc: SignDoc | StdSignDoc
+): signDoc is StdSignDoc {
   return (
     (signDoc as StdSignDoc).msgs &&
     (signDoc as StdSignDoc).fee &&

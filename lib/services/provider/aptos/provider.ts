@@ -119,7 +119,6 @@ export class AptosProvider implements Provider {
     )
   }
 
-
   async populateTransaction(
     account: IChainAccount,
     transaction: Types.TransactionPayload | TxnBuilderTypes.RawTransaction

@@ -227,6 +227,9 @@ export class NetworkService {
       case NetworkKind.EVM:
         network = EvmNetworkService.buildNetwork(chainId, info)
         break
+      case NetworkKind.COSM:
+        network = CosmNetworkService.buildNetwork(chainId, info)
+        break
       case NetworkKind.STARKNET:
         network = StarknetNetworkService.buildNetwork(chainId, info)
         break

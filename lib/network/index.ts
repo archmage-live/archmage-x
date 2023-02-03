@@ -1,3 +1,5 @@
+import { LOCAL_STORE, StoreKey } from '~lib/store'
+
 export enum NetworkKind {
   EVM = 'evm',
   COSM = 'cosm',
@@ -62,4 +64,17 @@ export function getNetworkScope(kind: NetworkKind): NetworkScope {
     case NetworkKind.SOL:
       return 'Solana'
   }
+}
+
+export async function checkNetworkKindInitialized(
+  kind: NetworkKind
+): Promise<boolean> {
+  const networkKinds =
+    (await LOCAL_STORE.get<string[]>(StoreKey.NETWORK_KINDS)) || []
+  if (networkKinds.indexOf(kind) >= 0) {
+    return true
+  }
+  networkKinds.push(kind)
+  await LOCAL_STORE.set(StoreKey.NETWORK_KINDS, networkKinds)
+  return false
 }

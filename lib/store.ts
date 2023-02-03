@@ -13,6 +13,7 @@ export enum StoreKey {
   LAST_UNLOCK_TIME = 'lastUnlockTime',
   AUTO_LOCK_TIME = 'autoLockTime',
   KEYSTORE_PREFIX = 'keystore',
+  NETWORK_KINDS = 'networkKinds',
   ACTIVE_NETWORK = 'activeNetwork',
   ACTIVE_WALLET = 'activeWallet',
   TOKEN_LISTS = 'tokenLists',

@@ -75,21 +75,15 @@ export class StarknetPermissionedProvider extends BasePermissionedProvider {
         case 'wallet_watchAsset':
           return await this.watchAsset(ctx, params[0])
       }
-    } catch (e) {
-
-    }
+    } catch (e) {}
   }
 
-  async addChain(ctx: Context, params: AddStarknetChainParameters) {
-  }
+  async addChain(ctx: Context, params: AddStarknetChainParameters) {}
 
-  async switchChain(ctx: Context, params: SwitchStarknetChainParameter) {
-  }
+  async switchChain(ctx: Context, params: SwitchStarknetChainParameter) {}
 
-  async watchAsset(ctx: Context, params: WatchStarknetAssetParameters) {
-  }
+  async watchAsset(ctx: Context, params: WatchStarknetAssetParameters) {}
 }
-
 
 export interface AddStarknetChainParameters extends AddEthereumChainParameter {
   baseUrl: string
@@ -97,7 +91,8 @@ export interface AddStarknetChainParameters extends AddEthereumChainParameter {
   blockExplorerUrl?: string | string[]
 }
 
-export interface SwitchStarknetChainParameter extends SwitchEthereumChainParameter {}
+export interface SwitchStarknetChainParameter
+  extends SwitchEthereumChainParameter {}
 
 export interface WatchStarknetAssetParameters extends WatchAssetParameters {
   options: WatchAssetParameters['options'] & {

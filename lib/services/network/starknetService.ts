@@ -1,7 +1,7 @@
 import assert from 'assert'
 
 import { DB, getNextField } from '~lib/db'
-import { NetworkKind } from '~lib/network'
+import { NetworkKind, checkNetworkKindInitialized } from '~lib/network'
 import {
   STARKNET_NETWORKS_PRESET,
   StarknetChainInfo
@@ -14,7 +14,7 @@ export class StarknetNetworkService {
       return
     }
 
-    if (await DB.networks.where('kind').equals(NetworkKind.STARKNET).count()) {
+    if (await checkNetworkKindInitialized(NetworkKind.STARKNET)) {
       return
     }
 

@@ -1,7 +1,7 @@
 import assert from 'assert'
 
 import { DB, getNextField } from '~lib/db'
-import { NetworkKind } from '~lib/network'
+import { NetworkKind, checkNetworkKindInitialized } from '~lib/network'
 import { EVM_NETWORKS_PRESET, EvmChainInfo } from '~lib/network/evm'
 import { ChainId, INetwork, createSearchString } from '~lib/schema/network'
 
@@ -13,7 +13,7 @@ export class EvmNetworkService implements IEvmNetworkService {
       return
     }
 
-    if (await DB.networks.where('kind').equals(NetworkKind.EVM).count()) {
+    if (await checkNetworkKindInitialized(NetworkKind.EVM)) {
       return
     }
 

@@ -8,9 +8,9 @@ import { Sha256 } from '@cosmjs/crypto'
 import { fromBech32, toBech32 } from '@cosmjs/encoding'
 import assert from 'assert'
 
-import { getLedgerCosmApp, } from '~lib/hardware/ledger'
+import { getLedgerCosmApp } from '~lib/hardware/ledger'
 import { DerivePosition } from '~lib/schema'
-import { SigningWallet, generatePath, isStdSignDoc } from "~lib/wallet";
+import { SigningWallet, generatePath, isStdSignDoc } from '~lib/wallet'
 
 import { HARDWARE_MISMATCH } from './evmHw'
 
