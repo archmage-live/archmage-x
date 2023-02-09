@@ -281,7 +281,7 @@ async function fetchTxs(client: AptosClient, account: IChainAccount) {
     const transactions = (await client.getAccountTransactions(
       account.address!,
       {
-        start: lastTx ? lastTx.index1 + 1 : 0, // `index1` as tx version
+        start: lastTx ? (lastTx.index1 as number) + 1 : 0, // `index1` as tx version
         limit: 100
       }
     )) as (
@@ -426,13 +426,14 @@ async function fetchTxs(client: AptosClient, account: IChainAccount) {
     addTxs.forEach(
       (tx) =>
         ((tx.info as AptosTransactionInfo).origin =
-          existingPendingTxsForTxsMap.get(tx.index2))
+          existingPendingTxsForTxsMap.get(tx.index2 as number))
     )
     const deletePendingTxs = existingPendingTxsForTxs.map((tx) => tx.id)
 
     await DB.transaction('rw', [DB.pendingTxs, DB.transactions], async () => {
       if (addPendingTxs.length) await DB.pendingTxs.bulkAdd(addPendingTxs)
-      if (deletePendingTxs) await DB.pendingTxs.bulkDelete(deletePendingTxs)
+      if (deletePendingTxs.length)
+        await DB.pendingTxs.bulkDelete(deletePendingTxs)
       if (addTxs.length) await DB.transactions.bulkAdd(addTxs)
     })
   }

@@ -5,6 +5,7 @@ import {
   APTOS_TRANSACTION_SERVICE,
   getAptosTransactionInfo
 } from './aptosService'
+import { COSM_TRANSACTION_SERVICE } from './cosmService'
 import {
   EVM_TRANSACTION_SERVICE,
   getEvmTransactionInfo,
@@ -63,6 +64,8 @@ export function getTransactionService(
   switch (networkKind) {
     case NetworkKind.EVM:
       return EVM_TRANSACTION_SERVICE
+    case NetworkKind.COSM:
+      return COSM_TRANSACTION_SERVICE
     case NetworkKind.APTOS:
       return APTOS_TRANSACTION_SERVICE
   }

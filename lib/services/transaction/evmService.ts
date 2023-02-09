@@ -538,8 +538,8 @@ export class EvmTransactionService extends EvmTransactionServicePartial {
         break
       }
       const lastTx = txs[txs.length - 1]
-      lastIndex1 = lastTx.index1
-      lastIndex2 = lastTx.index2
+      lastIndex1 = lastTx.index1 as number
+      lastIndex2 = lastTx.index2 as number
     }
     return undefined
   }

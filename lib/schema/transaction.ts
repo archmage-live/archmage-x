@@ -11,8 +11,8 @@ export interface ITransaction {
   chainId: ChainId
   address: string
   type: string // transaction type, e.g., normal/internal/erc20/erc721/...
-  index1: number // e.g., block number
-  index2: number // e.g., transaction index
+  index1: number | string // e.g., block number
+  index2: number | string // e.g., transaction index
   info: any
 }
 

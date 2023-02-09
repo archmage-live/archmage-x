@@ -2,12 +2,14 @@ import {
   AuthExtension,
   BankExtension,
   HttpEndpoint,
+  IbcExtension,
   QueryClient,
   StakingExtension,
   StargateClient,
   StargateClientOptions,
   setupAuthExtension,
   setupBankExtension,
+  setupIbcExtension,
   setupStakingExtension
 } from '@cosmjs/stargate'
 import { Tendermint34Client } from '@cosmjs/tendermint-rpc'
@@ -32,13 +34,15 @@ export class CosmClient extends StargateClient {
     AuthExtension &
     BankExtension &
     StakingExtension &
-    TxExtension {
+    TxExtension &
+    IbcExtension {
     return QueryClient.withExtensions(
       this.forceGetTmClient(),
       setupAuthExtension,
       setupBankExtension,
       setupStakingExtension,
-      setupTxExtension
+      setupTxExtension,
+      setupIbcExtension
     )
   }
 }
