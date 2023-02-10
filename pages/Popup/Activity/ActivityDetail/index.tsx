@@ -47,7 +47,7 @@ export const ActivityDetailModal = ({
   isOpen: boolean
   onClose: () => void
 }) => {
-  const txInfo = getTransactionInfo(tx)
+  const txInfo = getTransactionInfo(tx, network)
 
   return (
     <Modal size="full" isOpen={isOpen} onClose={onClose}>

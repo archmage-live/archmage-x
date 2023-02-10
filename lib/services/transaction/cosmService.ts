@@ -12,13 +12,19 @@ import { pubkeyToAddress } from '~lib/network/cosm/amino'
 import { Events } from '~lib/network/cosm/modules/tx/queries'
 import { decodePubkey } from '~lib/network/cosm/proto-signing'
 import { SERVICE_WORKER_CLIENT, SERVICE_WORKER_SERVER } from '~lib/rpc'
-import { IChainAccount, IPendingTx, ITransaction } from '~lib/schema'
+import { IChainAccount, INetwork, IPendingTx, ITransaction } from '~lib/schema'
 import { NETWORK_SERVICE } from '~lib/services/network'
 import { getCosmClient } from '~lib/services/provider/cosm/client'
 import { stall } from '~lib/util'
 
-import { ITransactionService, TransactionInfo } from '.'
+import {
+  ITransactionService,
+  TransactionInfo,
+  TransactionStatus,
+  TransactionType
+} from '.'
 import { BaseTransactionService } from './baseService'
+import { CosmTxInfo, parseCosmTx } from './cosmParse'
 
 export interface CosmPendingTxInfo {
   tx: Tx
@@ -34,13 +40,69 @@ export interface CosmTransactionInfo {
   origin?: string // only exists for local sent transaction
 }
 
+export function isCosmPendingTxInfo(
+  info: CosmPendingTxInfo | CosmTransactionInfo
+): info is CosmPendingTxInfo {
+  return !isCosmTransactionInfo(info)
+}
+
+export function isCosmTransactionInfo(
+  info: CosmPendingTxInfo | CosmTransactionInfo
+): info is CosmTransactionInfo {
+  return !!(info as CosmTransactionInfo).txResponse
+}
+
 export function getCosmTransactionInfo(
-  transaction: IPendingTx | ITransaction
+  transaction: IPendingTx | ITransaction,
+  network?: INetwork
 ): TransactionInfo {
   const info = transaction.info as CosmPendingTxInfo | CosmTransactionInfo
   const tx = info.tx
 
-  return {} as TransactionInfo
+  let txHash: string
+  if (isCosmTransactionInfo(info)) {
+    txHash = info.txResponse.txhash
+  } else {
+    const txRaw = TxRaw.fromPartial({
+      bodyBytes: TxBody.encode(tx.body!).finish(),
+      authInfoBytes: AuthInfo.encode(tx.authInfo!).finish(),
+      signatures: tx.signatures
+    })
+    const txBytes = TxRaw.encode(txRaw).finish()
+    txHash = toHex(sha256(txBytes)).toUpperCase()
+  }
+
+  let txInfo: CosmTxInfo | undefined = undefined
+  let timestamp
+  if (isCosmTransactionInfo(info)) {
+    txInfo = parseCosmTx(
+      tx,
+      info.txResponse,
+      network?.info,
+      transaction.address
+    )
+
+    timestamp = Number(new Date(info.txResponse.timestamp))
+  }
+
+  return {
+    type: txInfo?.type || TransactionType.CallContract,
+    isPending: isCosmPendingTxInfo(info),
+    isCancelled: false,
+    name: txInfo?.name,
+    from: txInfo?.from,
+    to: txInfo?.to,
+    origin: info.origin,
+    amount: txInfo?.amount,
+    hash: txHash,
+    nonce: tx.authInfo?.signerInfos.at(0)?.sequence.toNumber() || 0,
+    status: isCosmPendingTxInfo(info)
+      ? TransactionStatus.PENDING
+      : txInfo?.success
+      ? TransactionStatus.CONFIRMED
+      : TransactionStatus.CONFIRMED_FAILURE,
+    timestamp
+  } as TransactionInfo
 }
 
 // @ts-ignore
@@ -98,31 +160,25 @@ export class CosmTransactionService extends CosmTransactionServicePartial {
         }
       },
       {
-        // ibc transfer
+        // ibc transfer MsgTransfer
         ibc_transfer: {
           sender: account.address
         }
       },
       {
-        // ibc transfer
-        ibc_transfer: {
-          receiver: account.address
-        }
-      },
-      {
-        // ibc transfer
+        // ibc transfer OnAcknowledgePacket
         fungible_token_packet: {
           sender: account.address
         }
       },
       {
-        // ibc transfer
+        // ibc transfer OnRecvPacket
         fungible_token_packet: {
           receiver: account.address
         }
       },
       {
-        // ibc transfer
+        // ibc transfer OnTimeoutPacket
         fungible_token_packet: {
           refund_receiver: account.address
         }

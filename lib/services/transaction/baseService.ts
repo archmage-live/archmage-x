@@ -147,7 +147,7 @@ export abstract class BaseTransactionService {
   }
 
   async notifyTransaction(network: INetwork, transaction: ITransaction) {
-    const info = getTransactionInfo(transaction)
+    const info = getTransactionInfo(transaction, network)
     const success = info.status === TransactionStatus.CONFIRMED
     const nonce = info.nonce
 

@@ -5,7 +5,7 @@ import {
   APTOS_TRANSACTION_SERVICE,
   getAptosTransactionInfo
 } from './aptosService'
-import { COSM_TRANSACTION_SERVICE } from './cosmService'
+import { COSM_TRANSACTION_SERVICE, getCosmTransactionInfo } from './cosmService'
 import {
   EVM_TRANSACTION_SERVICE,
   getEvmTransactionInfo,
@@ -83,11 +83,14 @@ export function getTransactionTypes(networkKind: NetworkKind) {
 }
 
 export function getTransactionInfo(
-  tx: IPendingTx | ITransaction
+  tx: IPendingTx | ITransaction,
+  network?: INetwork
 ): TransactionInfo {
   switch (tx.networkKind) {
     case NetworkKind.EVM:
       return getEvmTransactionInfo(tx)
+    case NetworkKind.COSM:
+      return getCosmTransactionInfo(tx, network)
     case NetworkKind.APTOS:
       return getAptosTransactionInfo(tx)
   }
@@ -99,6 +102,7 @@ export interface TransactionInfo {
   isPending: boolean
   isCancelled: boolean
   name?: string
+  from?: string
   to?: string
   origin?: string
   amount?: string

@@ -35,7 +35,7 @@ export const ActivityItem = ({
 }) => {
   const netInfo = getNetworkInfo(network)
 
-  const txInfo = getTransactionInfo(tx)
+  const txInfo = getTransactionInfo(tx, network)
 
   let icon
   switch (txInfo.type) {

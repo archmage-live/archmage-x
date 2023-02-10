@@ -1,16 +1,30 @@
-import { fromBech32 } from '@cosmjs/encoding'
+import { sha256 } from '@cosmjs/crypto'
+import { fromBech32, toHex } from '@cosmjs/encoding'
+import assert from 'assert'
 import {
   StringEvent,
   TxResponse
 } from 'cosmjs-types/cosmos/base/abci/v1beta1/abci'
 import { Tx } from 'cosmjs-types/cosmos/tx/v1beta1/tx'
 import { Any } from 'cosmjs-types/google/protobuf/any'
-import Decimal from 'decimal.js'
+import { DenomTrace } from 'cosmjs-types/ibc/applications/transfer/v1/transfer'
 
 import { CosmAppChainInfo } from '~lib/network/cosm'
 import { Coin } from '~lib/network/cosm/coin'
 import { Dec } from '~lib/network/cosm/number'
 import { shortenAddress } from '~lib/utils'
+
+import { TransactionType } from '.'
+
+export interface CosmTxInfo {
+  success?: boolean
+  type: TransactionType
+  name?: string
+  from?: string
+  to?: string
+  amount?: string
+  description?: string
+}
 
 export interface CosmMsg {
   type: string
@@ -19,29 +33,45 @@ export interface CosmMsg {
   msg: Any
 }
 
-export interface CosmTx extends TxResponse {
-  msgs?: CosmMsg[]
-}
+export function parseCosmTx(
+  tx: Tx,
+  txResponse: TxResponse,
+  chain: CosmAppChainInfo,
+  account: string
+): CosmTxInfo & {
+  msgs: CosmMsg[]
+} {
+  let txInfo: CosmTxInfo | undefined
 
-export function parseCosmTx(tx: Tx, txResponse: TxResponse): CosmTx {
-  const msgs = tx.body?.messages.map((msg, i) => {
-    const cosmMsg = {
-      typeUrl: msg.typeUrl as any,
-      events: txResponse.logs[i].events,
-      msg
-    } as CosmMsg
+  const msgs =
+    tx.body?.messages.map((msg, i) => {
+      const cosmMsg = {
+        typeUrl: msg.typeUrl as any,
+        events: txResponse.logs[i].events,
+        msg
+      } as CosmMsg
 
-    cosmMsg.type =
-      cosmMsgDescriptions[msg.typeUrl]?.[0] ||
-      msg.typeUrl.split('.').pop() ||
-      'Unknown'
+      const parse = cosmMsgDescriptions[msg.typeUrl]
+      const info = parse ? parse(cosmMsg, chain, account) : undefined
 
-    return cosmMsg
-  })
+      if (info && !txInfo) {
+        txInfo = info
+      }
+
+      cosmMsg.type = info?.name || msg.typeUrl.split('.').pop() || 'Unknown'
+
+      return cosmMsg
+    }) || []
 
   return {
-    msgs,
-    ...txResponse
+    success: txResponse.code === 0 ? (txInfo ? txInfo.success : true) : false,
+    type: txInfo?.type || TransactionType.CallContract,
+    name: txInfo?.name || msgs[0].type,
+    from: txInfo?.from,
+    to: txInfo?.to,
+    amount: txInfo?.amount,
+    description: txInfo?.description,
+    msgs
   }
 }
 
@@ -82,37 +112,63 @@ function formatCosmCoin(coin: string | undefined, info: CosmAppChainInfo) {
 }
 
 export function shortenCosmAddress(
-  address: string,
+  address?: string,
   opts?: {
     prefixChars?: number
     suffixChars?: number
   }
 ): string {
+  if (!address) {
+    return ''
+  }
   const { prefix } = fromBech32(address)
   const { prefixChars, suffixChars } = opts || {}
-  return shortenAddress(address, { prefixChars, suffixChars })
+  return shortenAddress(address, {
+    leadingChars: prefix,
+    prefixChars,
+    suffixChars
+  })
 }
 
 const cosmMsgDescriptions: {
-  [typeUrl: string]: [string, (msg: CosmMsg, chain: CosmAppChainInfo) => string]
+  [typeUrl: string]: (
+    msg: CosmMsg,
+    chain: CosmAppChainInfo,
+    account: string
+  ) => CosmTxInfo
 } = {
-  '/cosmos.bank.v1beta1.MsgSend': ['Send', msgSendTx],
-  '/ibc.applications.transfer.v1.MsgTransfer': ['IBC Transfer', msgTransfer],
-  '/ibc.core.channel.v1.MsgRecvPacket': ['IBC Receive', msgRecvPacket],
-  '/ibc.core.channel.v1.MsgAcknowledgement': [
-    'IBC Acknowledgement',
-    msgAcknowledgement
-  ],
-  '/ibc.core.channel.v1.MsgTimeout': ['IBC Timeout', msgTimeout],
-  '/ibc.core.channel.v1.MsgTimeoutOnClose': ['IBC Timeout', msgTimeoutOnClose]
+  '/cosmos.bank.v1beta1.MsgSend': msgSendTx,
+  '/ibc.applications.transfer.v1.MsgTransfer': msgTransfer,
+  '/ibc.core.channel.v1.MsgRecvPacket': msgRecvPacket,
+  '/ibc.core.channel.v1.MsgAcknowledgement': msgAcknowledgement,
+  '/ibc.core.channel.v1.MsgTimeout': msgTimeout,
+  '/ibc.core.channel.v1.MsgTimeoutOnClose': msgTimeoutOnClose
 }
 
-function msgSendTx(msg: CosmMsg, chain: CosmAppChainInfo) {
+function msgSendTx(
+  msg: CosmMsg,
+  chain: CosmAppChainInfo,
+  account: string
+): CosmTxInfo {
   const attrs = extractEventAttributes(msg.events, 'transfer')
   const amount = formatCosmCoin(attrs?.get('amount'), chain)
+  const sender = attrs?.get('sender')
   const recipient = attrs?.get('recipient')
-  const recipientShort = recipient && shortenCosmAddress(recipient)
-  return `Send ${amount} to ${recipientShort}`
+
+  const type =
+    account === recipient ? TransactionType.Receive : TransactionType.Send
+
+  return {
+    type,
+    name: type === TransactionType.Send ? 'Send' : 'Receive',
+    from: sender,
+    to: recipient,
+    amount,
+    description:
+      type === TransactionType.Send
+        ? `Send ${amount} to ${shortenCosmAddress(recipient)}`
+        : `Receive ${amount} from ${shortenCosmAddress(sender)}`
+  }
 }
 
 /****************************** staking ******************************/
@@ -120,31 +176,148 @@ function msgSendTx(msg: CosmMsg, chain: CosmAppChainInfo) {
 function msgCreateValidator(msg: CosmMsg, chain: CosmAppChainInfo) {
   const attrs = extractEventAttributes(msg.events, 'create_validator')
   const validator = attrs?.get('validator')
-  const validatorShort = validator && shortenCosmAddress(validator)
   const amount = formatCosmCoin(attrs?.get('amount'), chain)
-  return `Create validator ${validatorShort} and delegate ${amount}`
+  return `Create validator ${shortenCosmAddress(
+    validator
+  )} and delegate ${amount}`
 }
 
 function msgEditValidator(msg: CosmMsg, chain: CosmAppChainInfo) {
   const attrs = extractEventAttributes(msg.events, 'edit_validator')
+  // TODO
 }
 
 /****************************** ibc ******************************/
 
-function msgTransfer(msg: CosmMsg, chain: CosmAppChainInfo) {}
-
-function msgRecvPacket(msg: CosmMsg, chain: CosmAppChainInfo) {
-  const attrs = extractEventAttributes(msg.events, 'edit_validator')
+interface IbcTransferPacketData {
+  sender: string
+  receiver: string
+  amount: string
+  denom: string
 }
 
-function msgAcknowledgement(msg: CosmMsg, chain: CosmAppChainInfo) {
-  const attrs = extractEventAttributes(msg.events, 'edit_validator')
+export function parseDenomTrace(denom: string): DenomTrace {
+  const splits = denom.split('/')
+  if (splits.length >= 3 && splits.length % 2 === 1) {
+    return {
+      path: splits.slice(0, splits.length - 1).join('/'),
+      baseDenom: splits[splits.length - 1]
+    }
+  } else {
+    return {
+      path: '',
+      baseDenom: denom
+    }
+  }
 }
 
-function msgTimeout(msg: CosmMsg, chain: CosmAppChainInfo) {
-  const attrs = extractEventAttributes(msg.events, 'edit_validator')
+export function toIbcDenom(denom: string) {
+  const dt = parseDenomTrace(denom)
+  if (dt.path) {
+    return 'ibc/' + toHex(sha256(Buffer.from(denom))).toUpperCase()
+  } else {
+    return dt.baseDenom
+  }
 }
 
-function msgTimeoutOnClose(msg: CosmMsg, chain: CosmAppChainInfo) {
-  const attrs = extractEventAttributes(msg.events, 'edit_validator')
+function msgTransfer(
+  msg: CosmMsg,
+  chain: CosmAppChainInfo,
+  account: string
+): CosmTxInfo {
+  const attrs = extractEventAttributes(msg.events, 'send_packet')
+  const packetData = JSON.parse(
+    attrs?.get('packet_data')!
+  ) as IbcTransferPacketData
+  assert(packetData.sender === account)
+  const amount = `${packetData.amount} ${packetData.denom}`
+
+  return {
+    type: TransactionType.Send,
+    name: 'IBC Transfer',
+    from: packetData.sender,
+    to: packetData.receiver,
+    amount,
+    description: `Transfer ${amount} to ${shortenCosmAddress(
+      packetData.receiver
+    )}`
+  }
+}
+
+function msgRecvPacket(
+  msg: CosmMsg,
+  chain: CosmAppChainInfo,
+  account: string
+): CosmTxInfo {
+  const attrs = extractEventAttributes(msg.events, 'recv_packet')
+  const packetData = JSON.parse(
+    attrs?.get('packet_data')!
+  ) as IbcTransferPacketData
+  assert(packetData.receiver === account)
+  const amount = `${packetData.amount} ${packetData.denom}`
+
+  return {
+    type: TransactionType.Receive,
+    name: 'IBC Receive',
+    from: packetData.sender,
+    to: packetData.receiver,
+    amount,
+    description: `Receive ${amount} from ${shortenCosmAddress(
+      packetData.sender
+    )}`
+  }
+}
+
+function msgAcknowledgement(
+  msg: CosmMsg,
+  chain: CosmAppChainInfo,
+  account: string
+): CosmTxInfo {
+  const attrs = extractEventAttributes(msg.events, 'fungible_token_packet')
+  const sender = attrs?.get('sender')
+  assert(sender === account)
+  const receiver = attrs?.get('receiver')
+  const amount = `${attrs?.get('amount')} ${attrs?.get('denom')}`
+  const success = attrs?.get('success')
+
+  return {
+    success: success !== undefined,
+    type: TransactionType.Send,
+    name: 'IBC Acknowledgement',
+    from: sender,
+    to: receiver,
+    amount,
+    description: `Acknowledgement of transferring ${amount} to ${shortenCosmAddress(
+      receiver
+    )}`
+  }
+}
+
+function msgTimeout(
+  msg: CosmMsg,
+  chain: CosmAppChainInfo,
+  account: string
+): CosmTxInfo {
+  const attrs = extractEventAttributes(msg.events, 'fungible_token_packet')
+  const refundReceiver = attrs?.get('refund_receiver')
+  assert(refundReceiver === account)
+  const amount = `${attrs?.get('refund_amount')} ${attrs?.get('refund_denom')}`
+
+  return {
+    success: false,
+    type: TransactionType.Send,
+    name: 'IBC Timeout',
+    from: account,
+    to: undefined,
+    amount,
+    description: `Timeout of transferring ${amount}`
+  }
+}
+
+function msgTimeoutOnClose(
+  msg: CosmMsg,
+  chain: CosmAppChainInfo,
+  account: string
+): CosmTxInfo {
+  return msgTimeout(msg, chain, account)
 }
