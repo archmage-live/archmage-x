@@ -1,6 +1,5 @@
 import { shallowCopy } from '@ethersproject/properties'
-import { TokenList } from '@uniswap/token-lists'
-import { TokenInfo } from '@uniswap/token-lists/src/types'
+import { TokenInfo, TokenList } from '@uniswap/token-lists'
 import assert from 'assert'
 import Decimal from 'decimal.js'
 import { ethers } from 'ethers'

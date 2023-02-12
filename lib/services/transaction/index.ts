@@ -76,6 +76,7 @@ export function getTransactionTypes(networkKind: NetworkKind) {
   switch (networkKind) {
     case NetworkKind.EVM:
       return getEvmTransactionTypes()
+    case NetworkKind.COSM:
     case NetworkKind.APTOS:
     // TODO
   }
