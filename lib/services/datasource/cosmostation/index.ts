@@ -42,11 +42,14 @@ export interface TokenInfo {
 }
 
 export interface TokenList {
+  url: string
   name: string
   desc: string
   logoURI: string
   tokens: TokenInfo[]
 }
+
+export const COSMOSTATION_REPO_URL = 'https://github.com/cosmostation/chainlist'
 
 class CosmostationApi {
   async getTokenList(
@@ -55,6 +58,7 @@ class CosmostationApi {
   ): Promise<TokenList | undefined> {
     if (!tokenList) {
       tokenList = {
+        url: COSMOSTATION_REPO_URL,
         name: 'Cosmostation Token List',
         desc: 'latest',
         logoURI:

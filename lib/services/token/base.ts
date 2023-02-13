@@ -4,6 +4,7 @@ import { DB } from '~lib/db'
 import { NetworkKind } from '~lib/network'
 import { IChainAccount, IToken, ITokenList, TokenVisibility } from '~lib/schema'
 import { formatTokenIdentifier } from '~lib/services/token'
+import { LOCAL_STORE, StoreKey } from '~lib/store'
 
 export class BaseTokenService {
   async getTokenLists(networkKind: NetworkKind) {
@@ -124,5 +125,49 @@ export class BaseTokenService {
     await DB.tokens.update(id, {
       visible
     })
+  }
+
+  protected async initDefaultTokenLists(
+    networkKind: NetworkKind,
+    defaultTokenListUrls: string[],
+    fetchTokenLists: (urls: string[]) => Promise<ITokenList[]>
+  ) {
+    const localDefaultTokenListUrls =
+      (await LOCAL_STORE.get<Record<NetworkKind, string[]>>(
+        StoreKey.TOKEN_LISTS
+      )) || {}
+    const local = localDefaultTokenListUrls[networkKind]
+
+    if (
+      local?.length === defaultTokenListUrls.length &&
+      local.every((item, i) => item === defaultTokenListUrls[i])
+    ) {
+      // default token lists not changed
+      return false
+    }
+
+    const newUrls = defaultTokenListUrls.filter(
+      (url) => !local || local.indexOf(url) < 0
+    )
+    localDefaultTokenListUrls[networkKind] = defaultTokenListUrls
+
+    const existingLists = (await this.getTokenLists(networkKind)).map(
+      (item) => item.url
+    )
+    const tokenLists = await fetchTokenLists(
+      newUrls.filter((url) => existingLists.indexOf(url) < 0)
+    )
+
+    if (tokenLists.length) {
+      if (!existingLists.length) {
+        tokenLists[0].enabled = true // enable first list
+      }
+
+      await DB.tokenLists.bulkAdd(tokenLists)
+    }
+
+    await LOCAL_STORE.set(StoreKey.TOKEN_LISTS, localDefaultTokenListUrls)
+
+    return true
   }
 }

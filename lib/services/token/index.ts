@@ -16,7 +16,9 @@ import {
 } from '~lib/schema'
 import { getNetworkInfo } from '~lib/services/network'
 import { BaseTokenService } from '~lib/services/token/base'
+import { Synchronizer } from '~lib/utils/synchronizer'
 
+import { COSM_TOKEN_SERVICE } from './cosm'
 import {
   EVM_TOKEN_SERVICE,
   formatEvmTokenIdentifier,
@@ -113,6 +115,8 @@ interface ITokenService {
 
   addTokenList(tokenList: ITokenList): Promise<ITokenList>
 
+  updateTokenList(tokenList: ITokenList, network: INetwork): Promise<void>
+
   deleteTokenList(id: number): Promise<void>
 
   getTokenCount(account: IChainAccount): Promise<number>
@@ -151,12 +155,41 @@ interface ITokenService {
 class TokenServicePartial extends BaseTokenService implements ITokenService {}
 
 export class TokenService extends TokenServicePartial {
-  private waits: Map<string, Promise<any>> = new Map()
+  private synchronizer = new Synchronizer()
 
   static async init() {
     if (ENV.inServiceWorker) {
       await EVM_TOKEN_SERVICE.init()
+      await COSM_TOKEN_SERVICE.init()
     }
+  }
+
+  async updateTokenList(
+    tokenList: ITokenList,
+    network: INetwork
+  ): Promise<void> {
+    const waitKey = `updateTokenList-${network.id}-${tokenList.id}`
+    const { promise, resolve } = this.synchronizer.get(waitKey)
+    if (promise) {
+      return promise
+    }
+
+    try {
+      switch (network.kind) {
+        case NetworkKind.EVM:
+          // Nothing
+          break
+        case NetworkKind.COSM:
+          await COSM_TOKEN_SERVICE.updateTokenList(tokenList, network)
+          break
+      }
+    } catch (err) {
+      console.error(
+        `update token list ${tokenList.id} for network ${network.id}: ${err}`
+      )
+    }
+
+    resolve()
   }
 
   async fetchTokenList(
@@ -169,27 +202,21 @@ export class TokenService extends TokenServicePartial {
     }
 
     const waitKey = `${networkKind}-${url}`
-    const wait = this.waits.get(waitKey)
-    if (wait) {
-      return wait
+    const { promise, resolve } = this.synchronizer.get(waitKey)
+    if (promise) {
+      return promise
     }
-
-    let resolve: any
-    this.waits.set(
-      waitKey,
-      new Promise((r) => {
-        resolve = r
-      })
-    )
 
     let tokenList
     switch (networkKind) {
       case NetworkKind.EVM:
         tokenList = await EVM_TOKEN_SERVICE.fetchTokenList(url)
         break
+      case NetworkKind.COSM:
+        tokenList = await COSM_TOKEN_SERVICE.fetchTokenList(url)
+        break
     }
 
-    this.waits.delete(waitKey)
     resolve(tokenList ? shallowCopy(tokenList) : undefined)
     return tokenList
   }
@@ -201,6 +228,8 @@ export class TokenService extends TokenServicePartial {
     switch (account.networkKind) {
       case NetworkKind.EVM:
         return EVM_TOKEN_SERVICE.searchTokenFromTokenLists(account, token)
+      case NetworkKind.COSM:
+        return COSM_TOKEN_SERVICE.searchTokenFromTokenLists(account, token)
     }
     return undefined
   }
@@ -234,18 +263,10 @@ export class TokenService extends TokenServicePartial {
     }
 
     const waitKey = `${account.networkKind}-${account.chainId}-${account.address}-${token}`
-    const wait = this.waits.get(waitKey)
-    if (wait) {
-      return wait
+    const { promise, resolve } = this.synchronizer.get(waitKey)
+    if (promise) {
+      return promise
     }
-
-    let resolve: any
-    this.waits.set(
-      waitKey,
-      new Promise((r) => {
-        resolve = r
-      })
-    )
 
     let foundToken
     try {
@@ -253,12 +274,14 @@ export class TokenService extends TokenServicePartial {
         case NetworkKind.EVM:
           foundToken = await EVM_TOKEN_SERVICE.searchToken(account, token)
           break
+        case NetworkKind.COSM:
+          foundToken = await COSM_TOKEN_SERVICE.searchToken(account, token)
+          break
       }
     } catch (err) {
       console.error(`search token ${token}: ${err}`)
     }
 
-    this.waits.delete(waitKey)
     const result = foundToken && {
       token: foundToken,
       existing: false
@@ -273,26 +296,20 @@ export class TokenService extends TokenServicePartial {
     }
 
     const waitKey = `${account.networkKind}-${account.chainId}-${account.address}`
-    const wait = this.waits.get(waitKey)
-    if (wait) {
-      return wait
+    const { promise, resolve } = this.synchronizer.get(waitKey)
+    if (promise) {
+      return promise
     }
-
-    let resolve: any
-    this.waits.set(
-      waitKey,
-      new Promise((r) => {
-        resolve = r
-      })
-    )
 
     switch (account.networkKind) {
       case NetworkKind.EVM:
         await EVM_TOKEN_SERVICE.fetchTokens(account)
         break
+      case NetworkKind.COSM:
+        await COSM_TOKEN_SERVICE.fetchTokens(account)
+        break
     }
 
-    this.waits.delete(waitKey)
     resolve()
   }
 }

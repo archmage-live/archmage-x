@@ -3,6 +3,8 @@ import { TokenInfo, TokenList } from '@uniswap/token-lists'
 import assert from 'assert'
 import Decimal from 'decimal.js'
 import { ethers } from 'ethers'
+// @ts-ignore
+import stableHash from 'stable-hash'
 
 import { DB } from '~lib/db'
 import { NetworkKind } from '~lib/network'
@@ -18,7 +20,6 @@ import { ETH_BALANCE_CHECKER_API } from '~lib/services/datasource/ethBalanceChec
 import { TOKENLISTS_API } from '~lib/services/datasource/tokenlists'
 import { NETWORK_SERVICE } from '~lib/services/network'
 import { EvmClient } from '~lib/services/provider/evm/client'
-import { LOCAL_STORE, StoreKey } from '~lib/store'
 
 import { TokenBrief, TokenListBrief } from '.'
 import { BaseTokenService } from './base'
@@ -73,47 +74,66 @@ export class EvmTokenService extends BaseTokenService {
       return
     }
 
-    const defaultTokenListUrls =
-      await TOKENLISTS_API.getDefaultEvmTokenListUrls()
-    const localDefaultTokenListUrls =
-      (await LOCAL_STORE.get<Record<NetworkKind, string[]>>(
-        StoreKey.TOKEN_LISTS
-      )) || {}
-    const local = localDefaultTokenListUrls[NetworkKind.EVM]
-    if (
-      local?.length === defaultTokenListUrls.length &&
-      local.every((item, i) => item === defaultTokenListUrls[i])
-    ) {
-      // default token lists not changed
-      return
+    const init = await this._initDefaultTokenLists()
+
+    if (!init) {
+      await this._updateTokenLists()
     }
 
-    const newUrls = defaultTokenListUrls.filter(
-      (url) => !local || local.indexOf(url) < 0
-    )
-    localDefaultTokenListUrls[NetworkKind.EVM] = defaultTokenListUrls
-
-    const existingLists = (await this.getTokenLists(NetworkKind.EVM)).map(
-      (item) => item.url
-    )
-    const tokenLists = (
-      await TOKENLISTS_API.getTokenLists(
-        newUrls.filter((url) => existingLists.indexOf(url) < 0)
-      )
-    ).map(({ url, tokenList }) => this.makeTokenList(url, tokenList))
-
-    if (tokenLists.length) {
-      if (!existingLists.length) {
-        tokenLists[0].enabled = true // enable first list
-      }
-
-      await DB.tokenLists.bulkAdd(tokenLists)
-    }
-
-    await LOCAL_STORE.set(StoreKey.TOKEN_LISTS, localDefaultTokenListUrls)
+    console.log('initialized evm tokens')
   }
 
-  private makeTokenList(url: string, tokenList: TokenList, enabled = false) {
+  private async _initDefaultTokenLists() {
+    // Default token lists may be updated across Archmage versions
+    const defaultTokenListUrls =
+      await TOKENLISTS_API.getDefaultEvmTokenListUrls()
+
+    return this.initDefaultTokenLists(
+      NetworkKind.EVM,
+      defaultTokenListUrls,
+      async (urls: string[]) => {
+        return (await TOKENLISTS_API.getTokenLists(urls)).map(
+          ({ url, tokenList }) => this._makeTokenList(url, tokenList)
+        )
+      }
+    )
+  }
+
+  private async _updateTokenLists() {
+    const tokenLists = await this.getTokenLists(NetworkKind.EVM)
+    const tokenListsMap = new Map(
+      tokenLists.map((tokenList) => [tokenList.url, tokenList])
+    )
+
+    const updatedTokenLists = await TOKENLISTS_API.getTokenLists(
+      tokenLists.map(({ url }) => url)
+    )
+
+    const updated = []
+    for (const { url, tokenList } of updatedTokenLists) {
+      const existing = tokenListsMap.get(url)
+      if (!existing) {
+        continue
+      }
+      const info = shallowCopy(tokenList) as any
+      delete info.tokens
+      if (
+        stableHash(existing.info) !== stableHash(info) ||
+        stableHash(existing.tokens) !== stableHash(tokenList.tokens)
+      ) {
+        const item = shallowCopy(existing)
+        item.info = info
+        item.tokens = tokenList.tokens
+        updated.push(item)
+      }
+    }
+
+    if (updated.length) {
+      await DB.tokenLists.bulkPut(updated)
+    }
+  }
+
+  private _makeTokenList(url: string, tokenList: TokenList, enabled = false) {
     const info = shallowCopy(tokenList) as any
     delete info.tokens
 
@@ -136,7 +156,7 @@ export class EvmTokenService extends BaseTokenService {
     if (!tokenList) {
       return
     }
-    return this.makeTokenList(url, tokenList)
+    return this._makeTokenList(url, tokenList)
   }
 
   async searchTokenFromTokenLists(
@@ -162,7 +182,7 @@ export class EvmTokenService extends BaseTokenService {
             chainId: account.chainId,
             address: account.address,
             sortId: 0, // TODO
-            token: token,
+            token,
             visible: TokenVisibility.UNSPECIFIED,
             info: {
               info
@@ -228,7 +248,9 @@ export class EvmTokenService extends BaseTokenService {
     } as IToken
   }
 
-  async getTokensFromLists(chainId: number): Promise<Map<string, TokenInfo>> {
+  private async _getTokensFromLists(
+    chainId: number
+  ): Promise<Map<string, TokenInfo>> {
     const tokenLists = (await this.getTokenLists(NetworkKind.EVM)).filter(
       (list) => {
         // only consider enabled list
@@ -299,7 +321,7 @@ export class EvmTokenService extends BaseTokenService {
       return new Map()
     }
 
-    const tokensMap = await this.getTokensFromLists(+account.chainId)
+    const tokensMap = await this._getTokensFromLists(+account.chainId)
     whitelistedTokens.forEach((wt) => {
       if (!tokensMap.has(wt.token)) {
         tokensMap.set(wt.token, wt.info.info)
@@ -371,7 +393,7 @@ export class EvmTokenService extends BaseTokenService {
           chainId: account.chainId,
           address: account.address,
           sortId: 0, // TODO
-          token: token,
+          token,
           visible: TokenVisibility.UNSPECIFIED,
           info
         } as IToken)
