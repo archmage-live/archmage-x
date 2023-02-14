@@ -78,7 +78,7 @@ export const COSM_NETWORKS_PRESET: CosmAppChainInfo[] = [
       }
     ],
     rest: 'https://lcd-cosmoshub.keplr.app',
-    rpc: 'https://rpc-cosmoshub.keplr.app',
+    rpc: 'https://rpc.cosmos.network',
     stakeCurrency: {
       coinDecimals: 6,
       coinDenom: 'ATOM',
@@ -88,7 +88,7 @@ export const COSM_NETWORKS_PRESET: CosmAppChainInfo[] = [
     walletUrlForStaking: 'https://wallet.keplr.app/chains/cosmos-hub'
   },
   {
-    rpc: 'https://rpc-osmosis.keplr.app',
+    rpc: 'https://rpc.osmosis.zone',
     rest: 'https://lcd-osmosis.keplr.app',
     chainId: 'osmosis-1',
     chainName: 'Osmosis',
@@ -143,7 +143,7 @@ export const COSM_NETWORKS_PRESET: CosmAppChainInfo[] = [
     features: ['cosmwasm', 'osmosis-txfees']
   },
   {
-    rpc: 'https://rpc-secret.keplr.app',
+    rpc: 'https://secretnetwork-rpc.stakely.io',
     rest: 'https://lcd-secret.keplr.app',
     chainId: 'secret-4',
     chainName: 'Secret Network',
@@ -198,7 +198,7 @@ export const COSM_NETWORKS_PRESET: CosmAppChainInfo[] = [
     features: ['secretwasm']
   },
   {
-    rpc: 'https://rpc-evmos.keplr.app',
+    rpc: 'https://tendermint.bd.evmos.org:26657',
     rest: 'https://lcd-evmos.keplr.app',
     chainId: 'evmos_9001-2',
     chainName: 'Evmos',
@@ -247,7 +247,7 @@ export const COSM_NETWORKS_PRESET: CosmAppChainInfo[] = [
     features: ['eth-address-gen', 'eth-key-sign']
   },
   {
-    rpc: 'https://rpc-juno.keplr.app',
+    rpc: 'https://rpc-juno.whispernode.com',
     rest: 'https://lcd-juno.keplr.app',
     chainId: 'juno-1',
     chainName: 'Juno',
@@ -307,7 +307,7 @@ export const COSM_NETWORKS_PRESET: CosmAppChainInfo[] = [
     features: ['cosmwasm']
   },
   {
-    rpc: 'https://rpc-kava.keplr.app',
+    rpc: 'https://rpc.data.kava.io',
     rest: 'https://lcd-kava.keplr.app',
     chainId: 'kava_2222-10',
     chainName: 'Kava',

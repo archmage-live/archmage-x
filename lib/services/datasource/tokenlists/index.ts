@@ -39,15 +39,19 @@ class TokenListsApi {
       tokenList = await IPFS_GATEWAY_API.fetch(ipfsHash, true)
     }
 
-    // validate schema
-    {
+    // TODO: https://github.com/traderjoe-xyz/joe-tokenlists/blob/main/mc.tokenlist.json
+    if (
+      url !==
+      'https://raw.githubusercontent.com/traderjoe-xyz/joe-tokenlists/main/mc.tokenlist.json'
+    ) {
+      // validate schema
       const valid = validate(tokenList)
       if (!valid) {
         console.error(
           `validate token list from ${url}: ${(validate as any).errors?.map(
             (error: any) => {
               delete error.data
-              return error
+              return JSON.stringify(error)
             }
           )}`
         )

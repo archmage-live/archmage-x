@@ -2,6 +2,7 @@ import { NetworkKind } from '~lib/network'
 import { IChainAccount, INetwork } from '~lib/schema'
 import { AptosProvider } from '~lib/services/provider/aptos/provider'
 import { formatAptosTxParams } from '~lib/services/provider/aptos/types'
+import { CosmProvider } from '~lib/services/provider/cosm/provider'
 import { EvmProvider } from '~lib/services/provider/evm/provider'
 import { formatEvmTxParams } from '~lib/services/provider/evm/types'
 
@@ -41,7 +42,7 @@ export async function getProvider(network: INetwork): Promise<Provider> {
     case NetworkKind.EVM:
       return await EvmProvider.from(network)
     case NetworkKind.COSM:
-      break
+      return await CosmProvider.from(network)
     case NetworkKind.APTOS:
       return await AptosProvider.from(network)
     case NetworkKind.SOL:

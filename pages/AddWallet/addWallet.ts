@@ -210,7 +210,6 @@ export function useAddWallet() {
         throw new Error('unknown wallet type')
     }
 
-    console.log(opts)
     const { wallet, decrypted } = await WALLET_SERVICE.newWallet(opts)
 
     if (await WALLET_SERVICE.existsSecret(wallet)) {

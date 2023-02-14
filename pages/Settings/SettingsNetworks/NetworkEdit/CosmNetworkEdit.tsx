@@ -1,6 +1,6 @@
 import { FormControl, FormLabel, Input, Stack } from '@chakra-ui/react'
 
-import { CosmChainInfo } from '~lib/network/cosm'
+import { CosmAppChainInfo } from '~lib/network/cosm'
 import { INetwork } from '~lib/schema'
 
 export const CosmNetworkEdit = ({
@@ -8,7 +8,7 @@ export const CosmNetworkEdit = ({
   info
 }: {
   network: INetwork
-  info: CosmChainInfo
+  info: CosmAppChainInfo
 }) => {
   return (
     <Stack spacing="12">

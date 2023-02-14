@@ -7,5 +7,5 @@ export const DEFAULT_EVM_TOKEN_LIST_URLS: string[] = [
   'ipfs://QmaQvV3pWKKaWJcHvSBuvQMrpckV3KKtGJ6p3HZjakwFtX', // Uniswap Labs Extended
   'https://token-list.sushi.com',
   'tokenlist.aave.eth',
-  'https://raw.githubusercontent.com/traderjoe-xyz/joe-tokenlists/main/joe.tokenlist.json' // Avalanche Trader Joe
+  'https://raw.githubusercontent.com/traderjoe-xyz/joe-tokenlists/main/mc.tokenlist.json' // Avalanche Trader Joe
 ]

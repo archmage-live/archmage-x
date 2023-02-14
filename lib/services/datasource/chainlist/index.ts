@@ -12,21 +12,17 @@ class ChainListApi {
     let data
     try {
       data = await fetchDataWithCache(
-        'https://github.com/DefiLlama/chainlist/raw/main/constants/chainIds.js',
+        'https://github.com/DefiLlama/chainlist/raw/main/constants/chainIds.json',
         1000 * 3600 * 24 * 7
       )
     } catch {
-      data = fs.readFileSync(__dirname + '/chainIds.js')
+      data = fs.readFileSync(__dirname + '/chainIds.json')
     }
 
     try {
-      let str = toUtf8String(data)
-      str = str.slice(str.indexOf('{') - 1, str.indexOf('}'))
+      const chainIds = JSON.parse(toUtf8String(data))
       return new Map(
-        Array.from(str.matchAll(/(\d+):\s+"(\S+)"/g)).map((item: any) => [
-          +item[1],
-          item[2]
-        ])
+        Object.entries(chainIds).map((item) => [+item[0], item[1] as string])
       )
     } catch (err) {
       console.error('getDefillamaEvmChainNames:', err)
@@ -43,7 +39,7 @@ class ChainListApi {
     if (!chainName) {
       return unknownLogoUrl
     }
-    return `https://defillama.com/chain-icons/rsz_${chainName}.jpg`
+    return `https://icons.llamao.fi/icons/chains/rsz_${chainName}`
   }
 
   async getEvmChainLogoUrl(chainId: number): Promise<string | undefined> {
