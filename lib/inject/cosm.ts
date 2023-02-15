@@ -45,15 +45,17 @@ if (
       COSM_PROVIDER_NAME
     )
 
-  const onAccountChange = (listener: Listener) => {
-    service.on('accountsChanged', listener)
-  }
+  service.on('accountsChanged', () => {
+    globalThis.dispatchEvent(new CustomEvent('keplr_keystorechange'))
+  })
 
   const cosm = new Proxy(service, {
     get: (service, method: string) => {
       switch (method) {
-        case 'keplr_keystorechange':
-          return onAccountChange
+        case 'then':
+          return undefined
+        case '__core__getAnalyticsId':
+          return undefined
       }
 
       if (isMsgEventMethod(method)) {

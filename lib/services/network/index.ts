@@ -10,6 +10,7 @@ import { EvmChainInfo } from '~lib/network/evm'
 import { StarknetChainInfo } from '~lib/network/starknet'
 import { ChainId, IChainAccount, INetwork, IToken } from '~lib/schema'
 import { useEvmChainLogoUrl } from '~lib/services/datasource/chainlist'
+import { useCosmChainLogoUrl } from '~lib/services/datasource/cosmos'
 import { useCryptoComparePrice } from '~lib/services/datasource/cryptocompare'
 import { StarknetNetworkService } from '~lib/services/network/starknetService'
 
@@ -52,9 +53,10 @@ export function getNetworkInfo(network: INetwork): NetworkInfo {
         description: info.chainName,
         chainId: info.chainId,
         isTestnet: info.isTestnet,
-        currencyName: info.feeCurrencies?.[0].coinDenom,
-        currencySymbol: info.feeCurrencies?.[0].coinDenom,
-        decimals: info.feeCurrencies?.[0].coinDecimals
+        currencyName: info.stakeCurrency.coinDenom,
+        currencySymbol: info.stakeCurrency.coinDenom,
+        decimals: info.stakeCurrency.coinDecimals,
+        rpcUrl: info.rpc
       }
     }
     case NetworkKind.STARKNET: {
@@ -304,11 +306,24 @@ export function useNetworkLogoUrl(network?: INetwork) {
     network?.kind === NetworkKind.EVM ? network?.chainId : undefined
   )
 
-  const result = useCryptoComparePrice(
-    network?.kind !== NetworkKind.EVM ? info?.currencySymbol : undefined
+  const cosmChainLogoUrl = useCosmChainLogoUrl(
+    network?.kind === NetworkKind.COSM ? network?.chainId : undefined
   )
 
-  return network?.kind === NetworkKind.EVM ? evmChainLogoUrl : result?.imageUrl
+  const result = useCryptoComparePrice(
+    network?.kind !== NetworkKind.EVM && network?.kind !== NetworkKind.COSM
+      ? info?.currencySymbol
+      : undefined
+  )
+
+  switch (network?.kind) {
+    case NetworkKind.EVM:
+      return evmChainLogoUrl
+    case NetworkKind.COSM:
+      return cosmChainLogoUrl
+    default:
+      return result?.imageUrl
+  }
 }
 
 export function reorderNetworks(

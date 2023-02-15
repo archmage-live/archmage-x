@@ -227,7 +227,7 @@ export function useEstimateGas(
     }
 
     try {
-      return provider.estimateGas(account, tx)
+      return await provider.estimateGas(account, tx)
     } catch (err) {
       console.error('useEstimateGas:', err)
     }

@@ -187,11 +187,14 @@ export class AptosProvider implements Provider {
   async signTypedData(
     account: IChainAccount,
     typedData: SignMessageResponse
-  ): Promise<string> {
+  ): Promise<SignMessageResponse> {
     const signer = await getSigningWallet(account)
     if (!signer) {
       throw ethErrors.rpc.internal()
     }
-    return signer.signTypedData(typedData.fullMessage)
+    typedData.signature = (
+      await signer.signTypedData(typedData.fullMessage)
+    ).slice(2)
+    return typedData
   }
 }

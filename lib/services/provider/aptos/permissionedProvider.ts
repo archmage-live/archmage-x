@@ -355,7 +355,7 @@ export class AptosPermissionedProvider extends BasePermissionedProvider {
       fullMsg.push(`application: ${msg.application}`)
     }
     if (req.chainId) {
-      fullMsg.push(`chain_id: ${msg.chainId}`)
+      fullMsg.push(`chainId: ${msg.chainId}`)
     }
     fullMsg.push(`message: ${msg.message}`)
     fullMsg.push(`nonce: ${msg.nonce}`)

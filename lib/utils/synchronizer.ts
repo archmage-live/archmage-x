@@ -27,4 +27,29 @@ export class Synchronizer {
   }
 }
 
+export class SingleSynchronizer {
+  private promise?: Promise<any>
+
+  get(): { promise?: Promise<any>; resolve: (value?: any) => void } {
+    if (this.promise) {
+      return {
+        promise: this.promise,
+        resolve: resolveNothing
+      }
+    }
+
+    let resolve: any
+    this.promise = new Promise((r) => {
+      resolve = r
+    })
+
+    return {
+      resolve: (value: any) => {
+        this.promise = undefined
+        resolve(value)
+      }
+    }
+  }
+}
+
 function resolveNothing() {}

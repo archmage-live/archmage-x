@@ -15,6 +15,7 @@ import * as React from 'react'
 import { ReactNode, useCallback, useState } from 'react'
 import ReactJson from 'react-json-view'
 
+import { NetworkKind } from '~lib/network'
 import {
   CONSENT_SERVICE,
   ConsentRequest,
@@ -54,6 +55,16 @@ export const SignTypedData = ({
   const payload = request.payload as SignTypedDataPayload
   const { metadata, typedData } = payload
   const { domain, types, primaryType, message } = typedData
+
+  let msg = {}
+  switch (network?.kind) {
+    case NetworkKind.EVM:
+      msg = message
+      break
+    case NetworkKind.APTOS:
+      msg = typedData
+      break
+  }
 
   const rjvTheme = useColorModeValue('rjv-default', 'brewer')
   const rjvBg = useColorModeValue('gray.50', 'rgb(12, 13, 14)')
@@ -171,7 +182,7 @@ export const SignTypedData = ({
                 borderColor="gray.500"
                 bg={rjvBg}>
                 <ReactJson
-                  src={message}
+                  src={msg}
                   name={false}
                   theme={rjvTheme}
                   iconStyle="triangle"

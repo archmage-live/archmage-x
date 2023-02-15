@@ -17,6 +17,7 @@ import { ethers } from 'ethers'
 import { getActiveNetwork, getActiveNetworkByKind } from '~lib/active'
 import { Context } from '~lib/inject/client'
 import { NetworkKind } from '~lib/network'
+import { COSM_NETWORKS_PRESET } from '~lib/network/cosm'
 import { validateCosmChainInfo } from '~lib/network/cosm/validate'
 import { INetwork, PSEUDO_INDEX } from '~lib/schema'
 import { NETWORK_SERVICE } from '~lib/services/network'
@@ -111,6 +112,16 @@ export class CosmPermissionedProvider extends BasePermissionedProvider {
   async enable(ctx: Context, chainIds: string | string[]) {
     // NOTE: we only use the first chain id, and ignore other chains
     const chainId = Array.isArray(chainIds) ? chainIds[0] : chainIds
+
+    // Workaround: give privilege to https://wallet.keplr.app
+    if (
+      ctx.fromUrl &&
+      new URL(ctx.fromUrl).origin === 'https://wallet.keplr.app' &&
+      chainId !== COSM_NETWORKS_PRESET[0].chainId
+    ) {
+      return
+    }
+
     await this.switchChain(ctx, chainId)
 
     await this.requestAccounts(ctx)

@@ -117,7 +117,7 @@ export class AptosWallet implements KeystoreSigningWallet {
   }
 
   async signTypedData(typedData: string): Promise<string> {
-    return hexlify(this.signHex(typedData))
+    return hexlify(this.sign(Buffer.from(typedData)))
   }
 
   static checkAddress(address: string): string | false {

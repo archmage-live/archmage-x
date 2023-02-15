@@ -1,4 +1,4 @@
-import type { PlasmoContentScript } from 'plasmo'
+import type { PlasmoContentScript } from '@archmagelive/plasmo'
 
 import type {
   Event,

@@ -15,7 +15,7 @@ import {
 } from '@chakra-ui/react'
 import { BiQuestionMark } from '@react-icons/all-files/bi/BiQuestionMark'
 import { IoSwapVertical } from '@react-icons/all-files/io5/IoSwapVertical'
-import { CoinClient } from 'aptos'
+import { CoinClient, Types } from 'aptos'
 import { APTOS_COIN } from 'aptos/src/utils'
 import assert from 'assert'
 import Decimal from 'decimal.js'
@@ -303,6 +303,7 @@ export const Send = ({
 
     const txPayload = await provider.populateTransaction(account, params)
 
+    console.log(params, JSON.stringify(txPayload))
     await CONSENT_SERVICE.requestConsent(
       {
         networkId: network.id,
@@ -616,7 +617,7 @@ function useBuildSendTx(
     amount = amount ? amount : 0
 
     return buildSendTx(network, provider, account, to, amount, token)
-  }, [network, account, token, to, amount])
+  }, [network, account, token, to, amount, provider])
 
   return value
 }
@@ -647,15 +648,22 @@ async function buildSendTx(
     }
     case NetworkKind.APTOS: {
       if (!token) {
-        return new CoinClient(
-          (provider as AptosProvider).client
-        ).transactionBuilder.buildTransactionPayload(
-          '0x1::coin::transfer',
-          [APTOS_COIN],
-          [to, amount]
-        )
+        // return new CoinClient(
+        //   (provider as AptosProvider).client
+        // ).transactionBuilder.buildTransactionPayload(
+        //   '0x1::coin::transfer',
+        //   [APTOS_COIN],
+        //   [to, amount]
+        // )
+        return {
+          type: 'entry_function_payload',
+          function: '0x1::coin::transfer',
+          type_arguments: [APTOS_COIN],
+          arguments: [to, amount]
+        } as Types.TransactionPayload_EntryFunctionPayload
       } else {
         // TODO
+        return
       }
     }
     default:
