@@ -247,7 +247,8 @@ export class AptosPermissionedProvider extends BasePermissionedProvider {
       rawTransaction,
       {
         estimateGasUnitPrice: false,
-        estimateMaxGasAmount: true
+        estimateMaxGasAmount: true,
+        estimatePrioritizedGasUnitPrice: false
       }
     )
 
@@ -319,7 +320,11 @@ export class AptosPermissionedProvider extends BasePermissionedProvider {
 
   async simulateTransaction(
     rawTransaction: TxnBuilderTypes.RawTransaction,
-    query?: { estimateGasUnitPrice?: boolean; estimateMaxGasAmount?: boolean }
+    query?: {
+      estimateGasUnitPrice?: boolean
+      estimateMaxGasAmount?: boolean
+      estimatePrioritizedGasUnitPrice: boolean
+    }
   ) {
     if (!this.account) {
       throw ethErrors.provider.unauthorized()

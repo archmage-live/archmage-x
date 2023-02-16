@@ -53,7 +53,8 @@ export function useAptosTransaction(
       rawTransaction,
       {
         estimateGasUnitPrice: !dontEstimateGasPrice,
-        estimateMaxGasAmount: !dontEstimateGasLimit
+        estimateMaxGasAmount: !dontEstimateGasLimit,
+        estimatePrioritizedGasUnitPrice: false // TODO
       }
     )
     const userTransaction = userTxs[0]

@@ -12,6 +12,7 @@ import {
 } from '~lib/services/wallet'
 
 import { AptosTransaction } from './AptosTransaction'
+// import { CosmTransaction } from './CosmTransactioin'
 import { EvmTransaction } from './EvmTransaction'
 
 export const Transaction = ({
@@ -57,6 +58,21 @@ export const Transaction = ({
           suffix={rejectAllButton}
         />
       )
+    // case NetworkKind.COSM:
+    //   return (
+    //     <CosmTransaction
+    //       origin={request.origin}
+    //       request={request}
+    //       network={network}
+    //       networkInfo={networkInfo}
+    //       wallet={wallet}
+    //       subWallet={subWallet}
+    //       account={account}
+    //       balance={balance}
+    //       onComplete={onComplete}
+    //       suffix={rejectAllButton}
+    //     />
+    //   )
     case NetworkKind.APTOS:
       return (
         <AptosTransaction

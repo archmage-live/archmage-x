@@ -50,14 +50,6 @@ export interface SignMessageResponse {
   bitmap?: Uint8Array // a 4-byte (32 bits) bit-vector of length N
 }
 
-export class FakeAptosAccount {
-  constructor(private publicKey: HexString) {}
-
-  pubKey(): HexString {
-    return this.publicKey
-  }
-}
-
 export function formatAptosTxParams(payload: {
   txParams?: string | TxnBuilderTypes.RawTransaction
   populatedParams?: Types.UserTransaction
@@ -66,7 +58,10 @@ export function formatAptosTxParams(payload: {
 
   if (txParams && !(txParams instanceof TxnBuilderTypes.RawTransaction)) {
     const deserializer = new BCS.Deserializer(arrayify(txParams))
-    payload.txParams = TxnBuilderTypes.RawTransaction.deserialize(deserializer)
+    payload = {
+      txParams: TxnBuilderTypes.RawTransaction.deserialize(deserializer),
+      populatedParams
+    }
   }
 
   return payload as TransactionPayload

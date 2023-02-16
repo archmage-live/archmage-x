@@ -8,6 +8,7 @@ import {
 import { Secp256k1, Secp256k1Signature, Sha256 } from '@cosmjs/crypto'
 import { fromBase64, fromBech32, toBech32 } from '@cosmjs/encoding'
 import { DirectSignResponse } from '@cosmjs/proto-signing'
+import { arrayify, hexlify } from "@ethersproject/bytes";
 import type { ChainInfo as CosmChainInfo } from '@keplr-wallet/types'
 import assert from 'assert'
 import { SignDoc } from 'cosmjs-types/cosmos/tx/v1beta1/tx'
@@ -88,7 +89,7 @@ export class CosmPermissionedProvider extends BasePermissionedProvider {
       case 'isProtobufSignerSupported':
         return this.isProtobufSignerSupported(ctx)
       case 'signTx':
-        return this.signTx(ctx, params[0])
+        return this.signTx(ctx, params[0], params[1], params[2])
       case 'sendTx':
         return this.sendTx(ctx, params[0], params[1], params[2])
       case 'signArbitrary':
@@ -167,8 +168,8 @@ export class CosmPermissionedProvider extends BasePermissionedProvider {
   ): Promise<{
     name: string
     algo: string
-    pubKey: Uint8Array
-    address: Uint8Array
+    pubKey: string
+    address: string
     bech32Address: string
     isNanoLedger: boolean
     isKeystone: boolean
@@ -211,10 +212,8 @@ export class CosmPermissionedProvider extends BasePermissionedProvider {
           ? wallet.name
           : `${wallet.name} / ${subWallet.name}`,
       algo: 'secp256k1',
-      pubKey: signer?.publicKey
-        ? ethers.utils.arrayify(signer.publicKey)
-        : Uint8Array.of(), // TODO
-      address: data,
+      pubKey: signer?.publicKey ? signer.publicKey : '', // TODO
+      address: hexlify(data),
       bech32Address: bech32Address,
       isNanoLedger: hwType === HardwareWalletType.LEDGER,
       isKeystone: false // TODO
@@ -234,9 +233,13 @@ export class CosmPermissionedProvider extends BasePermissionedProvider {
 
   async signTx(
     ctx: Context,
+    chainId: string,
+    signer: string,
     tx: SignDoc | StdSignDoc
   ): Promise<DirectSignResponse | AminoSignResponse> {
-    if (!this.account?.address) {
+    await this.switchChain(ctx, chainId)
+
+    if (!this.account?.address || signer !== this.account.address) {
       throw ethErrors.provider.unauthorized()
     }
 
@@ -250,22 +253,22 @@ export class CosmPermissionedProvider extends BasePermissionedProvider {
   async sendTx(
     ctx: Context,
     chainId: string,
-    tx: Uint8Array,
+    tx: string,
     mode?: BroadcastMode
-  ): Promise<Uint8Array> {
+  ): Promise<string> {
     // TODO: broadcast mode
 
     await this.switchChain(ctx, chainId)
 
-    const response = await this.client.broadcastTx(tx)
-    return Buffer.from(response.transactionHash, 'hex')
+    const response = await this.client.broadcastTx(arrayify(tx))
+    return response.transactionHash
   }
 
   async signArbitrary(
     ctx: Context,
     chainId: string,
     signer: string,
-    data: string | Uint8Array
+    data: string | Array<number>
   ): Promise<StdSignature> {
     await this.switchChain(ctx, chainId)
 
@@ -273,21 +276,27 @@ export class CosmPermissionedProvider extends BasePermissionedProvider {
       throw ethErrors.provider.unauthorized()
     }
 
-    const signDoc = makeADR36AminoSignDoc(signer, data)
+    const signDoc = makeADR36AminoSignDoc(
+      signer,
+      data instanceof Array ? Uint8Array.from(data) : data
+    )
 
-    return (await this.signTx(ctx, signDoc)).signature
+    return (await this.signTx(ctx, chainId, signer, signDoc)).signature
   }
 
   async verifyArbitrary(
     ctx: Context,
     chainId: string,
     signer: string,
-    data: string | Uint8Array,
+    data: string | Array<number>,
     signature: StdSignature
   ): Promise<boolean> {
     await this.switchChain(ctx, chainId)
 
-    const signDoc = makeADR36AminoSignDoc(signer, data)
+    const signDoc = makeADR36AminoSignDoc(
+      signer,
+      data instanceof Array ? Uint8Array.from(data) : data
+    )
 
     const { data: signerAddress } = fromBech32(signer)
     if (

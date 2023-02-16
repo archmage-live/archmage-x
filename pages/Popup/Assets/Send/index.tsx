@@ -13,9 +13,10 @@ import {
   Text,
   useDisclosure
 } from '@chakra-ui/react'
+import { hexlify } from '@ethersproject/bytes'
 import { BiQuestionMark } from '@react-icons/all-files/bi/BiQuestionMark'
 import { IoSwapVertical } from '@react-icons/all-files/io5/IoSwapVertical'
-import { CoinClient, Types } from 'aptos'
+import { BCS, Types } from 'aptos'
 import { APTOS_COIN } from 'aptos/src/utils'
 import assert from 'assert'
 import Decimal from 'decimal.js'
@@ -41,7 +42,6 @@ import {
   useIsContract,
   useProvider
 } from '~lib/services/provider'
-import { AptosProvider } from '~lib/services/provider/aptos/provider'
 import { EvmProvider } from '~lib/services/provider/evm/provider'
 import { EvmTxParams } from '~lib/services/provider/evm/types'
 import { NativeToken, getTokenBrief, useTokenById } from '~lib/services/token'
@@ -303,7 +303,12 @@ export const Send = ({
 
     const txPayload = await provider.populateTransaction(account, params)
 
-    console.log(params, JSON.stringify(txPayload))
+    if (network.kind === NetworkKind.APTOS) {
+      const serializer = new BCS.Serializer()
+      txPayload.txParams.serialize(serializer)
+      txPayload.txParams = hexlify(serializer.getBytes())
+    }
+
     await CONSENT_SERVICE.requestConsent(
       {
         networkId: network.id,
@@ -657,8 +662,8 @@ async function buildSendTx(
         // )
         return {
           type: 'entry_function_payload',
-          function: '0x1::coin::transfer',
-          type_arguments: [APTOS_COIN],
+          function: '0x1::aptos_account::transfer', // or '0x1::coin::transfer'
+          type_arguments: [], // or [APTOS_COIN]
           arguments: [to, amount]
         } as Types.TransactionPayload_EntryFunctionPayload
       } else {

@@ -3,6 +3,7 @@ import { IChainAccount, INetwork } from '~lib/schema'
 import { AptosProvider } from '~lib/services/provider/aptos/provider'
 import { formatAptosTxParams } from '~lib/services/provider/aptos/types'
 import { CosmProvider } from '~lib/services/provider/cosm/provider'
+import { formatCosmTxParams } from '~lib/services/provider/cosm/types'
 import { EvmProvider } from '~lib/services/provider/evm/provider'
 import { formatEvmTxParams } from '~lib/services/provider/evm/types'
 
@@ -63,6 +64,8 @@ export function formatTxPayload(
   switch (network.kind) {
     case NetworkKind.EVM:
       return formatEvmTxParams(payload)
+    case NetworkKind.COSM:
+      return formatCosmTxParams(payload)
     case NetworkKind.APTOS:
       return formatAptosTxParams(payload)
   }

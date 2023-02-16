@@ -1,8 +1,7 @@
 import {
-  AptosAccount,
   AptosClient,
-  HexString,
   TransactionBuilderRemoteABI,
+  TxnBuilderTypes,
   Types
 } from 'aptos'
 import assert from 'assert'
@@ -23,7 +22,6 @@ import {
 import { NETWORK_SERVICE } from '~lib/services/network'
 import { getAptosClient } from '~lib/services/provider/aptos/client'
 import {
-  FakeAptosAccount,
   isAptosEntryFunctionPayload,
   isAptosScriptPayload
 } from '~lib/services/provider/aptos/types'
@@ -181,6 +179,7 @@ export class AptosTransactionService extends AptosTransactionServicePartial {
     const tx = (await client.waitForTransactionWithResult(
       info.tx.hash
     )) as Types.Transaction_UserTransaction
+    delete (tx as any).__headers
 
     let transaction = {
       masterId: pendingTx.masterId,
@@ -343,9 +342,6 @@ async function fetchTxs(client: AptosClient, account: IChainAccount) {
         }
 
         let simulatedTx
-        const aptosAccount = new FakeAptosAccount(
-          HexString.ensure(account.address!) // TODO
-        )
         if (isAptosEntryFunctionPayload(tx.payload)) {
           const txBuilder = new TransactionBuilderRemoteABI(client, {
             sender: account.address!,
@@ -363,7 +359,7 @@ async function fetchTxs(client: AptosClient, account: IChainAccount) {
             tx.payload.arguments
           )
           const simulatedTxs = await client.simulateTransaction(
-            aptosAccount as unknown as AptosAccount,
+            new TxnBuilderTypes.Ed25519PublicKey(new Uint8Array(32)), // TODO
             rawTx
           )
           simulatedTx = simulatedTxs.length ? simulatedTxs[0] : undefined

@@ -1,22 +1,23 @@
 import type {
   AminoSignResponse,
   OfflineAminoSigner,
-  StdSignDoc
+  StdSignDoc,
+  StdSignature
 } from '@cosmjs/amino'
 import type {
   AccountData,
   DirectSignResponse,
-  OfflineDirectSigner,
-  OfflineSigner
+  OfflineDirectSigner
 } from '@cosmjs/proto-signing'
+import { arrayify, hexlify } from '@ethersproject/bytes'
 import type { SignDoc } from 'cosmjs-types/cosmos/tx/v1beta1/tx'
+import Long from 'long'
 
 import { ENV } from '~lib/env'
 
 import {
   Context,
   EventEmitter,
-  Listener,
   RpcClientInjected,
   isMsgEventMethod
 } from './client'
@@ -51,6 +52,7 @@ if (
 
   const cosm = new Proxy(service, {
     get: (service, method: string) => {
+      // bypass keplr specific methods
       switch (method) {
         case 'then':
           return undefined
@@ -85,8 +87,49 @@ if (
           }
       }
 
-      return (...params: any[]) => {
-        return service.request({ method, params })
+      return async (...params: any[]) => {
+        params = [...params]
+
+        switch (method) {
+          case 'signAmino':
+            return new CosmOfflineAminoSigner(service, params[0]).signAmino(
+              params[1],
+              params[2]
+            )
+          case 'signDirect':
+            return new CosmOfflineSigner(service, params[0]).signDirect(
+              params[1],
+              params[2]
+            )
+          case 'signArbitrary' || 'verifyArbitrary':
+            if (params[2] instanceof Uint8Array) {
+              params[2] = Array.from(params[2])
+            }
+            break
+        }
+
+        params = params.map((param) => {
+          return param instanceof Uint8Array
+            ? hexlify(param)
+            : param instanceof Long
+            ? param.toString()
+            : param
+        })
+
+        const response = await service.request({ method, params })
+
+        switch (method) {
+          case 'getKey':
+            return {
+              ...response,
+              pubkey: arrayify(response.pubKey),
+              address: arrayify(response.address)
+            }
+          case 'sendTx':
+            return Buffer.from(response, 'hex')
+          default:
+            return response
+        }
       }
     }
   })
@@ -102,16 +145,7 @@ class CosmOfflineAminoSigner implements OfflineAminoSigner {
     protected chainId: string
   ) {}
 
-  protected async switchChain() {
-    await this.service.request({
-      method: 'switchChain',
-      params: [this.chainId]
-    })
-  }
-
   async getAccounts(): Promise<readonly AccountData[]> {
-    await this.switchChain()
-
     const { bech32Address, pubKey, algo } = await this.service.request({
       method: 'getKey',
       params: [this.chainId]
@@ -120,7 +154,7 @@ class CosmOfflineAminoSigner implements OfflineAminoSigner {
       {
         address: bech32Address,
         algo: algo,
-        pubkey: pubKey
+        pubkey: arrayify(pubKey)
       }
     ]
   }
@@ -129,11 +163,9 @@ class CosmOfflineAminoSigner implements OfflineAminoSigner {
     signerAddress: string,
     signDoc: StdSignDoc
   ): Promise<AminoSignResponse> {
-    await this.switchChain()
-
     return await this.service.request({
       method: 'signTx',
-      params: [signerAddress, signDoc]
+      params: [this.chainId, signerAddress, signDoc]
     })
   }
 }
@@ -146,11 +178,39 @@ class CosmOfflineSigner
     signerAddress: string,
     signDoc: SignDoc
   ): Promise<DirectSignResponse> {
-    await this.switchChain()
+    const doc: CosmSignDoc = {
+      ...signDoc,
+      bodyBytes: hexlify(signDoc.bodyBytes),
+      authInfoBytes: hexlify(signDoc.authInfoBytes),
+      accountNumber: signDoc.accountNumber.toString()
+    }
 
-    return await this.service.request({
+    const response: CosmDirectSignResponse = await this.service.request({
       method: 'signTx',
-      params: [signerAddress, signDoc]
+      params: [this.chainId, signerAddress, doc]
     })
+    const { signed, signature } = response
+
+    return {
+      signed: {
+        ...signed,
+        bodyBytes: arrayify(signed.bodyBytes),
+        authInfoBytes: arrayify(signed.authInfoBytes),
+        accountNumber: Long.fromString(signed.accountNumber)
+      },
+      signature
+    }
   }
+}
+
+export interface CosmSignDoc {
+  bodyBytes: string
+  authInfoBytes: string
+  chainId: string
+  accountNumber: string
+}
+
+export interface CosmDirectSignResponse {
+  signed: CosmSignDoc
+  signature: StdSignature
 }

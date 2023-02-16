@@ -1,3 +1,4 @@
+import { arrayify, hexlify } from '@ethersproject/bytes'
 import {
   ApiError,
   AptosAccount,
@@ -16,11 +17,7 @@ import { Provider, TransactionPayload, getNonce } from '~lib/services/provider'
 import { getSigningWallet } from '~lib/wallet'
 
 import { getAptosClient } from './client'
-import {
-  FakeAptosAccount,
-  SignMessageResponse,
-  isAptosEntryFunctionPayload
-} from './types'
+import { SignMessageResponse, isAptosEntryFunctionPayload } from './types'
 
 export const DEFAULT_MAX_GAS_AMOUNT = 20000
 export const DEFAULT_TXN_EXP_SEC_FROM_NOW = 20
@@ -103,17 +100,17 @@ export class AptosProvider implements Provider {
     query?: {
       estimateGasUnitPrice?: boolean
       estimateMaxGasAmount?: boolean
+      estimatePrioritizedGasUnitPrice: boolean
     }
   ): Promise<Types.UserTransaction[]> {
     const signingWallet = await getSigningWallet(account)
     if (!signingWallet?.publicKey) {
       throw ethErrors.provider.unauthorized()
     }
-    const aptosAccount = new FakeAptosAccount(
-      HexString.ensure(signingWallet.publicKey)
-    )
     return this.client.simulateTransaction(
-      aptosAccount as unknown as AptosAccount,
+      new TxnBuilderTypes.Ed25519PublicKey(
+        HexString.ensure(signingWallet.publicKey).toUint8Array()
+      ),
       rawTransaction,
       query
     )
@@ -150,7 +147,8 @@ export class AptosProvider implements Provider {
 
     const userTxs = await this.simulateTransaction(account, rawTransaction, {
       estimateGasUnitPrice: false,
-      estimateMaxGasAmount: true
+      estimateMaxGasAmount: true,
+      estimatePrioritizedGasUnitPrice: false
     })
 
     return {
@@ -162,18 +160,22 @@ export class AptosProvider implements Provider {
   async signTransaction(
     account: IChainAccount,
     transaction: TxnBuilderTypes.RawTransaction
-  ): Promise<Uint8Array> {
+  ): Promise<string> {
     const signer = await getSigningWallet(account)
     if (!signer) {
       throw ethErrors.rpc.internal()
     }
-    return signer.signTransaction(transaction)
+    return hexlify(await signer.signTransaction(transaction))
   }
 
   async sendTransaction(
-    signedTransaction: Uint8Array
+    signedTransaction: string
   ): Promise<Types.PendingTransaction> {
-    return await this.client.submitSignedBCSTransaction(signedTransaction)
+    const pendingTx = await this.client.submitSignedBCSTransaction(
+      arrayify(signedTransaction)
+    )
+    delete (pendingTx as any).__headers
+    return pendingTx
   }
 
   signMessage(account: IChainAccount, message: any): Promise<any> {

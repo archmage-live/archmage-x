@@ -101,7 +101,7 @@ specifiers:
   ajv-cli: ^5.0.0
   ajv-formats: ^2.1.1
   alchemy-sdk: ^2.2.0
-  aptos: ^1.3.15
+  aptos: ^1.6.0
   assert: ^2.0.0
   avvvatars-react: ^0.4.2
   axios: 0.27.2
@@ -232,7 +232,7 @@ dependencies:
   ajv: 8.11.0
   ajv-formats: 2.1.1
   alchemy-sdk: 2.2.0
-  aptos: 1.3.15
+  aptos: 1.6.0
   assert: 2.0.0
   avvvatars-react: 0.4.2_owo25xnefcwdq3zjgtohz6dbju
   axios: 0.27.2
@@ -5583,11 +5583,11 @@ packages:
       normalize-path: 3.0.0
       picomatch: 2.3.1
 
-  /aptos/1.3.15:
-    resolution: {integrity: sha512-kRjTHZctWM5m4K1tMDl7tZZpRu0+ceHFGpvyMw8ONrtbx9EvfcctFSv9DnSKSKGX0soivT0LhwDFIobd3jQQtw==}
+  /aptos/1.6.0:
+    resolution: {integrity: sha512-5khjDwrDeNMDBFRcZAmETW20D+V2AqTdsgqkh6bvvl70BtRXdkitN0saM05gf1rK3atnO9PyUKO8iRaBDG5qtA==}
     engines: {node: '>=11.0.0'}
     dependencies:
-      '@noble/hashes': 1.1.2
+      '@noble/hashes': 1.1.3
       '@scure/bip39': 1.1.0
       axios: 0.27.2
       form-data: 4.0.0
