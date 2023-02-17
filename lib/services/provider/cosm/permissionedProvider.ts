@@ -8,21 +8,34 @@ import {
 import { Secp256k1, Secp256k1Signature, Sha256 } from '@cosmjs/crypto'
 import { fromBase64, fromBech32, toBech32 } from '@cosmjs/encoding'
 import { DirectSignResponse } from '@cosmjs/proto-signing'
-import { arrayify, hexlify } from "@ethersproject/bytes";
+import { arrayify, hexlify } from '@ethersproject/bytes'
 import type { ChainInfo as CosmChainInfo } from '@keplr-wallet/types'
 import assert from 'assert'
 import { SignDoc } from 'cosmjs-types/cosmos/tx/v1beta1/tx'
 import { ethErrors } from 'eth-rpc-errors'
-import { ethers } from 'ethers'
+import Long from 'long'
 
 import { getActiveNetwork, getActiveNetworkByKind } from '~lib/active'
 import { Context } from '~lib/inject/client'
+import {
+  CosmDirectSignResponse,
+  CosmSignDoc,
+  isCosmSignDoc,
+  toSignDoc
+} from '~lib/inject/cosm'
 import { NetworkKind } from '~lib/network'
-import { COSM_NETWORKS_PRESET } from '~lib/network/cosm'
+import { COSM_NETWORKS_PRESET, CosmAppChainInfo } from '~lib/network/cosm'
+import { pubkeyToAddress } from '~lib/network/cosm/amino'
+import { decodePubkey } from '~lib/network/cosm/proto-signing'
 import { validateCosmChainInfo } from '~lib/network/cosm/validate'
 import { INetwork, PSEUDO_INDEX } from '~lib/schema'
+import { CONSENT_SERVICE, ConsentType } from '~lib/services/consentService'
 import { NETWORK_SERVICE } from '~lib/services/network'
 import { BasePermissionedProvider } from '~lib/services/provider/base'
+import {
+  COSM_TRANSACTION_SERVICE,
+  CosmTransactionInfo
+} from '~lib/services/transaction/cosmService'
 import { WALLET_SERVICE } from '~lib/services/wallet'
 import {
   HardwareWalletType,
@@ -235,8 +248,8 @@ export class CosmPermissionedProvider extends BasePermissionedProvider {
     ctx: Context,
     chainId: string,
     signer: string,
-    tx: SignDoc | StdSignDoc
-  ): Promise<DirectSignResponse | AminoSignResponse> {
+    tx: CosmSignDoc | StdSignDoc
+  ): Promise<CosmDirectSignResponse | AminoSignResponse> {
     await this.switchChain(ctx, chainId)
 
     if (!this.account?.address || signer !== this.account.address) {
@@ -245,23 +258,61 @@ export class CosmPermissionedProvider extends BasePermissionedProvider {
 
     const provider = new CosmProvider(this.client, this.network)
 
-    const { txParams } = await provider.populateTransaction(this.account, tx)
+    const payload = await provider.populateTransaction(
+      this.account,
+      tx as SignDoc | StdSignDoc
+    )
 
-    return provider.signTransaction(this.account, txParams)
+    return CONSENT_SERVICE.requestConsent(
+      {
+        networkId: this.network.id,
+        accountId: this.account.id,
+        type: ConsentType.TRANSACTION,
+        origin: this.origin,
+        payload
+      },
+      ctx
+    )
   }
 
   async sendTx(
     ctx: Context,
     chainId: string,
-    tx: string,
+    signedTx: string,
     mode?: BroadcastMode
   ): Promise<string> {
     // TODO: broadcast mode
 
     await this.switchChain(ctx, chainId)
 
-    const response = await this.client.broadcastTx(arrayify(tx))
-    return response.transactionHash
+    if (!this.account?.address) {
+      throw ethErrors.provider.unauthorized()
+    }
+
+    const provider = new CosmProvider(this.client, this.network)
+
+    // consent request is not required, since tx has been signed
+    const { tx, txResponse } = await provider.sendTransaction(
+      arrayify(signedTx)
+    )
+
+    const publicKey = tx.authInfo?.signerInfos.at(0)?.publicKey
+    if (publicKey) {
+      const prefix = (this.network.info as CosmAppChainInfo).bech32Config
+        .bech32PrefixAccAddr
+
+      const signer = pubkeyToAddress(decodePubkey(publicKey)!, prefix)
+
+      if (signer === this.account.address) {
+        await COSM_TRANSACTION_SERVICE.addPendingTx(
+          this.account,
+          tx,
+          this.origin
+        )
+      }
+    }
+
+    return txResponse?.txhash
   }
 
   async signArbitrary(

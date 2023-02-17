@@ -174,3 +174,9 @@ export function isStdSignDoc(
     !(signDoc as SignDoc).bodyBytes
   )
 }
+
+export function isAminoSignResponse(
+  signResponse: DirectSignResponse | AminoSignResponse
+): signResponse is AminoSignResponse {
+  return isStdSignDoc(signResponse.signed)
+}

@@ -1,5 +1,5 @@
 import { arrayify } from '@ethersproject/bytes'
-import { BCS, HexString, TxnBuilderTypes, Types } from 'aptos'
+import { BCS, TxnBuilderTypes, Types } from 'aptos'
 
 import { TransactionPayload } from '~lib/services/provider'
 
@@ -54,13 +54,13 @@ export function formatAptosTxParams(payload: {
   txParams?: string | TxnBuilderTypes.RawTransaction
   populatedParams?: Types.UserTransaction
 }): TransactionPayload {
-  const { txParams, populatedParams } = payload
+  const { txParams } = payload
 
   if (txParams && !(txParams instanceof TxnBuilderTypes.RawTransaction)) {
     const deserializer = new BCS.Deserializer(arrayify(txParams))
     payload = {
-      txParams: TxnBuilderTypes.RawTransaction.deserialize(deserializer),
-      populatedParams
+      ...payload,
+      txParams: TxnBuilderTypes.RawTransaction.deserialize(deserializer)
     }
   }
 

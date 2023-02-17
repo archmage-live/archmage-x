@@ -2,7 +2,6 @@ import { shallowCopy } from '@ethersproject/properties'
 import assert from 'assert'
 import { Metadata } from 'cosmjs-types/cosmos/bank/v1beta1/bank'
 import Decimal from 'decimal.js'
-import { ethers } from 'ethers'
 
 import { DB } from '~lib/db'
 import { NetworkKind } from '~lib/network'
@@ -337,9 +336,9 @@ export class CosmTokenService extends BaseTokenService {
     const client = await getCosmClient(network)
     const queryClient = client.getQueryClient()
 
-    const balances = (await queryClient.bank.allBalances(account.address)).map(
-      Coin.fromProto
-    )
+    const balances: Coin[] = (
+      await queryClient.bank.allBalances(account.address)
+    ).map(Coin.fromProto)
     const balancesMap = new Map(
       balances.map((balance) => [balance.denom, balance.amount.toString()])
     )

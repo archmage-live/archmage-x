@@ -1,11 +1,13 @@
 import { AminoSignResponse, StdSignDoc } from '@cosmjs/amino'
 import { DirectSignResponse } from '@cosmjs/proto-signing'
-import { DeliverTxResponse } from '@cosmjs/stargate'
+import { hexlify } from '@ethersproject/bytes'
 import assert from 'assert'
+import { GetTxResponse } from 'cosmjs-types/cosmos/tx/v1beta1/service'
 import { SignDoc } from 'cosmjs-types/cosmos/tx/v1beta1/tx'
 import { ethErrors } from 'eth-rpc-errors'
 import PQueue from 'p-queue'
 
+import { CosmDirectSignResponse, CosmSignDoc } from '~lib/inject/cosm'
 import { CosmAppChainInfo } from '~lib/network/cosm'
 import { IChainAccount, INetwork } from '~lib/schema'
 import { Provider, TransactionPayload } from '~lib/services/provider'
@@ -78,7 +80,7 @@ export class CosmProvider implements Provider {
   async signTransaction(
     account: IChainAccount,
     signDoc: SignDoc | StdSignDoc
-  ): Promise<DirectSignResponse | AminoSignResponse> {
+  ): Promise<CosmDirectSignResponse | AminoSignResponse> {
     if (isStdSignDoc(signDoc) && isADR36AminoSignDoc(signDoc)) {
       checkAndValidateADR36AminoSignDoc(signDoc)
     }
@@ -87,13 +89,30 @@ export class CosmProvider implements Provider {
     if (!signer) {
       throw ethErrors.rpc.internal()
     }
-    return signer.signTransaction(signDoc)
+    const { signed, signature }: DirectSignResponse | AminoSignResponse =
+      await signer.signTransaction(signDoc)
+    return {
+      signed: isStdSignDoc(signed)
+        ? signed
+        : ({
+            bodyBytes: hexlify(signed.bodyBytes),
+            authInfoBytes: hexlify(signed.authInfoBytes),
+            chainId: signed.chainId,
+            accountNumber: signed.accountNumber.toString()
+          } as CosmSignDoc),
+      signature
+    } as CosmDirectSignResponse | AminoSignResponse
   }
 
   async sendTransaction(
     signedTransaction: Uint8Array
-  ): Promise<DeliverTxResponse> {
-    return this.client.broadcastTx(signedTransaction)
+  ): Promise<Required<GetTxResponse>> {
+    const response = await this.client.broadcastTx(signedTransaction)
+    const { tx, txResponse } = await this.client
+      .getQueryClient()
+      .tx.getTx(response.transactionHash)
+    assert(tx && txResponse)
+    return { tx, txResponse }
   }
 
   async signMessage(account: IChainAccount, message: any): Promise<any> {

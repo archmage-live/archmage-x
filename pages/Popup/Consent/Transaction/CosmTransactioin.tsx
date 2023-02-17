@@ -1,10 +1,12 @@
+import { StdSignDoc } from '@cosmjs/amino'
+import { SignDoc } from 'cosmjs-types/cosmos/tx/v1beta1/tx'
 import { ReactNode } from 'react'
 
 import { IChainAccount, INetwork, ISubWallet, IWallet } from '~lib/schema'
 import { ConsentRequest } from '~lib/services/consentService'
 import { NetworkInfo } from '~lib/services/network'
+import { formatTxPayload } from '~lib/services/provider'
 import { Balance } from '~lib/services/token'
-import { formatTxPayload } from "~lib/services/provider";
 
 export const CosmTransaction = ({
   origin,
@@ -30,9 +32,8 @@ export const CosmTransaction = ({
   onComplete: () => void
 }) => {
   const payload = formatTxPayload(network, request.payload)
-  const {
-  } = payload as {
-    txParams:,
+  const {} = payload as {
+    txParams: SignDoc | StdSignDoc
   }
 
   return <></>

@@ -178,12 +178,7 @@ class CosmOfflineSigner
     signerAddress: string,
     signDoc: SignDoc
   ): Promise<DirectSignResponse> {
-    const doc: CosmSignDoc = {
-      ...signDoc,
-      bodyBytes: hexlify(signDoc.bodyBytes),
-      authInfoBytes: hexlify(signDoc.authInfoBytes),
-      accountNumber: signDoc.accountNumber.toString()
-    }
+    const doc = toCosmSignDoc(signDoc)
 
     const response: CosmDirectSignResponse = await this.service.request({
       method: 'signTx',
@@ -192,12 +187,7 @@ class CosmOfflineSigner
     const { signed, signature } = response
 
     return {
-      signed: {
-        ...signed,
-        bodyBytes: arrayify(signed.bodyBytes),
-        authInfoBytes: arrayify(signed.authInfoBytes),
-        accountNumber: Long.fromString(signed.accountNumber)
-      },
+      signed: toSignDoc(signed),
       signature
     }
   }
@@ -213,4 +203,31 @@ export interface CosmSignDoc {
 export interface CosmDirectSignResponse {
   signed: CosmSignDoc
   signature: StdSignature
+}
+
+export function isCosmSignDoc(
+  signDoc: CosmSignDoc | SignDoc | StdSignDoc
+): signDoc is CosmSignDoc {
+  return (
+    !!(signDoc as CosmSignDoc).bodyBytes &&
+    typeof (signDoc as CosmSignDoc).bodyBytes === 'string'
+  )
+}
+
+export function toCosmSignDoc(signDoc: SignDoc): CosmSignDoc {
+  return {
+    bodyBytes: hexlify(signDoc.bodyBytes),
+    authInfoBytes: hexlify(signDoc.authInfoBytes),
+    chainId: signDoc.chainId,
+    accountNumber: signDoc.accountNumber.toString()
+  } as CosmSignDoc
+}
+
+export function toSignDoc(signDoc: CosmSignDoc): SignDoc {
+  return {
+    bodyBytes: arrayify(signDoc.bodyBytes),
+    authInfoBytes: arrayify(signDoc.authInfoBytes),
+    chainId: signDoc.chainId,
+    accountNumber: Long.fromString(signDoc.accountNumber)
+  } as SignDoc
 }
