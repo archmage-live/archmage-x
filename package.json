@@ -111,6 +111,8 @@
     "make-plural": "^7.1.0",
     "mitt": "^3.0.0",
     "os-browserify": "^0.3.0",
+    "osmojs": "14.0.0-rc.0",
+    "overlayscrollbars": "^2.1.0",
     "p-queue": "6.6.2",
     "path-browserify": "^1.0.1",
     "qrcode.react": "^3.1.0",
@@ -202,7 +204,12 @@
     "@cosmjs/crypto": "file:./resolutions/@cosmjs/crypto",
     "randombytes": "file:./resolutions/randombytes",
     "pbkdf2": "file:./resolutions/pbkdf2",
-    "randomfill": "file:./resolutions/randomfill"
+    "randomfill": "file:./resolutions/randomfill",
+    "@cosmjs/amino": "^0.29.5",
+    "@cosmjs/encoding": "^0.29.5",
+    "@cosmjs/proto-signing": "^0.29.5",
+    "@cosmjs/stargate": "^0.29.5",
+    "@cosmjs/tendermint-rpc": "^0.29.5"
   },
   "alias": {
     "stream": "./resolutions/stream.js"

@@ -1,6 +1,6 @@
 import { StdSignDoc } from '@cosmjs/amino'
 import { SignDoc } from 'cosmjs-types/cosmos/tx/v1beta1/tx'
-import { ReactNode } from 'react'
+import { ReactNode, useState } from 'react'
 
 import { IChainAccount, INetwork, ISubWallet, IWallet } from '~lib/schema'
 import { ConsentRequest } from '~lib/services/consentService'
@@ -35,6 +35,11 @@ export const CosmTransaction = ({
   const {} = payload as {
     txParams: SignDoc | StdSignDoc
   }
+
+  const [editGasPrice, setEditGasPrice] = useState(false)
+  const [editGasLimit, setEditGasLimit] = useState(false)
+
+  useCosmTxInfo()
 
   return <></>
 }

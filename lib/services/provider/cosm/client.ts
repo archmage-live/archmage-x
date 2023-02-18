@@ -31,6 +31,10 @@ export class CosmClient extends StargateClient {
     return new CosmClient(tmClient, options)
   }
 
+  getTmClient() {
+    return this.forceGetTmClient()
+  }
+
   getQueryClient(): QueryClient &
     AuthExtension &
     BankExtension &
@@ -51,7 +55,9 @@ export class CosmClient extends StargateClient {
 const COSM_CLIENTS = new Map<ChainId, CosmClient>()
 const COSM_CLIENTS_SYNCHRONIZER = new SingleSynchronizer()
 
-export async function getCosmClient(network: INetwork) {
+export async function getCosmClient(
+  network: INetwork
+): Promise<CosmClient | undefined> {
   let client = COSM_CLIENTS.get(network.id)
   if (!client) {
     const { promise, resolve } = COSM_CLIENTS_SYNCHRONIZER.get()

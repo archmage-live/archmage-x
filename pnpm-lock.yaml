@@ -10,6 +10,11 @@ overrides:
   randombytes: file:./resolutions/randombytes
   pbkdf2: file:./resolutions/pbkdf2
   randomfill: file:./resolutions/randomfill
+  '@cosmjs/amino': ^0.29.5
+  '@cosmjs/encoding': ^0.29.5
+  '@cosmjs/proto-signing': ^0.29.5
+  '@cosmjs/stargate': ^0.29.5
+  '@cosmjs/tendermint-rpc': ^0.29.5
 
 specifiers:
   '@archmagelive/plasmo': 0.56.0
@@ -131,6 +136,8 @@ specifiers:
   make-plural: ^7.1.0
   mitt: ^3.0.0
   os-browserify: ^0.3.0
+  osmojs: 14.0.0-rc.0
+  overlayscrollbars: ^2.1.0
   p-queue: 6.6.2
   path-browserify: ^1.0.1
   prettier: 2.7.1
@@ -258,6 +265,8 @@ dependencies:
   make-plural: 7.1.0
   mitt: 3.0.0
   os-browserify: 0.3.0
+  osmojs: 14.0.0-rc.0
+  overlayscrollbars: 2.1.0
   p-queue: 6.6.2
   path-browserify: 1.0.1
   qrcode.react: 3.1.0_react@18.2.0
@@ -3024,7 +3033,7 @@ packages:
     engines: {node: '>=10.0.0'}
     dependencies:
       '@babel/generator': 7.18.7
-      '@babel/runtime': 7.18.6
+      '@babel/runtime': 7.20.13
       '@lingui/conf': 3.14.0_typescript@4.7.4
       mkdirp: 1.0.4
     transitivePeerDependencies:
@@ -3078,7 +3087,7 @@ packages:
     resolution: {integrity: sha512-5GMAbIRad9FavqYsfZCRAwjcOLzE7tONDJe9lSYE5SSJbbG01RI5kR5P0B84DUhTI6cGXau+1dAcP9K+JbEx+g==}
     engines: {node: '>=10.0.0'}
     dependencies:
-      '@babel/runtime': 7.18.6
+      '@babel/runtime': 7.20.13
       '@endemolshinegroup/cosmiconfig-typescript-loader': 3.0.2_zmjss6mecb4soo3dpdlecld3xa
       chalk: 4.1.2
       cosmiconfig: 7.0.1
@@ -3394,6 +3403,15 @@ packages:
 
   /@openzeppelin/contracts/4.7.3:
     resolution: {integrity: sha512-dGRS0agJzu8ybo44pCIf3xBaPQN/65AIXNgK8+4gzKd5kbvlqyxryUYVLJv7fK98Seyd2hDZzVEHSWAh0Bt1Yw==}
+    dev: false
+
+  /@osmonauts/lcd/0.8.0:
+    resolution: {integrity: sha512-k7m2gAVnXc0H4m/eTq4z/8A6hFrr3MPS9wnLV4Xu9/K/WYltCnp2PpiObZm+feZUPK/svES6hxIQeO1bODLx8g==}
+    dependencies:
+      '@babel/runtime': 7.20.13
+      axios: 0.27.2
+    transitivePeerDependencies:
+      - debug
     dev: false
 
   /@parcel/bundler-default/2.7.0_@parcel+core@2.7.0:
@@ -10457,6 +10475,10 @@ packages:
     resolution: {integrity: sha512-XsP+KhQif4bjX1kbuSiySJFNAehNxgLb6hPRGJ9QsUr8ajHkuXGdrHmFUTUUXhDwVX2R5bY4JNZEwbUiMhV+MA==}
     dev: false
 
+  /long/5.2.1:
+    resolution: {integrity: sha512-GKSNGeNAtw8IryjjkhZxuKB3JzlcLTwjtiQCHKvqQet81I93kXslhDQruGI/QsddO83mcDToBVy7GqGS/zYf/A==}
+    dev: false
+
   /loose-envify/1.4.0:
     resolution: {integrity: sha512-lyuxPGr/Wfhrlem2CL/UcnUc1zcqKAImBDzukY7Y5F/yQiNdko6+fRLevlw1HgMySw7f611UIY408EtxRSoK3Q==}
     hasBin: true
@@ -11147,6 +11169,27 @@ packages:
   /os-tmpdir/1.0.2:
     resolution: {integrity: sha512-D2FR03Vir7FIu45XBY20mTb+/ZSWB00sjU9jdQXt83gDrI4Ztz5Fs7/yy74g2N5SVQY4xY1qDr4rNddwYRVX0g==}
     engines: {node: '>=0.10.0'}
+
+  /osmojs/14.0.0-rc.0:
+    resolution: {integrity: sha512-YXtg5mxaACWc0N8vKqWvdV3ZO9y/NgtJeUQPvjin+bkveEMkJA4RSN0nl0kRTKQIY6Tjt8YWgae+/98VF/2pzA==}
+    dependencies:
+      '@babel/runtime': 7.20.13
+      '@cosmjs/amino': 0.29.5
+      '@cosmjs/proto-signing': 0.29.5
+      '@cosmjs/stargate': 0.29.5
+      '@cosmjs/tendermint-rpc': 0.29.5
+      '@osmonauts/lcd': 0.8.0
+      long: 5.2.1
+      protobufjs: 6.11.3
+    transitivePeerDependencies:
+      - bufferutil
+      - debug
+      - utf-8-validate
+    dev: false
+
+  /overlayscrollbars/2.1.0:
+    resolution: {integrity: sha512-L6p4o4aWse5pDstRnJjZaos+al+bkuAgzGIlWwlsxRSgW6+7Kvrp+kAzlWoTZ1bgB4CJj+8u5bjdq8XHEhWjrw==}
+    dev: false
 
   /p-cancelable/2.1.1:
     resolution: {integrity: sha512-BZOr3nRQHOntUjTrH8+Lh54smKHoHyur8We1V8DSMVrl5A2malOOwuJRnKRDjSnkoeBh4at6BwEnb5I7Jl31wg==}
