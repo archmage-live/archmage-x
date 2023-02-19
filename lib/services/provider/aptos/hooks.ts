@@ -68,7 +68,14 @@ export function useAptosTransaction(
       rawTransaction: TxnBuilderTypes.RawTransaction
       userTransaction: Types.UserTransaction
     }
-  }, [network, account, rawTx, expirationSecs])
+  }, [
+    network,
+    account,
+    rawTx,
+    expirationSecs,
+    dontEstimateGasPrice,
+    dontEstimateGasLimit
+  ])
 
   useInterval(retry, !loading ? 5000 : null)
 
