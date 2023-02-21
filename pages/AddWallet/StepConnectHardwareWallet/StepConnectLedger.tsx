@@ -33,10 +33,22 @@ import {
   LEDGER_PATH_SCHEMAS,
   LedgerPathSchema,
   clearLedgerTransport,
+  getLedgerAddress,
+  getLedgerCosmApp,
   getLedgerEthApp
 } from '~lib/hardware/ledger'
-import { NETWORK_SCOPES, getNetworkKind, getNetworkScope } from '~lib/network'
-import { INetwork } from '~lib/schema'
+import {
+  NETWORK_SCOPES,
+  NetworkKind,
+  getNetworkKind,
+  getNetworkScope
+} from '~lib/network'
+import {
+  INetwork,
+  formatAddressForAux,
+  getAddressFromAux,
+  getAddressPrefix
+} from '~lib/schema'
 import { getNetworkInfo, useNetwork, useNetworks } from '~lib/services/network'
 import { useBalance } from '~lib/services/provider'
 import { useChainAccountsAux, useWallet } from '~lib/services/wallet'
@@ -52,6 +64,7 @@ import {
   useHdPath,
   useHwAccounts,
   useHwHash,
+  useHwTransport,
   useNetworkKind
 } from '~pages/AddWallet/addWallet'
 
@@ -66,6 +79,7 @@ export const StepConnectLedger = ({}: {}) => {
   const [addWalletKind, setAddWalletKind] = useAddWalletKind()
   const [, setHdPath] = useHdPath()
   const [, setDerivePosition] = useDerivePosition()
+  const [hwTransport] = useHwTransport()
   const [hwHash, setHwHash] = useHwHash()
   const [hwAccounts, setHwAccounts] = useHwAccounts()
 
@@ -94,17 +108,33 @@ export const StepConnectLedger = ({}: {}) => {
   }, [pathSchemas, pathSchemaIndex])
 
   const [addresses, setAddresses] = useState<string[]>([])
+  const [publicKeys, setPublicKeys] = useState<(string | undefined)[]>([])
   const [addressCount, setAddressCount] = useState(0)
 
   const getAddresses = useCallback(
     async (start: number, end: number) => {
-      if (!pathSchema) {
+      if (!network || !pathSchema || !hwTransport) {
         return
       }
 
       const addrs = addresses.slice()
+      const pubKeys = publicKeys.slice()
+      assert(addrs.length === pubKeys.length)
       try {
-        const [appEth, hwHash] = await getLedgerEthApp('hid')
+        let hwGot
+        switch (networkKind) {
+          case NetworkKind.EVM: {
+            hwGot = await getLedgerEthApp(hwTransport)
+            break
+          }
+          case NetworkKind.COSM: {
+            hwGot = await getLedgerCosmApp(hwTransport)
+            break
+          }
+          default:
+            return
+        }
+        const [hwApp, hwHash] = hwGot
 
         setHwHash(hwHash)
 
@@ -117,25 +147,38 @@ export const StepConnectLedger = ({}: {}) => {
             index,
             pathSchema.derivePosition
           )
-          const { address } = await appEth.getAddress(path)
+          const { address, publicKey } = await getLedgerAddress(hwApp, path)
           addrs.push(address)
+          pubKeys.push(publicKey)
           assert(addrs.length - 1 === index)
         }
         if (addrs.length > addresses.length) {
           setAddresses(addrs)
+          setPublicKeys(pubKeys)
         }
 
         setConnectError('')
       } catch (err: any) {
-        clearLedgerTransport('hid')
+        if (hwTransport) {
+          clearLedgerTransport(hwTransport)
+        }
         setConnectError(err.toString())
       }
     },
-    [addresses, pathSchema, setHwHash]
+    [
+      network,
+      pathSchema,
+      hwTransport,
+      addresses,
+      publicKeys,
+      networkKind,
+      setHwHash
+    ]
   )
 
   useEffect(() => {
     setAddresses([])
+    setPublicKeys([])
     setAddressCount(pathSchema ? 5 : 0)
     setConnectError('')
   }, [pathSchema])
@@ -189,15 +232,17 @@ export const StepConnectLedger = ({}: {}) => {
   useEffect(() => {
     const accounts: HardwareWalletAccount[] = []
     addresses.forEach((address, index) => {
+      assert(formatAddressForAux(address, networkKind) === address)
       if (checked.has(address)) {
         accounts.push({
           address,
-          index
+          index,
+          publicKey: publicKeys[index]
         })
       }
     })
     setHwAccounts(accounts)
-  }, [addresses, checked, setHwAccounts])
+  }, [addresses, publicKeys, checked, setHwAccounts, networkKind])
 
   useEffect(() => {
     if (!pathSchema) {
@@ -220,6 +265,7 @@ export const StepConnectLedger = ({}: {}) => {
 
   const existingWallet = useWallet(
     undefined,
+    // find wallet by hash
     addWalletKind === AddWalletKind.CONNECT_HARDWARE
       ? hwAccounts[0]?.address
       : hwHash
@@ -283,7 +329,7 @@ export const StepConnectLedger = ({}: {}) => {
 
       <Divider />
 
-      <FormControl>
+      <FormControl isDisabled={loading}>
         <FormLabel>Network</FormLabel>
         <HStack spacing={8}>
           <Select
@@ -328,7 +374,7 @@ export const StepConnectLedger = ({}: {}) => {
 
       {typeof pathSchemaIndex === 'number' && (
         <>
-          <FormControl>
+          <FormControl isDisabled={loading}>
             <FormLabel>Path Schema</FormLabel>
             <HStack spacing={8}>
               <Select
@@ -444,6 +490,8 @@ const SelectAddresses = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [addresses, setAddressCount, addressesVirtualizer.getVirtualItems()])
 
+  const addressPrefix = getAddressPrefix(network)
+
   return (
     <Box
       ref={parentRef}
@@ -504,7 +552,8 @@ const SelectAddresses = ({
                 network={network}
                 index={item.index}
                 path={path}
-                address={address}
+                address={getAddressFromAux(address, network)}
+                addressPrefix={addressPrefix}
                 isDisabled={existingAddresses.has(address)}
                 isChecked={
                   checked.has(address) || existingAddresses.has(address)
@@ -524,6 +573,7 @@ const AddressItem = ({
   index,
   path,
   address,
+  addressPrefix,
   isDisabled,
   isChecked,
   onChecked
@@ -532,6 +582,7 @@ const AddressItem = ({
   index: number
   path: string
   address: string
+  addressPrefix?: string
   isDisabled: boolean
   isChecked: boolean
   onChecked: (checked: boolean) => void
@@ -588,7 +639,7 @@ const AddressItem = ({
                     sx={{ fontFeatureSettings: '"tnum"' }}
                     fontSize="sm"
                     color="gray.500">
-                    {shortenAddress(address)}
+                    {shortenAddress(address, { leadingChars: addressPrefix })}
                   </Text>
 
                   <Text fontSize="xs" color="gray.500" textAlign="start">

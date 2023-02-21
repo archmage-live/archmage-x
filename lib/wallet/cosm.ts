@@ -147,12 +147,10 @@ export class CosmWallet implements KeystoreSigningWallet {
   }
 
   async signMessage(message: any): Promise<string> {
-    // TODO
     throw new Error('not implemented')
   }
 
   async signTypedData(typedData: any): Promise<string> {
-    // TODO
     throw new Error('not implemented')
   }
 

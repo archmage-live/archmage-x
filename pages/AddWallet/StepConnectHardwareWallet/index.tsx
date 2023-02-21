@@ -1,7 +1,10 @@
 import {
   Button,
   Divider,
+  FormControl,
+  FormLabel,
   Image,
+  Select,
   SimpleGrid,
   Stack,
   Text,
@@ -15,14 +18,23 @@ import { AlertBox } from '~components/AlertBox'
 import { clearLedgerTransport, getLedgerTransport } from '~lib/hardware/ledger'
 import { HardwareWalletType } from '~lib/wallet'
 
-import { useHwType } from '../addWallet'
+import {
+  HardwareWalletTransports,
+  useHwTransport,
+  useHwType
+} from '../addWallet'
 import { StepConnectLedger } from './StepConnectLedger'
 
 interface HardwareWalletInfo {
   logo: string
   filter?: string
-  title: string
-  description: string
+  transports: Map<
+    string | undefined,
+    {
+      title: string
+      description: string
+    }
+  >
 }
 
 export const StepConnectHardwareWallet = () => {
@@ -37,9 +49,24 @@ export const StepConnectHardwareWallet = () => {
       {
         logo: ledgerLogo,
         filter: filterForDarkInvert,
-        title: 'Plug in Ledger wallet',
-        description:
-          'Connect your Ledger wallet directly to your computer. Unlock your Ledger and open the Ethereum app.'
+        transports: new Map([
+          [
+            'hid',
+            {
+              title: 'Plug in Ledger wallet',
+              description:
+                'Connect your Ledger wallet directly to your computer. Unlock your Ledger.'
+            }
+          ],
+          [
+            'ble',
+            {
+              title: 'Bluetooth connection with Ledger wallet',
+              description:
+                'Make sure Bluetooth is enabled and pair your Ledger Nano X or Ledger Stax the first time you set it up with your computer. Unlock your Ledger.'
+            }
+          ]
+        ])
       }
     ]
   ])
@@ -47,21 +74,29 @@ export const StepConnectHardwareWallet = () => {
   const hwTypes = [HardwareWalletType.LEDGER]
 
   const [selectedHwType, setSelectedHwType] = useHwType()
+  const [hwTransport, setHwTransport] = useHwTransport()
 
   const [connectError, setConnectError] = useState('')
 
   useEffect(() => {
+    if (selectedHwType === HardwareWalletType.LEDGER) {
+      setHwTransport('hid')
+    } else {
+      setHwTransport(undefined)
+    }
     setConnectError('')
-  }, [selectedHwType])
+  }, [selectedHwType, setHwTransport])
 
   const connectLedger = useCallback(async () => {
-    try {
-      await getLedgerTransport('hid')
-    } catch (err) {
-      clearLedgerTransport('hid')
-      throw err
+    if (hwTransport) {
+      try {
+        await getLedgerTransport(hwTransport)
+      } catch (err) {
+        clearLedgerTransport(hwTransport)
+        throw err
+      }
     }
-  }, [])
+  }, [hwTransport])
 
   const [isLoading, setIsLoading] = useState(false)
 
@@ -124,13 +159,38 @@ export const StepConnectHardwareWallet = () => {
       </SimpleGrid>
 
       {selectedHwType && (
-        <Stack>
-          <Text fontSize="lg" fontWeight="medium">
-            {hardwareWallets.get(selectedHwType)!.title}
-          </Text>
-          <Text fontSize="lg" color="gray.500">
-            {hardwareWallets.get(selectedHwType)!.description}
-          </Text>
+        <Stack spacing={4}>
+          {hwTransport && (
+            <FormControl>
+              <FormLabel fontSize="lg">Transport</FormLabel>
+              <Select
+                value={hwTransport}
+                onChange={(e) => setHwTransport(e.target.value as any)}>
+                {HardwareWalletTransports.map(([transport, title]) => {
+                  return (
+                    <option key={transport} value={transport}>
+                      {title}
+                    </option>
+                  )
+                })}
+              </Select>
+            </FormControl>
+          )}
+
+          <Stack>
+            <Text fontSize="lg" fontWeight="medium">
+              {
+                hardwareWallets.get(selectedHwType)!.transports.get(hwTransport)
+                  ?.title
+              }
+            </Text>
+            <Text fontSize="lg" color="gray.500">
+              {
+                hardwareWallets.get(selectedHwType)!.transports.get(hwTransport)
+                  ?.description
+              }
+            </Text>
+          </Stack>
         </Stack>
       )}
 

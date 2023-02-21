@@ -55,9 +55,7 @@ export class CosmClient extends StargateClient {
 const COSM_CLIENTS = new Map<ChainId, CosmClient>()
 const COSM_CLIENTS_SYNCHRONIZER = new SingleSynchronizer()
 
-export async function getCosmClient(
-  network: INetwork
-): Promise<CosmClient | undefined> {
+export async function getCosmClient(network: INetwork): Promise<CosmClient> {
   let client = COSM_CLIENTS.get(network.id)
   if (!client) {
     const { promise, resolve } = COSM_CLIENTS_SYNCHRONIZER.get()

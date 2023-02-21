@@ -24,11 +24,14 @@ import {
   Index,
   PSEUDO_INDEX,
   SubIndex,
-  generateDefaultWalletName
+  formatAddressForAux,
+  generateDefaultWalletName,
+  getAddressFromAux
 } from '~lib/schema'
 import { IChainAccount } from '~lib/schema/chainAccount'
 import { ISubWallet, getDefaultSubName } from '~lib/schema/subWallet'
 import { IWallet } from '~lib/schema/wallet'
+import { NETWORK_SERVICE } from '~lib/services/network'
 import {
   HardwareWalletAccount,
   HardwareWalletType,
@@ -374,11 +377,14 @@ class WalletServicePartial implements IWalletService {
   ) {
     assert(indices.length === addresses.length)
     const accountsAux = indices.map((index, i) => {
+      const address = addresses[i]
+      assert(formatAddressForAux(address, networkKind) === address)
+
       return {
         masterId: id,
         index,
         networkKind,
-        address: addresses[i]
+        address
       } as IChainAccountAux
     })
     await DB.chainAccountsAux.bulkAdd(accountsAux)
@@ -706,27 +712,29 @@ class WalletService extends WalletServicePartial {
       [DB.wallets, DB.subWallets, DB.hdPaths, DB.chainAccountsAux],
       async () => {
         switch (wallet.type) {
-          case WalletType.HW_GROUP: {
-            assert(networkKind)
-            assert(hwAccounts && hwAccounts.length >= 1)
-            const addresses = checkAddresses(
-              networkKind,
-              hwAccounts.map(({ address }) => address)
-            )
-            const indices = hwAccounts.map(({ index }) => index)
-            assert(new Set(indices).size === hwAccounts.length)
-            const subWallets = await this.deriveSubWallets(
-              wallet.id,
-              addresses.length,
-              indices
-            )
-            await this.createChainAccountsAux(
-              wallet.id,
-              subWallets.map((w) => w.index),
-              networkKind,
-              addresses
-            )
-          }
+          case WalletType.HW_GROUP:
+            {
+              assert(networkKind)
+              assert(hwAccounts && hwAccounts.length >= 1)
+              const addresses = checkAddresses(
+                networkKind,
+                hwAccounts.map(({ address }) => address)
+              )
+              const indices = hwAccounts.map(({ index }) => index)
+              assert(new Set(indices).size === hwAccounts.length)
+              const subWallets = await this.deriveSubWallets(
+                wallet.id,
+                addresses.length,
+                indices
+              )
+              await this.createChainAccountsAux(
+                wallet.id,
+                subWallets.map((w) => w.index),
+                networkKind,
+                addresses
+              )
+            }
+            break
         }
       }
     )
@@ -1201,7 +1209,7 @@ export function useHdPaths(
 async function ensureChainAccounts(
   wallet: IWallet,
   networkKind: NetworkKind,
-  chainId: number | string
+  chainId: ChainId
 ) {
   if (!isWalletGroup(wallet.type)) {
     await ensureChainAccount(wallet, PSEUDO_INDEX, networkKind, chainId)
@@ -1296,7 +1304,13 @@ async function ensureChainAccounts(
         case WalletType.HW_GROUP: {
           assert(accountsAuxMap)
           const aux = accountsAuxMap.get(subWallet.index)
-          address = aux?.address
+          const network = await NETWORK_SERVICE.getNetwork({
+            kind: networkKind,
+            chainId
+          })
+          if (aux && network) {
+            address = getAddressFromAux(aux, network)
+          }
           break
         }
       }
@@ -1410,7 +1424,10 @@ async function ensureChainAccount(
         .where('[masterId+index+networkKind]')
         .equals([wallet.id, index, networkKind])
         .first()
-      address = aux?.address
+      const network = await NETWORK_SERVICE.getNetwork({kind: networkKind, chainId})
+      if (aux && network) {
+        address = getAddressFromAux(aux, network)
+      }
       break
     }
     case WalletType.WATCH_GROUP:
@@ -1422,7 +1439,10 @@ async function ensureChainAccount(
         .where('[masterId+index+networkKind]')
         .equals([wallet.id, index, networkKind])
         .first()
-      address = aux?.address
+      const network = await NETWORK_SERVICE.getNetwork({kind: networkKind, chainId})
+      if (aux && network) {
+        address = getAddressFromAux(aux, network)
+      }
       break
     }
   }

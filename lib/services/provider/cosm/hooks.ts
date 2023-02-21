@@ -67,7 +67,11 @@ export function useCosmTransaction(
       })
     }
 
-    return await client.getQueryClient().tx.simulateTx(tx)
+    const { gasInfo, result } = await client.getQueryClient().tx.simulateTx(tx)
+    return {
+      gasUsed: gasInfo?.gasUsed,
+      events: result?.events
+    }
   }, [network, account, signDoc])
 
   useInterval(retry, !loading ? 5000 : null)

@@ -1,3 +1,4 @@
+import LedgerAppBtc from '@ledgerhq/hw-app-btc'
 import LedgerAppCosmos from '@ledgerhq/hw-app-cosmos'
 import LedgerAppEth from '@ledgerhq/hw-app-eth'
 import TransportWebBLE from '@ledgerhq/hw-transport-web-ble'
@@ -49,6 +50,18 @@ export function clearLedgerTransport(type: 'hid' | 'ble') {
   }
 }
 
+export async function getLedgerBtcApp(
+  type: 'hid' | 'ble' = 'hid'
+): Promise<[LedgerAppBtc, string]> {
+  const transport = await getLedgerTransport(type)
+  const appBtc = new LedgerAppBtc(transport)
+  const hash = await appBtc.getWalletXpub({
+    path: "m/44'/0'/0'",
+    xpubVersion: 0x0488b21e
+  })
+  return [appBtc, hash]
+}
+
 export async function getLedgerEthApp(
   type: 'hid' | 'ble' = 'hid'
 ): Promise<[LedgerAppEth, string]> {
@@ -80,6 +93,22 @@ export async function getLedgerCosmApp(
   return [appCosm, hash]
 }
 
+export async function getLedgerAddress(
+  app: LedgerAppEth | LedgerAppCosmos,
+  path: string,
+  prefix: string = 'cosmos'
+): Promise<{
+  publicKey: string
+  address: string
+}> {
+  if (app instanceof LedgerAppEth) {
+    return await app.getAddress(path)
+  } else if (app instanceof LedgerAppCosmos) {
+    return await app.getAddress(path, prefix!)
+  }
+  return {} as any
+}
+
 export interface LedgerPathSchema {
   description: string
   pathSchema: string
@@ -87,6 +116,26 @@ export interface LedgerPathSchema {
 }
 
 export const LEDGER_PATH_SCHEMAS = new Map<NetworkKind, LedgerPathSchema[]>([
+  [
+    'btc' as NetworkKind, // TODO
+    [
+      {
+        description: 'BIP44 Standard',
+        pathSchema: "m/44'/0'/0'/0/0",
+        derivePosition: DerivePosition.ADDRESS_INDEX
+      },
+      {
+        description: 'BIP49 Standard',
+        pathSchema: "m/49'/0'/0'/0/0",
+        derivePosition: DerivePosition.ADDRESS_INDEX
+      },
+      {
+        description: 'BIP84 Standard',
+        pathSchema: "m/84'/0'/0'/0/0",
+        derivePosition: DerivePosition.ADDRESS_INDEX
+      }
+    ]
+  ],
   [
     NetworkKind.EVM,
     [

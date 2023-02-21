@@ -29,6 +29,8 @@ export enum AddWalletKind {
   WALLET_CONNECT_GROUP
 }
 
+export const HardwareWalletTransports = [['hid', 'USB/HID'], ['ble', 'Bluetooth']]
+
 const addWalletKindAtom = atom<AddWalletKind>(AddWalletKind.NEW_HD)
 const nameAtom = atom('')
 const mnemonicAtom = atom<string[]>([])
@@ -38,6 +40,7 @@ const derivePositionAtom = atom<DerivePosition | undefined>(undefined)
 const privateKeyAtom = atom('')
 const networkKindAtom = atom<NetworkKind>(NetworkKind.EVM)
 const hwTypeAtom = atom<HardwareWalletType | undefined>(undefined)
+const hwTransportAtom = atom<'hid' | 'ble' | undefined>(undefined)
 const addressesAtom = atom<string[]>([])
 const hwHash = atom<string>('')
 const hwAccountsAtom = atom<HardwareWalletAccount[]>([])
@@ -80,6 +83,10 @@ export function useHwType() {
   return useAtom(hwTypeAtom)
 }
 
+export function useHwTransport() {
+  return useAtom(hwTransportAtom)
+}
+
 export function useAddresses() {
   return useAtom(addressesAtom)
 }
@@ -109,6 +116,7 @@ export function useClear() {
   const [, setName] = useName()
   const [, setNetworkKind] = useNetworkKind()
   const [, setHwType] = useHwType()
+  const [, setHwTransport] = useHwTransport()
   const [, setAddresses] = useAddresses()
   const [, setHwHash] = useHwHash()
   const [, setHwAccounts] = useHwAccounts()
@@ -123,6 +131,7 @@ export function useClear() {
     setName('')
     setNetworkKind(NetworkKind.EVM)
     setHwType(undefined)
+    setHwTransport(undefined)
     setAddresses([])
     setHwHash('')
     setHwAccounts([])

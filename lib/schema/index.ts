@@ -1,3 +1,9 @@
+import { fromBech32, toBech32 } from '@cosmjs/encoding'
+
+import { NetworkKind } from '~lib/network'
+import { CosmAppChainInfo } from '~lib/network/cosm'
+import { IChainAccountAux } from '~lib/schema/chainAccountAux'
+import { INetwork } from '~lib/schema/network'
 import { SubIndex } from '~lib/schema/subWallet'
 
 export * from './network'
@@ -45,4 +51,39 @@ export function mapBySubIndex<T extends SubIndex>(
     m.set(item.index, item)
   }
   return map
+}
+
+export function getAddressPrefix(network: INetwork): string | undefined {
+  switch (network.kind) {
+    case NetworkKind.COSM: {
+      const info = network.info as CosmAppChainInfo
+      return info.bech32Config.bech32PrefixAccAddr
+    }
+    default:
+      return undefined
+  }
+}
+
+export function getAddressFromAux(
+  aux: IChainAccountAux | string,
+  network: INetwork
+) {
+  const address = typeof aux === 'string' ? aux : aux.address
+  switch (network.kind) {
+    case NetworkKind.COSM: {
+      return toBech32(getAddressPrefix(network)!, fromBech32(address).data)
+    }
+    default:
+      return address
+  }
+}
+
+export function formatAddressForAux(address: string, networkKind: NetworkKind) {
+  switch (networkKind) {
+    case NetworkKind.COSM: {
+      return toBech32('cosmos', fromBech32(address).data)
+    }
+    default:
+      return address
+  }
 }
