@@ -9,21 +9,25 @@ import {
   Input,
   Select,
   Stack,
-  chakra
+  chakra,
+  useDisclosure
 } from '@chakra-ui/react'
 import { useCallback, useEffect, useState } from 'react'
 import { useWizard } from 'react-use-wizard'
 
 import { AlertBox } from '~components/AlertBox'
 import { NETWORK_SCOPES, NetworkKind, getNetworkKind } from '~lib/network'
-import { checkAddress } from '~lib/wallet'
+import { WalletType, checkAddress } from '~lib/wallet'
 
 import { NameInput } from '../NameInput'
+import { SelectExistingWallet, WalletItemButton } from '../SelectExistingWallet'
 import {
   AddWalletKind,
+  useAddSubWallets,
   useAddWallet,
   useAddWalletKind,
   useAddresses,
+  useExistingWallet,
   useName,
   useNetworkKind
 } from '../addWallet'
@@ -32,6 +36,7 @@ export const ImportWatchAddress = () => {
   const { nextStep } = useWizard()
 
   const [, setAddWalletKind] = useAddWalletKind()
+  const [existingWallet, setExistingWallet] = useExistingWallet()
   const [networkKind, setNetworkKind] = useNetworkKind()
   const [addresses, setAddresses] = useAddresses()
   const [name, setName] = useName()
@@ -41,6 +46,15 @@ export const ImportWatchAddress = () => {
     setAddresses([''])
     setName('')
   }, [setAddWalletKind, setNetworkKind, setAddresses, setName])
+
+  const [
+    willAddToExistingWatchGroupChecked,
+    setWillAddToExistingWatchGroupChecked
+  ] = useState(false)
+  useEffect(() => {
+    setWillAddToExistingWatchGroupChecked(false)
+    setExistingWallet(undefined)
+  }, [networkKind, setExistingWallet])
 
   const [isWatchGroupChecked, setIsWatchGroupChecked] = useState(false)
   useEffect(() => {
@@ -54,12 +68,17 @@ export const ImportWatchAddress = () => {
     )
   }, [isWatchGroupChecked, setAddWalletKind, setAddresses])
 
+  useEffect(() => {
+    setIsWatchGroupChecked(willAddToExistingWatchGroupChecked)
+  }, [willAddToExistingWatchGroupChecked])
+
   const [alert, setAlert] = useState('')
   useEffect(() => {
     setAlert('')
   }, [addresses, name])
 
   const addWallet = useAddWallet()
+  const addSubWallets = useAddSubWallets()
 
   const onImport = useCallback(async () => {
     const addrs = addresses.map((addr) => checkAddress(networkKind, addr))
@@ -72,14 +91,35 @@ export const ImportWatchAddress = () => {
       return
     }
 
-    const { error } = await addWallet()
-    if (error) {
-      setAlert(error)
-      return
+    if (!willAddToExistingWatchGroupChecked) {
+      const { error } = await addWallet()
+      if (error) {
+        setAlert(error)
+        return
+      }
+    } else {
+      const { error } = await addSubWallets()
+      if (error) {
+        setAlert(error)
+        return
+      }
     }
 
     nextStep()
-  }, [addresses, addWallet, nextStep, networkKind])
+  }, [
+    addresses,
+    willAddToExistingWatchGroupChecked,
+    nextStep,
+    networkKind,
+    addWallet,
+    addSubWallets
+  ])
+
+  const {
+    isOpen: isSelectOpen,
+    onOpen: onSelectOpen,
+    onClose: onSelectClose
+  } = useDisclosure()
 
   return (
     <Stack spacing={12}>
@@ -100,15 +140,40 @@ export const ImportWatchAddress = () => {
           </Select>
         </FormControl>
 
-        <Checkbox
-          size="lg"
-          colorScheme="purple"
-          isChecked={isWatchGroupChecked}
-          onChange={(e) => setIsWatchGroupChecked(e.target.checked)}>
-          <chakra.span color="gray.500" fontSize="xl">
-            Create group to watch multiple addresses.
-          </chakra.span>
-        </Checkbox>
+        <Stack>
+          <Checkbox
+            size="lg"
+            colorScheme="purple"
+            isChecked={willAddToExistingWatchGroupChecked}
+            onChange={(e) => {
+              if (e.target.checked) {
+                onSelectOpen()
+              } else {
+                setWillAddToExistingWatchGroupChecked(false)
+                setExistingWallet(undefined)
+              }
+            }}>
+            <chakra.span color="gray.500" fontSize="xl">
+              Add addresses to an existing watch group wallet.
+            </chakra.span>
+          </Checkbox>
+
+          {existingWallet && (
+            <WalletItemButton wallet={existingWallet} onClick={onSelectOpen} />
+          )}
+        </Stack>
+
+        {!willAddToExistingWatchGroupChecked && (
+          <Checkbox
+            size="lg"
+            colorScheme="purple"
+            isChecked={isWatchGroupChecked}
+            onChange={(e) => setIsWatchGroupChecked(e.target.checked)}>
+            <chakra.span color="gray.500" fontSize="xl">
+              Create group to watch multiple addresses.
+            </chakra.span>
+          </Checkbox>
+        )}
 
         <Stack spacing={3}>
           {addresses.map((address, i) => {
@@ -162,13 +227,15 @@ export const ImportWatchAddress = () => {
           })}
         </Stack>
 
-        <NameInput
-          value={name}
-          onChange={setName}
-          placeholder={
-            isWatchGroupChecked ? 'Group Name (Optional)' : undefined
-          }
-        />
+        {!willAddToExistingWatchGroupChecked && (
+          <NameInput
+            value={name}
+            onChange={setName}
+            placeholder={
+              isWatchGroupChecked ? 'Group Name (Optional)' : undefined
+            }
+          />
+        )}
 
         <AlertBox>{alert}</AlertBox>
       </Stack>
@@ -182,6 +249,18 @@ export const ImportWatchAddress = () => {
         onClick={onImport}>
         Import Wallet
       </Button>
+
+      <SelectExistingWallet
+        networkKind={networkKind}
+        walletType={WalletType.WATCH_GROUP}
+        selected={existingWallet}
+        onSelected={(w) => {
+          setWillAddToExistingWatchGroupChecked(true)
+          setExistingWallet(w)
+        }}
+        isOpen={isSelectOpen}
+        onClose={onSelectClose}
+      />
     </Stack>
   )
 }
