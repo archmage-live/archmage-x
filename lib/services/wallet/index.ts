@@ -133,6 +133,10 @@ export interface IWalletService {
         }
   ): Promise<IChainAccount[]>
 
+  getChainAccountAux(
+    id: number | Omit<ChainAccountIndex, 'chainId'>
+  ): Promise<IChainAccountAux | undefined>
+
   getChainAccountsAux(query: {
     masterId: number
     networkKind: NetworkKind
@@ -298,6 +302,27 @@ class WalletServicePartial implements IWalletService {
           )
           .toArray()
       }
+    }
+  }
+
+  async getChainAccountAux(
+    id: number | Omit<ChainAccountIndex, 'chainId'>
+  ): Promise<IChainAccountAux | undefined> {
+    if (typeof id === 'number') {
+      return DB.chainAccountsAux.get(id)
+    } else {
+      const { masterId, index, networkKind } = id
+      const wallet = await this.getWallet(masterId)
+      if (!wallet) {
+        return undefined
+      }
+      return DB.chainAccountsAux
+        .where({
+          masterId,
+          index,
+          networkKind
+        })
+        .first()
     }
   }
 

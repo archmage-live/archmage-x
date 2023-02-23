@@ -123,7 +123,7 @@ const WalletConnectSigning = ({
 }) => {
   const [url, setUrl] = useState('')
 
-  const { provider, waitConnected, refresh, accounts, chainId } =
+  const { provider, waitConnected, refresh, addresses, chainId } =
     useWalletConnect(network, setUrl)
 
   const [signingErr, setSigningErr] = useState('')
@@ -183,7 +183,7 @@ const WalletConnectSigning = ({
   }, [provider, waitConnected, onSigned, onClose, payload])
 
   const mismatchedAccount =
-    accounts && accounts.every((acc) => acc !== account.address)
+    addresses && addresses.every((addr) => addr !== account.address)
   const mismatchedChainId =
     typeof chainId === 'number' && chainId !== network.chainId
 

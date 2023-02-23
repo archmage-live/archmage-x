@@ -68,7 +68,7 @@ import {
 import { Balance } from '~lib/services/token'
 import { useTransactionDescription } from '~lib/services/transaction/evmService'
 import { shortenAddress } from '~lib/utils'
-import { isWalletConnectProtocol, isWalletHardware } from '~lib/wallet'
+import { isHardwareWallet, isWalletConnectProtocol } from '~lib/wallet'
 import { EvmGasFeeEditSection } from '~pages/Popup/Consent/Transaction/EvmGasFeeEditSection'
 import {
   WalletConnectSigningModel,
@@ -689,7 +689,7 @@ export const EvmTransaction = ({
             </AlertBox>
           )}
 
-          {isWalletHardware(wallet.type) && (
+          {isHardwareWallet(wallet.type) && (
             <AlertBox level="info">
               Prior to clicking confirm, you should plug in your hardware wallet
               device and select the appropriate app.

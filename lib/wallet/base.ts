@@ -47,7 +47,18 @@ export function hasWalletKeystore(type: WalletType) {
   }
 }
 
-export function isWalletHardware(type: WalletType) {
+export function isWatchWallet(type: WalletType) {
+  switch (type) {
+    case WalletType.WATCH:
+    // pass through
+    case WalletType.WATCH_GROUP:
+      return true
+    default:
+      return false
+  }
+}
+
+export function isHardwareWallet(type: WalletType) {
   switch (type) {
     case WalletType.HW:
     // pass through
@@ -72,7 +83,7 @@ export function isWalletConnectProtocol(type: WalletType) {
 export function canWalletSign(type: WalletType) {
   return (
     hasWalletKeystore(type) ||
-    isWalletHardware(type) ||
+    isHardwareWallet(type) ||
     isWalletConnectProtocol(type)
   )
 }

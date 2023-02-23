@@ -41,7 +41,7 @@ import {
   HardwareWalletType,
   getSigningWallet,
   hasWalletKeystore,
-  isWalletHardware
+  isHardwareWallet
 } from '~lib/wallet'
 
 import { CosmClient, getCosmClient } from './client'
@@ -215,7 +215,7 @@ export class CosmPermissionedProvider extends BasePermissionedProvider {
 
     const signer = await getSigningWallet(this.account)
 
-    const hwType = isWalletHardware(wallet.type)
+    const hwType = isHardwareWallet(wallet.type)
       ? wallet.info.hwType
       : undefined
 
@@ -225,7 +225,8 @@ export class CosmPermissionedProvider extends BasePermissionedProvider {
           ? wallet.name
           : `${wallet.name} / ${subWallet.name}`,
       algo: 'secp256k1',
-      pubKey: signer?.publicKey ? signer.publicKey : '', // TODO
+      // for watch wallets & WalletConnect wallets, public key does not exist
+      pubKey: signer?.publicKey ? signer.publicKey : '',
       address: hexlify(data),
       bech32Address: bech32Address,
       isNanoLedger: hwType === HardwareWalletType.LEDGER,

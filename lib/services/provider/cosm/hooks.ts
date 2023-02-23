@@ -3,6 +3,8 @@ import { TxBodyEncodeObject, makeAuthInfoBytes } from '@cosmjs/proto-signing'
 import { SignMode } from 'cosmjs-types/cosmos/tx/signing/v1beta1/signing'
 import { SignDoc, TxRaw } from 'cosmjs-types/cosmos/tx/v1beta1/tx'
 import { Any } from 'cosmjs-types/google/protobuf/any'
+import { Event } from 'cosmjs-types/tendermint/abci/types'
+import Long from 'long'
 import { useAsyncRetry, useInterval } from 'react-use'
 
 import { CosmAppChainInfo } from '~lib/network/cosm'
@@ -16,7 +18,7 @@ export function useCosmTransaction(
   network?: INetwork,
   account?: IChainAccount,
   signDoc?: SignDoc | StdSignDoc
-) {
+): { gasUsed?: Long; events?: Event[] } | undefined {
   const { value, loading, retry } = useAsyncRetry(async () => {
     if (!network || !account?.address || !signDoc) {
       return
@@ -34,15 +36,27 @@ export function useCosmTransaction(
       const aminoTypes = createDefaultAminoTypes(
         info.bech32Config.bech32PrefixAccAddr
       )
-      const signedTxBody = {
-        messages: signDoc.msgs.map((msg) => aminoTypes.fromAmino(msg)),
-        memo: signDoc.memo
+      let signedTxBody
+      try {
+        signedTxBody = {
+          messages: signDoc.msgs.map((msg) => aminoTypes.fromAmino(msg)),
+          memo: signDoc.memo
+        }
+      } catch (err: any) {
+        console.warn(err.toString())
+        return
       }
       const signedTxBodyEncodeObject: TxBodyEncodeObject = {
         typeUrl: '/cosmos.tx.v1beta1.TxBody',
         value: signedTxBody
       }
-      const signedTxBodyBytes = registry.encode(signedTxBodyEncodeObject)
+      let signedTxBodyBytes
+      try {
+        signedTxBodyBytes = registry.encode(signedTxBodyEncodeObject)
+      } catch (err: any) {
+        console.warn(err.toString())
+        return
+      }
 
       const pubkey = {} as Any // TODO
       const signedAuthInfoBytes = makeAuthInfoBytes(

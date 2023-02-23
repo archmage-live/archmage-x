@@ -2,7 +2,7 @@ import assert from 'assert'
 
 import { NetworkKind } from '~lib/network'
 import { CosmAppChainInfo } from '~lib/network/cosm'
-import { IChainAccount } from '~lib/schema'
+import { IChainAccount, IChainAccountAux } from '~lib/schema'
 import { IWallet } from '~lib/schema/wallet'
 import { NETWORK_SERVICE } from '~lib/services/network'
 import { WALLET_SERVICE } from '~lib/services/wallet'
@@ -16,7 +16,7 @@ import {
   canWalletSign,
   getDerivePosition,
   hasWalletKeystore,
-  isWalletHardware
+  isHardwareWallet
 } from './base'
 import { CosmWallet } from './cosm'
 import { EvmWallet } from './evm'
@@ -124,7 +124,8 @@ export async function getMasterSigningWallet(
 
 export async function getHardwareSigningWallet(
   wallet: IWallet,
-  account: IChainAccount
+  account: IChainAccount,
+  aux?: IChainAccountAux
 ): Promise<SigningWallet | undefined> {
   if (hasWalletKeystore(wallet.type) || !canWalletSign(wallet.type)) {
     return undefined
@@ -140,7 +141,8 @@ export async function getHardwareSigningWallet(
               pathTemplate: wallet.info.path!,
               index: account.index,
               derivePosition: wallet.info.derivePosition
-            }
+            },
+        aux?.info.publicKey
       )
   }
 }
@@ -178,7 +180,12 @@ export async function getSigningWallet(
 
     assert(signingWallet.address === account.address)
     return signingWallet
-  } else if (isWalletHardware(master.type)) {
-    return getHardwareSigningWallet(master, account)
+  } else if (isHardwareWallet(master.type)) {
+    const aux = await WALLET_SERVICE.getChainAccountAux({
+      masterId: account.masterId,
+      index: account.index,
+      networkKind: account.networkKind
+    })
+    return getHardwareSigningWallet(master, account, aux)
   }
 }
