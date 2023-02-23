@@ -128,6 +128,6 @@ export function useWalletConnect(
     waitConnected,
     refresh,
     chainId,
-    accounts
+    addresses: accounts
   }
 }

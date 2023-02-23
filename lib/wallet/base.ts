@@ -135,7 +135,7 @@ export enum HardwareWalletType {
   LEDGER = 'Ledger'
 }
 
-export interface HardwareWalletAccount {
+export interface WalletAccount {
   address: string
   index: number
   publicKey?: string

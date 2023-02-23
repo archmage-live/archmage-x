@@ -11,8 +11,10 @@ import {
 } from '@chakra-ui/react'
 
 import { NetworkKind, getNetworkScope } from '~lib/network'
-import { IWallet } from '~lib/schema'
-import { useExistingGroupWallets } from '~lib/services/wallet'
+import {
+  ExistingGroupWallet,
+  useExistingGroupWallets
+} from '~lib/services/wallet'
 import { WalletType } from '~lib/wallet'
 
 import { WalletList } from './WalletList'
@@ -29,8 +31,8 @@ export const SelectExistingWallet = ({
 }: {
   networkKind?: NetworkKind
   walletType: WalletType
-  selected?: IWallet
-  onSelected: (wallet: IWallet) => void
+  selected?: ExistingGroupWallet
+  onSelected: (wallet: ExistingGroupWallet) => void
   isOpen: boolean
   onClose: () => void
 }) => {

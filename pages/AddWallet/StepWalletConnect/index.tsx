@@ -21,54 +21,58 @@ import { useWizard } from 'react-use-wizard'
 import { AlertBox } from '~components/AlertBox'
 import { WallectConnectQRCode } from '~components/WalletConnectQRCode'
 import { NETWORK_SCOPES, NetworkKind, getNetworkKind } from '~lib/network'
+import { PSEUDO_INDEX } from '~lib/schema'
 import { NETWORK_SERVICE } from '~lib/services/network'
 import { checkAddress } from '~lib/wallet'
 import { useWalletConnect } from '~lib/walletConnect'
-import { NameInput } from '~pages/AddWallet/NameInput'
+
+import { NameInput } from '../NameInput'
 import {
   AddWalletKind,
+  useAccounts,
   useAddWallet,
   useAddWalletKind,
-  useAddresses,
   useName,
   useNetworkKind
-} from '~pages/AddWallet/addWallet'
+} from '../addWallet'
 
 export const StepWalletConnect = () => {
   const { nextStep } = useWizard()
 
   const [, setAddWalletKind] = useAddWalletKind()
   const [networkKind, setNetworkKind] = useNetworkKind()
-  const [addresses, setAddresses] = useAddresses()
+  const [accounts, setAccounts] = useAccounts()
   const [name, setName] = useName()
   useEffect(() => {
     setAddWalletKind(AddWalletKind.WALLET_CONNECT)
     setNetworkKind(NetworkKind.EVM)
-    setAddresses([])
+    setAccounts([])
     setName('')
-  }, [setAddWalletKind, setNetworkKind, setAddresses, setName])
+  }, [setAddWalletKind, setNetworkKind, setAccounts, setName])
 
   const [isGroupChecked, setIsGroupChecked] = useState(false)
   useEffect(() => {
     if (!isGroupChecked) {
-      setAddresses((addresses) => addresses.slice(0, 1))
+      setAccounts((accounts) => accounts.slice(0, 1))
     }
     setAddWalletKind(
       !isGroupChecked
         ? AddWalletKind.WALLET_CONNECT
         : AddWalletKind.WALLET_CONNECT_GROUP
     )
-  }, [isGroupChecked, setAddWalletKind, setAddresses])
+  }, [isGroupChecked, setAddWalletKind, setAccounts])
 
   const [alert, setAlert] = useState('')
   useEffect(() => {
     setAlert('')
-  }, [addresses, name])
+  }, [accounts, name])
 
   const addWallet = useAddWallet()
 
   const onImport = useCallback(async () => {
-    const addrs = addresses.map((addr) => checkAddress(networkKind, addr))
+    const addrs = accounts.map(({ address }) =>
+      checkAddress(networkKind, address)
+    )
     if (addrs.some((addr) => !addr)) {
       setAlert('Invalid address')
       return
@@ -84,8 +88,8 @@ export const StepWalletConnect = () => {
       return
     }
 
-    nextStep()
-  }, [addresses, addWallet, nextStep, networkKind])
+    await nextStep()
+  }, [accounts, addWallet, nextStep, networkKind])
 
   // WalletConnect 1.0 only supports Ethereum networks
   // Here we only connect it with Ethereum mainnet
@@ -98,36 +102,39 @@ export const StepWalletConnect = () => {
 
   const [url, setUrl] = useState('')
 
-  const { accounts, refresh } = useWalletConnect(network, setUrl)
+  const { addresses, refresh } = useWalletConnect(network, setUrl)
 
   useEffect(() => {
-    if (!accounts?.length) {
+    if (!addresses?.length) {
       return
     }
-    setAddresses((addresses) => {
-      let addrs = addresses.slice()
+    setAccounts((accounts) => {
+      let accs = accounts.slice()
       if (isGroupChecked) {
         let update = false
-        const existing = new Set(addrs)
-        for (const addr of accounts) {
-          if (!existing.has(addr)) {
-            addrs.push(addr)
+        const existing = new Set(accs.map((c) => c.address))
+        for (const address of addresses) {
+          if (!existing.has(address)) {
+            accs.push({
+              address,
+              index: accs.length
+            })
             update = true
           }
         }
         if (!update) {
-          return addresses
+          return accounts
         }
       } else {
-        if (addresses[0] === accounts[0]) {
-          return addresses
+        if (accounts[0].address === addresses[0]) {
+          return accounts
         }
-        addrs = [accounts[0]]
+        accs = [{ address: addresses[0], index: PSEUDO_INDEX }]
       }
       refresh()
-      return addrs
+      return accs
     })
-  }, [accounts, refresh, setAddresses, isGroupChecked])
+  }, [addresses, refresh, setAccounts, isGroupChecked])
 
   return (
     <Stack p="4" pt="16" spacing={8}>
@@ -174,7 +181,7 @@ export const StepWalletConnect = () => {
           </Checkbox>
 
           <Stack spacing={3}>
-            {addresses.map((address, i) => {
+            {accounts.map(({ address }, i) => {
               return (
                 <HStack key={i}>
                   <Input size="lg" value={address} readOnly />
@@ -184,11 +191,11 @@ export const StepWalletConnect = () => {
                       size="xs"
                       aria-label="Remove address"
                       icon={<MinusIcon />}
-                      visibility={addresses.length > 1 ? 'visible' : 'hidden'}
+                      visibility={accounts.length > 1 ? 'visible' : 'hidden'}
                       onClick={() =>
-                        setAddresses([
-                          ...addresses.slice(0, i),
-                          ...addresses.slice(i + 1)
+                        setAccounts([
+                          ...accounts.slice(0, i),
+                          ...accounts.slice(i + 1)
                         ])
                       }
                     />
@@ -215,7 +222,7 @@ export const StepWalletConnect = () => {
         size="lg"
         colorScheme="purple"
         borderRadius="8px"
-        disabled={!addresses.length || addresses.some((addr) => !addr)}
+        disabled={!accounts.length || accounts.some(({ address }) => !address)}
         onClick={onImport}>
         Connect
       </Button>

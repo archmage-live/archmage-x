@@ -113,7 +113,6 @@ export class CosmWallet implements KeystoreSigningWallet {
 
     ws.wallet = wallet
     ws.prefix = this.prefix
-    console.log(await wallet.getAccounts())
     const account = (
       await (wallet as any).getAccountsWithPrivkeys()
     )[0] as AccountDataWithPrivkey

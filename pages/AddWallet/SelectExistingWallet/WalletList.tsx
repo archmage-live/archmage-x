@@ -2,7 +2,7 @@ import { Box } from '@chakra-ui/react'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { useRef } from 'react'
 
-import { INetwork, IWallet } from '~lib/schema'
+import { ExistingGroupWallet } from '~lib/services/wallet'
 
 import { WalletItem } from './WalletItem'
 
@@ -12,9 +12,9 @@ export const WalletList = ({
   onSelected,
   renderItems = 6
 }: {
-  wallets: IWallet[]
-  selected?: IWallet
-  onSelected: (wallet: IWallet) => void
+  wallets: ExistingGroupWallet[]
+  selected?: ExistingGroupWallet
+  onSelected: (wallet: ExistingGroupWallet) => void
   renderItems?: number
 }) => {
   const itemSize = 56
@@ -24,10 +24,10 @@ export const WalletList = ({
   const walletsVirtualizer = useVirtualizer({
     count: wallets.length || 0,
     getScrollElement: () => parentRef.current,
-    estimateSize: (index) => {
+    estimateSize: () => {
       return selfItemSize
     },
-    getItemKey: (index) => wallets[index].id
+    getItemKey: (index) => wallets[index].wallet.id
   })
 
   return (
@@ -41,7 +41,7 @@ export const WalletList = ({
           const wallet = wallets[item.index]
           return (
             <Box
-              key={wallet.id}
+              key={wallet.wallet.id}
               position="absolute"
               top={0}
               left={0}
@@ -50,7 +50,7 @@ export const WalletList = ({
               minH={selfItemSize + 'px'}>
               <WalletItem
                 wallet={wallet}
-                isSelected={selected?.id === wallet.id}
+                isSelected={selected?.wallet.id === wallet.wallet.id}
                 onSelected={() => onSelected(wallet)}
                 measureElement={(el: unknown) => {
                   item.measureElement(el)

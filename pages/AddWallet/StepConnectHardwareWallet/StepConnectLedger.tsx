@@ -53,16 +53,16 @@ import { getNetworkInfo, useNetwork, useNetworks } from '~lib/services/network'
 import { useBalance } from '~lib/services/provider'
 import { useChainAccountsAux, useWallet } from '~lib/services/wallet'
 import { shortenAddress } from '~lib/utils'
-import { HardwareWalletAccount, generatePath } from '~lib/wallet'
+import { WalletAccount, generatePath } from '~lib/wallet'
 import {
   AddWalletKind,
+  useAccounts,
   useAddSubWallets,
   useAddWallet,
   useAddWalletKind,
   useDerivePosition,
   useExistingWallet,
   useHdPath,
-  useHwAccounts,
   useHwHash,
   useHwTransport,
   useNetworkKind
@@ -81,7 +81,7 @@ export const StepConnectLedger = ({}: {}) => {
   const [, setDerivePosition] = useDerivePosition()
   const [hwTransport] = useHwTransport()
   const [hwHash, setHwHash] = useHwHash()
-  const [hwAccounts, setHwAccounts] = useHwAccounts()
+  const [accounts, setAccounts] = useAccounts()
 
   const networksOfKind = useNetworks(networkKind)
   const [networkId, setNetworkId] = useState<number>()
@@ -230,10 +230,11 @@ export const StepConnectLedger = ({}: {}) => {
   )
 
   useEffect(() => {
-    const accounts: HardwareWalletAccount[] = []
+    const accounts: WalletAccount[] = []
     addresses.forEach((address, index) => {
       assert(formatAddressForAux(address, networkKind) === address)
       if (checked.has(address)) {
+        // bypass existing addresses
         accounts.push({
           address,
           index,
@@ -241,8 +242,8 @@ export const StepConnectLedger = ({}: {}) => {
         })
       }
     })
-    setHwAccounts(accounts)
-  }, [addresses, publicKeys, checked, setHwAccounts, networkKind])
+    setAccounts(accounts)
+  }, [addresses, publicKeys, checked, setAccounts, networkKind])
 
   useEffect(() => {
     if (!pathSchema) {
@@ -253,21 +254,21 @@ export const StepConnectLedger = ({}: {}) => {
     if (addWalletKind === AddWalletKind.CONNECT_HARDWARE_GROUP) {
       setHdPath(pathSchema.pathSchema)
       setDerivePosition(pathSchema.derivePosition)
-    } else if (hwAccounts.length) {
+    } else if (accounts.length) {
       const path = generatePath(
         pathSchema.pathSchema,
-        hwAccounts[0].index,
+        accounts[0].index,
         pathSchema.derivePosition
       )
       setHdPath(path)
     }
-  }, [pathSchema, setHdPath, setDerivePosition, addWalletKind, hwAccounts])
+  }, [pathSchema, setHdPath, setDerivePosition, addWalletKind, accounts])
 
   const existingWallet = useWallet(
     undefined,
     // find wallet by hash
     addWalletKind === AddWalletKind.CONNECT_HARDWARE
-      ? hwAccounts[0]?.address
+      ? accounts[0]?.address
       : hwHash
   )
   const existingAccounts = useChainAccountsAux(existingWallet?.id, networkKind)
@@ -446,7 +447,7 @@ export const StepConnectLedger = ({}: {}) => {
         size="lg"
         colorScheme="purple"
         borderRadius="8px"
-        disabled={!hwAccounts.length}
+        disabled={!accounts.length}
         onClick={onNext}>
         Connect
       </Button>

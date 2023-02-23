@@ -199,6 +199,11 @@ export function useHdPaths(
   }, [walletId])
 }
 
+export interface ExistingGroupWallet {
+  wallet: IWallet
+  addresses: string[]
+}
+
 export function useExistingGroupWallets(
   walletType: WalletType,
   networkKind?: NetworkKind
@@ -238,13 +243,24 @@ export function useExistingGroupWallets(
         .toArray()
     }
 
-    const walletIdSet = new Set()
+    const walletMap = new Map<number, string[]>()
     for (const aux of accountsAux) {
-      if (!walletIdSet.has(aux.masterId)) {
-        walletIdSet.add(aux.masterId)
+      let addresses = walletMap.get(aux.masterId)
+      if (!addresses) {
+        addresses = []
       }
+      addresses.push(aux.address)
+      walletMap.set(aux.masterId, addresses)
     }
 
-    return groupWallets.filter((w) => walletIdSet.has(w.id))
+    return groupWallets
+      .filter((wallet) => walletMap.has(wallet.id))
+      .map(
+        (wallet) =>
+          ({
+            wallet,
+            addresses: walletMap.get(wallet.id)!
+          } as ExistingGroupWallet)
+      )
   }, [walletType, networkKind, wallets])
 }

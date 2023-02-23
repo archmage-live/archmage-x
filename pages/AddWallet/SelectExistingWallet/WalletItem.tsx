@@ -3,7 +3,7 @@ import { useEffect, useRef } from 'react'
 
 import { AccountAvatar } from '~components/AccountAvatar'
 import { useTransparentize } from '~lib/hooks/useColor'
-import { IWallet } from '~lib/schema'
+import { ExistingGroupWallet } from '~lib/services/wallet'
 
 export const WalletItem = ({
   wallet,
@@ -11,7 +11,7 @@ export const WalletItem = ({
   onSelected,
   measureElement
 }: {
-  wallet: IWallet
+  wallet: ExistingGroupWallet
   isSelected: boolean
   onSelected: () => void
   measureElement?: (element?: HTMLElement | null) => any
@@ -38,30 +38,38 @@ export const WalletItem = ({
 }
 
 export const WalletItemButton = ({
-  wallet,
-  onClick
+  wallet: { wallet, addresses },
+  onClick,
+  buttonVariant = 'ghost'
 }: {
-  wallet: IWallet
+  wallet: ExistingGroupWallet
   onClick: () => void
+  buttonVariant?: string
 }) => {
   return (
     <Button
       key={wallet.id}
       as="div"
       cursor="pointer"
-      variant="ghost"
+      variant={buttonVariant}
       size="lg"
       w="full"
       h={16}
       px={4}
       justifyContent="start"
       onClick={onClick}>
-      <HStack spacing={4}>
+      <HStack w="full" spacing={4}>
         <AccountAvatar text={wallet.hash} />
 
-        <Text fontSize="lg" noOfLines={1} display="block">
-          {wallet.name}
-        </Text>
+        <HStack w="calc(100% - 44px)" justify="space-between">
+          <Text fontSize="lg" noOfLines={1} display="block">
+            {wallet.name}
+          </Text>
+
+          <Text fontSize="sm" color="gray.500">
+            {addresses.length} accounts
+          </Text>
+        </HStack>
       </HStack>
     </Button>
   )

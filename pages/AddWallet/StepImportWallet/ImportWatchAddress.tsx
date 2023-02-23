@@ -17,16 +17,18 @@ import { useWizard } from 'react-use-wizard'
 
 import { AlertBox } from '~components/AlertBox'
 import { NETWORK_SCOPES, NetworkKind, getNetworkKind } from '~lib/network'
+import { PSEUDO_INDEX, formatAddressForAux } from '~lib/schema'
+import { ExistingGroupWallet } from '~lib/services/wallet'
 import { WalletType, checkAddress } from '~lib/wallet'
 
 import { NameInput } from '../NameInput'
 import { SelectExistingWallet, WalletItemButton } from '../SelectExistingWallet'
 import {
   AddWalletKind,
+  useAccounts,
   useAddSubWallets,
   useAddWallet,
   useAddWalletKind,
-  useAddresses,
   useExistingWallet,
   useName,
   useNetworkKind
@@ -36,9 +38,13 @@ export const ImportWatchAddress = () => {
   const { nextStep } = useWizard()
 
   const [, setAddWalletKind] = useAddWalletKind()
-  const [existingWallet, setExistingWallet] = useExistingWallet()
+  const [, setExistingWallet] = useExistingWallet()
+  const [existingGroupWallet, setExistingGroupWallet] = useState<
+    ExistingGroupWallet | undefined
+  >(undefined)
   const [networkKind, setNetworkKind] = useNetworkKind()
-  const [addresses, setAddresses] = useAddresses()
+  const [addresses, setAddresses] = useState<string[]>([])
+  const [accounts, setAccounts] = useAccounts()
   const [name, setName] = useName()
   useEffect(() => {
     setAddWalletKind(AddWalletKind.IMPORT_WATCH_ADDRESS)
@@ -53,8 +59,11 @@ export const ImportWatchAddress = () => {
   ] = useState(false)
   useEffect(() => {
     setWillAddToExistingWatchGroupChecked(false)
-    setExistingWallet(undefined)
-  }, [networkKind, setExistingWallet])
+    setExistingGroupWallet(undefined)
+  }, [networkKind, setExistingGroupWallet])
+  useEffect(() => {
+    setExistingWallet(existingGroupWallet?.wallet)
+  }, [setExistingWallet, existingGroupWallet])
 
   const [isWatchGroupChecked, setIsWatchGroupChecked] = useState(false)
   useEffect(() => {
@@ -80,13 +89,30 @@ export const ImportWatchAddress = () => {
   const addWallet = useAddWallet()
   const addSubWallets = useAddSubWallets()
 
+  useEffect(() => {
+    setAccounts(
+      addresses.map((addr, i) => ({
+        address: addr as string,
+        index: isWatchGroupChecked
+          ? (existingGroupWallet?.addresses.length || 0) + i
+          : PSEUDO_INDEX
+      }))
+    )
+  }, [addresses, existingGroupWallet, isWatchGroupChecked, setAccounts])
+
   const onImport = useCallback(async () => {
-    const addrs = addresses.map((addr) => checkAddress(networkKind, addr))
+    let addrs = accounts.map((a) => checkAddress(networkKind, a.address))
     if (addrs.some((addr) => !addr)) {
       setAlert('Invalid address')
       return
     }
-    if (new Set(addrs).size !== addrs.length) {
+    addrs = addrs.map((addr) =>
+      formatAddressForAux(addr as string, networkKind)
+    )
+    if (
+      new Set(addrs.concat(existingGroupWallet?.addresses || [])).size !==
+      addrs.length + (existingGroupWallet?.addresses.length || 0)
+    ) {
       setAlert('Duplicate address')
       return
     }
@@ -107,7 +133,8 @@ export const ImportWatchAddress = () => {
 
     nextStep()
   }, [
-    addresses,
+    accounts,
+    existingGroupWallet,
     willAddToExistingWatchGroupChecked,
     nextStep,
     networkKind,
@@ -150,7 +177,7 @@ export const ImportWatchAddress = () => {
                 onSelectOpen()
               } else {
                 setWillAddToExistingWatchGroupChecked(false)
-                setExistingWallet(undefined)
+                setExistingGroupWallet(undefined)
               }
             }}>
             <chakra.span color="gray.500" fontSize="xl">
@@ -158,8 +185,12 @@ export const ImportWatchAddress = () => {
             </chakra.span>
           </Checkbox>
 
-          {existingWallet && (
-            <WalletItemButton wallet={existingWallet} onClick={onSelectOpen} />
+          {existingGroupWallet && (
+            <WalletItemButton
+              wallet={existingGroupWallet}
+              onClick={onSelectOpen}
+              buttonVariant="outline"
+            />
           )}
         </Stack>
 
@@ -182,7 +213,11 @@ export const ImportWatchAddress = () => {
                 <Input
                   size="lg"
                   placeholder={
-                    isWatchGroupChecked ? `Address ${i + 1}` : 'Address'
+                    isWatchGroupChecked
+                      ? `Address ${
+                          (existingGroupWallet?.addresses.length || 0) + i + 1
+                        }`
+                      : 'Address'
                   }
                   errorBorderColor="red.500"
                   isInvalid={!!address && !checkAddress(networkKind, address)}
@@ -253,10 +288,10 @@ export const ImportWatchAddress = () => {
       <SelectExistingWallet
         networkKind={networkKind}
         walletType={WalletType.WATCH_GROUP}
-        selected={existingWallet}
+        selected={existingGroupWallet}
         onSelected={(w) => {
           setWillAddToExistingWatchGroupChecked(true)
-          setExistingWallet(w)
+          setExistingGroupWallet(w)
         }}
         isOpen={isSelectOpen}
         onClose={onSelectClose}

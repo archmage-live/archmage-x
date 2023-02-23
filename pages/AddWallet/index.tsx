@@ -35,7 +35,7 @@ export default function AddWallet() {
     <>
       <TitleBar />
 
-      <Container centerContent my="16">
+      <Container centerContent mt="16" mb="32">
         <ActionWizard hideLastStepBackButton>
           {!passwordExists && <StepCreatePassword />}
 

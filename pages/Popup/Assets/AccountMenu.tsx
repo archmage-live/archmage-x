@@ -209,7 +209,12 @@ const AccountDetailModal = ({
 
                     <PopoverAnchor>
                       <Stack maxW={64} spacing={0} align="center">
-                        <Text noOfLines={2} fontSize="lg" fontWeight="medium">
+                        <Text
+                          maxW={64}
+                          noOfLines={2}
+                          textAlign="center"
+                          fontSize="lg"
+                          fontWeight="medium">
                           {wallet.name}
                         </Text>
                         {subWallet.index !== PSEUDO_INDEX && (
@@ -218,6 +223,7 @@ const AccountDetailModal = ({
                               /
                             </Text>
                             <Text
+                              maxW={64}
                               noOfLines={2}
                               fontSize="lg"
                               fontWeight="medium">
