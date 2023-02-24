@@ -1,8 +1,19 @@
+import { AminoMsg, StdSignDoc } from '@cosmjs/amino'
 import { sha256 } from '@cosmjs/crypto'
 import { toHex } from '@cosmjs/encoding'
 import assert from 'assert'
-import { TxResponse } from 'cosmjs-types/cosmos/base/abci/v1beta1/abci'
-import { AuthInfo, Tx, TxBody, TxRaw } from 'cosmjs-types/cosmos/tx/v1beta1/tx'
+import {
+  ABCIMessageLog,
+  TxResponse
+} from 'cosmjs-types/cosmos/base/abci/v1beta1/abci'
+import {
+  AuthInfo,
+  SignDoc,
+  Tx,
+  TxBody,
+  TxRaw
+} from 'cosmjs-types/cosmos/tx/v1beta1/tx'
+import { useMemo } from 'react'
 
 import { DB } from '~lib/db'
 import { ENV } from '~lib/env'
@@ -16,6 +27,7 @@ import { IChainAccount, INetwork, IPendingTx, ITransaction } from '~lib/schema'
 import { NETWORK_SERVICE } from '~lib/services/network'
 import { getCosmClient } from '~lib/services/provider/cosm/client'
 import { stall } from '~lib/util'
+import { isStdSignDoc } from '~lib/wallet'
 
 import {
   ITransactionService,
@@ -490,3 +502,50 @@ function createCosmTransactionService(): ITransactionService {
 }
 
 export const COSM_TRANSACTION_SERVICE = createCosmTransactionService()
+
+export function useCosmTxInfo(
+  network?: INetwork,
+  account?: IChainAccount,
+  signDoc?: SignDoc | StdSignDoc,
+  tx?: Tx,
+  logs?: ABCIMessageLog[]
+) {
+  return useMemo(() => {
+    if (!network || !account?.address || !signDoc) {
+      return
+    }
+
+    const networkInfo = network.info as CosmAppChainInfo
+
+    let msgs, gasFee, gasLimit, sequence, memo
+    if (isStdSignDoc(signDoc)) {
+      msgs = signDoc.msgs as AminoMsg[]
+      gasFee = signDoc.fee.amount
+      gasLimit = Number(signDoc.fee.gas)
+      sequence = Number(signDoc.sequence)
+      memo = signDoc.memo
+    } else {
+      const txBody = TxBody.decode(signDoc.bodyBytes)
+      const authInfo = AuthInfo.decode(signDoc.authInfoBytes)
+      msgs = txBody.messages
+      gasFee = authInfo.fee?.amount
+      gasLimit = authInfo.fee?.gasLimit.toNumber()
+      sequence = authInfo.signerInfos[0].sequence.toNumber()
+      memo = txBody.memo
+    }
+
+    let txInfo
+    if (tx) {
+      txInfo = parseCosmTx(tx, logs, networkInfo, account.address)
+    }
+
+    return {
+      gasFee,
+      gasLimit,
+      sequence,
+      memo,
+      txInfo: txInfo && (txInfo as CosmTxInfo),
+      msgs: txInfo?.msgs || msgs
+    }
+  }, [network, account, signDoc, tx, logs])
+}

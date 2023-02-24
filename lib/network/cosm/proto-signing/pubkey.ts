@@ -10,10 +10,7 @@ import { LegacyAminoPubKey } from 'cosmjs-types/cosmos/crypto/multisig/keys'
 import { PubKey } from 'cosmjs-types/cosmos/crypto/secp256k1/keys'
 import { Any } from 'cosmjs-types/google/protobuf/any'
 
-import {
-  encodeEthSecp256k1Pubkey,
-  isEthSecp256k1Pubkey
-} from '../modules/amino'
+import { encodeEthSecp256k1Pubkey, isEthSecp256k1Pubkey } from '../amino'
 
 export function encodePubkey(pubkey: Pubkey): Any {
   if (isEthSecp256k1Pubkey(pubkey)) {

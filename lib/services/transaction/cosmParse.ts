@@ -2,6 +2,7 @@ import { sha256 } from '@cosmjs/crypto'
 import { fromBech32, toHex } from '@cosmjs/encoding'
 import assert from 'assert'
 import {
+  ABCIMessageLog,
   StringEvent,
   TxResponse
 } from 'cosmjs-types/cosmos/base/abci/v1beta1/abci'
@@ -35,7 +36,7 @@ export interface CosmMsg {
 
 export function parseCosmTx(
   tx: Tx,
-  txResponse: TxResponse,
+  txResponseOrLogs: TxResponse | ABCIMessageLog[] | undefined,
   chain: CosmAppChainInfo,
   account: string
 ): CosmTxInfo & {
@@ -47,12 +48,22 @@ export function parseCosmTx(
     tx.body?.messages.map((msg, i) => {
       const cosmMsg = {
         typeUrl: msg.typeUrl as any,
-        events: txResponse.logs[i].events,
         msg
       } as CosmMsg
 
-      const parse = cosmMsgDescriptions[msg.typeUrl]
-      const info = parse ? parse(cosmMsg, chain, account) : undefined
+      let info
+      if (txResponseOrLogs) {
+        cosmMsg.events = (
+          (txResponseOrLogs as TxResponse).logs
+            ? (txResponseOrLogs as TxResponse).logs
+            : (txResponseOrLogs as ABCIMessageLog[])
+        )[i].events
+
+        const parse = cosmMsgDescriptions[msg.typeUrl]
+        info = parse ? parse(cosmMsg, chain, account) : undefined
+      } else {
+        cosmMsg.events = []
+      }
 
       if (info && !txInfo) {
         txInfo = info
@@ -64,7 +75,14 @@ export function parseCosmTx(
     }) || []
 
   return {
-    success: txResponse.code === 0 ? (txInfo ? txInfo.success : true) : false,
+    success:
+      txResponseOrLogs === undefined ||
+      (txResponseOrLogs as TxResponse).code === 0 ||
+      Array.isArray(txResponseOrLogs as ABCIMessageLog[])
+        ? txInfo
+          ? txInfo.success
+          : true
+        : false,
     type: txInfo?.type || TransactionType.CallContract,
     name: txInfo?.name || msgs[0].type,
     from: txInfo?.from,
