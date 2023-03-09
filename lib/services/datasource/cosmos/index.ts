@@ -37,6 +37,15 @@ class CosmosChainRegistryApi {
 
     return assetList
   }
+
+  async getOsmosisAssetList(chainId: string): Promise<AssetList | undefined> {
+    const url = `https://github.com/osmosis-labs/assetlists/blob/main/${chainId}/${chainId}.assetlist.json`
+    const assetList: AssetList = await fetchJsonWithCache(
+      url,
+      1000 * 3600 * 24 * 7
+    )
+    return assetList
+  }
 }
 
 export const COSMOS_CHAIN_REGISTRY_API = new CosmosChainRegistryApi()

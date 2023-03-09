@@ -46,10 +46,7 @@ export const TokenList = ({
   const { tokens } = useTokens(account)
 
   const { currencySymbol, prices, changes24Hour } =
-    useCoinGeckoTokensPrice(
-      network,
-      tokens?.map((t) => t.token)
-    ) || {}
+    useCoinGeckoTokensPrice(network, tokens) || {}
 
   return (
     <Stack w="full" spacing={4}>

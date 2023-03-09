@@ -25,7 +25,7 @@ import { AccountAvatar } from '~components/AccountAvatar'
 import { BtnBox } from '~components/BtnBox'
 import { formatNumber } from '~lib/formatNumber'
 import { INetwork } from '~lib/schema'
-import { Balance } from '~lib/services/token'
+import { Amount } from '~lib/services/token'
 import { SubWalletEntry } from '~lib/services/wallet/tree'
 import { shortenAddress } from '~lib/utils'
 import { DeleteWalletOpts } from '~pages/Settings/SettingsWallets/DeleteWalletModal'
@@ -40,7 +40,7 @@ export const SubWalletItem = ({
 }: {
   network: INetwork
   subWallet: SubWalletEntry
-  balance?: Balance
+  balance?: Amount
   onSelected: () => void
   onDelete: (opts: DeleteWalletOpts) => void
   reorderSubWallets: (

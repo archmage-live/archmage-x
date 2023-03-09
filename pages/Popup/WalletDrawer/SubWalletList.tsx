@@ -6,7 +6,7 @@ import { useDebounce } from 'react-use'
 import { WalletId } from '~lib/active'
 import { INetwork } from '~lib/schema'
 import { useBalances } from '~lib/services/provider'
-import { Balance } from '~lib/services/token'
+import { Amount } from '~lib/services/token'
 import { SubWalletEntry, WalletEntry } from '~lib/services/wallet/tree'
 import { isWalletGroup } from '~lib/wallet'
 import { DeleteWalletOpts } from '~pages/Settings/SettingsWallets/DeleteWalletModal'
@@ -127,7 +127,7 @@ export function usePaginatedBalances(
   startIndex: number = 0,
   endIndex: number = 0
 ) {
-  const [balanceMap, setBalanceMap] = useState(new Map<number, Balance>())
+  const [balanceMap, setBalanceMap] = useState(new Map<number, Amount>())
 
   useEffect(() => {
     setBalanceMap(new Map())

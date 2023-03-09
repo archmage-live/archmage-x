@@ -6,7 +6,7 @@ import {
   isAptosEntryFunctionPayload,
   isAptosScriptPayload
 } from '~lib/services/provider/aptos/types'
-import { Balance } from '~lib/services/token'
+import { Amount } from '~lib/services/token'
 import { isAptosUserTransaction } from '~lib/services/transaction/aptosService'
 
 import { TransactionType } from '.'
@@ -83,7 +83,7 @@ export async function parseAptosTxCoinEvents(
   tx: Types.Transaction_UserTransaction
 ) {
   // account -> coinType -> (+/-)balance
-  const coinEvents = new Map<string, Map<string, Balance>>()
+  const coinEvents = new Map<string, Map<string, Amount>>()
 
   const coinTypesByEvents = new Map<string, Map<string, AptosCoinType>>()
   for (const change of tx.changes as Types.WriteSetChange_WriteResource[]) {
@@ -153,7 +153,7 @@ export async function parseAptosTxCoinEvents(
           `0x1::coin::CoinInfo<${coinType.type}>`
         )
         const { name, symbol, decimals } = resource.data as any
-        balance = { symbol, decimals, amountParticle: value } as Balance
+        balance = { symbol, decimals, amountParticle: value } as Amount
       }
       balance.amount = new Decimal(balance.amountParticle)
         .div(new Decimal(10).pow(balance.decimals))

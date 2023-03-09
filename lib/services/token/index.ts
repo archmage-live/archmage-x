@@ -26,7 +26,7 @@ import {
   getEvmTokenListBrief
 } from './evm'
 
-export interface Balance {
+export interface Amount {
   symbol: string
   decimals: number
   amount: string // number
@@ -35,7 +35,7 @@ export interface Balance {
 
 export interface TokenBrief {
   name: string
-  balance: Balance
+  balance: Amount
   iconUrl?: string
 }
 
@@ -59,7 +59,7 @@ export function getTokenBrief(token: IToken): TokenBrief {
 
 export interface NativeToken {
   network: INetwork
-  balance: Balance
+  balance: Amount
   iconUrl?: string
 }
 

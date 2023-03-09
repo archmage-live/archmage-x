@@ -18,7 +18,7 @@ import { getNetworkInfo } from '~lib/services/network'
 import { AptosAddressZero } from '~lib/services/network/aptosService'
 import { getEvmGasFeeBrief } from '~lib/services/provider/evm/gasFee'
 import { Provider, getProvider } from '~lib/services/provider/provider'
-import { Balance } from '~lib/services/token'
+import { Amount } from '~lib/services/token'
 import { getTransactionService } from '~lib/services/transaction'
 
 export function addressZero(network: INetwork): string {
@@ -72,7 +72,7 @@ export function useIsContract(network?: INetwork, address?: string) {
 export function useBalance(
   network?: INetwork,
   account?: IChainAccount | string
-): Balance | undefined {
+): Amount | undefined {
   const address = typeof account === 'object' ? account.address : account
 
   const { data } = useQuery(
@@ -106,14 +106,14 @@ export function useBalance(
             .toString()
         : '0',
       amountParticle: balance || '0'
-    } as Balance
+    } as Amount
   }, [balance, network])
 }
 
 export function useBalances(
   network?: INetwork,
   accounts?: IChainAccount[]
-): Map<number, Balance> | undefined {
+): Map<number, Amount> | undefined {
   const addresses = useMemo(
     () =>
       (accounts || [])
@@ -164,7 +164,7 @@ export function useBalances(
               .toString()
           : '0',
         amountParticle: balance || '0'
-      } as Balance)
+      } as Amount)
     }
 
     return result

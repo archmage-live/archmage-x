@@ -65,7 +65,7 @@ import {
   parseGwei,
   useDefaultGasFeeSettings
 } from '~lib/services/provider/evm'
-import { Balance } from '~lib/services/token'
+import { Amount } from '~lib/services/token'
 import { useTransactionDescription } from '~lib/services/transaction/evmService'
 import { shortenAddress } from '~lib/utils'
 import { isHardwareWallet, isWalletConnectProtocol } from '~lib/wallet'
@@ -104,7 +104,7 @@ export const EvmTransaction = ({
   wallet: IWallet
   subWallet: ISubWallet
   account: IChainAccount
-  balance?: Balance
+  balance?: Amount
   suffix?: ReactNode
   onComplete: () => void
 }) => {
@@ -692,7 +692,7 @@ export const EvmTransaction = ({
           {isHardwareWallet(wallet.type) && (
             <AlertBox level="info">
               Prior to clicking confirm, you should plug in your hardware wallet
-              device and select the appropriate app.
+              device and select the Ethereum app.
             </AlertBox>
           )}
 

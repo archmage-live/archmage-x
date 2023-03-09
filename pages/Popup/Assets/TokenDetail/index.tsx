@@ -49,7 +49,7 @@ export default function TokenDetail({ onClose }: { onClose: () => void }) {
     onClose()
   }, [network, onClose])
 
-  const price = useCoinGeckoTokenPrice(network, token?.token)
+  const price = useCoinGeckoTokenPrice(network, token)
 
   const { onOpen: onSendOpen } = useSendModal()
   const { onOpen: onDepositOpen } = useDepositModal()

@@ -26,7 +26,7 @@ import { SearchedToken } from '~lib/services/token/index'
 
 import { BaseTokenService } from './base'
 
-type CosmTokenInfo = {
+export type CosmTokenInfo = {
   info: TokenInfo
   balance: string
 }

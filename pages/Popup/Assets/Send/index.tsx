@@ -553,7 +553,7 @@ function useTokenInfo(
 
   const token = useTokenById(tokenId)
 
-  const tokenPrice = useCoinGeckoTokenPrice(network, token?.token)
+  const tokenPrice = useCoinGeckoTokenPrice(network, token)
 
   const nativeToken = useMemo(
     () =>

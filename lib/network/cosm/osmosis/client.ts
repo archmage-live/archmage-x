@@ -1,5 +1,5 @@
 import { QueryClient } from '@cosmjs/stargate'
-import { createRpcQueryExtension } from 'osmojs/types/codegen/cosmos/gov/v1/query.rpc.Query'
+import { createRpcQueryExtension } from 'osmojs/types/codegen/osmosis/txfees/v1beta1/query.rpc.Query'
 
 import { CosmClient } from '~lib/services/provider/cosm/client'
 

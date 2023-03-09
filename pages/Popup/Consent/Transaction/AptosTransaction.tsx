@@ -43,7 +43,7 @@ import {
 } from '~lib/services/provider'
 import { useAptosTransaction } from '~lib/services/provider/aptos/hooks'
 import { DEFAULT_TXN_EXP_SEC_FROM_NOW } from '~lib/services/provider/aptos/provider'
-import { Balance } from '~lib/services/token'
+import { Amount } from '~lib/services/token'
 import { TransactionType } from '~lib/services/transaction'
 import {
   AptosTxInfo,
@@ -82,7 +82,7 @@ export const AptosTransaction = ({
   wallet: IWallet
   subWallet: ISubWallet
   account: IChainAccount
-  balance?: Balance
+  balance?: Amount
   suffix?: ReactNode
   onComplete: () => void
 }) => {

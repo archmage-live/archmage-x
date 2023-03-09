@@ -6,9 +6,10 @@ import { fetchJsonWithCache } from '~lib/fetch'
 import { NetworkKind } from '~lib/network'
 import { QueryService } from '~lib/query'
 import { useQuoteCurrency } from '~lib/quoteCurrency'
-import { INetwork } from '~lib/schema'
+import { INetwork, IToken } from '~lib/schema'
 import { CacheCategory, useCachesByKeys3 } from '~lib/services/cacheService'
 import { PLATFORMS } from '~lib/services/datasource/coingecko/platforms'
+import { CosmTokenInfo } from '~lib/services/token/cosm'
 
 import { constants as Constants, ReturnObject, utils as Utils } from './helpers'
 
@@ -740,7 +741,7 @@ export class CoinGecko {
             'params.ids must be of type: String or Array and greater than 0 characters.'
           )
 
-        //
+        params.include_24hr_change = true
 
         const path = `/simple/price`
 
@@ -991,7 +992,7 @@ export const COIN_GECKO_SERVICE = new CoinGecko()
 
 export function useCoinGeckoTokensPrice(
   network?: INetwork,
-  tokens?: string[]
+  tokens?: string[] | IToken[]
 ):
   | {
       currencySymbol: string
@@ -999,6 +1000,21 @@ export function useCoinGeckoTokensPrice(
       changes24Hour: Map<string, number | undefined | null>
     }
   | undefined {
+  const tokenIds = useMemo(() => {
+    if (tokens?.length && typeof tokens[0] === 'object') {
+      return tokens.map((token) => {
+        if (network?.kind === NetworkKind.COSM) {
+          const { info } = (token as IToken).info as CosmTokenInfo
+          return info.coinGeckoId
+        } else {
+          return (token as IToken).token
+        }
+      })
+    } else {
+      return tokens as string[] | undefined
+    }
+  }, [network, tokens])
+
   const { quoteCurrency, quoteCurrencySymbol } = useQuoteCurrency()
 
   const { data: priceByToken } = useQuery(
@@ -1006,11 +1022,11 @@ export function useCoinGeckoTokensPrice(
       QueryService.COIN_GECKO,
       network?.kind,
       network?.chainId,
-      tokens,
+      tokenIds,
       quoteCurrency
     ],
     async () => {
-      if (!network || !tokens?.length) {
+      if (!network || !tokenIds?.length) {
         return null
       }
       const chains = PLATFORMS.get(network.kind)
@@ -1021,15 +1037,39 @@ export function useCoinGeckoTokensPrice(
       if (!chain) {
         return null
       }
-      const result = (await COIN_GECKO_SERVICE.simple.fetchTokenPrice(
-        {
-          contract_addresses: tokens,
+      let prices: Record<string, Record<string, number>>
+      if (network.kind === NetworkKind.COSM) {
+        prices = await COIN_GECKO_SERVICE.simple.price({
+          ids: tokenIds,
           vs_currencies: quoteCurrency.toLowerCase()
-        },
-        chain
-      )) as Record<string, Record<string, number>>
+        })
+      } else {
+        prices = await COIN_GECKO_SERVICE.simple.fetchTokenPrice(
+          {
+            contract_addresses: tokenIds,
+            vs_currencies: quoteCurrency.toLowerCase()
+          },
+          chain
+        )
+      }
+
+      if (
+        tokens?.length &&
+        typeof tokens[0] === 'object' &&
+        network.kind === NetworkKind.COSM
+      ) {
+        for (const token of tokens as IToken[]) {
+          const id = (token.info as CosmTokenInfo).info.coinGeckoId
+          const price = prices[id]
+          if (price) {
+            delete prices[id]
+            prices[token.token] = price
+          }
+        }
+      }
+
       return new Map(
-        Object.entries(result).map(([addr, price]) => {
+        Object.entries(prices).map(([addr, price]) => {
           addr =
             network.kind === NetworkKind.EVM
               ? ethers.utils.getAddress(addr) // format returned evm address
@@ -1044,7 +1084,7 @@ export function useCoinGeckoTokensPrice(
     CacheCategory.COIN_GECKO,
     network?.id,
     `price-${quoteCurrency}`,
-    tokens,
+    tokenIds,
     priceByToken
   )
 
@@ -1071,7 +1111,7 @@ export function useCoinGeckoTokensPrice(
 
 export function useCoinGeckoTokenPrice(
   network?: INetwork,
-  token?: string
+  token?: string | IToken
 ):
   | {
       currencySymbol: string
@@ -1081,7 +1121,7 @@ export function useCoinGeckoTokenPrice(
   | undefined {
   const tokens = useMemo(() => {
     return token ? [token] : undefined
-  }, [token])
+  }, [token]) as string[] | IToken[] | undefined
 
   const prices = useCoinGeckoTokensPrice(network, tokens)
 
@@ -1089,10 +1129,16 @@ export function useCoinGeckoTokenPrice(
     if (!token || !prices) {
       return undefined
     }
+    const tok =
+      typeof token === 'string'
+        ? token
+        : network?.kind === NetworkKind.COSM
+        ? ((token as IToken).info as CosmTokenInfo).info.coinGeckoId
+        : (token as IToken).token
     return {
       currencySymbol: prices.currencySymbol,
-      price: prices.prices.get(token),
-      change24Hour: prices.changes24Hour.get(token)
+      price: prices.prices.get(tok),
+      change24Hour: prices.changes24Hour.get(tok)
     }
-  }, [token, prices])
+  }, [network, token, prices])
 }

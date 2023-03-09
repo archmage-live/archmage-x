@@ -11,15 +11,20 @@ import {
   TxBody,
   TxRaw
 } from 'cosmjs-types/cosmos/tx/v1beta1/tx'
-import { useAsyncRetry, useInterval } from 'react-use'
+import { useAsync, useAsyncRetry, useInterval } from 'react-use'
 
 import { CosmAppChainInfo } from '~lib/network/cosm'
 import { encodeEthSecp256k1Pubkey } from '~lib/network/cosm/amino'
 import { createDefaultAminoTypes } from '~lib/network/cosm/modules/amino'
 import { createDefaultRegistry } from '~lib/network/cosm/modules/registry'
+import { Dec } from '~lib/network/cosm/number'
+import { getOsmosisQueryClient } from '~lib/network/cosm/osmosis/client'
+import { computeOsmosisTxFeeAmount } from '~lib/network/cosm/osmosis/txfees'
 import { encodePubkey } from '~lib/network/cosm/proto-signing'
 import { IChainAccount, INetwork } from '~lib/schema'
+import { COSMOS_CHAIN_REGISTRY_API } from '~lib/services/datasource/cosmos'
 import { getCosmClient } from '~lib/services/provider/cosm/client'
+import { Amount } from '~lib/services/token'
 import { getSigningWallet, isStdSignDoc } from '~lib/wallet'
 
 export function useCosmTransaction(
@@ -54,6 +59,116 @@ export function useCosmTransaction(
   }, [network, account, signDoc])
 
   useInterval(retry, !loading ? 5000 : null)
+
+  return value
+}
+
+interface CosmTxFeeAmount {
+  amount: string
+  amountParticle: string
+}
+
+export interface CosmTxFee {
+  denom: string
+  symbol: string
+  decimals: number
+  low: CosmTxFeeAmount
+  average: CosmTxFeeAmount
+  high: CosmTxFeeAmount
+}
+
+export const CosmPriceSteps = ['low', 'average', 'high'] as [
+  'low',
+  'average',
+  'high'
+]
+
+export function useCosmTxFees(
+  network?: INetwork,
+  gas?: number
+): CosmTxFee[] | undefined {
+  const { value } = useAsync(async () => {
+    if (!network || gas === undefined) {
+      return
+    }
+    const client = await getCosmClient(network)
+    if (!client) {
+      return
+    }
+
+    const info = network.info as CosmAppChainInfo
+
+    const baseFeeCurrency = info.feeCurrencies[0]
+    if (!baseFeeCurrency.gasPriceStep) {
+      return
+    }
+    const gasPriceStep = baseFeeCurrency.gasPriceStep
+
+    const baseTxFee = {
+      denom: baseFeeCurrency.coinMinimalDenom,
+      symbol: baseFeeCurrency.coinDenom,
+      decimals: baseFeeCurrency.coinDecimals
+    } as CosmTxFee
+
+    for (const step of CosmPriceSteps) {
+      const amountParticle = new Dec(gasPriceStep[step]).mul(gas)
+      baseTxFee[step] = {
+        amount: amountParticle.divPow(baseTxFee.decimals).toString(),
+        amountParticle: amountParticle.toString()
+      }
+    }
+
+    const txFees: CosmTxFee[] = [baseTxFee]
+
+    if (info.chainId.startsWith('osmosis')) {
+      const assetList = await COSMOS_CHAIN_REGISTRY_API.getOsmosisAssetList(
+        info.chainId
+      )
+
+      const queryClient = getOsmosisQueryClient(client)
+      const { feeTokens } = await queryClient.osmosis.txfees.v1beta1.feeTokens()
+
+      for (const { denom } of feeTokens) {
+        const asset = assetList?.assets.find(({ base }) => {
+          return base === denom
+        })
+        if (!asset) {
+          continue
+        }
+        const denomUnit = asset.denom_units.find((denomUnit) => {
+          return denomUnit.denom === asset.display
+        })
+        if (!denomUnit) {
+          continue
+        }
+        const { spotPrice } =
+          await queryClient.osmosis.txfees.v1beta1.denomSpotPrice({ denom })
+
+        const txFee = {
+          denom,
+          symbol: asset.symbol,
+          decimals: denomUnit.exponent
+        } as CosmTxFee
+
+        for (const step of CosmPriceSteps) {
+          const amountParticle = computeOsmosisTxFeeAmount(
+            gasPriceStep[step],
+            gas,
+            denom,
+            new Dec(spotPrice)
+          )
+          txFee[step].amountParticle = amountParticle
+          txFee[step].amount = new Dec(amountParticle)
+            .divPow(txFee.decimals)
+            .toString()
+        }
+
+        txFees.push(txFee)
+      }
+    }
+
+    return txFees
+  }, [network, gas])
 
   return value
 }

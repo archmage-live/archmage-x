@@ -22,7 +22,7 @@ import { TypeBadge } from '~components/TypeBadge'
 import { WalletId } from '~lib/active'
 import { formatNumber } from '~lib/formatNumber'
 import { INetwork } from '~lib/schema/network'
-import { Balance } from '~lib/services/token'
+import { Amount } from '~lib/services/token'
 import { WALLET_SERVICE } from '~lib/services/wallet'
 import {
   localReorderSubWallets,
@@ -39,7 +39,7 @@ import { SubWalletList } from './SubWalletList'
 interface WalletItemProps {
   network?: INetwork
   walletEntry: WalletEntry
-  balance?: Balance
+  balance?: Amount
   onToggleOpen: (id: number) => void
   onSelected: (selected: WalletId) => void
   onClose: () => void
