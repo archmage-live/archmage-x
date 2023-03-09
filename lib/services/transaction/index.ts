@@ -5,7 +5,12 @@ import {
   APTOS_TRANSACTION_SERVICE,
   getAptosTransactionInfo
 } from './aptosService'
-import { COSM_TRANSACTION_SERVICE, getCosmTransactionInfo } from './cosmService'
+import {
+  COSM_TRANSACTION_SERVICE,
+  decodeCosmTransaction,
+  encodeCosmTransaction,
+  getCosmTransactionInfo
+} from './cosmService'
 import {
   EVM_TRANSACTION_SERVICE,
   getEvmTransactionInfo,
@@ -124,4 +129,28 @@ export enum TransactionStatus {
   PENDING = 'pending',
   CONFIRMED = 'confirmed',
   CONFIRMED_FAILURE = 'confirmedFailure'
+}
+
+export function encodeTransaction(tx?: IPendingTx | ITransaction) {
+  if (!tx) {
+    return
+  }
+  switch (tx.networkKind) {
+    case NetworkKind.COSM:
+      return encodeCosmTransaction(tx)
+    default:
+      return tx
+  }
+}
+
+export function decodeTransaction(tx?: IPendingTx | ITransaction) {
+  if (!tx) {
+    return
+  }
+  switch (tx.networkKind) {
+    case NetworkKind.COSM:
+      return decodeCosmTransaction(tx)
+    default:
+      return tx
+  }
 }

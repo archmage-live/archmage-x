@@ -23,6 +23,7 @@ export interface CosmTxInfo {
   name?: string
   from?: string
   to?: string
+  denom?: string
   amount?: string
   description?: string
 }
@@ -87,6 +88,7 @@ export function parseCosmTx(
     name: txInfo?.name || msgs[0].type,
     from: txInfo?.from,
     to: txInfo?.to,
+    denom: txInfo?.denom,
     amount: txInfo?.amount,
     description: txInfo?.description,
     msgs
@@ -169,7 +171,8 @@ function msgSendTx(
   account: string
 ): CosmTxInfo {
   const attrs = extractEventAttributes(msg.events, 'transfer')
-  const amount = formatCosmCoin(attrs?.get('amount'), chain)
+  const amount = attrs?.get('amount')
+  const coin = amount ? Coin.fromString(amount).toProto() : undefined
   const sender = attrs?.get('sender')
   const recipient = attrs?.get('recipient')
 
@@ -181,7 +184,8 @@ function msgSendTx(
     name: type === TransactionType.Send ? 'Send' : 'Receive',
     from: sender,
     to: recipient,
-    amount,
+    denom: coin?.denom,
+    amount: coin?.amount,
     description:
       type === TransactionType.Send
         ? `Send ${amount} to ${shortenCosmAddress(recipient)}`
@@ -255,7 +259,8 @@ function msgTransfer(
     name: 'IBC Transfer',
     from: packetData.sender,
     to: packetData.receiver,
-    amount,
+    denom: packetData.denom,
+    amount: packetData.amount,
     description: `Transfer ${amount} to ${shortenCosmAddress(
       packetData.receiver
     )}`
@@ -279,7 +284,8 @@ function msgRecvPacket(
     name: 'IBC Receive',
     from: packetData.sender,
     to: packetData.receiver,
-    amount,
+    denom: packetData.denom,
+    amount: packetData.amount,
     description: `Receive ${amount} from ${shortenCosmAddress(
       packetData.sender
     )}`
@@ -295,7 +301,9 @@ function msgAcknowledgement(
   const sender = attrs?.get('sender')
   assert(sender === account)
   const receiver = attrs?.get('receiver')
-  const amount = `${attrs?.get('amount')} ${attrs?.get('denom')}`
+  const amount = attrs?.get('amount')
+  const denom = attrs?.get('denom')
+  const coin = `${amount} ${denom}`
   const success = attrs?.get('success')
 
   return {
@@ -304,8 +312,9 @@ function msgAcknowledgement(
     name: 'IBC Acknowledgement',
     from: sender,
     to: receiver,
+    denom,
     amount,
-    description: `Acknowledgement of transferring ${amount} to ${shortenCosmAddress(
+    description: `Acknowledgement of transferring ${coin} to ${shortenCosmAddress(
       receiver
     )}`
   }
@@ -319,7 +328,9 @@ function msgTimeout(
   const attrs = extractEventAttributes(msg.events, 'fungible_token_packet')
   const refundReceiver = attrs?.get('refund_receiver')
   assert(refundReceiver === account)
-  const amount = `${attrs?.get('refund_amount')} ${attrs?.get('refund_denom')}`
+  const amount = attrs?.get('refund_amount')
+  const denom = attrs?.get('refund_denom')
+  const coin = `${amount} ${denom}`
 
   return {
     success: false,
@@ -327,8 +338,9 @@ function msgTimeout(
     name: 'IBC Timeout',
     from: account,
     to: undefined,
+    denom,
     amount,
-    description: `Timeout of transferring ${amount}`
+    description: `Timeout of transferring ${coin}`
   }
 }
 

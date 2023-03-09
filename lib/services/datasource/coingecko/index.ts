@@ -1000,19 +1000,26 @@ export function useCoinGeckoTokensPrice(
       changes24Hour: Map<string, number | undefined | null>
     }
   | undefined {
-  const tokenIds = useMemo(() => {
+  const { tokenIds, tokenKeys } = useMemo(() => {
+    let tokenIds: string[] | undefined
+    let tokenKeys: string[] | undefined
     if (tokens?.length && typeof tokens[0] === 'object') {
-      return tokens.map((token) => {
+      tokenIds = []
+      tokenKeys = []
+      tokens.forEach((token) => {
         if (network?.kind === NetworkKind.COSM) {
           const { info } = (token as IToken).info as CosmTokenInfo
-          return info.coinGeckoId
+          tokenIds?.push(info.coinGeckoId)
         } else {
-          return (token as IToken).token
+          tokenIds?.push((token as IToken).token)
         }
+        tokenKeys?.push((token as IToken).token)
       })
     } else {
-      return tokens as string[] | undefined
+      tokenIds = tokens as string[] | undefined
+      tokenKeys = tokens as string[] | undefined
     }
+    return { tokenIds, tokenKeys }
   }, [network, tokens])
 
   const { quoteCurrency, quoteCurrencySymbol } = useQuoteCurrency()
@@ -1029,14 +1036,19 @@ export function useCoinGeckoTokensPrice(
       if (!network || !tokenIds?.length) {
         return null
       }
-      const chains = PLATFORMS.get(network.kind)
-      if (!chains) {
-        return null
+
+      let chain
+      if (network.kind !== NetworkKind.COSM) {
+        const chains = PLATFORMS.get(network.kind)
+        if (!chains) {
+          return null
+        }
+        chain = chains.get(network.chainId)
+        if (!chain) {
+          return null
+        }
       }
-      const chain = chains.get(network.chainId)
-      if (!chain) {
-        return null
-      }
+
       let prices: Record<string, Record<string, number>>
       if (network.kind === NetworkKind.COSM) {
         prices = await COIN_GECKO_SERVICE.simple.price({
@@ -1084,7 +1096,7 @@ export function useCoinGeckoTokensPrice(
     CacheCategory.COIN_GECKO,
     network?.id,
     `price-${quoteCurrency}`,
-    tokenIds,
+    tokenKeys,
     priceByToken
   )
 

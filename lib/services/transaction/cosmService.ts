@@ -44,12 +44,64 @@ export interface CosmPendingTxInfo {
   origin?: string // only exists for local sent transaction
 }
 
+interface CosmPendingTxInfoRaw {
+  tx: Uint8Array
+
+  origin?: string
+}
+
+function encodeCosmPendingTxInfo(
+  info: CosmPendingTxInfo
+): CosmPendingTxInfoRaw {
+  return {
+    tx: Tx.encode(info.tx).finish(),
+    origin: info.origin
+  }
+}
+
+function decodeCosmPendingTxInfo(
+  info: CosmPendingTxInfoRaw
+): CosmPendingTxInfo {
+  return {
+    tx: Tx.decode(info.tx),
+    origin: info.origin
+  }
+}
+
 export interface CosmTransactionInfo {
   tx: Tx
 
   txResponse: TxResponse
 
   origin?: string // only exists for local sent transaction
+}
+
+interface CosmTransactionInfoRaw {
+  tx: Uint8Array
+
+  txResponse: Uint8Array
+
+  origin?: string
+}
+
+function encodeCosmTransactionInfo(
+  info: CosmTransactionInfo
+): CosmTransactionInfoRaw {
+  return {
+    tx: Tx.encode(info.tx).finish(),
+    txResponse: TxResponse.encode(info.txResponse).finish(),
+    origin: info.origin
+  }
+}
+
+function decodeCosmTransactionInfo(
+  info: CosmTransactionInfoRaw
+): CosmTransactionInfo {
+  return {
+    tx: Tx.decode(info.tx),
+    txResponse: TxResponse.decode(info.txResponse),
+    origin: info.origin
+  }
 }
 
 export function isCosmPendingTxInfo(
@@ -62,6 +114,18 @@ export function isCosmTransactionInfo(
   info: CosmPendingTxInfo | CosmTransactionInfo
 ): info is CosmTransactionInfo {
   return !!(info as CosmTransactionInfo).txResponse
+}
+
+export function isCosmPendingTxInfoRaw(
+  info: CosmPendingTxInfoRaw | CosmTransactionInfoRaw
+): info is CosmPendingTxInfoRaw {
+  return !isCosmTransactionInfoRaw(info)
+}
+
+export function isCosmTransactionInfoRaw(
+  info: CosmPendingTxInfoRaw | CosmTransactionInfoRaw
+): info is CosmTransactionInfoRaw {
+  return !!(info as CosmTransactionInfoRaw).txResponse
 }
 
 export function getCosmTransactionInfo(
@@ -115,6 +179,24 @@ export function getCosmTransactionInfo(
       : TransactionStatus.CONFIRMED_FAILURE,
     timestamp
   } as TransactionInfo
+}
+
+export function encodeCosmTransaction(tx: IPendingTx | ITransaction) {
+  return {
+    ...tx,
+    info: isCosmPendingTxInfo(tx.info)
+      ? encodeCosmPendingTxInfo(tx.info)
+      : encodeCosmTransactionInfo(tx.info)
+  }
+}
+
+export function decodeCosmTransaction(tx: IPendingTx | ITransaction) {
+  return {
+    ...tx,
+    info: isCosmPendingTxInfoRaw(tx.info)
+      ? decodeCosmPendingTxInfo(tx.info)
+      : decodeCosmTransactionInfo(tx.info)
+  }
 }
 
 // @ts-ignore
@@ -267,6 +349,11 @@ export class CosmTransactionService extends CosmTransactionServicePartial {
             txResponse.txhash
           ])
         }
+
+        const total = txsEventResponse.pagination?.total.toNumber()
+        if (!total || total <= (page + 1) * limit) {
+          break
+        }
       }
     }
 
@@ -328,7 +415,7 @@ export class CosmTransactionService extends CosmTransactionServicePartial {
     const existingPendingTxsForTxsMap = new Map(
       existingPendingTxsForTxs.map((tx) => [
         tx.nonce,
-        (tx.info as CosmPendingTxInfo).origin
+        (tx.info as CosmPendingTxInfoRaw).origin
       ])
     )
     addTxs.forEach(
@@ -345,7 +432,15 @@ export class CosmTransactionService extends CosmTransactionServicePartial {
     await DB.transaction('rw', [DB.pendingTxs, DB.transactions], async () => {
       if (deletePendingTxs.length)
         await DB.pendingTxs.bulkDelete(deletePendingTxs)
-      if (addTxs.length) await DB.transactions.bulkAdd(addTxs)
+      if (addTxs.length)
+        await DB.transactions.bulkAdd(
+          addTxs.map((tx) => {
+            return {
+              ...tx,
+              info: encodeCosmTransactionInfo(tx.info)
+            }
+          })
+        )
     })
   }
 
@@ -374,7 +469,10 @@ export class CosmTransactionService extends CosmTransactionServicePartial {
       } as CosmPendingTxInfo
     } as IPendingTx
 
-    pendingTx.id = await DB.pendingTxs.add(pendingTx)
+    pendingTx.id = await DB.pendingTxs.add({
+      ...pendingTx,
+      info: encodeCosmPendingTxInfo(pendingTx.info)
+    })
 
     this.checkPendingTx(pendingTx).finally()
 
@@ -468,9 +566,15 @@ export class CosmTransactionService extends CosmTransactionServicePartial {
         })
         .first()
       if (!existingTx) {
-        transaction.id = await DB.transactions.add(transaction)
+        transaction.id = await DB.transactions.add({
+          ...transaction,
+          info: encodeCosmTransactionInfo(transaction.info)
+        })
       } else {
-        transaction = existingTx
+        transaction = {
+          ...existingTx,
+          info: decodeCosmTransactionInfo(existingTx.info)
+        }
       }
 
       if (!(await this.getPendingTx(pendingTx.id))) {

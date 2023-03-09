@@ -8,6 +8,7 @@ import { NetworkKind } from '~lib/network'
 import { COSM_NETWORKS_PRESET, CosmAppChainInfo } from '~lib/network/cosm'
 import { Coin } from '~lib/network/cosm/coin'
 import {
+  ChainId,
   IChainAccount,
   INetwork,
   IToken,
@@ -22,13 +23,47 @@ import {
 } from '~lib/services/datasource/cosmostation'
 import { NETWORK_SERVICE } from '~lib/services/network'
 import { getCosmClient } from '~lib/services/provider/cosm/client'
-import { SearchedToken } from '~lib/services/token/index'
 
+import { SearchedToken, TokenBrief, TokenListBrief } from '.'
 import { BaseTokenService } from './base'
 
 export type CosmTokenInfo = {
   info: TokenInfo
   balance: string
+}
+
+export function getCosmTokenBrief(token: IToken): TokenBrief {
+  const { info, balance } = token.info as CosmTokenInfo
+  return {
+    name: info.symbol,
+    iconUrl: info.image,
+    balance: {
+      symbol: info.symbol,
+      decimals: info.decimals,
+      amount: new Decimal(balance)
+        .div(new Decimal(10).pow(info.decimals))
+        .toString(),
+      amountParticle: balance
+    }
+  }
+}
+
+export function getCosmTokenListBrief(
+  token: ITokenList,
+  chainId: ChainId
+): TokenListBrief {
+  const info = token.info as Omit<TokenList, 'tokens'>
+  return {
+    name: info.name,
+    desc: info.desc,
+    url: info.url,
+    iconUrl: info.logoURI,
+    tokenCount: token.tokens.reduce(
+      (count, token: TokenInfo) => count + (token.chainId === chainId),
+      0
+    ),
+    enabled: token.enabled
+  }
 }
 
 export class CosmTokenService extends BaseTokenService {

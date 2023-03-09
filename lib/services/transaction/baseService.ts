@@ -4,11 +4,8 @@ import { DB } from '~lib/db'
 import { EXTENSION } from '~lib/extension'
 import { IChainAccount, INetwork, IPendingTx, ITransaction } from '~lib/schema'
 import { getTransactionUrl } from '~lib/services/network'
-import {
-  TransactionStatus,
-  getTransactionInfo
-} from '~lib/services/transaction/index'
 
+import { TransactionStatus, decodeTransaction, getTransactionInfo } from '.'
 import { PENDING_TX_CHECKER } from './check'
 
 export abstract class BaseTransactionService {
@@ -85,7 +82,9 @@ export abstract class BaseTransactionService {
     collection =
       typeof limit === 'number' ? collection.limit(limit) : collection
 
-    return collection.toArray()
+    return (await collection.toArray()).map(
+      (pendingTx) => decodeTransaction(pendingTx) as IPendingTx
+    )
   }
 
   async getTransactions(
@@ -98,45 +97,53 @@ export abstract class BaseTransactionService {
     if (!account.address) {
       return []
     }
-    return DB.transactions
-      .where('[masterId+index+networkKind+chainId+address+type+index1+index2]')
-      .between(
-        [
-          account.masterId,
-          account.index,
-          account.networkKind,
-          account.chainId,
-          account.address,
-          type,
-          Dexie.minKey,
-          Dexie.minKey
-        ],
-        [
-          account.masterId,
-          account.index,
-          account.networkKind,
-          account.chainId,
-          account.address,
-          type,
-          lastIndex1 !== undefined && lastIndex1 !== null
-            ? lastIndex1
-            : Dexie.maxKey,
-          lastIndex2 !== undefined && lastIndex2 !== null
-            ? lastIndex2
-            : Dexie.maxKey
-        ]
-      )
-      .reverse()
-      .limit(limit)
-      .toArray()
+    return (
+      await DB.transactions
+        .where(
+          '[masterId+index+networkKind+chainId+address+type+index1+index2]'
+        )
+        .between(
+          [
+            account.masterId,
+            account.index,
+            account.networkKind,
+            account.chainId,
+            account.address,
+            type,
+            Dexie.minKey,
+            Dexie.minKey
+          ],
+          [
+            account.masterId,
+            account.index,
+            account.networkKind,
+            account.chainId,
+            account.address,
+            type,
+            lastIndex1 !== undefined && lastIndex1 !== null
+              ? lastIndex1
+              : Dexie.maxKey,
+            lastIndex2 !== undefined && lastIndex2 !== null
+              ? lastIndex2
+              : Dexie.maxKey
+          ]
+        )
+        .reverse()
+        .limit(limit)
+        .toArray()
+    ).map((tx) => decodeTransaction(tx) as ITransaction)
   }
 
   async getPendingTx(id: number): Promise<IPendingTx | undefined> {
-    return DB.pendingTxs.get(id)
+    return decodeTransaction(await DB.pendingTxs.get(id)) as
+      | IPendingTx
+      | undefined
   }
 
   async getTransaction(id: number): Promise<ITransaction | undefined> {
-    return DB.transactions.get(id)
+    return decodeTransaction(await DB.transactions.get(id)) as
+      | ITransaction
+      | undefined
   }
 
   async checkPendingTx(

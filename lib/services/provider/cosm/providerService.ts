@@ -22,6 +22,7 @@ class CosmProviderService
     args: { method: string; params?: Array<any> },
     ctx: Context
   ): Promise<any> {
+    console.log(args, ctx)
     const provider = await CosmPermissionedProvider.fromMayThrow(ctx.fromUrl!)
     return provider.request(ctx, args.method, args.params || [])
   }

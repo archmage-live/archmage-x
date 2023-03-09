@@ -11,8 +11,10 @@ import { StarknetChainInfo } from '~lib/network/starknet'
 import { ChainId, IChainAccount, INetwork, IToken } from '~lib/schema'
 import { useEvmChainLogoUrl } from '~lib/services/datasource/chainlist'
 import { useCosmChainLogoUrl } from '~lib/services/datasource/cosmos'
+import { DENOM_TO_SUBDIRECTORY } from '~lib/services/datasource/cosmostation/helpers'
 import { useCryptoComparePrice } from '~lib/services/datasource/cryptocompare'
 import { StarknetNetworkService } from '~lib/services/network/starknetService'
+import { CosmTokenInfo } from '~lib/services/token/cosm'
 
 import { AptosNetworkService } from './aptosService'
 import { CosmNetworkService } from './cosmService'
@@ -56,7 +58,8 @@ export function getNetworkInfo(network: INetwork): NetworkInfo {
         currencyName: info.stakeCurrency.coinDenom,
         currencySymbol: info.stakeCurrency.coinDenom,
         decimals: info.stakeCurrency.coinDecimals,
-        rpcUrl: info.rpc
+        rpcUrl: info.rpc,
+        explorerUrl: info.txExplorer?.txUrl || 'https://www.mintscan.io'
       }
     }
     case NetworkKind.STARKNET: {
@@ -92,6 +95,20 @@ export function getNetworkInfo(network: INetwork): NetworkInfo {
   }
 }
 
+function subDirPathPrefix(network: INetwork, url: URL, pathPrefix: string) {
+  if (network.kind === NetworkKind.COSM) {
+    if (url.origin === 'https://www.mintscan.io') {
+      const stakingDenom = (network.info as CosmAppChainInfo).stakeCurrency
+        .coinMinimalDenom
+      const subDir = DENOM_TO_SUBDIRECTORY[stakingDenom]
+      if (subDir) {
+        return `${subDir}/${pathPrefix}`
+      }
+    }
+  }
+  return pathPrefix
+}
+
 export function getAccountUrl(
   network: INetwork,
   account: IChainAccount
@@ -107,6 +124,9 @@ export function getAccountUrl(
     switch (network.kind) {
       case NetworkKind.EVM:
         pathPrefix = 'address'
+        break
+      case NetworkKind.COSM:
+        pathPrefix = subDirPathPrefix(network, url, 'account')
         break
       case NetworkKind.STARKNET:
         pathPrefix = 'contract'
@@ -141,6 +161,9 @@ export function getTransactionUrl(
       case NetworkKind.EVM:
         pathPrefix = 'tx'
         break
+      case NetworkKind.COSM:
+        pathPrefix = subDirPathPrefix(network, url, 'txs')
+        break
       case NetworkKind.STARKNET:
         pathPrefix = 'tx'
         break
@@ -170,9 +193,17 @@ export function getTokenUrl(
     const url = new URL(info.explorerUrl)
 
     let pathPrefix
+    let tokenId = token.token
+    let tokenType
     switch (network.kind) {
       case NetworkKind.EVM:
         pathPrefix = 'token'
+        break
+      case NetworkKind.COSM:
+        pathPrefix = subDirPathPrefix(network, url, 'assets')
+        const info = (token.info as CosmTokenInfo).info
+        tokenId = Buffer.from(info.denom).toString('base64')
+        tokenType = info.type
         break
       case NetworkKind.STARKNET:
         pathPrefix = 'contract'
@@ -184,7 +215,10 @@ export function getTokenUrl(
         return undefined
     }
 
-    url.pathname = `/${pathPrefix}/${token.token}`
+    url.pathname = `/${pathPrefix}/${tokenId}`
+    if (tokenType) {
+      url.searchParams.set('type', tokenType)
+    }
     return url.toString()
   } catch {
     return undefined

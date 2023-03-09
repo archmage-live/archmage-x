@@ -18,7 +18,11 @@ import { getNetworkInfo } from '~lib/services/network'
 import { BaseTokenService } from '~lib/services/token/base'
 import { Synchronizer } from '~lib/utils/synchronizer'
 
-import { COSM_TOKEN_SERVICE } from './cosm'
+import {
+  COSM_TOKEN_SERVICE,
+  getCosmTokenBrief,
+  getCosmTokenListBrief
+} from './cosm'
 import {
   EVM_TOKEN_SERVICE,
   formatEvmTokenIdentifier,
@@ -52,6 +56,8 @@ export function getTokenBrief(token: IToken): TokenBrief {
   switch (token.networkKind) {
     case NetworkKind.EVM:
       return getEvmTokenBrief(token)
+    case NetworkKind.COSM:
+      return getCosmTokenBrief(token)
     default:
       throw new Error('unknown token')
   }
@@ -83,6 +89,8 @@ export function getTokenListBrief(
   switch (tokenList.networkKind) {
     case NetworkKind.EVM:
       return getEvmTokenListBrief(tokenList, chainId)
+    case NetworkKind.COSM:
+      return getCosmTokenListBrief(tokenList, chainId)
     default:
       throw new Error('unknown token')
   }

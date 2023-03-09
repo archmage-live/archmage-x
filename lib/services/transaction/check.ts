@@ -3,7 +3,8 @@ import browser from 'webextension-polyfill'
 import { DB } from '~lib/db'
 import { NetworkKind } from '~lib/network'
 import { IPendingTx, ITransaction } from '~lib/schema'
-import { getTransactionService } from '~lib/services/transaction/index'
+
+import { decodeTransaction, getTransactionService } from '.'
 
 class PendingTxChecker {
   private waits: Map<number, Promise<ITransaction>> = new Map()
@@ -44,10 +45,9 @@ class PendingTxChecker {
 
   async checkPendingTxs(networkKind: NetworkKind) {
     while (true) {
-      const pendingTx = await DB.pendingTxs
-        .where('networkKind')
-        .equals(networkKind)
-        .first()
+      const pendingTx = decodeTransaction(
+        await DB.pendingTxs.where('networkKind').equals(networkKind).first()
+      ) as IPendingTx | undefined
       if (!pendingTx) {
         return
       }

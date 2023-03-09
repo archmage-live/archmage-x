@@ -90,37 +90,45 @@ export class CosmPermissionedProvider extends BasePermissionedProvider {
   }
 
   async request(ctx: Context, method: string, params: any[]) {
-    switch (method) {
-      case 'enable':
-        return this.enable(ctx, params[0])
-      case 'experimentalSuggestChain':
-        return this.addChain(ctx, params[0])
-      case 'switchChain':
-        return this.switchChain(ctx, params[0])
-      case 'getKey':
-        return this.getKey(ctx, params[0])
-      case 'isProtobufSignerSupported':
-        return this.isProtobufSignerSupported(ctx)
-      case 'signTx':
-        return this.signTx(ctx, params[0], params[1], params[2])
-      case 'sendTx':
-        return this.sendTx(ctx, params[0], params[1], params[2])
-      case 'signArbitrary':
-        return this.signArbitrary(ctx, params[0], params[1], params[2])
-      case 'verifyArbitrary':
-        return this.verifyArbitrary(
-          ctx,
-          params[0],
-          params[1],
-          params[2],
-          params[3]
-        )
-      case 'signEthereum':
-        // TODO: https://docs.keplr.app/api/#request-ethereum-signature
-        return this.signArbitrary(ctx, params[0], params[1], params[2])
-    }
+    try {
+      switch (method) {
+        case 'enable':
+          return await this.enable(ctx, params[0])
+        case 'experimentalSuggestChain':
+          return await this.addChain(ctx, params[0])
+        case 'switchChain':
+          return await this.switchChain(ctx, params[0])
+        case 'getKey':
+          return await this.getKey(ctx, params[0])
+        case 'isProtobufSignerSupported':
+          return await this.isProtobufSignerSupported(ctx)
+        case 'signTx':
+          return await this.signTx(ctx, params[0], params[1], params[2])
+        case 'sendTx':
+          return await this.sendTx(ctx, params[0], params[1], params[2])
+        case 'signArbitrary':
+          return await this.signArbitrary(ctx, params[0], params[1], params[2])
+        case 'verifyArbitrary':
+          return await this.verifyArbitrary(
+            ctx,
+            params[0],
+            params[1],
+            params[2],
+            params[3]
+          )
+        case 'signEthereum':
+          // TODO: https://docs.keplr.app/api/#request-ethereum-signature
+          return await this.signArbitrary(ctx, params[0], params[1], params[2])
+      }
 
-    throw ethErrors.rpc.methodNotSupported()
+      throw ethErrors.rpc.methodNotSupported()
+    } catch (err: any) {
+      if (err.toString().includes('User rejected the request')) {
+        throw 'Request rejected'
+      } else {
+        throw err
+      }
+    }
   }
 
   async enable(ctx: Context, chainIds: string | string[]) {
@@ -225,8 +233,10 @@ export class CosmPermissionedProvider extends BasePermissionedProvider {
           ? wallet.name
           : `${wallet.name} / ${subWallet.name}`,
       algo: 'secp256k1',
-      // for watch wallets & WalletConnect wallets, public key does not exist
-      pubKey: signer?.publicKey ? signer.publicKey : '',
+      // for Watch / WalletConnect wallets, public key does not exist
+      pubKey: signer?.publicKey
+        ? signer.publicKey
+        : hexlify(new Uint8Array(33)),
       address: hexlify(data),
       bech32Address: bech32Address,
       isNanoLedger: hwType === HardwareWalletType.LEDGER,
