@@ -13,6 +13,7 @@ import { IChainAccount, INetwork, IPendingTx, ITransaction } from '~lib/schema'
 import { getTransactionInfo } from '~lib/services/transaction'
 
 import { AptosActivityDetail } from './aptos'
+import { CosmActivityDetail } from './cosm'
 import { EvmActivityDetail } from './evm'
 
 export const ActivityDetail = ({
@@ -27,6 +28,8 @@ export const ActivityDetail = ({
   switch (network.kind) {
     case NetworkKind.EVM:
       return <EvmActivityDetail network={network} tx={tx} />
+    case NetworkKind.COSM:
+      return <CosmActivityDetail network={network} account={account} tx={tx} />
     case NetworkKind.APTOS:
       return <AptosActivityDetail network={network} account={account} tx={tx} />
   }

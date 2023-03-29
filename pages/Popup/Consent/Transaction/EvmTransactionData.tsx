@@ -2,7 +2,8 @@ import { Box, Stack, Text, useColorModeValue } from '@chakra-ui/react'
 import { TransactionDescription } from '@ethersproject/abi'
 import {
   FormatTypes,
-  FunctionFragment
+  FunctionFragment,
+  ParamType
 } from '@ethersproject/abi/src.ts/fragments'
 import { BigNumber } from '@ethersproject/bignumber'
 import { shallowCopy } from '@ethersproject/properties'
@@ -50,9 +51,8 @@ export const EvmTransactionData = ({
       return arg
     }
 
-    const fragment = shallowCopy(description.functionFragment)
-    delete (fragment as any)._isFragment
-    const signature = FunctionFragment.from(fragment).format(FormatTypes.full)
+    const fragment = copyFunctionFragment(description.functionFragment)
+    const signature = fragment.format(FormatTypes.full)
 
     const args = description.functionFragment.inputs.map((input, i) => {
       return {
@@ -138,4 +138,30 @@ export const EvmTransactionData = ({
       )}
     </Stack>
   )
+}
+
+function copyFunctionFragment(functionFragment: FunctionFragment) {
+  const fragment = shallowCopy(functionFragment)
+  delete (fragment as any)._isFragment
+  ;(fragment as any).inputs = ((fragment as any).inputs as ParamType[]).map(
+    (input) => copyParamType(input)
+  )
+  ;(fragment as any).outputs = ((fragment as any).outputs as ParamType[]).map(
+    (output) => copyParamType(output)
+  )
+  return FunctionFragment.from(fragment)
+}
+
+function copyParamType(paramType: ParamType) {
+  const pt = shallowCopy(paramType) as any
+  delete pt._isParamType
+  if (pt.components) {
+    pt.components = (pt.components as ParamType[]).map((comp) =>
+      copyParamType(comp)
+    )
+  }
+  if (pt.arrayChildren) {
+    pt.arrayChildren = copyParamType(pt.arrayChildren)
+  }
+  return pt
 }

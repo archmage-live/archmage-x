@@ -28,8 +28,9 @@ import {
   isAptosPendingTransaction
 } from '~lib/services/transaction/aptosService'
 import { shortenAddress } from '~lib/utils'
-import { Status } from '~pages/Popup/Activity/ActivityDetail/evm'
-import { FromTo } from '~pages/Popup/Consent/Transaction/FromTo'
+
+import { FromTo } from '../../Consent/Transaction/FromTo'
+import { Status } from './evm'
 
 export const AptosActivityDetail = ({
   network,

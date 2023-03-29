@@ -1,5 +1,5 @@
 import { ArrowForwardIcon, InfoOutlineIcon } from '@chakra-ui/icons'
-import { Box, Center, HStack, Text, Tooltip } from '@chakra-ui/react'
+import { Center, HStack, Text, Tooltip } from '@chakra-ui/react'
 import { ReactNode } from 'react'
 
 import { AccountAvatar } from '~components/AccountAvatar'
@@ -10,17 +10,23 @@ import { shortenAddress } from '~lib/utils'
 export const FromTo = ({
   from,
   to,
+  leadingChars,
+  leadingChars2,
   checkFrom = undefined
 }: {
-  from: string
+  from?: string
   to?: string
+  leadingChars?: number | string
+  leadingChars2?: number | string
   checkFrom?: ReactNode
 }) => {
   return (
     <HStack justify="space-between">
       <HStack minW={36}>
-        <AccountAvatar text={from} scale={0.8} />
-        <Text fontSize="md">{shortenAddress(from)}</Text>
+        {from && <AccountAvatar text={from} scale={0.8} />}
+        <Text fontSize="md">
+          {from ? shortenAddress(from, { leadingChars }) : 'n/a'}
+        </Text>
         {checkFrom}
       </HStack>
 
@@ -35,7 +41,14 @@ export const FromTo = ({
 
       <HStack minW={36} justify="end">
         {to && <AccountAvatar text={to} scale={0.8} />}
-        <Text fontSize="md">{to ? shortenAddress(to) : 'n/a'}</Text>
+        <Text fontSize="md">
+          {to
+            ? shortenAddress(to, {
+                leadingChars:
+                  leadingChars2 === undefined ? leadingChars : leadingChars2
+              })
+            : 'n/a'}
+        </Text>
       </HStack>
     </HStack>
   )
@@ -44,11 +57,13 @@ export const FromTo = ({
 export const FromToWithCheck = ({
   from,
   to,
+  leadingChars,
   subWallet: { id: subWalletId }
 }: {
-  subWallet: ISubWallet
-  from: string
+  from?: string
   to?: string
+  leadingChars?: number | string
+  subWallet: ISubWallet
 }) => {
   const { subWallet } = useActiveWallet()
 
@@ -56,6 +71,7 @@ export const FromToWithCheck = ({
     <FromTo
       from={from}
       to={to}
+      leadingChars={leadingChars}
       checkFrom={
         subWallet !== undefined &&
         subWallet.id !== subWalletId && (

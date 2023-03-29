@@ -307,11 +307,21 @@ export class CosmTransactionService extends CosmTransactionServicePartial {
       while (true) {
         page += 1
 
-        const txsEventResponse = await queryClient.tx.getTxsEvent(events, {
-          offset: page * limit,
-          limit,
-          isDesc: true
-        })
+        let txsEventResponse
+        try {
+          txsEventResponse = await queryClient.tx.getTxsEvent(events, {
+            offset: page * limit,
+            limit,
+            isDesc: true
+          })
+        } catch (err: any) {
+          if (err.toString().includes('page should be within')) {
+            console.error(err)
+            break
+          }
+          throw err
+        }
+        console.log(txsEventResponse, events, page * limit, limit)
 
         if (!txsEventResponse.txResponses.length) {
           break

@@ -1,3 +1,4 @@
+import { useAsync } from 'react-use'
 // @ts-ignore
 import stableHash from 'stable-hash'
 
@@ -119,3 +120,27 @@ class CosmostationApi {
 }
 
 export const COSMOSTATION_API = new CosmostationApi()
+
+export function useCosmTokenInfos(chain?: CosmAppChainInfo) {
+  const { value } = useAsync(async () => {
+    if (!chain) {
+      return
+    }
+    const tokens = await COSMOSTATION_API.getTokenInfos(chain)
+    return new Map(tokens?.map((token) => [token.denom, token]))
+  }, [chain])
+
+  return value
+}
+
+export function useCosmTokenInfo(chain?: CosmAppChainInfo, denom?: string) {
+  const { value } = useAsync(async () => {
+    if (!chain) {
+      return
+    }
+    const tokens = await COSMOSTATION_API.getTokenInfos(chain)
+    return tokens?.find((token) => token.denom === denom)
+  }, [chain, denom])
+
+  return value
+}

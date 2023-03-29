@@ -36,7 +36,8 @@ import {
 } from '~lib/services/transaction'
 import { EvmTransactionInfo } from '~lib/services/transaction/evmService'
 import { shortenAddress } from '~lib/utils'
-import { FromTo } from '~pages/Popup/Consent/Transaction/FromTo'
+
+import { FromTo } from '../../Consent/Transaction/FromTo'
 
 export const Status = ({ status }: { status: TransactionStatus }) => {
   let bgColor, color, Icon, text
