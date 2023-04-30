@@ -5,14 +5,14 @@ import {
   watchActiveNetworkChange,
   watchActiveWalletChange
 } from '~lib/active'
-import { DB } from '~lib/db'
 import { Context, EventType, Listener } from '~lib/inject/client'
 import { NetworkKind } from '~lib/network'
 import { watchPasswordUnlocked } from '~lib/password'
 import { ChainId, IChainAccount, INetwork } from '~lib/schema'
 import {
   CONNECTED_SITE_SERVICE,
-  getConnectedAccountsBySite
+  getConnectedAccountsBySite,
+  watchConnectedSitesChange
 } from '~lib/services/connectedSiteService'
 import {
   AddNetworkPayload,
@@ -196,10 +196,7 @@ export class BaseProviderService {
 
     watchActiveWalletChange(handleAccountsChanged)
 
-    // NOTE: Dexie hooks can only be functions which don't return promises
-    DB.connectedSites.hook('creating', handleAccountsChanged)
-    DB.connectedSites.hook('updating', handleAccountsChanged)
-    DB.connectedSites.hook('deleting', handleAccountsChanged)
+    watchConnectedSitesChange(handleAccountsChanged)
   }
 
   protected async switchNetwork(network?: INetwork) {

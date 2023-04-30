@@ -2,15 +2,9 @@ import { useEffect, useState } from 'react'
 import { useAsync } from 'react-use'
 import browser from 'webextension-polyfill'
 
-import { Context } from '~lib/rpc'
+import { Context } from '~lib/inject/client'
 
-export function stall(duration: number): Promise<void> {
-  return new Promise((resolve) => {
-    setTimeout(resolve, duration)
-  })
-}
-
-export function getRootHref() {
+function getRootHref() {
   let href = globalThis.location.href
   const url = new URL(href)
   const searchIndex = url.search ? href.lastIndexOf(url.search) : -1
@@ -147,7 +141,7 @@ export function useCurrentSiteUrl(): URL | undefined {
 
   const tab = useCurrentTab()
   useEffect(() => {
-    setUrl(isUrlSupported(tab?.url) ? new URL(tab!.url!) : undefined)
+    setUrl(isUrlSupported(tab?.url) ? new URL(tab?.url!) : undefined)
   }, [tab])
 
   return url

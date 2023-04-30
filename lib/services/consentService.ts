@@ -24,8 +24,8 @@ import { COSM_TRANSACTION_SERVICE } from '~lib/services/transaction/cosmService'
 import { EVM_TRANSACTION_SERVICE } from '~lib/services/transaction/evmService'
 import { WALLET_SERVICE } from '~lib/services/wallet'
 import { SESSION_STORE, StoreKey, useSessionStorage } from '~lib/store'
-import { createWindow } from '~lib/util'
 import { canWalletSign } from '~lib/wallet'
+import { createWindow } from "~lib/tab";
 
 export enum Permission {
   ACCOUNT = 'account'

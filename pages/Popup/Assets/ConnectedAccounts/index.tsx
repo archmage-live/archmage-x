@@ -29,10 +29,10 @@ import {
   isSameWallet,
   useReadonlyWalletTree
 } from '~lib/services/wallet/tree'
-import { useCurrentSiteUrl, useSiteIconUrl } from '~lib/util'
 
 import { WalletItem } from './WalletItem'
 import { WalletList } from './WalletList'
+import { useCurrentSiteUrl, useSiteIconUrl } from "~lib/tab";
 
 export const ConnectedAccountsModal = ({
   isOpen,

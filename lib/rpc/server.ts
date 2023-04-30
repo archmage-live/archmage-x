@@ -146,6 +146,7 @@ class RpcConn {
       ...msg.args,
       {
         ...msg.ctx,
+        fromTab: port.sender?.tab?.id,
         fromUrl: this.fromInternal ? undefined : port.sender?.url,
         fromInternal: this.fromInternal
       } as Context

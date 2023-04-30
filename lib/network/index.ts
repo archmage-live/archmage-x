@@ -1,6 +1,7 @@
 import { LOCAL_STORE, StoreKey } from '~lib/store'
 
 export enum NetworkKind {
+  BTC = 'btc',
   EVM = 'evm',
   COSM = 'cosm',
   STARKNET = 'starknet',
@@ -11,6 +12,9 @@ export enum NetworkKind {
 
 export const NETWORK_SCOPES: string[] = []
 
+if (process.env.PLASMO_PUBLIC_ENABLE_BITCOIN) {
+  NETWORK_SCOPES.push('Bitcoin')
+}
 if (process.env.PLASMO_PUBLIC_ENABLE_EVM) {
   NETWORK_SCOPES.push('Ethereum')
 }
@@ -37,6 +41,7 @@ export type NetworkScope = typeof NETWORK_SCOPES[number]
 const NETWORK_KINDS: {
   [key in NetworkScope]: NetworkKind | undefined
 } = {
+  Bitcoin: NetworkKind.BTC,
   Ethereum: NetworkKind.EVM,
   Cosmos: NetworkKind.COSM,
   StarkNet: NetworkKind.STARKNET,
@@ -51,6 +56,8 @@ export function getNetworkKind(scope?: NetworkScope): NetworkKind {
 
 export function getNetworkScope(kind: NetworkKind): NetworkScope {
   switch (kind) {
+    case NetworkKind.BTC:
+      return 'Bitcoin'
     case NetworkKind.EVM:
       return 'Ethereum'
     case NetworkKind.COSM:

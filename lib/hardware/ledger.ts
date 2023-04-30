@@ -7,7 +7,7 @@ import { listen } from '@ledgerhq/logs'
 
 import { NetworkKind } from '~lib/network'
 import { DerivePosition } from '~lib/schema'
-import { stall } from '~lib/util'
+import { stall } from "~lib/utils";
 
 let transportHID: any, transportBLE: any
 let unsubscribe: any

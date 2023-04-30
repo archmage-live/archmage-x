@@ -25,9 +25,9 @@ import {
   useNetworks
 } from '~lib/services/network'
 import { PASSWORD_SERVICE } from '~lib/services/passwordService'
-import { createTab } from '~lib/util'
 
 import { NetworkList } from './NetworkList'
+import { createTab } from "~lib/tab";
 
 export const NetworkDrawer = ({ onClose }: { onClose(): void }) => {
   const navigate = useNavigate()

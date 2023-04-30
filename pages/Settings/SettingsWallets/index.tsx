@@ -21,11 +21,11 @@ import {
 } from '~lib/network'
 import { getNetworkInfo, useNetwork, useNetworks } from '~lib/services/network'
 import { useWalletTree } from '~lib/services/wallet/tree'
-import { createTab } from '~lib/util'
 import { SubWalletEdit } from '~pages/Settings/SettingsWallets/SubWalletEdit'
 import { WalletEdit } from '~pages/Settings/SettingsWallets/WalletEdit'
 
 import { WalletList } from './WalletList'
+import { createTab } from "~lib/tab";
 
 export const SettingsWallets = () => {
   const [networkScope, setNetworkScope] = useState<NetworkScope | undefined>(

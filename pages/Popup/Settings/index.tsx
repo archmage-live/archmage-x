@@ -2,13 +2,13 @@ import { Button, Center, Divider, Icon, Stack, Text } from '@chakra-ui/react'
 import { MdReadMore } from '@react-icons/all-files/md/MdReadMore'
 import { useEffect } from 'react'
 
-import { createTab } from '~lib/util'
 import { useForPopupSettings } from '~pages/Settings/SettingItem'
 import {
   SettingsGeneralLockTime,
   SettingsGeneralQuoteCurrency,
   SettingsGeneralTheme
 } from '~pages/Settings/SettingsGeneral'
+import { createTab } from "~lib/tab";
 
 export default function Settings() {
   const [, setForPopupSettings] = useForPopupSettings()

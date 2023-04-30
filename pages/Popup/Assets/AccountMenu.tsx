@@ -40,7 +40,6 @@ import { useActive } from '~lib/active'
 import { IChainAccount, ISubWallet, IWallet, PSEUDO_INDEX } from '~lib/schema'
 import { getAccountUrl } from '~lib/services/network'
 import { WalletInfo } from '~lib/services/wallet'
-import { createTab } from '~lib/util'
 import { WalletType, hasWalletKeystore } from '~lib/wallet'
 import { ConnectedSitesModal } from '~pages/Popup/Assets/ConnectedSites'
 import { DeleteWalletModal } from '~pages/Settings/SettingsWallets/DeleteWalletModal'
@@ -48,6 +47,7 @@ import { ExportMnemonicModal } from '~pages/Settings/SettingsWallets/ExportMnemo
 import { ExportPrivateKeyModal } from '~pages/Settings/SettingsWallets/ExportPrivateKeyModal'
 import { SubWalletNameEdit } from '~pages/Settings/SettingsWallets/SubWalletEdit'
 import { WalletNameEdit } from '~pages/Settings/SettingsWallets/WalletEdit'
+import { createTab } from "~lib/tab";
 
 export const AccountMenu = () => {
   const { network, wallet, subWallet, account } = useActive()

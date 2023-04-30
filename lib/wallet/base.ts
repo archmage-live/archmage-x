@@ -13,6 +13,9 @@ export enum WalletType {
   WATCH_GROUP = 'watch_group', // ditto, but in group
   HW = 'hw', // hardware
   HW_GROUP = 'hw_group', // ditto, but in group
+  MPC_HD = 'mpc_hd', // Hierarchical Deterministic, derived from MPC wallet private key (as seed)
+  MPC = 'mpc', // MPC wallet
+  MPC_GROUP = 'mpc_group', // ditto, but in group
   WALLET_CONNECT = 'wallet_connect', // WalletConnect protocol
   WALLET_CONNECT_GROUP = 'wallet_connect_group' // ditto, but in group
 }
@@ -26,6 +29,10 @@ export function isWalletGroup(type: WalletType) {
     case WalletType.WATCH_GROUP:
     // pass through
     case WalletType.HW_GROUP:
+    // pass through
+    case WalletType.MPC_HD:
+    // pass through
+    case WalletType.MPC_GROUP:
     // pass through
     case WalletType.WALLET_CONNECT_GROUP:
       return true
@@ -146,6 +153,10 @@ export enum HardwareWalletType {
   LEDGER = 'Ledger'
 }
 
+export enum MpcWalletType {
+  WEB3AUTH = 'Web3Auth'
+}
+
 export interface WalletAccount {
   address: string
   index: number
@@ -156,7 +167,7 @@ export interface WalletOpts {
   id: number // wallet id in db
   type: WalletType
   path?: string
-  prefix?: string // for Cosm
+  extra?: any
 }
 
 export interface SigningWallet {
@@ -186,6 +197,8 @@ export function getDefaultDerivePosition(
   networkKind: NetworkKind
 ): DerivePosition {
   switch (networkKind) {
+    case NetworkKind.BTC:
+      return DerivePosition.ACCOUNT
     case NetworkKind.APTOS:
       return DerivePosition.ACCOUNT
     default:

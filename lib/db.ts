@@ -17,6 +17,7 @@ import {
   ITokenList,
   ITransaction,
   IWallet,
+  IActiveBinding,
   addressBookSchemaV1,
   aptosEventSchemaV2,
   cacheSchemaV1,
@@ -31,7 +32,8 @@ import {
   tokenListSchemaV1,
   tokenSchemaV1,
   transactionSchemaV1,
-  walletSchemaV1
+  walletSchemaV1,
+  activeBindingSchemaV1
 } from '~lib/schema'
 
 export class Database extends Dexie {
@@ -47,6 +49,7 @@ export class Database extends Dexie {
   tokenLists!: Dexie.Table<ITokenList, number>
   tokens!: Dexie.Table<IToken, number>
   connectedSites!: Dexie.Table<IConnectedSite, number>
+  activeBindings!: Dexie.Table<IActiveBinding, number>
   addressBook!: Dexie.Table<IAddressBook, number>
   cache!: Dexie.Table<ICache, number>
   aptosEvents!: Dexie.Table<IAptosEvent, number>
@@ -66,11 +69,15 @@ export class Database extends Dexie {
       tokenLists: tokenListSchemaV1,
       tokens: tokenSchemaV1,
       connectedSites: connectedSiteSchemaV1,
+      // activeBindings: activeBindingSchemaV1,
       addressBook: addressBookSchemaV1,
       cache: cacheSchemaV1
     })
     this.version(2).stores({
-      aptosEvents: aptosEventSchemaV2
+      aptosEvents: aptosEventSchemaV2,
+    })
+    this.version(3).stores({
+      activeBindings: activeBindingSchemaV1,
     })
   }
 }

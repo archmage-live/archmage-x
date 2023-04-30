@@ -15,7 +15,7 @@ import {
 } from '~lib/schema'
 import { IConnectedSite } from '~lib/schema/connectedSite'
 import { WALLET_SERVICE, useChainAccounts } from '~lib/services/wallet'
-import { getCurrentTab, getTab, isUrlSupported } from '~lib/util'
+import { getCurrentTab, getTab, isUrlSupported } from "~lib/tab";
 
 interface IConnectedSiteService {
   connectSite(
@@ -261,6 +261,13 @@ function createConnectedSiteService() {
 }
 
 export const CONNECTED_SITE_SERVICE = createConnectedSiteService()
+
+export function watchConnectedSitesChange(handler: () => void) {
+  // NOTE: Dexie hooks can only be functions which don't return promises
+  DB.connectedSites.hook('creating', handler)
+  DB.connectedSites.hook('updating', handler)
+  DB.connectedSites.hook('deleting', handler)
+}
 
 export function useConnectedSiteAccess(account?: IChainAccount, href?: string) {
   const conn = useConnectedSite(account, href)

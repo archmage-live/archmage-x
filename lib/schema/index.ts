@@ -21,6 +21,7 @@ export * from './connectedSite'
 export * from './addressBook'
 export * from './cache'
 export * from './aptosEvent'
+export * from './activeBinding'
 
 // https://dexie.org/docs/Indexable-Type
 // non-indexable types:

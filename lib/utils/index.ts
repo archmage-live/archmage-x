@@ -1,5 +1,11 @@
 import { ethers } from 'ethers'
 
+export function stall(duration: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, duration)
+  })
+}
+
 export function isMnemonic(mnemonic: string): boolean {
   try {
     const _ = ethers.utils.HDNode.fromMnemonic(mnemonic)

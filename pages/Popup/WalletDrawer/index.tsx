@@ -28,8 +28,8 @@ import {
   persistReorderWallets
 } from '~lib/services/wallet/reorder'
 import { WalletEntry } from '~lib/services/wallet/tree'
-import { createTab, createWindow } from '~lib/util'
 import { WalletList } from '~pages/Popup/WalletDrawer/WalletList'
+import { createTab, createWindow } from "~lib/tab";
 
 export const WalletDrawer = ({
   network,

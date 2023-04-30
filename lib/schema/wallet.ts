@@ -2,7 +2,7 @@ import Dexie from 'dexie'
 
 import { generateName } from '~lib/db'
 import { DerivePosition } from '~lib/schema/hdPath'
-import { HardwareWalletType, WalletType } from '~lib/wallet'
+import { HardwareWalletType, MpcWalletType, WalletType } from "~lib/wallet";
 
 export interface IWallet {
   id: number
@@ -22,6 +22,9 @@ export interface WalletInfo {
   path?: string
   derivePosition?: DerivePosition
   notBackedUp?: boolean
+  mpcType?: MpcWalletType
+  mpcInfo: any
+  extra?: any
 }
 
 const namePrefix = 'Wallet '

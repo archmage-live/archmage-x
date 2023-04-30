@@ -1,24 +1,26 @@
-import { useLiveQuery } from 'dexie-react-hooks'
-import { useMemo } from 'react'
+import { useLiveQuery } from "dexie-react-hooks";
+import { useMemo } from "react";
 
-import { DB, getNextField } from '~lib/db'
-import { ENV } from '~lib/env'
-import { NetworkKind } from '~lib/network'
-import { AptosChainInfo } from '~lib/network/aptos'
-import { CosmAppChainInfo } from '~lib/network/cosm'
-import { EvmChainInfo } from '~lib/network/evm'
-import { StarknetChainInfo } from '~lib/network/starknet'
-import { ChainId, IChainAccount, INetwork, IToken } from '~lib/schema'
-import { useEvmChainLogoUrl } from '~lib/services/datasource/chainlist'
-import { useCosmChainLogoUrl } from '~lib/services/datasource/cosmos'
-import { DENOM_TO_SUBDIRECTORY } from '~lib/services/datasource/cosmostation/helpers'
-import { useCryptoComparePrice } from '~lib/services/datasource/cryptocompare'
-import { StarknetNetworkService } from '~lib/services/network/starknetService'
-import { CosmTokenInfo } from '~lib/services/token/cosm'
+import { DB, getNextField } from "~lib/db";
+import { ENV } from "~lib/env";
+import { NetworkKind } from "~lib/network";
+import { AptosChainInfo } from "~lib/network/aptos";
+import { CosmAppChainInfo } from "~lib/network/cosm";
+import { EvmChainInfo } from "~lib/network/evm";
+import { StarknetChainInfo } from "~lib/network/starknet";
+import { ChainId, IChainAccount, INetwork, IToken } from "~lib/schema";
+import { useEvmChainLogoUrl } from "~lib/services/datasource/chainlist";
+import { useCosmChainLogoUrl } from "~lib/services/datasource/cosmos";
+import { DENOM_TO_SUBDIRECTORY } from "~lib/services/datasource/cosmostation/helpers";
+import { useCryptoComparePrice } from "~lib/services/datasource/cryptocompare";
+import { CosmTokenInfo } from "~lib/services/token/cosm";
 
-import { AptosNetworkService } from './aptosService'
-import { CosmNetworkService } from './cosmService'
-import { EvmNetworkService } from './evmService'
+import { AptosNetworkService } from "./aptosService";
+import { BtcNetworkService } from "./btcService";
+import { CosmNetworkService } from "./cosmService";
+import { EvmNetworkService } from "./evmService";
+import { StarknetNetworkService } from "./starknetService";
+import { BtcChainInfo } from "~lib/network/btc";
 
 export interface NetworkInfo {
   name: string
@@ -34,6 +36,20 @@ export interface NetworkInfo {
 
 export function getNetworkInfo(network: INetwork): NetworkInfo {
   switch (network.kind) {
+    case NetworkKind.BTC: {
+      const info = network.info as BtcChainInfo
+      return {
+        name: info.name,
+        description: info.name,
+        chainId: info.chainId,
+        isTestnet: info.isTestnet,
+        currencyName: info.currency.name,
+        currencySymbol: info.currency.symbol,
+        decimals: info.currency.decimals,
+        rpcUrl: info.rpc.at(0),
+        explorerUrl: info.explorers.at(0)
+      }
+    }
     case NetworkKind.EVM: {
       const info = network.info as EvmChainInfo
       return {
@@ -122,6 +138,9 @@ export function getAccountUrl(
 
     let pathPrefix
     switch (network.kind) {
+      case NetworkKind.BTC:
+        pathPrefix = 'address'
+        break
       case NetworkKind.EVM:
         pathPrefix = 'address'
         break
@@ -158,6 +177,9 @@ export function getTransactionUrl(
 
     let pathPrefix
     switch (network.kind) {
+      case NetworkKind.BTC:
+        pathPrefix = 'tx'
+        break
       case NetworkKind.EVM:
         pathPrefix = 'tx'
         break
@@ -196,6 +218,8 @@ export function getTokenUrl(
     let tokenId = token.token
     let tokenType
     switch (network.kind) {
+      case NetworkKind.BTC:
+        return undefined
       case NetworkKind.EVM:
         pathPrefix = 'token'
         break
@@ -228,6 +252,7 @@ export function getTokenUrl(
 export class NetworkService {
   static async init() {
     if (ENV.inServiceWorker) {
+      await BtcNetworkService.init()
       await EvmNetworkService.init()
       await CosmNetworkService.init()
       await StarknetNetworkService.init()
@@ -260,6 +285,9 @@ export class NetworkService {
   ): Promise<INetwork> {
     let network
     switch (kind) {
+      case NetworkKind.BTC:
+        network = BtcNetworkService.buildNetwork(chainId, info)
+        break
       case NetworkKind.EVM:
         network = EvmNetworkService.buildNetwork(chainId, info)
         break

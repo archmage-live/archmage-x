@@ -1,4 +1,5 @@
 export interface Context {
+  fromTab?: number
   fromUrl?: string
   fromInternal?: boolean
   window?: {

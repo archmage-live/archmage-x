@@ -25,6 +25,10 @@ interface AccountDataWithPrivkey extends AccountData {
   readonly privkey: Uint8Array
 }
 
+export interface CosmWalletOpts extends WalletOpts {
+  prefix?: string
+}
+
 export class CosmWallet implements KeystoreSigningWallet {
   static defaultPath = "m/44'/118'/0'/0/0"
 
@@ -47,7 +51,7 @@ export class CosmWallet implements KeystoreSigningWallet {
     type,
     path,
     prefix
-  }: WalletOpts): Promise<CosmWallet | undefined> {
+  }: CosmWalletOpts): Promise<CosmWallet | undefined> {
     const ks = await KEYSTORE.get(id, true)
     if (!ks) {
       return undefined

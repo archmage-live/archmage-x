@@ -16,10 +16,10 @@ import { useActive } from '~lib/active'
 import { CONSENT_SERVICE, ConsentRequest } from '~lib/services/consentService'
 import { WALLET_SERVICE } from '~lib/services/wallet'
 import { useWalletTree } from '~lib/services/wallet/tree'
-import { useSiteIconUrl } from '~lib/util'
 import { shortenAddress } from '~lib/utils'
 
 import { WalletList } from './WalletList'
+import { useSiteIconUrl } from "~lib/tab";
 
 export const RequestPermission = ({
   request,

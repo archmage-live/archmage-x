@@ -18,7 +18,8 @@ import {
   hasWalletKeystore,
   isHardwareWallet
 } from './base'
-import { CosmWallet } from './cosm'
+import { BtcWallet, BtcWalletOpts } from "./btc";
+import { CosmWallet, CosmWalletOpts } from './cosm'
 import { EvmWallet } from './evm'
 import { EvmHwWallet } from './evmHw'
 import { SolWallet } from './sol'
@@ -26,6 +27,7 @@ import { StarknetWallet } from './starknet'
 import { SuiWallet } from './sui'
 
 export * from './base'
+export * from './btc'
 export * from './evm'
 export * from './cosm'
 export * from './aptos'
@@ -46,6 +48,8 @@ export function isUseEd25519Curve(networkKind: NetworkKind): boolean {
 
 export function getDefaultPath(networkKind: NetworkKind): string {
   switch (networkKind) {
+    case NetworkKind.BTC:
+      return BtcWallet.defaultPath
     case NetworkKind.EVM:
       return EvmWallet.defaultPath
     case NetworkKind.COSM:
@@ -99,9 +103,13 @@ export async function getMasterSigningWallet(
   const opts: WalletOpts = {
     id: wallet.id,
     type: wallet.type,
-    path: wallet.info.path
+    path: wallet.info.path,
+    extra: wallet.info.extra
   }
   switch (networkKind) {
+    case NetworkKind.BTC:
+      assert(opts.extra)
+      return BtcWallet.from(opts as BtcWalletOpts)
     case NetworkKind.EVM:
       return EvmWallet.from(opts)
     case NetworkKind.COSM:
@@ -111,8 +119,10 @@ export async function getMasterSigningWallet(
       })
       assert(network !== undefined)
       const info = network.info as CosmAppChainInfo
-      opts.prefix = info.bech32Config.bech32PrefixAccAddr
-      return CosmWallet.from(opts)
+      return CosmWallet.from({
+        ...opts,
+        prefix: info.bech32Config.bech32PrefixAccAddr
+      } as CosmWalletOpts)
     case NetworkKind.APTOS:
       return AptosWallet.from(opts)
     case NetworkKind.SUI:
