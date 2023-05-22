@@ -32,6 +32,7 @@ import { ISubWallet, getDefaultSubName } from '~lib/schema/subWallet'
 import { IWallet } from '~lib/schema/wallet'
 import { NETWORK_SERVICE } from '~lib/services/network'
 import {
+  BtcAddressType,
   HardwareWalletType,
   KeystoreSigningWallet,
   WalletAccount,
@@ -58,6 +59,7 @@ export type NewWalletOpts = {
   networkKind?: NetworkKind
   hash?: string // for WalletType.HW_GROUP
   accounts?: WalletAccount[] // for imported wallets
+  addressType?: BtcAddressType
 }
 
 export type CreateWalletOpts = {
@@ -481,7 +483,8 @@ class WalletService extends WalletServicePartial {
     privateKey,
     networkKind,
     hash,
-    accounts
+    accounts,
+    addressType
   }: NewWalletOpts): Promise<{
     wallet: IWallet
     decrypted?: _KeystoreAccount
@@ -492,6 +495,7 @@ class WalletService extends WalletServicePartial {
     switch (type) {
       case WalletType.HD: {
         assert(mnemonic && !path && !privateKey)
+        assert(addressType)
         account = ethers.utils.HDNode.fromMnemonic(mnemonic)
         hash = account.address
         break
@@ -504,6 +508,7 @@ class WalletService extends WalletServicePartial {
           assert(!mnemonic && !path)
           account = new ethers.Wallet(privateKey)
         }
+        assert(addressType)
         hash = account.address
         break
       }
@@ -511,6 +516,7 @@ class WalletService extends WalletServicePartial {
       // pass through
       case WalletType.WALLET_CONNECT: {
         assert(networkKind)
+        assert(networkKind !== NetworkKind.BTC || addressType)
         assert(accounts && accounts.length === 1)
         accounts = checkAccounts(networkKind, accounts)
         hash = accounts[0].address
@@ -520,6 +526,7 @@ class WalletService extends WalletServicePartial {
       // pass through
       case WalletType.WALLET_CONNECT_GROUP: {
         assert(networkKind)
+        assert(networkKind !== NetworkKind.BTC || addressType)
         assert(accounts && accounts.length >= 1)
         accounts = checkAccounts(networkKind, accounts)
         hash = ethers.utils.getAddress(
@@ -533,6 +540,7 @@ class WalletService extends WalletServicePartial {
       case WalletType.HW: {
         assert(hwType && path && pathTemplate && derivePosition)
         assert(networkKind)
+        assert(networkKind !== NetworkKind.BTC || addressType)
         assert(accounts && accounts.length === 1)
         accounts = checkAccounts(networkKind, accounts)
         hash = accounts[0].address
@@ -541,6 +549,7 @@ class WalletService extends WalletServicePartial {
       case WalletType.HW_GROUP: {
         assert(hwType && pathTemplate && derivePosition)
         assert(networkKind)
+        assert(networkKind !== NetworkKind.BTC || addressType)
         assert(accounts && accounts.length >= 1)
         accounts = checkAccounts(networkKind, accounts)
         assert(
@@ -562,7 +571,8 @@ class WalletService extends WalletServicePartial {
         hwType,
         path,
         pathTemplate,
-        derivePosition
+        derivePosition,
+        addressType
       },
       createdAt: Date.now()
     } as IWallet

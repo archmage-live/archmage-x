@@ -1,5 +1,5 @@
 import assert from 'assert'
-import bitcoin from 'bitcoinjs-lib'
+import * as bitcoin from 'bitcoinjs-lib'
 import { ethErrors } from 'eth-rpc-errors'
 import PQueue from 'p-queue'
 

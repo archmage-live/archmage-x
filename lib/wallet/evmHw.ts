@@ -6,7 +6,7 @@ import { ethers } from 'ethers'
 
 import { getLedgerEthApp } from '~lib/hardware/ledger'
 
-import { SigningWallet, generatePath, WalletPathSchema } from ".";
+import { SigningWallet, WalletPathSchema, generatePath } from '.'
 
 export const HARDWARE_MISMATCH =
   'Connected hardware wallet has a different secret recovery phrase'
@@ -33,7 +33,7 @@ export class EvmHwWallet implements SigningWallet {
   }
 
   private async getLedgerApp() {
-    const [appEth, hwHash] = await getLedgerEthApp(this.pathSchema!)
+    const [appEth, hwHash] = await getLedgerEthApp(this.pathSchema)
     assert(
       this.hwHash === this.address || hwHash === this.hwHash,
       HARDWARE_MISMATCH

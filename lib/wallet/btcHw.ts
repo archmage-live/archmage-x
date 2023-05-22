@@ -1,7 +1,7 @@
+import ecc from '@bitcoinerlab/secp256k1'
 import assert from 'assert'
-import bitcoin from 'bitcoinjs-lib'
+import * as bitcoin from 'bitcoinjs-lib'
 import ECPairFactory from 'ecpair'
-import * as ecc from 'tiny-secp256k1'
 
 import { getLedgerBtcApp, toAddressFormat } from '~lib/hardware/ledger'
 import { DerivePosition } from '~lib/schema'

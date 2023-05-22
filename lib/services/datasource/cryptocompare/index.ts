@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import tBtcLogo from 'data-base64:~assets/tokens/BitcoinTestnet.png'
 import { useMemo } from 'react'
 
 import { fetchJsonWithCache } from '~lib/fetch'
@@ -205,6 +206,10 @@ export function useCryptoComparePrice(
     let imageUrl = result[0].DISPLAY?.IMAGEURL
     if (imageUrl) {
       imageUrl = 'https://www.cryptocompare.com' + imageUrl
+    }
+
+    if (currency === 'tBTC') {
+      imageUrl = tBtcLogo
     }
 
     return {

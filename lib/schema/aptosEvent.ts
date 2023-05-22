@@ -15,5 +15,5 @@ export interface IAptosEvent {
   info: any
 }
 
-export const aptosEventSchemaV2 =
+export const aptosEventSchemaV1 =
   '++id, &[masterId+index+networkKind+chainId+address+creationNumber+sequenceNumber], [networkKind+chainId]'

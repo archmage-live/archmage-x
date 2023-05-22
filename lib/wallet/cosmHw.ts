@@ -9,8 +9,12 @@ import { fromBech32, toBech32 } from '@cosmjs/encoding'
 import assert from 'assert'
 
 import { getLedgerCosmApp } from '~lib/hardware/ledger'
-import { DerivePosition } from '~lib/schema'
-import { SigningWallet, generatePath, isStdSignDoc } from '~lib/wallet'
+import {
+  SigningWallet,
+  WalletPathSchema,
+  generatePath,
+  isStdSignDoc
+} from '~lib/wallet'
 
 import { HARDWARE_MISMATCH } from './evmHw'
 
@@ -20,25 +24,25 @@ export class CosmHwWallet implements SigningWallet {
   constructor(
     public hwHash: string,
     public address: string,
-    path:
-      | {
-          pathTemplate: string
-          index: number
-          derivePosition?: DerivePosition
-        }
-      | string,
+    public pathSchema: WalletPathSchema,
+    pathOrIndex: string | number,
     public publicKey?: string
   ) {
-    this.path =
-      typeof path === 'object'
-        ? generatePath(path.pathTemplate, path.index, path.derivePosition)
-        : path
+    if (typeof pathOrIndex === 'string') {
+      this.path = pathOrIndex
+    } else {
+      this.path = generatePath(
+        pathSchema.pathTemplate,
+        pathOrIndex,
+        pathSchema.derivePosition
+      )
+    }
   }
 
   private async getLedgerApp() {
     const { prefix, data } = fromBech32(this.address)
 
-    const [appCosm, hwHash] = await getLedgerCosmApp()
+    const [appCosm, hwHash] = await getLedgerCosmApp(this.pathSchema)
     assert(
       this.hwHash === toBech32('cosmos', data) || hwHash === this.hwHash,
       HARDWARE_MISMATCH

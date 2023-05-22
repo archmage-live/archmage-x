@@ -1,18 +1,17 @@
+import ecc from '@bitcoinerlab/secp256k1'
 import { stringToPath } from '@cosmjs/crypto'
 import { arrayify } from '@ethersproject/bytes'
 import assert from 'assert'
-import bitcoin from 'bitcoinjs-lib'
+import * as bitcoin from 'bitcoinjs-lib'
 import ECPairFactory from 'ecpair'
 import { ethers } from 'ethers'
-import * as ecc from 'tiny-secp256k1'
-// @ts-ignore
 import * as wif from 'wif'
 
 import { KEYSTORE } from '~lib/keystore'
 import { DerivePosition } from '~lib/schema'
+import { BtcTxParams } from '~lib/services/provider/btc'
 
 import { KeystoreSigningWallet, WalletOpts, WalletType, generatePath } from '.'
-import { BtcTxParams } from "~lib/services/provider/btc";
 
 export enum BtcAddressType {
   LEGACY = 'Legacy', // legacy; P2PKH
@@ -137,7 +136,9 @@ export class BtcWallet implements KeystoreSigningWallet {
     // Bitcoin always uses `account` as derivation position
     assert(derivePosition === DerivePosition.ACCOUNT)
     // Bitcoin should uses full BIP44 path
-    assert(stringToPath(pathTemplate).length === DerivePosition.ADDRESS_INDEX + 1)
+    assert(
+      stringToPath(pathTemplate).length === DerivePosition.ADDRESS_INDEX + 1
+    )
     const path = generatePath(pathTemplate, accountIndex, derivePosition)
     const wallet = this.wallet.derivePath(path)
     const derived = new BtcWallet(wallet, this.addressType, this.network)
@@ -148,21 +149,30 @@ export class BtcWallet implements KeystoreSigningWallet {
   async deriveSub(changeIndex: number, addressIndex: number) {
     assert(this.wallet instanceof ethers.utils.HDNode)
     assert(this.master)
-    const path1 = generatePath(this.wallet.path, changeIndex, DerivePosition.CHANGE)
-    const path2 = generatePath(path1, addressIndex, DerivePosition.ADDRESS_INDEX)
+    const path1 = generatePath(
+      this.wallet.path,
+      changeIndex,
+      DerivePosition.CHANGE
+    )
+    const path2 = generatePath(
+      path1,
+      addressIndex,
+      DerivePosition.ADDRESS_INDEX
+    )
     const wallet = this.master.derivePath(path2)
     return new BtcWallet(wallet, this.addressType, this.network)
   }
 
-  async signTransaction(
-    transaction: BtcTxParams,
-  ): Promise<string> {
+  async signTransaction(transaction: BtcTxParams): Promise<string> {
     const psbt = bitcoin.Psbt.fromHex(transaction.psbt!)
 
     const ECPair = ECPairFactory(ecc)
     if (transaction.subAccounts) {
       for (const acc of transaction.subAccounts) {
-        const subWallet = await this.deriveSub(acc.changeIndex, acc.addressIndex)
+        const subWallet = await this.deriveSub(
+          acc.changeIndex,
+          acc.addressIndex
+        )
         const key = ECPair.fromWIF(subWallet.privateKey, subWallet.network)
         await psbt.signAllInputsAsync(key)
       }
@@ -174,8 +184,8 @@ export class BtcWallet implements KeystoreSigningWallet {
     const validator = (
       pubkey: Buffer,
       msghash: Buffer,
-      signature: Buffer,
-    ): boolean => ECPair.fromPublicKey(pubkey).verify(msghash, signature);
+      signature: Buffer
+    ): boolean => ECPair.fromPublicKey(pubkey).verify(msghash, signature)
 
     assert(psbt.validateSignaturesOfAllInputs(validator))
 

@@ -34,6 +34,7 @@ import {
   LedgerPathSchema,
   clearLedgerTransport,
   getLedgerAddress,
+  getLedgerBtcApp,
   getLedgerCosmApp,
   getLedgerEthApp
 } from '~lib/hardware/ledger'
@@ -63,6 +64,7 @@ import {
   useDerivePosition,
   useExistingWallet,
   useHdPath,
+  useHdPathTemplate,
   useHwHash,
   useHwTransport,
   useNetworkKind
@@ -78,6 +80,7 @@ export const StepConnectLedger = ({}: {}) => {
   const [networkKind, setNetworkKind] = useNetworkKind()
   const [addWalletKind, setAddWalletKind] = useAddWalletKind()
   const [, setHdPath] = useHdPath()
+  const [, setHdPathTemplate] = useHdPathTemplate()
   const [, setDerivePosition] = useDerivePosition()
   const [hwTransport] = useHwTransport()
   const [hwHash, setHwHash] = useHwHash()
@@ -123,12 +126,16 @@ export const StepConnectLedger = ({}: {}) => {
       try {
         let hwGot
         switch (networkKind) {
+          case NetworkKind.BTC: {
+            hwGot = await getLedgerBtcApp(pathSchema, hwTransport)
+            break
+          }
           case NetworkKind.EVM: {
-            hwGot = await getLedgerEthApp(hwTransport)
+            hwGot = await getLedgerEthApp(pathSchema, hwTransport)
             break
           }
           case NetworkKind.COSM: {
-            hwGot = await getLedgerCosmApp(hwTransport)
+            hwGot = await getLedgerCosmApp(pathSchema, hwTransport)
             break
           }
           default:
@@ -143,11 +150,15 @@ export const StepConnectLedger = ({}: {}) => {
             continue
           }
           const path = generatePath(
-            pathSchema.pathSchema,
+            pathSchema.pathTemplate,
             index,
             pathSchema.derivePosition
           )
-          const { address, publicKey } = await getLedgerAddress(hwApp, path)
+          const { address, publicKey } = await getLedgerAddress(
+            hwApp,
+            pathSchema,
+            path
+          )
           addrs.push(address)
           pubKeys.push(publicKey)
           assert(addrs.length - 1 === index)
@@ -248,21 +259,28 @@ export const StepConnectLedger = ({}: {}) => {
   useEffect(() => {
     if (!pathSchema) {
       setHdPath('')
+      setHdPathTemplate('')
       setDerivePosition(undefined)
       return
     }
-    if (addWalletKind === AddWalletKind.CONNECT_HARDWARE_GROUP) {
-      setHdPath(pathSchema.pathSchema)
-      setDerivePosition(pathSchema.derivePosition)
-    } else if (accounts.length) {
+    if (addWalletKind === AddWalletKind.CONNECT_HARDWARE && accounts.length) {
       const path = generatePath(
-        pathSchema.pathSchema,
+        pathSchema.pathTemplate,
         accounts[0].index,
         pathSchema.derivePosition
       )
       setHdPath(path)
     }
-  }, [pathSchema, setHdPath, setDerivePosition, addWalletKind, accounts])
+    setHdPathTemplate(pathSchema.pathTemplate)
+    setDerivePosition(pathSchema.derivePosition)
+  }, [
+    pathSchema,
+    setHdPath,
+    setHdPathTemplate,
+    setDerivePosition,
+    addWalletKind,
+    accounts
+  ])
 
   const existingWallet = useWallet(
     undefined,
@@ -393,10 +411,12 @@ export const StepConnectLedger = ({}: {}) => {
 
               {pathSchema && (
                 <HdPathInput
-                  forcePrefixLength={stringToPath(pathSchema.pathSchema).length}
+                  forcePrefixLength={
+                    stringToPath(pathSchema.pathTemplate).length
+                  }
                   fixedLength
                   derivePosition={pathSchema.derivePosition}
-                  value={pathSchema.pathSchema}
+                  value={pathSchema.pathTemplate}
                 />
               )}
             </HStack>
@@ -534,7 +554,7 @@ const SelectAddresses = ({
 
           const address = addresses[item.index]
           const path = generatePath(
-            pathSchema.pathSchema,
+            pathSchema.pathTemplate,
             item.index,
             pathSchema.derivePosition
           )

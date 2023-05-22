@@ -9,7 +9,12 @@ import {
   NewWalletOpts,
   WALLET_SERVICE
 } from '~lib/services/wallet'
-import { HardwareWalletType, WalletAccount, WalletType } from '~lib/wallet'
+import {
+  BtcAddressType,
+  HardwareWalletType,
+  WalletAccount,
+  WalletType
+} from '~lib/wallet'
 
 export enum AddWalletKind {
   NEW_HD,
@@ -35,6 +40,7 @@ const nameAtom = atom('')
 const mnemonicAtom = atom<string[]>([])
 const mnemonicNotBackedUpAtom = atom<boolean>(false)
 const hdPathAtom = atom('')
+const hdPathTemplateAtom = atom('')
 const derivePositionAtom = atom<DerivePosition | undefined>(undefined)
 const privateKeyAtom = atom('')
 const networkKindAtom = atom<NetworkKind>(NetworkKind.EVM)
@@ -43,6 +49,7 @@ const accountsAtom = atom<WalletAccount[]>([])
 const hwTypeAtom = atom<HardwareWalletType | undefined>(undefined)
 const hwTransportAtom = atom<'hid' | 'ble' | undefined>(undefined)
 const hwHash = atom<string>('')
+const addressType = atom<BtcAddressType | undefined>(undefined)
 const createdAtom = atom(false)
 
 export function useAddWalletKind() {
@@ -63,6 +70,10 @@ export function useMnemonicNotBackedUp() {
 
 export function useHdPath() {
   return useAtom(hdPathAtom)
+}
+
+export function useHdPathTemplate() {
+  return useAtom(hdPathTemplateAtom)
 }
 
 export function useDerivePosition() {
@@ -97,6 +108,10 @@ export function useHwHash() {
   return useAtom(hwHash)
 }
 
+export function useAddressType() {
+  return useAtom(addressType)
+}
+
 export function useCreated() {
   return useAtom(createdAtom)
 }
@@ -105,6 +120,7 @@ export function useClear() {
   const [, setMnemonic] = useMnemonic()
   const [, setMnemonicNotBackedUp] = useMnemonicNotBackedUp()
   const [, setHdPath] = useHdPath()
+  const [, setHdPathTemplate] = useHdPathTemplate()
   const [, setDerivePosition] = useDerivePosition()
   const [, setPrivateKey] = usePrivateKey()
   const [, setName] = useName()
@@ -114,11 +130,13 @@ export function useClear() {
   const [, setHwHash] = useHwHash()
   const [, setAccounts] = useAccounts()
   const [, setExistingWallet] = useExistingWallet()
+  const [, setAddressType] = useAddressType()
   const [, setCreated] = useCreated()
   return useCallback(() => {
     setMnemonic([])
     setMnemonicNotBackedUp(false)
     setHdPath('')
+    setHdPathTemplate('')
     setDerivePosition(undefined)
     setPrivateKey('')
     setName('')
@@ -128,6 +146,7 @@ export function useClear() {
     setHwHash('')
     setAccounts([])
     setExistingWallet(undefined)
+    setAddressType(undefined)
     setCreated(false)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -138,6 +157,7 @@ export function useAddWallet() {
   const [mnemonic] = useMnemonic()
   const [notBackedUp] = useMnemonicNotBackedUp()
   const [hdPath] = useHdPath()
+  const [hdPathTemplate] = useHdPathTemplate()
   const [derivePosition] = useDerivePosition()
   const [privateKey] = usePrivateKey()
   const [name] = useName()
@@ -145,6 +165,7 @@ export function useAddWallet() {
   const [accounts] = useAccounts()
   const [hwType] = useHwType()
   const [hwHash] = useHwHash()
+  const [addressType] = useAddressType()
   const [, setCreated] = useCreated()
 
   return useCallback(async (): Promise<{ error?: string }> => {
@@ -159,51 +180,63 @@ export function useAddWallet() {
       case AddWalletKind.IMPORT_HD:
         opts.type = WalletType.HD
         opts.mnemonic = mnemonic.join(' ')
+        opts.addressType = addressType || BtcAddressType.NATIVE_SEGWIT
         break
       case AddWalletKind.IMPORT_MNEMONIC_PRIVATE_KEY:
         opts.type = WalletType.PRIVATE_KEY
         opts.mnemonic = mnemonic.join(' ')
         opts.path = hdPath
+        opts.addressType = addressType || BtcAddressType.NATIVE_SEGWIT
         break
       case AddWalletKind.IMPORT_PRIVATE_KEY:
         opts.type = WalletType.PRIVATE_KEY
         opts.privateKey = privateKey
+        opts.addressType = addressType || BtcAddressType.NATIVE_SEGWIT
         break
       case AddWalletKind.IMPORT_WATCH_ADDRESS:
         opts.type = WalletType.WATCH
         opts.networkKind = networkKind
         opts.accounts = accounts
+        opts.addressType = addressType
         break
       case AddWalletKind.IMPORT_WATCH_ADDRESS_GROUP:
         opts.type = WalletType.WATCH_GROUP
         opts.networkKind = networkKind
         opts.accounts = accounts
+        opts.addressType = addressType
         break
       case AddWalletKind.WALLET_CONNECT:
         opts.type = WalletType.WALLET_CONNECT
         opts.networkKind = networkKind
         opts.accounts = accounts
+        opts.addressType = addressType
         break
       case AddWalletKind.WALLET_CONNECT_GROUP:
         opts.type = WalletType.WALLET_CONNECT_GROUP
         opts.networkKind = networkKind
         opts.accounts = accounts
+        opts.addressType = addressType
         break
       case AddWalletKind.CONNECT_HARDWARE:
         opts.type = WalletType.HW
         opts.networkKind = networkKind
         opts.path = hdPath
+        opts.pathTemplate = hdPathTemplate
+        opts.derivePosition = derivePosition
         opts.hwType = hwType
         opts.accounts = accounts
+        opts.addressType = addressType
         break
       case AddWalletKind.CONNECT_HARDWARE_GROUP:
         opts.type = WalletType.HW_GROUP
         opts.networkKind = networkKind
         opts.path = hdPath
+        opts.pathTemplate = hdPathTemplate
         opts.derivePosition = derivePosition
         opts.hwType = hwType
         opts.hash = hwHash
         opts.accounts = accounts
+        opts.addressType = addressType
         break
       default:
         throw new Error('unknown wallet type')
@@ -229,17 +262,19 @@ export function useAddWallet() {
 
     return {}
   }, [
-    addWalletKind,
-    derivePosition,
-    hdPath,
-    accounts,
-    hwHash,
-    hwType,
-    mnemonic,
     name,
+    addWalletKind,
     networkKind,
+    accounts,
     notBackedUp,
+    mnemonic,
+    hdPath,
     privateKey,
+    hdPathTemplate,
+    derivePosition,
+    hwType,
+    hwHash,
+    addressType,
     setCreated
   ])
 }

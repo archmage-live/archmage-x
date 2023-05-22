@@ -1,4 +1,5 @@
-import bitcoin from 'bitcoinjs-lib'
+import * as bitcoin from 'bitcoinjs-lib'
+import { crypto } from '@noble/hashes/crypto'
 
 import { NativeCurrency } from './evm'
 

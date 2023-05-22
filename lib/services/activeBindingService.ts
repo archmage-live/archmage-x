@@ -23,7 +23,7 @@ interface IActiveBindingService {
 class ActiveBindingServicePartial implements IActiveBindingService {
   async getActiveBinding(origin: string, tabId: number | typeof TAB_ID_NONE) {
     return DB.activeBindings
-      .where('[origin, tabId]')
+      .where('[origin+tabId]')
       .equals([origin, tabId])
       .first()
   }
@@ -53,7 +53,7 @@ class ActiveBindingService extends ActiveBindingServicePartial {
   async removeActiveBinding(origin: string, tabId?: number) {
     if (typeof tabId === 'number') {
       await DB.activeBindings
-        .where('[origin, tabId]')
+        .where('[origin+tabId]')
         .equals([origin, tabId])
         .delete()
     } else {

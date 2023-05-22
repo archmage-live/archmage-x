@@ -2,6 +2,7 @@ import Dexie from 'dexie'
 import { Config, animals, uniqueNamesGenerator } from 'unique-names-generator'
 
 import {
+  IActiveBinding,
   IAddressBook,
   IAptosEvent,
   ICache,
@@ -17,9 +18,9 @@ import {
   ITokenList,
   ITransaction,
   IWallet,
-  IActiveBinding,
+  activeBindingSchemaV1,
   addressBookSchemaV1,
-  aptosEventSchemaV2,
+  aptosEventSchemaV1,
   cacheSchemaV1,
   chainAccountAuxSchemaV1,
   chainAccountSchemaV1,
@@ -32,8 +33,7 @@ import {
   tokenListSchemaV1,
   tokenSchemaV1,
   transactionSchemaV1,
-  walletSchemaV1,
-  activeBindingSchemaV1
+  walletSchemaV1
 } from '~lib/schema'
 
 export class Database extends Dexie {
@@ -69,15 +69,10 @@ export class Database extends Dexie {
       tokenLists: tokenListSchemaV1,
       tokens: tokenSchemaV1,
       connectedSites: connectedSiteSchemaV1,
-      // activeBindings: activeBindingSchemaV1,
-      addressBook: addressBookSchemaV1,
-      cache: cacheSchemaV1
-    })
-    this.version(2).stores({
-      aptosEvents: aptosEventSchemaV2,
-    })
-    this.version(3).stores({
       activeBindings: activeBindingSchemaV1,
+      addressBook: addressBookSchemaV1,
+      cache: cacheSchemaV1,
+      aptosEvents: aptosEventSchemaV1
     })
   }
 }
