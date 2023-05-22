@@ -5,9 +5,8 @@ import assert from 'assert'
 import { ethers } from 'ethers'
 
 import { getLedgerEthApp } from '~lib/hardware/ledger'
-import { DerivePosition } from '~lib/schema'
 
-import { SigningWallet, generatePath } from '.'
+import { SigningWallet, generatePath, WalletPathSchema } from ".";
 
 export const HARDWARE_MISMATCH =
   'Connected hardware wallet has a different secret recovery phrase'
@@ -18,23 +17,23 @@ export class EvmHwWallet implements SigningWallet {
   constructor(
     public hwHash: string,
     public address: string,
-    path:
-      | {
-          pathTemplate: string
-          index: number
-          derivePosition?: DerivePosition
-        }
-      | string,
+    public pathSchema: WalletPathSchema,
+    pathOrIndex: string | number,
     public publicKey?: string
   ) {
-    this.path =
-      typeof path === 'object'
-        ? generatePath(path.pathTemplate, path.index, path.derivePosition)
-        : path
+    if (typeof pathOrIndex === 'string') {
+      this.path = pathOrIndex
+    } else {
+      this.path = generatePath(
+        pathSchema.pathTemplate,
+        pathOrIndex,
+        pathSchema.derivePosition
+      )
+    }
   }
 
   private async getLedgerApp() {
-    const [appEth, hwHash] = await getLedgerEthApp()
+    const [appEth, hwHash] = await getLedgerEthApp(this.pathSchema!)
     assert(
       this.hwHash === this.address || hwHash === this.hwHash,
       HARDWARE_MISMATCH

@@ -36,11 +36,15 @@ export class StarknetProvider implements Provider {
     return Promise.resolve(undefined)
   }
 
-  getBalance(address: string): Promise<string> {
+  getBalance(
+    accountOrAddress: IChainAccount | string
+  ): Promise<string | undefined> {
     return Promise.resolve('')
   }
 
-  getBalances(addresses: string[]): Promise<string[]> {
+  getBalances(
+    accountsOrAddresses: IChainAccount[] | string[]
+  ): Promise<(string | undefined)[]> {
     return Promise.resolve([])
   }
 

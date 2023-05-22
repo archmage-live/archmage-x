@@ -51,7 +51,8 @@ export type NewWalletOpts = {
   type: WalletType
   mnemonic?: string
   hwType?: HardwareWalletType
-  path?: string // for WalletType.PRIVATE_KEY (by mnemonic) / WalletType.HW / WalletType.HW_GROUP
+  path?: string // for WalletType.PRIVATE_KEY (by mnemonic) / WalletType.HW
+  pathTemplate?: string // for WalletType.HW / WalletType.HW_GROUP
   derivePosition?: DerivePosition // for WalletType.HW / WalletType.HW_GROUP
   privateKey?: string
   networkKind?: NetworkKind
@@ -165,6 +166,8 @@ export interface IWalletService {
     networkKind: NetworkKind,
     chainId: ChainId
   ): Promise<IChainAccount | undefined>
+
+  updateChainAccount(account: IChainAccount): Promise<void>
 
   getHdPath(
     masterId: number,
@@ -473,6 +476,7 @@ class WalletService extends WalletServicePartial {
     mnemonic,
     hwType,
     path,
+    pathTemplate,
     derivePosition,
     privateKey,
     networkKind,
@@ -527,7 +531,7 @@ class WalletService extends WalletServicePartial {
         break
       }
       case WalletType.HW: {
-        assert(hwType)
+        assert(hwType && path && pathTemplate && derivePosition)
         assert(networkKind)
         assert(accounts && accounts.length === 1)
         accounts = checkAccounts(networkKind, accounts)
@@ -535,7 +539,7 @@ class WalletService extends WalletServicePartial {
         break
       }
       case WalletType.HW_GROUP: {
-        assert(hwType && path && derivePosition)
+        assert(hwType && pathTemplate && derivePosition)
         assert(networkKind)
         assert(accounts && accounts.length >= 1)
         accounts = checkAccounts(networkKind, accounts)
@@ -557,6 +561,7 @@ class WalletService extends WalletServicePartial {
       info: {
         hwType,
         path,
+        pathTemplate,
         derivePosition
       },
       createdAt: Date.now()
@@ -891,6 +896,10 @@ class WalletService extends WalletServicePartial {
     } finally {
       unlock()
     }
+  }
+
+  async updateChainAccount(account: IChainAccount): Promise<void> {
+    await DB.chainAccounts.put(account)
   }
 
   async _getHdPath(

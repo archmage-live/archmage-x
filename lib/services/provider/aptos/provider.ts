@@ -52,7 +52,16 @@ export class AptosProvider implements Provider {
     return +sequenceNumber
   }
 
-  async getBalance(address: string): Promise<string> {
+  async getBalance(
+    accountOrAddress: IChainAccount | string
+  ): Promise<string | undefined> {
+    const address =
+      typeof accountOrAddress === 'object'
+        ? accountOrAddress.address
+        : accountOrAddress
+    if (!address) {
+      return
+    }
     const account = new AptosAccount(undefined, address)
     try {
       const balance = await new CoinClient(this.client).checkBalance(account)
@@ -68,10 +77,12 @@ export class AptosProvider implements Provider {
     }
   }
 
-  async getBalances(addresses: string[]): Promise<string[]> {
+  async getBalances(
+    accountsOrAddresses: IChainAccount[] | string[]
+  ): Promise<(string | undefined)[]> {
     const queue = new PQueue({ concurrency: 3 })
     return await queue.addAll(
-      addresses.map((addr) => () => this.getBalance(addr))
+      accountsOrAddresses.map((acc) => () => this.getBalance(acc))
     )
   }
 

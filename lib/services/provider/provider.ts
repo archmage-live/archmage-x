@@ -14,9 +14,11 @@ export interface Provider {
 
   getNextNonce(address: string, tag?: string | number): Promise<number>
 
-  getBalance(address: string): Promise<string>
+  getBalance(accountOrAddress: IChainAccount | string): Promise<string | undefined>
 
-  getBalances(addresses: string[]): Promise<string[]>
+  getBalances(
+    accountsOrAddresses: IChainAccount[] | string[]
+  ): Promise<(string | undefined)[]>
 
   estimateGasPrice(): Promise<any>
 

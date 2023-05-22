@@ -1,13 +1,17 @@
-import LedgerAppBtc from '@ledgerhq/hw-app-btc'
-import LedgerAppCosmos from '@ledgerhq/hw-app-cosmos'
-import LedgerAppEth from '@ledgerhq/hw-app-eth'
-import TransportWebBLE from '@ledgerhq/hw-transport-web-ble'
-import TransportWebHID from '@ledgerhq/hw-transport-webhid'
-import { listen } from '@ledgerhq/logs'
+import LedgerAppBtc, { AddressFormat } from '@ledgerhq/hw-app-btc';
+import LedgerAppCosmos from '@ledgerhq/hw-app-cosmos';
+import LedgerAppEth from '@ledgerhq/hw-app-eth';
+import TransportWebBLE from '@ledgerhq/hw-transport-web-ble';
+import TransportWebHID from '@ledgerhq/hw-transport-webhid';
+import { listen } from '@ledgerhq/logs';
 
-import { NetworkKind } from '~lib/network'
-import { DerivePosition } from '~lib/schema'
-import { stall } from "~lib/utils";
+
+
+import { NetworkKind } from '~lib/network';
+import { DerivePosition } from '~lib/schema';
+import { stall } from '~lib/utils';
+import { BtcAddressType, WalletPathSchema } from "~lib/wallet";
+
 
 let transportHID: any, transportBLE: any
 let unsubscribe: any
@@ -51,19 +55,21 @@ export function clearLedgerTransport(type: 'hid' | 'ble') {
 }
 
 export async function getLedgerBtcApp(
-  type: 'hid' | 'ble' = 'hid'
+  pathSchema: Omit<LedgerPathSchema, 'description'>,
+  type: 'hid' | 'ble' = 'hid',
 ): Promise<[LedgerAppBtc, string]> {
   const transport = await getLedgerTransport(type)
   const appBtc = new LedgerAppBtc(transport)
-  const hash = await appBtc.getWalletXpub({
-    path: "m/44'/0'/0'",
-    xpubVersion: 0x0488b21e
-  })
-  return [appBtc, hash]
+  const { bitcoinAddress: hash } = await appBtc.getWalletPublicKey(
+    pathSchema.pathTemplate,
+    { format: pathSchema.addressFormat! }
+  )
+  return [appBtc, `${hash}-${pathSchema.derivePosition}`]
 }
 
 export async function getLedgerEthApp(
-  type: 'hid' | 'ble' = 'hid'
+  pathSchema: WalletPathSchema,
+  type: 'hid' | 'ble' = 'hid',
 ): Promise<[LedgerAppEth, string]> {
   const transport = await getLedgerTransport(type)
   const appEth = new LedgerAppEth(transport)
@@ -72,12 +78,13 @@ export async function getLedgerEthApp(
     throw new Error('TransportStatusError: Ledger device: UNKNOWN_ERROR')
   }
   console.log('ledger app configuration:', appCfg)
-  const { address: hash } = await appEth.getAddress("m/44'/60'")
-  return [appEth, hash]
+  const { address: hash } = await appEth.getAddress(pathSchema.pathTemplate)
+  return [appEth, `${hash}-${pathSchema.derivePosition}`]
 }
 
 export async function getLedgerCosmApp(
-  type: 'hid' | 'ble' = 'hid'
+  pathSchema: WalletPathSchema,
+  type: 'hid' | 'ble' = 'hid',
 ): Promise<[LedgerAppCosmos, string]> {
   const transport = await getLedgerTransport(type)
   const appCosm = new LedgerAppCosmos(transport)
@@ -89,19 +96,32 @@ export async function getLedgerCosmApp(
     throw new Error('TransportStatusError: Ledger device: UNKNOWN_ERROR')
   }
   console.log('ledger app configuration:', appCfg)
-  const { address: hash } = await appCosm.getAddress("m/44'/118'", 'cosmos')
-  return [appCosm, hash]
+  const { address: hash } = await appCosm.getAddress(
+    pathSchema.pathTemplate,
+    'cosmos'
+  )
+  return [appCosm, `${hash}-${pathSchema.derivePosition}`]
 }
 
 export async function getLedgerAddress(
-  app: LedgerAppEth | LedgerAppCosmos,
+  app: LedgerAppBtc | LedgerAppEth | LedgerAppCosmos,
+  pathSchema: LedgerPathSchema,
   path: string,
   prefix: string = 'cosmos'
 ): Promise<{
   publicKey: string
   address: string
 }> {
-  if (app instanceof LedgerAppEth) {
+  if (app instanceof LedgerAppBtc) {
+    return await app
+      .getWalletPublicKey(path, {
+        format: pathSchema.addressFormat!
+      })
+      .then(({ publicKey, bitcoinAddress }) => ({
+        publicKey,
+        address: bitcoinAddress
+      }))
+  } else if (app instanceof LedgerAppEth) {
     return await app.getAddress(path)
   } else if (app instanceof LedgerAppCosmos) {
     return await app.getAddress(path, prefix!)
@@ -109,30 +129,51 @@ export async function getLedgerAddress(
   return {} as any
 }
 
-export interface LedgerPathSchema {
+export interface LedgerPathSchema extends WalletPathSchema {
   description: string
-  pathSchema: string
-  derivePosition: DerivePosition
+  addressFormat?: AddressFormat
+}
+
+export function toAddressFormat(addressType: BtcAddressType): AddressFormat {
+  switch (addressType) {
+    case BtcAddressType.LEGACY:
+      return 'legacy'
+    case BtcAddressType.NESTED_SEGWIT:
+      return 'p2sh'
+    case BtcAddressType.NATIVE_SEGWIT:
+      return 'bech32'
+    case BtcAddressType.TAPROOT:
+      return 'bech32m'
+  }
 }
 
 export const LEDGER_PATH_SCHEMAS = new Map<NetworkKind, LedgerPathSchema[]>([
   [
-    'btc' as NetworkKind, // TODO
+    NetworkKind.BTC,
     [
       {
-        description: 'BIP44 Standard',
-        pathSchema: "m/44'/0'/0'/0/0",
-        derivePosition: DerivePosition.ADDRESS_INDEX
+        description: 'Legacy (BIP44 Standard)',
+        pathTemplate: "m/44'/0'/0'/0/0",
+        derivePosition: DerivePosition.ACCOUNT,
+        addressFormat: 'legacy'
       },
       {
-        description: 'BIP49 Standard',
-        pathSchema: "m/49'/0'/0'/0/0",
-        derivePosition: DerivePosition.ADDRESS_INDEX
+        description: 'Nested SegWit (BIP49 Standard)',
+        pathTemplate: "m/49'/0'/0'/0/0",
+        derivePosition: DerivePosition.ACCOUNT,
+        addressFormat: 'p2sh'
       },
       {
-        description: 'BIP84 Standard',
-        pathSchema: "m/84'/0'/0'/0/0",
-        derivePosition: DerivePosition.ADDRESS_INDEX
+        description: 'Native SegWit (BIP84 Standard)',
+        pathTemplate: "m/84'/0'/0'/0/0",
+        derivePosition: DerivePosition.ACCOUNT,
+        addressFormat: 'bech32'
+      },
+      {
+        description: 'Taproot (BIP84 Standard)',
+        pathTemplate: "m/86'/0'/0'/0/0",
+        derivePosition: DerivePosition.ACCOUNT,
+        addressFormat: 'bech32m'
       }
     ]
   ],
@@ -141,17 +182,17 @@ export const LEDGER_PATH_SCHEMAS = new Map<NetworkKind, LedgerPathSchema[]>([
     [
       {
         description: 'Ledger Live',
-        pathSchema: "m/44'/60'/0'/0/0",
+        pathTemplate: "m/44'/60'/0'/0/0",
         derivePosition: DerivePosition.ACCOUNT
       },
       {
         description: 'BIP44 Standard (e.g., Archmage, MetaMask)',
-        pathSchema: "m/44'/60'/0'/0/0",
+        pathTemplate: "m/44'/60'/0'/0/0",
         derivePosition: DerivePosition.ADDRESS_INDEX
       },
       {
         description: 'Legacy (MEW / MyCrypto)',
-        pathSchema: "m/44'/60'/0'/0",
+        pathTemplate: "m/44'/60'/0'/0",
         derivePosition: DerivePosition.CHANGE
       }
     ]
@@ -161,7 +202,7 @@ export const LEDGER_PATH_SCHEMAS = new Map<NetworkKind, LedgerPathSchema[]>([
     [
       {
         description: 'BIP44 Standard',
-        pathSchema: "m/44'/118'/0'/0/0",
+        pathTemplate: "m/44'/118'/0'/0/0",
         derivePosition: DerivePosition.ADDRESS_INDEX
       }
     ]

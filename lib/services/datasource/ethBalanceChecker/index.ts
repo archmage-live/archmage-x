@@ -56,7 +56,7 @@ class EthBalanceCheckerApi {
     provider: EvmClient,
     addresses: string[],
     tokens: (string | typeof NATIVE_TOKEN)[] = [NATIVE_TOKEN] // '0x0' means native currency token
-  ): Promise<Record<string, string>[] | undefined> {
+  ): Promise<Record<string, Record<string, string>> | undefined> {
     const network = await provider.getNetwork()
     const contractAddress = EthBalanceCheckerApi.chainContracts.get(
       network.chainId
@@ -65,14 +65,9 @@ class EthBalanceCheckerApi {
       return undefined
     }
     try {
-      const balances = await getAddressesBalances(provider, addresses, tokens, {
+      return await getAddressesBalances(provider, addresses, tokens, {
         contractAddress
       })
-      const result = []
-      for (const addr of addresses) {
-        result.push(balances[addr] || {})
-      }
-      return result
     } catch (err) {
       console.error(err)
       return undefined

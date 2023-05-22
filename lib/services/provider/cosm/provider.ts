@@ -43,7 +43,16 @@ export class CosmProvider implements Provider {
     return sequence
   }
 
-  async getBalance(address: string): Promise<string> {
+  async getBalance(
+    accountOrAddress: IChainAccount | string
+  ): Promise<string | undefined> {
+    const address =
+      typeof accountOrAddress === 'object'
+        ? accountOrAddress.address
+        : accountOrAddress
+    if (!address) {
+      return
+    }
     const info = this.network.info as CosmAppChainInfo
     const coin = await this.client.getBalance(
       address,
@@ -52,10 +61,12 @@ export class CosmProvider implements Provider {
     return coin.amount
   }
 
-  async getBalances(addresses: string[]): Promise<string[]> {
+  async getBalances(
+    accountsOrAddresses: IChainAccount[] | string[]
+  ): Promise<(string | undefined)[]> {
     const queue = new PQueue({ concurrency: 3 })
     return await queue.addAll(
-      addresses.map((addr) => () => this.getBalance(addr))
+      accountsOrAddresses.map((acc) => () => this.getBalance(acc))
     )
   }
 

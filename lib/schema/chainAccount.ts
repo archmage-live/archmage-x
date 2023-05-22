@@ -10,7 +10,28 @@ export interface IChainAccount {
   networkKind: NetworkKind
   chainId: ChainId
   address: string | undefined // undefined means no chain account on the specific chain
-  info: any
+  info: ChainAccountInfo
+}
+
+export interface ChainAccountInfo {
+  publicKey?: string
+  utxos?: Utxo[] // cached UTXOs if no `subAccounts`
+  subAccounts?: SubChainAccount[][] // for Bitcoin sub addresses
+}
+
+// Bitcoin sub address
+export interface SubChainAccount {
+  changeIndex: number
+  addressIndex: number
+  publicKey: string
+  address: string
+  utxos?: Utxo[] // cached UTXOs
+}
+
+export interface Utxo {
+  txid: string
+  vout: number
+  value: number // $sat amount
 }
 
 export const chainAccountSchemaV1 =

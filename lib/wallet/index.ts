@@ -18,13 +18,15 @@ import {
   hasWalletKeystore,
   isHardwareWallet
 } from './base'
-import { BtcWallet, BtcWalletOpts } from "./btc";
+import { BtcWallet, BtcWalletOpts } from './btc'
 import { CosmWallet, CosmWalletOpts } from './cosm'
 import { EvmWallet } from './evm'
 import { EvmHwWallet } from './evmHw'
 import { SolWallet } from './sol'
 import { StarknetWallet } from './starknet'
 import { SuiWallet } from './sui'
+import { BtcChainInfo } from "~lib/network/btc";
+import { BtcHwWallet } from "~lib/wallet/btcHw";
 
 export * from './base'
 export * from './btc'
@@ -104,25 +106,39 @@ export async function getMasterSigningWallet(
     id: wallet.id,
     type: wallet.type,
     path: wallet.info.path,
-    extra: wallet.info.extra
   }
   switch (networkKind) {
-    case NetworkKind.BTC:
-      assert(opts.extra)
-      return BtcWallet.from(opts as BtcWalletOpts)
-    case NetworkKind.EVM:
-      return EvmWallet.from(opts)
-    case NetworkKind.COSM:
+    case NetworkKind.BTC: {
       const network = await NETWORK_SERVICE.getNetwork({
         kind: networkKind,
         chainId
       })
-      assert(network !== undefined)
+      assert(network)
+      const info = network.info as BtcChainInfo
+      assert(wallet.info.addressType)
+      return BtcWallet.from({
+        ...opts,
+        extra: {
+          addressType: wallet.info.addressType,
+          isTestnet: info.isTestnet,
+          network: info.network,
+        }
+      } as BtcWalletOpts)
+    }
+    case NetworkKind.EVM:
+      return EvmWallet.from(opts)
+    case NetworkKind.COSM: {
+      const network = await NETWORK_SERVICE.getNetwork({
+        kind: networkKind,
+        chainId
+      })
+      assert(network)
       const info = network.info as CosmAppChainInfo
       return CosmWallet.from({
         ...opts,
         prefix: info.bech32Config.bech32PrefixAccAddr
       } as CosmWalletOpts)
+    }
     case NetworkKind.APTOS:
       return AptosWallet.from(opts)
     case NetworkKind.SUI:
@@ -141,18 +157,36 @@ export async function getHardwareSigningWallet(
     return undefined
   }
   switch (account.networkKind) {
+    case NetworkKind.BTC: {
+      const network = await NETWORK_SERVICE.getNetwork({
+        kind: account.networkKind,
+        chainId: account.chainId
+      })
+      assert(network)
+      const info = network.info as BtcChainInfo
+      return new BtcHwWallet(
+        wallet.hash,
+        account.address!,
+        wallet.info.addressType!,
+        info.network,
+        {
+          pathTemplate: wallet.info.pathTemplate!,
+          derivePosition: wallet.info.derivePosition
+        },
+        wallet.type === WalletType.HW ? wallet.info.path! : account.index,
+        account.info.publicKey || aux?.info.publicKey
+      )
+    }
     case NetworkKind.EVM:
       return new EvmHwWallet(
         wallet.hash,
         account.address!,
-        wallet.type === WalletType.HW
-          ? wallet.info.path!
-          : {
-              pathTemplate: wallet.info.path!,
-              index: account.index,
-              derivePosition: wallet.info.derivePosition
-            },
-        aux?.info.publicKey
+        {
+          pathTemplate: wallet.info.pathTemplate!,
+          derivePosition: wallet.info.derivePosition
+        },
+        wallet.type === WalletType.HW ? wallet.info.path! : account.index,
+        account.info.publicKey || aux?.info.publicKey
       )
   }
 }

@@ -170,6 +170,11 @@ export interface WalletOpts {
   extra?: any
 }
 
+export interface WalletPathSchema {
+  pathTemplate: string
+  derivePosition?: DerivePosition
+}
+
 export interface SigningWallet {
   address: string
   privateKey?: string

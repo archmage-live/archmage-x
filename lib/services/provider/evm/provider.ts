@@ -51,28 +51,50 @@ export class EvmProvider implements Provider {
     return this.provider.getTransactionCount(address, tag || 'pending')
   }
 
-  async getBalance(address: string): Promise<string> {
+  async getBalance(
+    accountOrAddress: IChainAccount | string
+  ): Promise<string | undefined> {
+    const address =
+      typeof accountOrAddress === 'object'
+        ? accountOrAddress.address
+        : accountOrAddress
+    if (!address) {
+      return
+    }
     const balance = await this.provider.getBalance(address)
     return balance.toString()
   }
 
-  async getBalances(addresses: string[]): Promise<string[]> {
+  async getBalances(
+    accountsOrAddresses: IChainAccount[] | string[]
+  ): Promise<(string | undefined)[]> {
+    const addresses = accountsOrAddresses
+      .map((acc) => (typeof acc === 'object' ? acc.address : acc))
+      .filter((addr) => !!addr) as string[]
+
     const balances = await ETH_BALANCE_CHECKER_API.getAddressesBalances(
       this.provider,
       addresses
     )
     if (balances) {
-      const result = balances.map(
-        (item) => item[ETH_BALANCE_CHECKER_API.NATIVE_TOKEN]
-      )
-      if (!result.some((item) => !item)) {
-        return result
+      const balancesMap = new Map<string, string>()
+      for (const addr of Object.keys(balances)) {
+        const balance = balances[addr][ETH_BALANCE_CHECKER_API.NATIVE_TOKEN]
+        if (balance) {
+          balancesMap.set(addr, balance)
+        }
+      }
+
+      if (balancesMap.size === addresses.length) {
+        return accountsOrAddresses
+          .map((acc) => (typeof acc === 'object' ? acc.address : acc))
+          .map((addr) => (addr ? balancesMap.get(addr) : undefined))
       }
     }
 
     const queue = new PQueue({ concurrency: 3 })
     return await queue.addAll(
-      addresses.map((addr) => () => this.getBalance(addr))
+      accountsOrAddresses.map((acc) => () => this.getBalance(acc))
     )
   }
 
@@ -320,8 +342,11 @@ export class EvmProvider implements Provider {
     return { txParams: tx, populatedParams } as TransactionPayload
   }
 
-  async signTransaction(wallet: IChainAccount, transaction: any): Promise<any> {
-    const signer = await getSigningWallet(wallet)
+  async signTransaction(
+    account: IChainAccount,
+    transaction: any
+  ): Promise<any> {
+    const signer = await getSigningWallet(account)
     if (!signer) {
       throw ethErrors.rpc.internal()
     }
