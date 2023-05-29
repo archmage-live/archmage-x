@@ -185,6 +185,11 @@ export class EvmProvider implements Provider {
       tx.to = to
     }
 
+    // trick
+    if (typeof tx.type === 'string') {
+      tx.type = Number(tx.type)
+    }
+
     // Do not allow mixing pre-eip-1559 and eip-1559 properties
     const hasEip1559 =
       tx.maxFeePerGas != null || tx.maxPriorityFeePerGas != null

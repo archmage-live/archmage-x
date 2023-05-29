@@ -17,7 +17,9 @@ export enum WalletType {
   MPC = 'mpc', // MPC wallet
   MPC_GROUP = 'mpc_group', // ditto, but in group
   WALLET_CONNECT = 'wallet_connect', // WalletConnect protocol
-  WALLET_CONNECT_GROUP = 'wallet_connect_group' // ditto, but in group
+  WALLET_CONNECT_GROUP = 'wallet_connect_group', // ditto, but in group
+  AA = 'aa', // account abstraction
+  AA_GROUP = 'aa_group' // ditto, but in group
 }
 
 export function isWalletGroup(type: WalletType) {

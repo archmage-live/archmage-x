@@ -62,7 +62,8 @@ export class BtcWallet implements KeystoreSigningWallet {
   private constructor(
     private wallet: ethers.utils.HDNode | ethers.Wallet,
     private addressType: BtcAddressType,
-    private network: bitcoin.Network
+    private network: bitcoin.Network,
+    private isTestnet: boolean
   ) {
     this.privateKey = wif.encode(
       network.wif,
@@ -124,7 +125,7 @@ export class BtcWallet implements KeystoreSigningWallet {
     }
     assert(wallet)
 
-    return new BtcWallet(wallet, addressType, network)
+    return new BtcWallet(wallet, addressType, network, isTestnet)
   }
 
   async derive(
@@ -139,9 +140,20 @@ export class BtcWallet implements KeystoreSigningWallet {
     assert(
       stringToPath(pathTemplate).length === DerivePosition.ADDRESS_INDEX + 1
     )
+
+    if (this.isTestnet) {
+      // `coin_type` is 1 for testnet
+      pathTemplate = generatePath(pathTemplate, 1, DerivePosition.ACCOUNT - 1)
+    }
+
     const path = generatePath(pathTemplate, accountIndex, derivePosition)
     const wallet = this.wallet.derivePath(path)
-    const derived = new BtcWallet(wallet, this.addressType, this.network)
+    const derived = new BtcWallet(
+      wallet,
+      this.addressType,
+      this.network,
+      this.isTestnet
+    )
     derived.master = this.wallet
     return derived
   }
@@ -160,7 +172,7 @@ export class BtcWallet implements KeystoreSigningWallet {
       DerivePosition.ADDRESS_INDEX
     )
     const wallet = this.master.derivePath(path2)
-    return new BtcWallet(wallet, this.addressType, this.network)
+    return new BtcWallet(wallet, this.addressType, this.network, this.isTestnet)
   }
 
   async signTransaction(transaction: BtcTxParams): Promise<string> {

@@ -320,6 +320,13 @@ export const EvmTransaction = ({
         maxFeePerGas && parseGwei(maxFeePerGas).toDecimalPlaces(0).toString()
     } as EvmTxParams
 
+    // trick
+    if (tx.type === 2 && tx.gasPrice && (!tx.maxPriorityFeePerGas || !tx.maxFeePerGas)) {
+      tx.maxPriorityFeePerGas = tx.gasPrice
+      tx.maxFeePerGas = tx.gasPrice
+      delete tx.gasPrice
+    }
+
     const process = async (signed?: any) => {
       setSpinning(true)
 

@@ -61,12 +61,18 @@ export function formatEvmTxParams(payload: {
     if (txParams.gasLimit) txParams.gasLimit = BigNumber.from(txParams.gasLimit)
     if (txParams.gasPrice) txParams.gasPrice = BigNumber.from(txParams.gasPrice)
     if (txParams.value) txParams.value = BigNumber.from(txParams.value)
-    if (txParams.maxPriorityFeePerGas)
+    if (txParams.maxPriorityFeePerGas) {
       txParams.maxPriorityFeePerGas = BigNumber.from(
         txParams.maxPriorityFeePerGas
       )
-    if (txParams.maxFeePerGas)
+    } else {
+      delete txParams.maxPriorityFeePerGas
+    }
+    if (txParams.maxFeePerGas) {
       txParams.maxFeePerGas = BigNumber.from(txParams.maxFeePerGas)
+    } else {
+      delete txParams.maxFeePerGas
+    }
   }
 
   if (populatedParams) {
