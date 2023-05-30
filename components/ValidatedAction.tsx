@@ -14,7 +14,7 @@ import { Wizard, useWizard } from 'react-use-wizard'
 import { AlertBox } from '~components/AlertBox'
 import { usePassword } from '~lib/password'
 import { PASSWORD_SERVICE } from '~lib/services/passwordService'
-import { createTab } from "~lib/tab";
+import { createTab } from '~lib/tab'
 
 interface PasswordActionProps extends BoxProps {
   children: React.ReactElement | React.ReactElement[]

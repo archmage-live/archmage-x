@@ -1,26 +1,26 @@
-import { useLiveQuery } from "dexie-react-hooks";
-import { useMemo } from "react";
+import { useLiveQuery } from 'dexie-react-hooks'
+import { useMemo } from 'react'
 
-import { DB, getNextField } from "~lib/db";
-import { ENV } from "~lib/env";
-import { NetworkKind } from "~lib/network";
-import { AptosChainInfo } from "~lib/network/aptos";
-import { CosmAppChainInfo } from "~lib/network/cosm";
-import { EvmChainInfo } from "~lib/network/evm";
-import { StarknetChainInfo } from "~lib/network/starknet";
-import { ChainId, IChainAccount, INetwork, IToken } from "~lib/schema";
-import { useEvmChainLogoUrl } from "~lib/services/datasource/chainlist";
-import { useCosmChainLogoUrl } from "~lib/services/datasource/cosmos";
-import { DENOM_TO_SUBDIRECTORY } from "~lib/services/datasource/cosmostation/helpers";
-import { useCryptoComparePrice } from "~lib/services/datasource/cryptocompare";
-import { CosmTokenInfo } from "~lib/services/token/cosm";
+import { DB, getNextField } from '~lib/db'
+import { ENV } from '~lib/env'
+import { NetworkKind } from '~lib/network'
+import { AptosChainInfo } from '~lib/network/aptos'
+import { BtcChainInfo } from '~lib/network/btc'
+import { CosmAppChainInfo } from '~lib/network/cosm'
+import { EvmChainInfo } from '~lib/network/evm'
+import { StarknetChainInfo } from '~lib/network/starknet'
+import { ChainId, IChainAccount, INetwork, IToken } from '~lib/schema'
+import { useEvmChainLogoUrl } from '~lib/services/datasource/chainlist'
+import { useCosmChainLogoUrl } from '~lib/services/datasource/cosmos'
+import { DENOM_TO_SUBDIRECTORY } from '~lib/services/datasource/cosmostation/helpers'
+import { useCryptoComparePrice } from '~lib/services/datasource/cryptocompare'
+import { CosmTokenInfo } from '~lib/services/token/cosm'
 
-import { AptosNetworkService } from "./aptosService";
-import { BtcNetworkService } from "./btcService";
-import { CosmNetworkService } from "./cosmService";
-import { EvmNetworkService } from "./evmService";
-import { StarknetNetworkService } from "./starknetService";
-import { BtcChainInfo } from "~lib/network/btc";
+import { AptosNetworkService } from './aptosService'
+import { BtcNetworkService } from './btcService'
+import { CosmNetworkService } from './cosmService'
+import { EvmNetworkService } from './evmService'
+import { StarknetNetworkService } from './starknetService'
 
 export interface NetworkInfo {
   name: string

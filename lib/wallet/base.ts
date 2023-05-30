@@ -1,6 +1,7 @@
 import { Slip10RawIndex, pathToString, stringToPath } from '@cosmjs/crypto'
 import assert from 'assert'
 import walletConnectLogo from 'data-base64:~assets/thirdparty/walletconnect.svg'
+import { ethers } from 'ethers'
 
 import { NetworkKind } from '~lib/network'
 import { DerivePosition, IHdPath, IWallet } from '~lib/schema'
@@ -19,11 +20,11 @@ export enum WalletType {
   WALLET_CONNECT = 'wallet_connect', // WalletConnect protocol
   WALLET_CONNECT_GROUP = 'wallet_connect_group', // ditto, but in group
   MULTI_SIG = 'multi_sig', // multi-sig
-  MULTI_SIG_GROUP = 'multi_sig_group', // ditto, but in group
+  MULTI_SIG_GROUP = 'multi_sig_group' // ditto, but in group
 }
 
 export enum AccountAbstractionType {
-  ERC4337= 'erc4337',
+  ERC4337 = 'erc4337',
   SAFE = 'safe'
 }
 
@@ -168,6 +169,10 @@ export interface WalletAccount {
   address: string
   index: number
   publicKey?: string
+
+  mnemonic?: string
+  path?: string
+  privateKey?: string
 }
 
 export interface WalletOpts {
@@ -243,4 +248,74 @@ export function generatePath(
     component,
     ...(path.slice(derivePosition + 1) || [])
   ])
+}
+
+export function buildWalletUniqueHash(
+  wallet: IWallet,
+  keystoreAccount?: ethers.utils.HDNode | ethers.Wallet,
+  accounts?: WalletAccount[],
+  hash?: string
+) {
+  let prefix: string = wallet.type
+
+  if (wallet.info.isAccountAbstraction) {
+    prefix += '-aa'
+  }
+
+  switch (wallet.type) {
+    case WalletType.HD:
+      hash = keystoreAccount!.address
+      break
+    case WalletType.PRIVATE_KEY:
+      hash = keystoreAccount!.address
+      break
+    case WalletType.PRIVATE_KEY_GROUP:
+      hash = generateWalletUniqueHash()
+      break
+    case WalletType.WATCH:
+      hash = accounts![0].address
+      break
+    case WalletType.WATCH_GROUP:
+      hash = generateWalletUniqueHash()
+      break
+    case WalletType.WALLET_CONNECT:
+      hash = accounts![0].address
+      break
+    case WalletType.WALLET_CONNECT_GROUP:
+      hash = generateWalletUniqueHash()
+      break
+    case WalletType.MPC_HD:
+      hash = keystoreAccount!.address
+      break
+    case WalletType.MPC:
+      hash = keystoreAccount!.address
+      break
+    case WalletType.MPC_GROUP:
+      hash = generateWalletUniqueHash()
+      break
+    case WalletType.HW:
+      hash = accounts![0].address
+      break
+    case WalletType.HW_GROUP:
+      // read from hardware wallet
+      assert(hash)
+      break
+    case WalletType.MULTI_SIG:
+      hash = accounts![0].address
+      break
+    case WalletType.MULTI_SIG_GROUP:
+      hash = generateWalletUniqueHash()
+      break
+  }
+
+  return `${prefix}-${hash}`
+}
+
+function generateWalletUniqueHash() {
+  return ethers.utils.getAddress(
+    ethers.utils.hexDataSlice(
+      ethers.utils.keccak256(ethers.utils.randomBytes(32)),
+      12
+    )
+  )
 }

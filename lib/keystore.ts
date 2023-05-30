@@ -11,8 +11,8 @@ import { IKeystore, PSEUDO_INDEX } from '~lib/schema'
 import { IWallet } from '~lib/schema/wallet'
 import { WALLET_SERVICE } from '~lib/services/wallet'
 import { SESSION_STORE, StoreKey } from '~lib/store'
+import { stall } from '~lib/utils'
 import { hasWalletKeystore } from '~lib/wallet'
-import { stall } from "~lib/utils";
 
 function keystoreKey(id: number): string {
   return `${StoreKey.KEYSTORE_PREFIX}_${id}`

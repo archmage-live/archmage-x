@@ -20,7 +20,7 @@ import {
   useNetwork,
   useNetworkLogoUrl
 } from '~lib/services/network'
-import { useSiteIconUrl } from "~lib/tab";
+import { useSiteIconUrl } from '~lib/tab'
 
 export const SwitchNetwork = ({
   request,

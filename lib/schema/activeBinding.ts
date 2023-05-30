@@ -13,5 +13,4 @@ export interface ActiveBindingAccount {
 
 export const TAB_ID_NONE = -1
 
-export const activeBindingSchemaV1 =
-  '++id, &[origin+tabId], &tabId'
+export const activeBindingSchemaV1 = '++id, &[origin+tabId], &tabId'

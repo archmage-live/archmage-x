@@ -6,12 +6,12 @@ import PQueue from 'p-queue'
 import { BtcChainInfo } from '~lib/network/btc'
 import { IChainAccount, INetwork, Utxo } from '~lib/schema'
 import { EsploraApi } from '~lib/services/datasource/esplora'
+import { NETWORK_SERVICE } from '~lib/services/network'
 import { Provider, TransactionPayload } from '~lib/services/provider'
 import { WALLET_SERVICE } from '~lib/services/wallet'
 import { getSigningWallet } from '~lib/wallet'
 
 import { BtcSubAccount, BtcTxParams } from './types'
-import { NETWORK_SERVICE } from "~lib/services/network";
 
 const coinSelect = require('coinselect')
 
@@ -186,11 +186,13 @@ export class BtcProvider implements Provider {
 
     const network = await NETWORK_SERVICE.getNetwork({
       kind: account.networkKind,
-      chainId: account.chainId,
+      chainId: account.chainId
     })
     assert(network)
 
-    const psbt = new bitcoin.Psbt({network: (network.info as BtcChainInfo).network})
+    const psbt = new bitcoin.Psbt({
+      network: (network.info as BtcChainInfo).network
+    })
 
     const subAccounts = new Map<string, BtcSubAccount>()
 
@@ -226,7 +228,7 @@ export class BtcProvider implements Provider {
           changeIndex: acc.changeIndex,
           addressIndex: acc.addressIndex,
           publicKey: acc.publicKey,
-          address: acc.address,
+          address: acc.address
         })
       }
     }

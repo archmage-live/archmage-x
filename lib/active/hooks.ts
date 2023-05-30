@@ -71,7 +71,8 @@ export function useActiveNetworkBuild() {
 }
 
 export function useActiveNetworkId() {
-  const {activeBindingAccount, setActiveBindingAccount} = useActiveBindingAccount()
+  const { activeBindingAccount, setActiveBindingAccount } =
+    useActiveBindingAccount()
 
   const [networkId, setNetworkId] = useLocalStorage<number | undefined>(
     StoreKey.ACTIVE_NETWORK,

@@ -19,9 +19,9 @@ import { EvmChainInfo } from '~lib/network/evm'
 import { ChainId } from '~lib/schema'
 import { NETWORK_SERVICE } from '~lib/services/network'
 import { getEvmBlockNumber, getEvmChainId } from '~lib/services/provider/evm'
+import { stall } from '~lib/utils'
 
 import { ExplorerUrlInputGroup, RpcUrlInputGroup } from './UrlInputGroup'
-import { stall } from "~lib/utils";
 
 export const EvmNetworkAdd = ({
   onCancel,

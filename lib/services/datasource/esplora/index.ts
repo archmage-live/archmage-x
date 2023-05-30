@@ -26,7 +26,14 @@ export interface EsploraTxVin {
 export interface EsploraTxVout {
   scriptpubkey: string
   scriptpubkey_asm: string
-  scriptpubkey_type:  'p2pkh' | 'p2sh' | 'v0_p2wpkh' | 'v0_p2wsh' | 'v1_p2tr' | 'op_return' | 'fee'
+  scriptpubkey_type:
+    | 'p2pkh'
+    | 'p2sh'
+    | 'v0_p2wpkh'
+    | 'v0_p2wsh'
+    | 'v1_p2tr'
+    | 'op_return'
+    | 'fee'
   scriptpubkey_address: string
   value: number
 }

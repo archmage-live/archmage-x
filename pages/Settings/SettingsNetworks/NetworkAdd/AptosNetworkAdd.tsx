@@ -19,9 +19,9 @@ import { NetworkKind } from '~lib/network'
 import { AptosChainInfo } from '~lib/network/aptos'
 import { ChainId } from '~lib/schema'
 import { NETWORK_SERVICE } from '~lib/services/network'
+import { stall } from '~lib/utils'
 
 import { ExplorerUrlInputGroup, RpcUrlInputGroup } from './UrlInputGroup'
-import { stall } from "~lib/utils";
 
 export const AptosNetworkAdd = ({
   onCancel,

@@ -21,11 +21,11 @@ import {
   ConsentRequest
 } from '~lib/services/consentService'
 import { getEvmBlockNumber } from '~lib/services/provider/evm'
+import { useSiteIconUrl } from '~lib/tab'
 import {
   ExplorerUrlInputGroup,
   RpcUrlInputGroup
 } from '~pages/Settings/SettingsNetworks/NetworkAdd/UrlInputGroup'
-import { useSiteIconUrl } from "~lib/tab";
 
 export const AddNetwork = ({
   request,

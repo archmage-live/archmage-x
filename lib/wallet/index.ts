@@ -1,11 +1,13 @@
 import assert from 'assert'
 
 import { NetworkKind } from '~lib/network'
+import { BtcChainInfo } from '~lib/network/btc'
 import { CosmAppChainInfo } from '~lib/network/cosm'
 import { IChainAccount, IChainAccountAux } from '~lib/schema'
 import { IWallet } from '~lib/schema/wallet'
 import { NETWORK_SERVICE } from '~lib/services/network'
 import { WALLET_SERVICE } from '~lib/services/wallet'
+import { BtcHwWallet } from '~lib/wallet/btcHw'
 
 import { AptosWallet } from './aptos'
 import {
@@ -25,8 +27,6 @@ import { EvmHwWallet } from './evmHw'
 import { SolWallet } from './sol'
 import { StarknetWallet } from './starknet'
 import { SuiWallet } from './sui'
-import { BtcChainInfo } from "~lib/network/btc";
-import { BtcHwWallet } from "~lib/wallet/btcHw";
 
 export * from './base'
 export * from './btc'
@@ -105,7 +105,7 @@ export async function getMasterSigningWallet(
   const opts: WalletOpts = {
     id: wallet.id,
     type: wallet.type,
-    path: wallet.info.path,
+    path: wallet.info.path
   }
   switch (networkKind) {
     case NetworkKind.BTC: {
@@ -121,7 +121,7 @@ export async function getMasterSigningWallet(
         extra: {
           addressType: wallet.info.addressType,
           isTestnet: info.isTestnet,
-          network: info.network,
+          network: info.network
         }
       } as BtcWalletOpts)
     }

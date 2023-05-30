@@ -1,17 +1,14 @@
-import LedgerAppBtc, { AddressFormat } from '@ledgerhq/hw-app-btc';
-import LedgerAppCosmos from '@ledgerhq/hw-app-cosmos';
-import LedgerAppEth from '@ledgerhq/hw-app-eth';
-import TransportWebBLE from '@ledgerhq/hw-transport-web-ble';
-import TransportWebHID from '@ledgerhq/hw-transport-webhid';
-import { listen } from '@ledgerhq/logs';
+import LedgerAppBtc, { AddressFormat } from '@ledgerhq/hw-app-btc'
+import LedgerAppCosmos from '@ledgerhq/hw-app-cosmos'
+import LedgerAppEth from '@ledgerhq/hw-app-eth'
+import TransportWebBLE from '@ledgerhq/hw-transport-web-ble'
+import TransportWebHID from '@ledgerhq/hw-transport-webhid'
+import { listen } from '@ledgerhq/logs'
 
-
-
-import { NetworkKind } from '~lib/network';
-import { DerivePosition } from '~lib/schema';
-import { stall } from '~lib/utils';
-import { BtcAddressType, WalletPathSchema } from "~lib/wallet";
-
+import { NetworkKind } from '~lib/network'
+import { DerivePosition } from '~lib/schema'
+import { stall } from '~lib/utils'
+import { BtcAddressType, WalletPathSchema } from '~lib/wallet'
 
 let transportHID: any, transportBLE: any
 let unsubscribe: any
@@ -56,7 +53,7 @@ export function clearLedgerTransport(type: 'hid' | 'ble') {
 
 export async function getLedgerBtcApp(
   pathSchema: Omit<LedgerPathSchema, 'description'>,
-  type: 'hid' | 'ble' = 'hid',
+  type: 'hid' | 'ble' = 'hid'
 ): Promise<[LedgerAppBtc, string]> {
   const transport = await getLedgerTransport(type)
   const appBtc = new LedgerAppBtc(transport)
@@ -69,7 +66,7 @@ export async function getLedgerBtcApp(
 
 export async function getLedgerEthApp(
   pathSchema: WalletPathSchema,
-  type: 'hid' | 'ble' = 'hid',
+  type: 'hid' | 'ble' = 'hid'
 ): Promise<[LedgerAppEth, string]> {
   const transport = await getLedgerTransport(type)
   const appEth = new LedgerAppEth(transport)
@@ -84,7 +81,7 @@ export async function getLedgerEthApp(
 
 export async function getLedgerCosmApp(
   pathSchema: WalletPathSchema,
-  type: 'hid' | 'ble' = 'hid',
+  type: 'hid' | 'ble' = 'hid'
 ): Promise<[LedgerAppCosmos, string]> {
   const transport = await getLedgerTransport(type)
   const appCosm = new LedgerAppCosmos(transport)

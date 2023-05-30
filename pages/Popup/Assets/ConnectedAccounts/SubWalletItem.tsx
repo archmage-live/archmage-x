@@ -19,10 +19,10 @@ import { AccountAvatar } from '~components/AccountAvatar'
 import { setActiveWallet } from '~lib/active'
 import { INetwork } from '~lib/schema'
 import { CONNECTED_SITE_SERVICE } from '~lib/services/connectedSiteService'
+import { getCurrentTab } from '~lib/tab'
 import { shortenAddress } from '~lib/utils'
 
 import { SubEntry } from '.'
-import { getCurrentTab } from "~lib/tab";
 
 export const SubWalletItem = ({
   network,

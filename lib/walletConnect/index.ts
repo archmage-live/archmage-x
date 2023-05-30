@@ -8,8 +8,8 @@ import { useAsyncRetry } from 'react-use'
 import { NetworkKind } from '~lib/network'
 import { INetwork } from '~lib/schema'
 import { getNetworkInfo } from '~lib/services/network'
+import { stall } from '~lib/utils'
 import { checkAddressMayThrow } from '~lib/wallet'
-import { stall } from "~lib/utils";
 
 const metadata: IClientMeta = {
   name: 'Archmage',

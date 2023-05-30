@@ -24,8 +24,8 @@ import { useCoinGeckoTokenPrice } from '~lib/services/datasource/coingecko'
 import { getNetworkInfo, useNetwork } from '~lib/services/network'
 import { useToken } from '~lib/services/token'
 import { useChainAccount } from '~lib/services/wallet'
+import { useSiteIconUrl } from '~lib/tab'
 import { TokenItem, TokenItemStyle } from '~pages/Popup/Assets/TokenItem'
-import { useSiteIconUrl } from "~lib/tab";
 
 export const WatchAsset = ({
   request,

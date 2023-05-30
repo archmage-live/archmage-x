@@ -27,12 +27,12 @@ import {
   useSubWalletByIndex,
   useWallet
 } from '~lib/services/wallet'
+import { useSiteIconUrl } from '~lib/tab'
 import { isWalletConnectProtocol } from '~lib/wallet'
 import {
   WalletConnectSigningModel,
   useWalletConnectSigning
 } from '~pages/Popup/Consent/WallectConnectSigningModel'
-import { useSiteIconUrl } from "~lib/tab";
 
 export const SignTypedData = ({
   request,

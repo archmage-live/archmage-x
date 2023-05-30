@@ -37,6 +37,7 @@ import {
   KeystoreSigningWallet,
   WalletAccount,
   WalletType,
+  buildWalletUniqueHash,
   checkAddressMayThrow,
   getDefaultPath,
   getDerivePosition,
@@ -497,7 +498,6 @@ class WalletService extends WalletServicePartial {
         assert(mnemonic && !path && !privateKey)
         assert(addressType)
         account = ethers.utils.HDNode.fromMnemonic(mnemonic)
-        hash = account.address
         break
       }
       case WalletType.PRIVATE_KEY: {
@@ -509,9 +509,10 @@ class WalletService extends WalletServicePartial {
           account = new ethers.Wallet(privateKey)
         }
         assert(addressType)
-        hash = account.address
         break
       }
+      case WalletType.PRIVATE_KEY_GROUP:
+        break
       case WalletType.WATCH:
       // pass through
       case WalletType.WALLET_CONNECT: {
@@ -519,7 +520,6 @@ class WalletService extends WalletServicePartial {
         assert(networkKind !== NetworkKind.BTC || addressType)
         assert(accounts && accounts.length === 1)
         accounts = checkAccounts(networkKind, accounts)
-        hash = accounts[0].address
         break
       }
       case WalletType.WATCH_GROUP:
@@ -529,12 +529,6 @@ class WalletService extends WalletServicePartial {
         assert(networkKind !== NetworkKind.BTC || addressType)
         assert(accounts && accounts.length >= 1)
         accounts = checkAccounts(networkKind, accounts)
-        hash = ethers.utils.getAddress(
-          ethers.utils.hexDataSlice(
-            ethers.utils.keccak256(ethers.utils.randomBytes(32)),
-            12
-          )
-        )
         break
       }
       case WalletType.HW: {
@@ -543,7 +537,6 @@ class WalletService extends WalletServicePartial {
         assert(networkKind !== NetworkKind.BTC || addressType)
         assert(accounts && accounts.length === 1)
         accounts = checkAccounts(networkKind, accounts)
-        hash = accounts[0].address
         break
       }
       case WalletType.HW_GROUP: {
@@ -555,7 +548,6 @@ class WalletService extends WalletServicePartial {
         assert(
           new Set(accounts.map(({ index }) => index)).size === accounts.length
         )
-        assert(hash)
         break
       }
       default:
@@ -566,7 +558,6 @@ class WalletService extends WalletServicePartial {
       sortId: await getNextField(DB.wallets),
       type,
       name,
-      hash, // use address or other unique string as hash
       info: {
         hwType,
         path,
@@ -576,6 +567,8 @@ class WalletService extends WalletServicePartial {
       },
       createdAt: Date.now()
     } as IWallet
+
+    wallet.hash = buildWalletUniqueHash(wallet, account, accounts, hash)
 
     const decrypted: _KeystoreAccount | undefined = account
       ? {

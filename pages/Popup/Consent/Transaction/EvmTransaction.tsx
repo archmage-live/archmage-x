@@ -321,7 +321,11 @@ export const EvmTransaction = ({
     } as EvmTxParams
 
     // trick
-    if (tx.type === 2 && tx.gasPrice && (!tx.maxPriorityFeePerGas || !tx.maxFeePerGas)) {
+    if (
+      tx.type === 2 &&
+      tx.gasPrice &&
+      (!tx.maxPriorityFeePerGas || !tx.maxFeePerGas)
+    ) {
       tx.maxPriorityFeePerGas = tx.gasPrice
       tx.maxFeePerGas = tx.gasPrice
       delete tx.gasPrice

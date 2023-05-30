@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom'
 
 import { DB } from '~lib/db'
 import { PASSWORD_SERVICE } from '~lib/services/passwordService'
-import { createTab } from "~lib/tab";
+import { createTab } from '~lib/tab'
 
 interface SidebarProps {
   isOpen: boolean

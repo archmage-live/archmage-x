@@ -1,4 +1,4 @@
-import { LOCAL_STORE, StoreKey } from "~lib/store";
+import { LOCAL_STORE, StoreKey } from '~lib/store'
 
 export function watchActiveNetworkChange(handler: () => void) {
   LOCAL_STORE.watch({

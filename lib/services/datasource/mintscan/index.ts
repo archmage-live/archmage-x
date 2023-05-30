@@ -1,25 +1,26 @@
-import { fetchJson } from "~lib/fetch";
-import { Long } from "cosmjs-types/helpers";
-import { Any } from "cosmjs-types/google/protobuf/any";
-import { Event } from "cosmjs-types/tendermint/abci/types";
-import { ABCIMessageLog } from "cosmjs-types/cosmos/base/abci/v1beta1/abci";
-import { Tx } from "cosmjs-types/cosmos/tx/v1beta1/tx";
+import { ABCIMessageLog } from 'cosmjs-types/cosmos/base/abci/v1beta1/abci'
+import { Tx } from 'cosmjs-types/cosmos/tx/v1beta1/tx'
+import { Any } from 'cosmjs-types/google/protobuf/any'
+import { Long } from 'cosmjs-types/helpers'
+import { Event } from 'cosmjs-types/tendermint/abci/types'
+
+import { fetchJson } from '~lib/fetch'
 
 interface TxsResponse {
   data: {
     height: string
-    txhash: string;
-    codespace: string;
-    code: number;
-    data: string;
-    raw_log: string;
-    logs: ABCIMessageLog[];
-    info: string;
+    txhash: string
+    codespace: string
+    code: number
+    data: string
+    raw_log: string
+    logs: ABCIMessageLog[]
+    info: string
     gas_wanted: string
     gas_used: string
-    tx?: Tx;
-    timestamp: string;
-    events: Event[];
+    tx?: Tx
+    timestamp: string
+    events: Event[]
   }
   header: {
     block_id: number

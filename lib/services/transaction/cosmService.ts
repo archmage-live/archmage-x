@@ -26,6 +26,7 @@ import { SERVICE_WORKER_CLIENT, SERVICE_WORKER_SERVER } from '~lib/rpc'
 import { IChainAccount, INetwork, IPendingTx, ITransaction } from '~lib/schema'
 import { NETWORK_SERVICE } from '~lib/services/network'
 import { getCosmClient } from '~lib/services/provider/cosm/client'
+import { stall } from '~lib/utils'
 import { isStdSignDoc } from '~lib/wallet'
 
 import {
@@ -36,7 +37,6 @@ import {
 } from '.'
 import { BaseTransactionService } from './baseService'
 import { CosmTxInfo, parseCosmTx } from './cosmParse'
-import { stall } from "~lib/utils";
 
 export interface CosmPendingTxInfo {
   tx: Tx

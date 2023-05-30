@@ -30,6 +30,7 @@ import { useCryptoComparePrice } from '~lib/services/datasource/cryptocompare'
 import { getNetworkInfo } from '~lib/services/network'
 import { useBalance, useNetworkStatus } from '~lib/services/provider'
 import { WalletInfo } from '~lib/services/wallet'
+import { createTab, useCurrentSiteUrl } from '~lib/tab'
 import { shortenAddress } from '~lib/utils'
 import { ConnectedAccountsModal } from '~pages/Popup/Assets/ConnectedAccounts'
 import { useDepositModal } from '~pages/Popup/Assets/Deposit'
@@ -38,7 +39,6 @@ import { ExportMnemonicModal } from '~pages/Settings/SettingsWallets/ExportMnemo
 
 import { AccountMenu } from './AccountMenu'
 import { TokenListSection } from './TokenList'
-import { createTab, useCurrentSiteUrl } from "~lib/tab";
 
 export default function Assets({ onLoaded }: { onLoaded?: () => void }) {
   const { network, account, wallet, subWallet } = useActive()
