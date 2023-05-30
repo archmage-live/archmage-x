@@ -18,8 +18,13 @@ export enum WalletType {
   MPC_GROUP = 'mpc_group', // ditto, but in group
   WALLET_CONNECT = 'wallet_connect', // WalletConnect protocol
   WALLET_CONNECT_GROUP = 'wallet_connect_group', // ditto, but in group
-  AA = 'aa', // account abstraction
-  AA_GROUP = 'aa_group' // ditto, but in group
+  MULTI_SIG = 'multi_sig', // multi-sig
+  MULTI_SIG_GROUP = 'multi_sig_group', // ditto, but in group
+}
+
+export enum AccountAbstractionType {
+  ERC4337= 'erc4337',
+  SAFE = 'safe'
 }
 
 export function isWalletGroup(type: WalletType) {

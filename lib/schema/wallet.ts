@@ -31,6 +31,7 @@ export interface WalletInfo {
   mpcType?: MpcWalletType
   mpcInfo: any
   addressType?: BtcAddressType // for Bitcoin
+  isAccountAbstraction?: boolean
 }
 
 const namePrefix = 'Wallet '

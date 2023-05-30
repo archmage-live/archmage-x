@@ -16,6 +16,7 @@
     "ajv": "./scripts/ajv.sh"
   },
   "dependencies": {
+    "@account-abstraction/sdk": "^0.6.0",
     "@archmagelive/plasmo": "0.56.0",
     "@bitcoinerlab/secp256k1": "^1.0.2",
     "@chakra-ui/icons": "^2.0.4",
@@ -74,6 +75,9 @@
     "@openzeppelin/contracts": "^4.7.3",
     "@plasmohq/storage": "^0.8.1",
     "@react-icons/all-files": "https://github.com/react-icons/react-icons/releases/download/v4.6.0/react-icons-all-files-4.6.0.tgz",
+    "@safe-global/api-kit": "^1.1.0",
+    "@safe-global/protocol-kit": "^1.0.1",
+    "@safe-global/safe-core-sdk-types": "^2.0.0",
     "@scure/btc-signer": "^1.0.0",
     "@solana/web3.js": "^1.47.3",
     "@tanstack/query-core": "^4.13.4",
@@ -89,6 +93,7 @@
     "@web3auth/base": "^5.1.0",
     "@web3auth/modal": "^5.1.1",
     "@web3auth/openlogin-adapter": "^5.1.1",
+    "@zerodevapp/sdk": "^3.1.29",
     "@zxcvbn-ts/core": "^2.0.3",
     "@zxcvbn-ts/language-common": "^2.0.1",
     "@zxcvbn-ts/language-en": "^2.0.1",
