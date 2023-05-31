@@ -67,6 +67,7 @@ const ExportMnemonic = ({
 }: ExportMnemonicModalProps) => {
   const [mnemonic, setMnemonic] = useState<string[]>([])
   useEffect(() => {
+    // TODO
     WALLET_SERVICE.getKeystore(walletId).then((keystore) => {
       if (keystore?.mnemonic) {
         setMnemonic(keystore.mnemonic.phrase.split(' '))

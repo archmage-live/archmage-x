@@ -17,9 +17,10 @@ export class EvmWallet implements KeystoreSigningWallet {
   static async from({
     id,
     type,
+    index,
     path
   }: WalletOpts): Promise<EvmWallet | undefined> {
-    const ks = await KEYSTORE.get(id, true)
+    const ks = await KEYSTORE.get(id, index, true)
     if (!ks) {
       return undefined
     }

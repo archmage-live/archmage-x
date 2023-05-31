@@ -41,9 +41,10 @@ export class StarknetWallet implements KeystoreSigningWallet {
   static async from({
     id,
     type,
+    index,
     path
   }: WalletOpts): Promise<StarknetWallet | undefined> {
-    const ks = await KEYSTORE.get(id, true)
+    const ks = await KEYSTORE.get(id, index, true)
     if (!ks) {
       return undefined
     }

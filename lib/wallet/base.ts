@@ -4,7 +4,7 @@ import walletConnectLogo from 'data-base64:~assets/thirdparty/walletconnect.svg'
 import { ethers } from 'ethers'
 
 import { NetworkKind } from '~lib/network'
-import { DerivePosition, IHdPath, IWallet } from '~lib/schema'
+import { DerivePosition, IHdPath, IWallet, Index } from '~lib/schema'
 
 export enum WalletType {
   HD = 'hd', // Hierarchical Deterministic, derived from mnemonic
@@ -56,6 +56,12 @@ export function hasWalletKeystore(type: WalletType) {
     case WalletType.PRIVATE_KEY:
     // pass through
     case WalletType.PRIVATE_KEY_GROUP:
+    // pass through
+    case WalletType.MPC_HD:
+    // pass through
+    case WalletType.MPC:
+    // pass through
+    case WalletType.MPC_GROUP:
       return true
     default:
       return false
@@ -166,8 +172,8 @@ export enum MpcWalletType {
 }
 
 export interface WalletAccount {
-  address: string
-  index: number
+  address?: string
+  index: Index
   publicKey?: string
 
   mnemonic?: string
@@ -178,6 +184,7 @@ export interface WalletAccount {
 export interface WalletOpts {
   id: number // wallet id in db
   type: WalletType
+  index?: Index
   path?: string
   extra?: any
 }
@@ -273,13 +280,13 @@ export function buildWalletUniqueHash(
       hash = generateWalletUniqueHash()
       break
     case WalletType.WATCH:
-      hash = accounts![0].address
+      hash = accounts![0].address!
       break
     case WalletType.WATCH_GROUP:
       hash = generateWalletUniqueHash()
       break
     case WalletType.WALLET_CONNECT:
-      hash = accounts![0].address
+      hash = accounts![0].address!
       break
     case WalletType.WALLET_CONNECT_GROUP:
       hash = generateWalletUniqueHash()
@@ -294,14 +301,14 @@ export function buildWalletUniqueHash(
       hash = generateWalletUniqueHash()
       break
     case WalletType.HW:
-      hash = accounts![0].address
+      hash = accounts![0].address!
       break
     case WalletType.HW_GROUP:
       // read from hardware wallet
       assert(hash)
       break
     case WalletType.MULTI_SIG:
-      hash = accounts![0].address
+      hash = accounts![0].address!
       break
     case WalletType.MULTI_SIG_GROUP:
       hash = generateWalletUniqueHash()

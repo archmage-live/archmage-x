@@ -47,7 +47,7 @@ class PasswordService implements IPasswordService {
 
     if (unlocked) {
       await setUnlockTime()
-      KEYSTORE.unlock()
+      KEYSTORE.unlock().then()
     }
 
     return unlocked

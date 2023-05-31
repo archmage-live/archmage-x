@@ -82,20 +82,33 @@ export interface WalletInfo {
   notBackedUp?: boolean
 }
 
-function checkAccounts(networkKind: NetworkKind, accounts: WalletAccount[]) {
+function checkAccounts(accounts: WalletAccount[], networkKind?: NetworkKind) {
   return accounts.map((account) => {
-    return {
-      ...account,
-      address: formatAddressForAux(
-        checkAddressMayThrow(networkKind, account.address),
-        networkKind
-      )
-    } as WalletAccount
+    assert(
+      [
+        account.address,
+        account.mnemonic && account.path,
+        account.privateKey
+      ].filter(Boolean).length === 1
+    )
+
+    if (account.address) {
+      assert(networkKind)
+      return {
+        ...account,
+        address: formatAddressForAux(
+          checkAddressMayThrow(networkKind, account.address),
+          networkKind
+        )
+      } as WalletAccount
+    } else {
+      return account
+    }
   })
 }
 
 export interface IWalletService {
-  getKeystore(id: number): Promise<KeystoreAccount | undefined>
+  getKeystore(id: number, index?: Index): Promise<KeystoreAccount | undefined>
 
   generateMnemonic(opts?: { locale?: string }): Promise<string>
 
@@ -116,7 +129,7 @@ export interface IWalletService {
 
   deleteWallet(id: number): Promise<void>
 
-  deleteSubWallet(id: number): Promise<void>
+  deleteSubWallet(id: number | SubIndex): Promise<void>
 
   getWallet(id?: number, hash?: string): Promise<IWallet | undefined>
 
@@ -409,6 +422,7 @@ class WalletServicePartial implements IWalletService {
     accounts: WalletAccount[]
   ) {
     const accountsAux = accounts.map(({ address, index, publicKey }) => {
+      assert(address)
       assert(formatAddressForAux(address, networkKind) === address)
 
       return {
@@ -469,8 +483,11 @@ class WalletServicePartial implements IWalletService {
 }
 
 class WalletService extends WalletServicePartial {
-  async getKeystore(id: number): Promise<KeystoreAccount | undefined> {
-    return KEYSTORE.get(id)
+  async getKeystore(
+    id: number,
+    index?: Index
+  ): Promise<KeystoreAccount | undefined> {
+    return KEYSTORE.get(id, index)
   }
 
   async newWallet({
@@ -512,6 +529,8 @@ class WalletService extends WalletServicePartial {
         break
       }
       case WalletType.PRIVATE_KEY_GROUP:
+        assert(accounts && accounts.length >= 1)
+        accounts = checkAccounts(accounts)
         break
       case WalletType.WATCH:
       // pass through
@@ -519,7 +538,7 @@ class WalletService extends WalletServicePartial {
         assert(networkKind)
         assert(networkKind !== NetworkKind.BTC || addressType)
         assert(accounts && accounts.length === 1)
-        accounts = checkAccounts(networkKind, accounts)
+        accounts = checkAccounts(accounts, networkKind)
         break
       }
       case WalletType.WATCH_GROUP:
@@ -528,7 +547,7 @@ class WalletService extends WalletServicePartial {
         assert(networkKind)
         assert(networkKind !== NetworkKind.BTC || addressType)
         assert(accounts && accounts.length >= 1)
-        accounts = checkAccounts(networkKind, accounts)
+        accounts = checkAccounts(accounts, networkKind)
         break
       }
       case WalletType.HW: {
@@ -536,7 +555,7 @@ class WalletService extends WalletServicePartial {
         assert(networkKind)
         assert(networkKind !== NetworkKind.BTC || addressType)
         assert(accounts && accounts.length === 1)
-        accounts = checkAccounts(networkKind, accounts)
+        accounts = checkAccounts(accounts, networkKind)
         break
       }
       case WalletType.HW_GROUP: {
@@ -544,7 +563,7 @@ class WalletService extends WalletServicePartial {
         assert(networkKind)
         assert(networkKind !== NetworkKind.BTC || addressType)
         assert(accounts && accounts.length >= 1)
-        accounts = checkAccounts(networkKind, accounts)
+        accounts = checkAccounts(accounts, networkKind)
         assert(
           new Set(accounts.map(({ index }) => index)).size === accounts.length
         )
@@ -627,7 +646,7 @@ class WalletService extends WalletServicePartial {
                 accounts.length === 1 &&
                 accounts[0].index === PSEUDO_INDEX
             )
-            accounts = checkAccounts(networkKind, accounts)
+            accounts = checkAccounts(accounts, networkKind)
             await DB.subWallets.add({
               masterId: wallet.id,
               sortId: 0,
@@ -642,7 +661,7 @@ class WalletService extends WalletServicePartial {
           case WalletType.WALLET_CONNECT_GROUP: {
             assert(networkKind)
             assert(accounts && accounts.length >= 1)
-            accounts = checkAccounts(networkKind, accounts)
+            accounts = checkAccounts(accounts, networkKind)
             assert(accounts.every(({ index }, i) => index === i))
             await this.deriveSubWallets(wallet.id, accounts.length)
             await this.createChainAccountsAux(wallet.id, networkKind, accounts)
@@ -655,7 +674,7 @@ class WalletService extends WalletServicePartial {
                 accounts.length === 1 &&
                 accounts[0].index === PSEUDO_INDEX
             )
-            accounts = checkAccounts(networkKind, accounts)
+            accounts = checkAccounts(accounts, networkKind)
             await DB.subWallets.add({
               masterId: wallet.id,
               sortId: 0,
@@ -668,7 +687,7 @@ class WalletService extends WalletServicePartial {
           case WalletType.HW_GROUP: {
             assert(networkKind)
             assert(accounts && accounts.length >= 1)
-            accounts = checkAccounts(networkKind, accounts)
+            accounts = checkAccounts(accounts, networkKind)
             const indices = accounts.map(({ index }) => index)
             assert(new Set(indices).size === accounts.length)
 
@@ -683,9 +702,14 @@ class WalletService extends WalletServicePartial {
     )
 
     if (decrypted) {
-      await KEYSTORE.set(wallet.id, new KeystoreAccount(decrypted))
-      // time-consuming, so do not wait for it
-      KEYSTORE.persist(wallet)
+      await KEYSTORE.set(
+        wallet.id,
+        PSEUDO_INDEX,
+        new KeystoreAccount(decrypted)
+      )
+      KEYSTORE.persist(wallet, PSEUDO_INDEX).then(() => {
+        // time-consuming, so do not wait for it
+      })
     }
   }
 
@@ -707,7 +731,7 @@ class WalletService extends WalletServicePartial {
             {
               assert(networkKind)
               assert(accounts && accounts.length >= 1)
-              accounts = checkAccounts(networkKind, accounts)
+              accounts = checkAccounts(accounts, networkKind)
               const indices = accounts.map(({ index }) => index)
               assert(new Set(indices).size === accounts.length)
               await this.deriveSubWallets(wallet.id, accounts.length, indices)
@@ -784,8 +808,8 @@ class WalletService extends WalletServicePartial {
     await DB.pendingTxs.where('masterId').equals(id).delete()
   }
 
-  async deleteSubWallet(id: number) {
-    const subWallet = await DB.subWallets.get(id)
+  async deleteSubWallet(id: number | SubIndex) {
+    const subWallet = await this.getSubWallet(id)
     if (!subWallet) {
       return
     }
@@ -830,7 +854,7 @@ class WalletService extends WalletServicePartial {
             .equals([subWallet.masterId, subWallet.index])
             .delete()
 
-          await DB.subWallets.delete(id)
+          await DB.subWallets.delete(subWallet.id)
         }
       )
     } finally {

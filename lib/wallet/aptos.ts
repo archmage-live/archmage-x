@@ -18,9 +18,10 @@ export class AptosWallet implements KeystoreSigningWallet {
   static async from({
     id,
     type,
+    index,
     path
   }: WalletOpts): Promise<AptosWallet | undefined> {
-    const ks = await KEYSTORE.get(id, true)
+    const ks = await KEYSTORE.get(id, index, true)
     if (!ks) {
       return undefined
     }

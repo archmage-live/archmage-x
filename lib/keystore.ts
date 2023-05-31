@@ -7,44 +7,51 @@ import { Storage } from '@plasmohq/storage'
 import { DB } from '~lib/db'
 import { ENV } from '~lib/env'
 import { PASSWORD } from '~lib/password'
-import { IKeystore, PSEUDO_INDEX } from '~lib/schema'
+import { IKeystore, Index, PSEUDO_INDEX } from '~lib/schema'
 import { IWallet } from '~lib/schema/wallet'
 import { WALLET_SERVICE } from '~lib/services/wallet'
 import { SESSION_STORE, StoreKey } from '~lib/store'
-import { stall } from '~lib/utils'
-import { hasWalletKeystore } from '~lib/wallet'
+import { WalletType, hasWalletKeystore } from '~lib/wallet'
 
-function keystoreKey(id: number): string {
-  return `${StoreKey.KEYSTORE_PREFIX}_${id}`
+function keystoreKey(id: number, index: Index): string {
+  return index === PSEUDO_INDEX
+    ? `${StoreKey.KEYSTORE_PREFIX}_${id}`
+    : `${StoreKey.KEYSTORE_PREFIX}_${id}_${index}`
+}
+
+function readyKey(id: number, index: Index): string {
+  return index === PSEUDO_INDEX ? `${id}` : `${id}_${index}`
 }
 
 class Accounts {
-  private accounts = new Map<number, KeystoreAccount>() // id -> decrypted keystore
+  private accounts = new Map<string, KeystoreAccount>() // key -> decrypted keystore
 
-  async set(id: number, account: KeystoreAccount) {
-    this.accounts.set(id, account)
+  async set(id: number, index: Index, account: KeystoreAccount) {
+    const key = keystoreKey(id, index)
+    this.accounts.set(key, account)
 
-    const key = keystoreKey(id)
     await new Storage({
       area: 'session',
       secretKeyList: [key]
     }).set(key, account)
   }
 
-  async get(id: number): Promise<KeystoreAccount | undefined> {
-    if (!this.accounts.has(id)) {
-      const account = await SESSION_STORE.get<KeystoreAccount>(keystoreKey(id))
+  async get(id: number, index: Index): Promise<KeystoreAccount | undefined> {
+    const key = keystoreKey(id, index)
+    if (!this.accounts.has(key)) {
+      const account = await SESSION_STORE.get<KeystoreAccount>(key)
 
       if (account) {
-        this.accounts.set(id, account)
+        this.accounts.set(key, account)
       }
     }
-    return this.accounts.get(id)
+    return this.accounts.get(key)
   }
 
-  async remove(id: number) {
-    this.accounts.delete(id)
-    await SESSION_STORE.remove(keystoreKey(id))
+  async remove(id: number, index: Index) {
+    const key = keystoreKey(id, index)
+    this.accounts.delete(key)
+    await SESSION_STORE.remove(key)
   }
 
   async clear() {
@@ -63,10 +70,10 @@ class Accounts {
 
 export class Keystore {
   private accounts = new Accounts()
-  private ready = new Map<number, [Promise<unknown>, Function]>()
+  private ready = new Map<string, [Promise<unknown>, Function]>()
 
   constructor() {
-    this.unlock()
+    this.unlock().then()
   }
 
   async unlock() {
@@ -99,11 +106,21 @@ export class Keystore {
             continue
           }
 
-          if (!(await this.getKeystore(wallet))) {
-            promises.push(this.persist(wallet))
+          let indices: Index[]
+          if (wallet.type === WalletType.PRIVATE_KEY_GROUP) {
+            const subWallets = await WALLET_SERVICE.getSubWallets(wallet.id)
+            indices = subWallets.map(({ index }) => index)
+          } else {
+            indices = [PSEUDO_INDEX]
           }
 
-          promises.push(this.fetch(wallet.id))
+          for (const index of indices) {
+            if (!(await this.getKeystore(wallet, index))) {
+              promises.push(this.persist(wallet, index))
+            }
+
+            promises.push(this.fetch(wallet.id, index))
+          }
         }
 
         await Promise.all(promises)
@@ -119,26 +136,29 @@ export class Keystore {
 
   async lock() {
     await this.accounts.clear()
-    for (const id of this.ready.keys()) {
-      this.resolveReady(id)
+    for (const key of this.ready.keys()) {
+      this.resolveReadyByKey(key)
     }
     this.ready.clear()
   }
 
-  async set(id: number, keystore: KeystoreAccount) {
-    await this.accounts.set(id, keystore)
+  async set(id: number, index: Index, keystore: KeystoreAccount) {
+    await this.accounts.set(id, index, keystore)
   }
 
   async get(
     id: number,
+    index: Index | undefined,
     waitForUnlock = false
   ): Promise<KeystoreAccount | undefined> {
-    // TODO
     while (true) {
-      const account = await this.fetch(id)
+      const account = await this.fetch(
+        id,
+        typeof index === 'number' ? index : PSEUDO_INDEX
+      )
       if (!account && waitForUnlock) {
         if (await PASSWORD.isLocked()) {
-          await stall(1000)
+          await PASSWORD.waitForUnlocked()
           continue
         }
       }
@@ -146,28 +166,35 @@ export class Keystore {
     }
   }
 
-  async remove(id: number) {
-    await this.accounts.remove(id)
-    this.resolveReady(id, true)
+  async remove(id: number, index: Index) {
+    await this.accounts.remove(id, index)
+    this.resolveReady(id, index, true)
   }
 
-  async persist(wallet: IWallet) {
+  async persist(wallet: IWallet, index: Index) {
     if (!hasWalletKeystore(wallet.type)) {
       return
     }
 
-    if (await this.getKeystore(wallet)) {
+    if (await this.getKeystore(wallet, index)) {
       // has persisted
       return
     }
 
-    const account = await this.accounts.get(wallet.id)
+    const account = await this.accounts.get(wallet.id, index)
     const password = await PASSWORD.get()
     if (!account) {
-      await WALLET_SERVICE.deleteWallet(wallet.id)
-      console.log(
-        `keystore for wallet ${wallet.id} cannot be recovered anymore, so delete it`
-      )
+      if (index === PSEUDO_INDEX) {
+        await WALLET_SERVICE.deleteWallet(wallet.id)
+        console.log(
+          `keystore for wallet ${wallet.id} cannot be recovered anymore, so delete it`
+        )
+      } else {
+        await WALLET_SERVICE.deleteSubWallet({ masterId: wallet.id, index })
+        console.log(
+          `keystore for sub wallet ${wallet.id}/${index} cannot be recovered anymore, so delete it`
+        )
+      }
       return
     }
     if (!password) {
@@ -184,97 +211,109 @@ export class Keystore {
     })
 
     await DB.transaction('rw', [DB.keystores], async () => {
-      if (await this.getKeystore(wallet)) {
+      if (await this.getKeystore(wallet, index)) {
         return
       }
 
       await DB.keystores.add({
         masterId: wallet.id,
-        index: PSEUDO_INDEX,
+        index,
         keystore
       } as IKeystore)
     })
-    console.log(`keystore for wallet ${wallet.id} is persistent`)
+
+    if (index === PSEUDO_INDEX) {
+      console.log(`keystore for wallet ${wallet.id} is persistent`)
+    } else {
+      console.log(`keystore for sub wallet ${wallet.id}/${index} is persistent`)
+    }
   }
 
-  private async fetch(id: number): Promise<KeystoreAccount | undefined> {
-    const account = await this.accounts.get(id)
+  private async fetch(
+    id: number,
+    index: Index
+  ): Promise<KeystoreAccount | undefined> {
+    const account = await this.accounts.get(id, index)
     if (account) {
       return account
     }
-    if (!this.hasReady(id)) {
-      this.initReady(id)
+    if (!this.hasReady(id, index)) {
+      this.initReady(id, index)
 
       const wallet = await DB.wallets.get(id)
       if (!wallet) {
-        this.resolveReady(id, true)
+        this.resolveReady(id, index, true)
         return undefined
       }
 
       const password = await PASSWORD.get()
       if (!password) {
-        this.resolveReady(id, true)
+        this.resolveReady(id, index, true)
         return undefined
       }
 
-      const encrypt = await this.getKeystore(wallet)
+      const encrypt = await this.getKeystore(wallet, index)
       if (!encrypt) {
-        this.resolveReady(id, true)
+        this.resolveReady(id, index, true)
         return undefined
       }
 
       // time-consuming decrypting
       const keystore = await decryptKeystore(encrypt.keystore, password)
-      await this.accounts.set(id, keystore)
+      await this.accounts.set(id, index, keystore)
 
       if (await PASSWORD.isLocked()) {
-        await this.remove(id)
+        await this.remove(id, index)
         return undefined
       }
 
-      this.resolveReady(id)
+      this.resolveReady(id, index)
 
       return keystore
     } else {
-      await this.waitReady(id)
-      return await this.accounts.get(id)
+      await this.waitReady(id, index)
+      return await this.accounts.get(id, index)
     }
   }
 
-  private initReady(id: number) {
+  private initReady(id: number, index: Index) {
     let resolve
     const promise = new Promise((r) => {
       resolve = r
     })
-    this.ready.set(id, [promise, resolve as any])
+    this.ready.set(readyKey(id, index), [promise, resolve as any])
   }
 
-  private hasReady(id: number) {
-    return this.ready.has(id)
+  private hasReady(id: number, index: Index) {
+    return this.ready.has(readyKey(id, index))
   }
 
-  private async waitReady(id: number) {
-    const ready = this.ready.get(id)
+  private async waitReady(id: number, index: Index) {
+    const ready = this.ready.get(readyKey(id, index))
     if (ready) {
       await ready[0]
     }
   }
 
-  private resolveReady(id: number, remove?: boolean) {
-    const ready = this.ready.get(id)
+  private resolveReady(id: number, index: Index, remove?: boolean) {
+    this.resolveReadyByKey(readyKey(id, index), remove)
+  }
+
+  private resolveReadyByKey(key: string, remove?: boolean) {
+    const ready = this.ready.get(key)
     if (ready) {
       ready[1]()
     }
     if (remove) {
-      this.ready.delete(id)
+      this.ready.delete(key)
     }
   }
 
-  private async getKeystore(wallet: IWallet) {
+  private async getKeystore(wallet: IWallet, index: Index) {
     return DB.keystores
       .where({
         masterId: wallet.id,
-        index: PSEUDO_INDEX
+        index
       })
       .first()
   }

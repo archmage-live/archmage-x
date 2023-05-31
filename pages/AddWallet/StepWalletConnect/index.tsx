@@ -71,7 +71,7 @@ export const StepWalletConnect = () => {
 
   const onImport = useCallback(async () => {
     const addrs = accounts.map(({ address }) =>
-      checkAddress(networkKind, address)
+      checkAddress(networkKind, address!)
     )
     if (addrs.some((addr) => !addr)) {
       setAlert('Invalid address')
@@ -112,7 +112,7 @@ export const StepWalletConnect = () => {
       let accs = accounts.slice()
       if (isGroupChecked) {
         let update = false
-        const existing = new Set(accs.map((c) => c.address))
+        const existing = new Set(accs.map((c) => c.address!))
         for (const address of addresses) {
           if (!existing.has(address)) {
             accs.push({

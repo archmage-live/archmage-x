@@ -24,9 +24,10 @@ export class SuiWallet implements KeystoreSigningWallet {
   static async from({
     id,
     type,
+    index,
     path
   }: WalletOpts): Promise<SuiWallet | undefined> {
-    const ks = await KEYSTORE.get(id, true)
+    const ks = await KEYSTORE.get(id, index, true)
     if (!ks) {
       return undefined
     }

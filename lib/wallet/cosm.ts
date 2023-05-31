@@ -49,10 +49,11 @@ export class CosmWallet implements KeystoreSigningWallet {
   static async from({
     id,
     type,
+    index,
     path,
     prefix
   }: CosmWalletOpts): Promise<CosmWallet | undefined> {
-    const ks = await KEYSTORE.get(id, true)
+    const ks = await KEYSTORE.get(id, index, true)
     if (!ks) {
       return undefined
     }

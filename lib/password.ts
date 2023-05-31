@@ -3,7 +3,7 @@ import { useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useAsync } from 'react-use'
 
-import { useStorage } from '@plasmohq/storage'
+import { StorageCallbackMap, useStorage } from '@plasmohq/storage'
 
 import { ENV } from '~lib/env'
 import { useSubWalletsCount } from '~lib/services/wallet'
@@ -70,6 +70,23 @@ class Password {
     return !(await this.isLocked())
   }
 
+  async waitForUnlocked() {
+    let resolve: Function
+    const promise = new Promise((r) => {
+      resolve = r
+    })
+
+    const unwatch = watchPasswordUnlocked((isUnlocked) => {
+      if (isUnlocked) {
+        resolve()
+      }
+    })
+
+    await promise
+
+    unwatch()
+  }
+
   async unlock(password: string) {
     if (!password) {
       return false
@@ -93,11 +110,17 @@ class Password {
 export const PASSWORD = new Password(ENV.inServiceWorker)
 
 export function watchPasswordUnlocked(handler: (isUnlocked: boolean) => void) {
-  SESSION_STORE.watch({
+  const callbackMap: StorageCallbackMap = {
     [StoreKey.PASSWORD]: (change) => {
       handler(!!change.newValue)
     }
-  })
+  }
+
+  SESSION_STORE.watch(callbackMap)
+
+  return () => {
+    SESSION_STORE.unwatch(callbackMap)
+  }
 }
 
 export function usePassword(): {

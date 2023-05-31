@@ -99,10 +99,11 @@ export class BtcWallet implements KeystoreSigningWallet {
   static async from({
     id,
     type,
+    index,
     path,
     extra: { addressType, isTestnet, network }
   }: BtcWalletOpts): Promise<BtcWallet | undefined> {
-    const ks = await KEYSTORE.get(id, true)
+    const ks = await KEYSTORE.get(id, index, true)
     if (!ks) {
       return undefined
     }

@@ -101,7 +101,7 @@ export const ImportWatchAddress = () => {
   }, [addresses, existingGroupWallet, isWatchGroupChecked, setAccounts])
 
   const onImport = useCallback(async () => {
-    let addrs = accounts.map((a) => checkAddress(networkKind, a.address))
+    let addrs = accounts.map((a) => checkAddress(networkKind, a.address!))
     if (addrs.some((addr) => !addr)) {
       setAlert('Invalid address')
       return

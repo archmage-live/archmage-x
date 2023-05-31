@@ -286,7 +286,7 @@ export const StepConnectLedger = ({}: {}) => {
     undefined,
     // find wallet by hash
     addWalletKind === AddWalletKind.CONNECT_HARDWARE
-      ? accounts[0]?.address
+      ? accounts[0]?.address!
       : hwHash
   )
   const existingAccounts = useChainAccountsAux(existingWallet?.id, networkKind)
