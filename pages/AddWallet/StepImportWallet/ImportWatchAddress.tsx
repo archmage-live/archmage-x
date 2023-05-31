@@ -18,7 +18,10 @@ import { useWizard } from 'react-use-wizard'
 import { AlertBox } from '~components/AlertBox'
 import { NETWORK_SCOPES, NetworkKind, getNetworkKind } from '~lib/network'
 import { PSEUDO_INDEX, formatAddressForAux } from '~lib/schema'
-import { ExistingGroupWallet } from '~lib/services/wallet'
+import {
+  ExistingGroupWallet,
+  useNextSubWalletIndex
+} from '~lib/services/wallet'
 import { WalletType, checkAddress } from '~lib/wallet'
 
 import { NameInput } from '../NameInput'
@@ -89,16 +92,25 @@ export const ImportWatchAddress = () => {
   const addWallet = useAddWallet()
   const addSubWallets = useAddSubWallets()
 
+  const nextIndex = useNextSubWalletIndex(existingGroupWallet?.wallet.id)
+
   useEffect(() => {
+    if (isWatchGroupChecked && nextIndex === undefined) {
+      return
+    }
     setAccounts(
       addresses.map((addr, i) => ({
         address: addr as string,
-        index: isWatchGroupChecked
-          ? (existingGroupWallet?.addresses.length || 0) + i
-          : PSEUDO_INDEX
+        index: isWatchGroupChecked ? nextIndex! + i : PSEUDO_INDEX
       }))
     )
-  }, [addresses, existingGroupWallet, isWatchGroupChecked, setAccounts])
+  }, [
+    addresses,
+    existingGroupWallet,
+    isWatchGroupChecked,
+    setAccounts,
+    nextIndex
+  ])
 
   const onImport = useCallback(async () => {
     let addrs = accounts.map((a) => checkAddress(networkKind, a.address!))
@@ -131,7 +143,7 @@ export const ImportWatchAddress = () => {
       }
     }
 
-    nextStep()
+    nextStep().then()
   }, [
     accounts,
     existingGroupWallet,

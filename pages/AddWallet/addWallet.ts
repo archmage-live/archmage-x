@@ -242,7 +242,7 @@ export function useAddWallet() {
         throw new Error('unknown wallet type')
     }
 
-    const { wallet, decrypted } = await WALLET_SERVICE.newWallet(opts)
+    const { wallet, decryptedKeystores } = await WALLET_SERVICE.newWallet(opts)
 
     if (await WALLET_SERVICE.existsSecret(wallet)) {
       return {
@@ -252,7 +252,7 @@ export function useAddWallet() {
 
     WALLET_SERVICE.createWallet({
       wallet,
-      decrypted,
+      decryptedKeystores,
       networkKind,
       accounts,
       notBackedUp

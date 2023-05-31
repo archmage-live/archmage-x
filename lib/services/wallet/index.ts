@@ -33,6 +33,7 @@ import { IWallet } from '~lib/schema/wallet'
 import { NETWORK_SERVICE } from '~lib/services/network'
 import {
   BtcAddressType,
+  DecryptedKeystoreAccount,
   HardwareWalletType,
   KeystoreSigningWallet,
   WalletAccount,
@@ -65,7 +66,7 @@ export type NewWalletOpts = {
 
 export type CreateWalletOpts = {
   wallet: IWallet
-  decrypted?: _KeystoreAccount
+  decryptedKeystores?: DecryptedKeystoreAccount[]
   networkKind?: NetworkKind
   accounts?: WalletAccount[] // for imported wallets
   notBackedUp?: boolean
@@ -114,7 +115,7 @@ export interface IWalletService {
 
   newWallet(opts: NewWalletOpts): Promise<{
     wallet: IWallet
-    decrypted?: _KeystoreAccount
+    decryptedKeystores?: DecryptedKeystoreAccount[]
   }>
 
   existsName(name: string): Promise<boolean>
@@ -398,7 +399,7 @@ class WalletServicePartial implements IWalletService {
     const subWallets = [...Array(num).keys()].map((n) => {
       const index = !indices ? nextIndex + n : indices[n]
 
-      // TODO: check name conflict
+      // there should be no conflict when using default sub name for specific index
       const name = getDefaultSubName(index)
 
       return {
@@ -505,32 +506,56 @@ class WalletService extends WalletServicePartial {
     addressType
   }: NewWalletOpts): Promise<{
     wallet: IWallet
-    decrypted?: _KeystoreAccount
+    decryptedKeystores?: DecryptedKeystoreAccount[]
   }> {
     name = name || (await generateDefaultWalletName(DB.wallets))
 
-    let account
+    let decryptedKeystores: DecryptedKeystoreAccount[] = []
     switch (type) {
       case WalletType.HD: {
         assert(mnemonic && !path && !privateKey)
         assert(addressType)
-        account = ethers.utils.HDNode.fromMnemonic(mnemonic)
+        const acc = ethers.utils.HDNode.fromMnemonic(mnemonic)
+        decryptedKeystores.push({
+          index: PSEUDO_INDEX,
+          account: {
+            address: acc.address,
+            privateKey: acc.privateKey,
+            mnemonic: acc.mnemonic,
+            _isKeystoreAccount: true
+          }
+        })
         break
       }
-      case WalletType.PRIVATE_KEY: {
-        if (!privateKey) {
-          assert(mnemonic && path)
-          account = ethers.Wallet.fromMnemonic(mnemonic, path)
-        } else {
-          assert(!mnemonic && !path)
-          account = new ethers.Wallet(privateKey)
-        }
-        assert(addressType)
-        break
-      }
+      case WalletType.PRIVATE_KEY:
+      // pass through
       case WalletType.PRIVATE_KEY_GROUP:
-        assert(accounts && accounts.length >= 1)
+        assert(addressType)
+        assert(
+          accounts &&
+            accounts.length >= 1 &&
+            (type !== WalletType.PRIVATE_KEY || accounts.length === 1)
+        )
         accounts = checkAccounts(accounts)
+        for (const { index, mnemonic, path, privateKey } of accounts) {
+          let acc
+          if (!privateKey) {
+            assert(mnemonic && path)
+            acc = ethers.Wallet.fromMnemonic(mnemonic, path)
+          } else {
+            assert(!mnemonic && !path)
+            acc = new ethers.Wallet(privateKey)
+          }
+          decryptedKeystores.push({
+            index,
+            account: {
+              address: acc.address,
+              privateKey: acc.privateKey,
+              mnemonic: acc.mnemonic,
+              _isKeystoreAccount: true
+            }
+          })
+        }
         break
       case WalletType.WATCH:
       // pass through
@@ -587,26 +612,22 @@ class WalletService extends WalletServicePartial {
       createdAt: Date.now()
     } as IWallet
 
-    wallet.hash = buildWalletUniqueHash(wallet, account, accounts, hash)
-
-    const decrypted: _KeystoreAccount | undefined = account
-      ? {
-          address: account.address,
-          privateKey: account.privateKey,
-          mnemonic: account.mnemonic,
-          _isKeystoreAccount: true
-        }
-      : undefined
+    wallet.hash = buildWalletUniqueHash(
+      wallet,
+      decryptedKeystores,
+      accounts,
+      hash
+    )
 
     return {
       wallet,
-      decrypted
+      decryptedKeystores
     }
   }
 
   async createWallet({
     wallet,
-    decrypted,
+    decryptedKeystores,
     networkKind,
     accounts,
     notBackedUp
@@ -701,15 +722,13 @@ class WalletService extends WalletServicePartial {
       }
     )
 
-    if (decrypted) {
-      await KEYSTORE.set(
-        wallet.id,
-        PSEUDO_INDEX,
-        new KeystoreAccount(decrypted)
-      )
-      KEYSTORE.persist(wallet, PSEUDO_INDEX).then(() => {
-        // time-consuming, so do not wait for it
-      })
+    if (decryptedKeystores) {
+      for (const { index, account } of decryptedKeystores) {
+        await KEYSTORE.set(wallet.id, index, new KeystoreAccount(account))
+        KEYSTORE.persist(wallet, index).then(() => {
+          // time-consuming, so do not wait for it
+        })
+      }
     }
   }
 
@@ -723,11 +742,17 @@ class WalletService extends WalletServicePartial {
       [DB.wallets, DB.subWallets, DB.hdPaths, DB.chainAccountsAux],
       async () => {
         switch (wallet.type) {
+          case WalletType.PRIVATE_KEY_GROUP:
+          // pass through
           case WalletType.WATCH_GROUP:
           // pass through
           case WalletType.HW_GROUP:
           // pass through
+          case WalletType.MPC_GROUP:
+          // pass through
           case WalletType.WALLET_CONNECT_GROUP:
+          // pass through
+          case WalletType.MULTI_SIG_GROUP:
             {
               assert(networkKind)
               assert(accounts && accounts.length >= 1)
@@ -793,7 +818,7 @@ class WalletService extends WalletServicePartial {
           await DB.wallets.delete(id)
           await DB.keystores.where('masterId').equals(id).delete()
 
-          await Dexie.waitFor(KEYSTORE.remove(id))
+          await Dexie.waitFor(KEYSTORE.removeAll(id))
         }
       )
     } finally {

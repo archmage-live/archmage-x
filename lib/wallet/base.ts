@@ -5,6 +5,7 @@ import { ethers } from 'ethers'
 
 import { NetworkKind } from '~lib/network'
 import { DerivePosition, IHdPath, IWallet, Index } from '~lib/schema'
+import type { _KeystoreAccount } from "@ethersproject/json-wallets/lib.esm/keystore";
 
 export enum WalletType {
   HD = 'hd', // Hierarchical Deterministic, derived from mnemonic
@@ -181,6 +182,11 @@ export interface WalletAccount {
   privateKey?: string
 }
 
+export type DecryptedKeystoreAccount = {
+  index: Index
+  account: _KeystoreAccount
+}
+
 export interface WalletOpts {
   id: number // wallet id in db
   type: WalletType
@@ -259,7 +265,7 @@ export function generatePath(
 
 export function buildWalletUniqueHash(
   wallet: IWallet,
-  keystoreAccount?: ethers.utils.HDNode | ethers.Wallet,
+  keystoreAccounts?: DecryptedKeystoreAccount[],
   accounts?: WalletAccount[],
   hash?: string
 ) {
@@ -271,10 +277,10 @@ export function buildWalletUniqueHash(
 
   switch (wallet.type) {
     case WalletType.HD:
-      hash = keystoreAccount!.address
+      hash = keystoreAccounts![0].account.address
       break
     case WalletType.PRIVATE_KEY:
-      hash = keystoreAccount!.address
+      hash = keystoreAccounts![0].account.address
       break
     case WalletType.PRIVATE_KEY_GROUP:
       hash = generateWalletUniqueHash()
@@ -292,10 +298,10 @@ export function buildWalletUniqueHash(
       hash = generateWalletUniqueHash()
       break
     case WalletType.MPC_HD:
-      hash = keystoreAccount!.address
+      hash = keystoreAccounts![0].account.address
       break
     case WalletType.MPC:
-      hash = keystoreAccount!.address
+      hash = keystoreAccounts![0].account.address
       break
     case WalletType.MPC_GROUP:
       hash = generateWalletUniqueHash()

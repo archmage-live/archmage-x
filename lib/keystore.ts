@@ -171,6 +171,21 @@ export class Keystore {
     this.resolveReady(id, index, true)
   }
 
+  async removeAll(id: number) {
+    const wallet = await WALLET_SERVICE.getWallet(id)
+    if (!wallet) {
+      return
+    }
+    if (wallet.type === WalletType.PRIVATE_KEY_GROUP) {
+      const subWallets = await WALLET_SERVICE.getSubWallets(id)
+      for (const { index } of subWallets) {
+        await this.remove(id, index)
+      }
+    } else {
+      await this.remove(id, PSEUDO_INDEX)
+    }
+  }
+
   async persist(wallet: IWallet, index: Index) {
     if (!hasWalletKeystore(wallet.type)) {
       return
@@ -240,7 +255,7 @@ export class Keystore {
     if (!this.hasReady(id, index)) {
       this.initReady(id, index)
 
-      const wallet = await DB.wallets.get(id)
+      const wallet = await WALLET_SERVICE.getWallet(id)
       if (!wallet) {
         this.resolveReady(id, index, true)
         return undefined

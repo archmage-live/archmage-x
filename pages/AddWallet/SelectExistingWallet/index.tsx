@@ -60,8 +60,8 @@ export const SelectExistingWallet = ({
                 </Text>
               ) : (
                 <Text fontSize="lg" textAlign="center">
-                  No existing group wallets for {getNetworkScope(networkKind)}{' '}
-                  networks.
+                  No existing group wallets for {getNetworkScope(networkKind)}
+                  &nbsp;networks.
                 </Text>
               )
             ) : (

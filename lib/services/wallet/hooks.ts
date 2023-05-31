@@ -1,9 +1,9 @@
 import assert from 'assert'
 import Dexie from 'dexie'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { useMemo } from 'react'
+import { useAsync } from 'react-use'
 
-import { DB } from '~lib/db'
+import { DB, getNextField } from '~lib/db'
 import { NetworkKind } from '~lib/network'
 import { ChainId, DerivePosition, IWallet, Index, SubIndex } from '~lib/schema'
 import { WalletType, generatePath, getDerivePosition } from '~lib/wallet'
@@ -216,6 +216,8 @@ export function useExistingGroupWallets(
       case WalletType.WATCH_GROUP:
       case WalletType.HW_GROUP: // hw group not used here
       case WalletType.WALLET_CONNECT_GROUP:
+      case WalletType.MPC_GROUP:
+      case WalletType.MULTI_SIG_GROUP:
         break
       default:
         assert(false, 'not group wallet')
@@ -263,4 +265,19 @@ export function useExistingGroupWallets(
           } as ExistingGroupWallet)
       )
   }, [walletType, networkKind, wallets])
+}
+
+export function useNextSubWalletIndex(walletId?: number) {
+  const { value } = useAsync(async () => {
+    if (walletId !== undefined) {
+      return await getNextField(DB.subWallets, 'index', {
+        key: 'masterId',
+        value: walletId
+      })
+    } else {
+      return undefined
+    }
+  }, [walletId])
+
+  return value
 }
