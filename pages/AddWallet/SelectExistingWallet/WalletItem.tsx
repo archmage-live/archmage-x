@@ -38,7 +38,7 @@ export const WalletItem = ({
 }
 
 export const WalletItemButton = ({
-  wallet: { wallet, addresses },
+  wallet: { wallet, hashes },
   onClick,
   buttonVariant = 'ghost'
 }: {
@@ -67,7 +67,7 @@ export const WalletItemButton = ({
           </Text>
 
           <Text fontSize="sm" color="gray.500">
-            {addresses.length} accounts
+            {hashes.length} accounts
           </Text>
         </HStack>
       </HStack>

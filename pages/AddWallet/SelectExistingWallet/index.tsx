@@ -38,6 +38,28 @@ export const SelectExistingWallet = ({
 }) => {
   const wallets = useExistingGroupWallets(walletType, networkKind)
 
+  let type
+  switch (walletType) {
+    case WalletType.PRIVATE_KEY_GROUP:
+      type = 'private-key'
+      break
+    case WalletType.WATCH_GROUP:
+      type = 'watch'
+      break
+    case WalletType.HW_GROUP:
+      type = 'hardware'
+      break
+    case WalletType.WALLET_CONNECT_GROUP:
+      type = 'WalletConnect'
+      break
+    case WalletType.MPC_GROUP:
+      type = 'MPC'
+      break
+    case WalletType.MULTI_SIG_GROUP:
+      type = 'MultiSig'
+      break
+  }
+
   return (
     <Modal
       isOpen={isOpen}
@@ -56,12 +78,12 @@ export const SelectExistingWallet = ({
             {!wallets?.length ? (
               !networkKind ? (
                 <Text fontSize="lg" textAlign="center">
-                  No existing group wallets.
+                  No existing {type} group wallets.
                 </Text>
               ) : (
                 <Text fontSize="lg" textAlign="center">
-                  No existing group wallets for {getNetworkScope(networkKind)}
-                  &nbsp;networks.
+                  No existing {type} group wallets for&nbsp;
+                  {getNetworkScope(networkKind)} networks.
                 </Text>
               )
             ) : (

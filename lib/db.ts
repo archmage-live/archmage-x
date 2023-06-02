@@ -7,7 +7,6 @@ import {
   IAptosEvent,
   ICache,
   IChainAccount,
-  IChainAccountAux,
   IConnectedSite,
   IHdPath,
   IKeystore,
@@ -22,7 +21,6 @@ import {
   addressBookSchemaV1,
   aptosEventSchemaV1,
   cacheSchemaV1,
-  chainAccountAuxSchemaV1,
   chainAccountSchemaV1,
   connectedSiteSchemaV1,
   hdPathSchemaV1,
@@ -43,7 +41,6 @@ export class Database extends Dexie {
   hdPaths!: Dexie.Table<IHdPath, number>
   subWallets!: Dexie.Table<ISubWallet, number>
   chainAccounts!: Dexie.Table<IChainAccount, number>
-  chainAccountsAux!: Dexie.Table<IChainAccountAux, number>
   pendingTxs!: Dexie.Table<IPendingTx, number>
   transactions!: Dexie.Table<ITransaction, number>
   tokenLists!: Dexie.Table<ITokenList, number>
@@ -63,7 +60,6 @@ export class Database extends Dexie {
       hdPaths: hdPathSchemaV1,
       subWallets: subWalletSchemaV1,
       chainAccounts: chainAccountSchemaV1,
-      chainAccountsAux: chainAccountAuxSchemaV1,
       pendingTxs: pendingTxSchemaV1,
       transactions: transactionSchemaV1,
       tokenLists: tokenListSchemaV1,

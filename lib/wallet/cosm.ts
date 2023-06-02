@@ -64,7 +64,10 @@ export class CosmWallet implements KeystoreSigningWallet {
       assert(!path && mnemonic)
       wallet.mnemonic = mnemonic.phrase
       wallet.prefix = prefix
-    } else if (type === WalletType.PRIVATE_KEY) {
+    } else if (
+      type === WalletType.PRIVATE_KEY ||
+      type === WalletType.PRIVATE_KEY_GROUP
+    ) {
       if (mnemonic) {
         if (!path) {
           path = CosmWallet.defaultPath

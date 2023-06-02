@@ -46,13 +46,13 @@ import {
 } from '~lib/network'
 import {
   INetwork,
-  formatAddressForAux,
-  getAddressFromAux,
+  formatAddressForNetwork,
+  getAddressFromInfo,
   getAddressPrefix
 } from '~lib/schema'
 import { getNetworkInfo, useNetwork, useNetworks } from '~lib/services/network'
 import { useBalance } from '~lib/services/provider'
-import { useChainAccountsAux, useWallet } from '~lib/services/wallet'
+import { useSubWallets, useWallet } from '~lib/services/wallet'
 import { shortenAddress } from '~lib/utils'
 import { WalletAccount, generatePath } from '~lib/wallet'
 import {
@@ -243,12 +243,13 @@ export const StepConnectLedger = ({}: {}) => {
   useEffect(() => {
     const accounts: WalletAccount[] = []
     addresses.forEach((address, index) => {
-      assert(formatAddressForAux(address, networkKind) === address)
+      assert(formatAddressForNetwork(address, networkKind) === address)
       if (checked.has(address)) {
         // bypass existing addresses
         accounts.push({
-          address,
           index,
+          hash: address,
+          address,
           publicKey: publicKeys[index]
         })
       }
@@ -289,10 +290,10 @@ export const StepConnectLedger = ({}: {}) => {
       ? accounts[0]?.address!
       : hwHash
   )
-  const existingAccounts = useChainAccountsAux(existingWallet?.id, networkKind)
+  const existingSubWallets = useSubWallets(existingWallet?.id)
   const existingAddresses = useMemo(
-    () => new Set(existingAccounts?.map(({ address }) => address)),
-    [existingAccounts]
+    () => new Set(existingSubWallets?.map(({ info: { address } }) => address!)),
+    [existingSubWallets]
   )
 
   const [, setExistingWallet] = useExistingWallet()
@@ -573,7 +574,7 @@ const SelectAddresses = ({
                 network={network}
                 index={item.index}
                 path={path}
-                address={getAddressFromAux(address, network)}
+                address={getAddressFromInfo(address, network)}
                 addressPrefix={addressPrefix}
                 isDisabled={existingAddresses.has(address)}
                 isChecked={

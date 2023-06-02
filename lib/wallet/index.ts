@@ -1,9 +1,10 @@
 import assert from 'assert'
+import { ethers } from 'ethers'
 
 import { NetworkKind } from '~lib/network'
 import { BtcChainInfo } from '~lib/network/btc'
 import { CosmAppChainInfo } from '~lib/network/cosm'
-import { IChainAccount, IChainAccountAux } from '~lib/schema'
+import { IChainAccount, ISubWallet, Index, PSEUDO_INDEX } from '~lib/schema'
 import { IWallet } from '~lib/schema/wallet'
 import { NETWORK_SERVICE } from '~lib/services/network'
 import { WALLET_SERVICE } from '~lib/services/wallet'
@@ -17,6 +18,7 @@ import {
   WalletType,
   canWalletSign,
   getDerivePosition,
+  hasSubKeystore,
   hasWalletKeystore,
   isHardwareWallet
 } from './base'
@@ -67,6 +69,14 @@ export function getDefaultPath(networkKind: NetworkKind): string {
   }
 }
 
+export function checkPrivateKey(privateKey: string): ethers.Wallet | false {
+  try {
+    return new ethers.Wallet(privateKey)
+  } catch {
+    return false
+  }
+}
+
 export function checkAddress(
   networkKind: NetworkKind,
   address: string
@@ -94,17 +104,25 @@ export function checkAddressMayThrow(
   return addr
 }
 
-export async function getMasterSigningWallet(
+export async function getStructuralSigningWallet(
   wallet: IWallet,
   networkKind: NetworkKind,
-  chainId: number | string
+  chainId: number | string,
+  index?: Index
 ): Promise<KeystoreSigningWallet | undefined> {
   if (!hasWalletKeystore(wallet.type)) {
     return undefined
   }
+
+  assert(
+    hasSubKeystore(wallet.type) ===
+      (typeof index === 'number' && index > PSEUDO_INDEX)
+  )
+
   const opts: WalletOpts = {
     id: wallet.id,
     type: wallet.type,
+    index,
     path: wallet.info.path
   }
   switch (networkKind) {
@@ -150,8 +168,8 @@ export async function getMasterSigningWallet(
 
 export async function getHardwareSigningWallet(
   wallet: IWallet,
-  account: IChainAccount,
-  aux?: IChainAccountAux
+  subWallet: ISubWallet,
+  account: IChainAccount
 ): Promise<SigningWallet | undefined> {
   if (hasWalletKeystore(wallet.type) || !canWalletSign(wallet.type)) {
     return undefined
@@ -174,7 +192,7 @@ export async function getHardwareSigningWallet(
           derivePosition: wallet.info.derivePosition
         },
         wallet.type === WalletType.HW ? wallet.info.path! : account.index,
-        account.info.publicKey || aux?.info.publicKey
+        account.info.publicKey || subWallet?.info.publicKey
       )
     }
     case NetworkKind.EVM:
@@ -186,7 +204,7 @@ export async function getHardwareSigningWallet(
           derivePosition: wallet.info.derivePosition
         },
         wallet.type === WalletType.HW ? wallet.info.path! : account.index,
-        account.info.publicKey || aux?.info.publicKey
+        account.info.publicKey || subWallet?.info.publicKey
       )
   }
 }
@@ -198,10 +216,11 @@ export async function getSigningWallet(
   assert(master)
 
   if (hasWalletKeystore(master.type)) {
-    let signingWallet = await getMasterSigningWallet(
+    let signingWallet = await getStructuralSigningWallet(
       master,
       account.networkKind,
-      account.chainId
+      account.chainId,
+      hasSubKeystore(master.type) ? account.index : undefined
     )
     if (!signingWallet) {
       return undefined
@@ -225,11 +244,11 @@ export async function getSigningWallet(
     assert(signingWallet.address === account.address)
     return signingWallet
   } else if (isHardwareWallet(master.type)) {
-    const aux = await WALLET_SERVICE.getChainAccountAux({
+    const subWallet = await WALLET_SERVICE.getSubWallet({
       masterId: account.masterId,
-      index: account.index,
-      networkKind: account.networkKind
+      index: account.index
     })
-    return getHardwareSigningWallet(master, account, aux)
+    assert(subWallet)
+    return getHardwareSigningWallet(master, subWallet, account)
   }
 }

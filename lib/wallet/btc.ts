@@ -113,7 +113,10 @@ export class BtcWallet implements KeystoreSigningWallet {
     if (type === WalletType.HD) {
       assert(!path && mnemonic)
       wallet = ethers.utils.HDNode.fromMnemonic(mnemonic.phrase)
-    } else if (type === WalletType.PRIVATE_KEY) {
+    } else if (
+      type === WalletType.PRIVATE_KEY ||
+      type === WalletType.PRIVATE_KEY_GROUP
+    ) {
       if (mnemonic) {
         if (!path) {
           path = BtcWallet.getDefaultPath(addressType, isTestnet)

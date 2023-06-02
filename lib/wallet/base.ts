@@ -1,11 +1,11 @@
 import { Slip10RawIndex, pathToString, stringToPath } from '@cosmjs/crypto'
+import type { _KeystoreAccount } from '@ethersproject/json-wallets/lib.esm/keystore'
 import assert from 'assert'
 import walletConnectLogo from 'data-base64:~assets/thirdparty/walletconnect.svg'
 import { ethers } from 'ethers'
 
 import { NetworkKind } from '~lib/network'
 import { DerivePosition, IHdPath, IWallet, Index } from '~lib/schema'
-import type { _KeystoreAccount } from "@ethersproject/json-wallets/lib.esm/keystore";
 
 export enum WalletType {
   HD = 'hd', // Hierarchical Deterministic, derived from mnemonic
@@ -44,6 +44,8 @@ export function isWalletGroup(type: WalletType) {
     case WalletType.MPC_GROUP:
     // pass through
     case WalletType.WALLET_CONNECT_GROUP:
+    // pass through
+    case WalletType.MULTI_SIG_GROUP:
       return true
     default:
       return false
@@ -51,16 +53,27 @@ export function isWalletGroup(type: WalletType) {
 }
 
 export function hasWalletKeystore(type: WalletType) {
+  return hasMasterKeystore(type) || hasSubKeystore(type)
+}
+
+export function hasMasterKeystore(type: WalletType) {
   switch (type) {
     case WalletType.HD:
     // pass through
     case WalletType.PRIVATE_KEY:
     // pass through
-    case WalletType.PRIVATE_KEY_GROUP:
-    // pass through
     case WalletType.MPC_HD:
     // pass through
     case WalletType.MPC:
+      return true
+    default:
+      return false
+  }
+}
+
+export function hasSubKeystore(type: WalletType) {
+  switch (type) {
+    case WalletType.PRIVATE_KEY_GROUP:
     // pass through
     case WalletType.MPC_GROUP:
       return true
@@ -173,8 +186,10 @@ export enum MpcWalletType {
 }
 
 export interface WalletAccount {
-  address?: string
   index: Index
+  hash: string
+
+  address?: string
   publicKey?: string
 
   mnemonic?: string

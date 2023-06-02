@@ -15,15 +15,6 @@ export function isMnemonic(mnemonic: string): boolean {
   }
 }
 
-export function isPrivateKey(privateKey: string): boolean {
-  try {
-    const _ = new ethers.Wallet(privateKey)
-    return true
-  } catch {
-    return false
-  }
-}
-
 // shorten the checksummed version of the input address
 export function shortenAddress(
   address?: string,

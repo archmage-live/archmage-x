@@ -16,8 +16,11 @@ export function useWallets() {
   })
 }
 
-export function useSubWallets(walletId: number) {
-  return useLiveQuery(() => {
+export function useSubWallets(walletId?: number) {
+  return useLiveQuery(async () => {
+    if (walletId === undefined) {
+      return undefined
+    }
     return DB.subWallets
       .where('[masterId+sortId]')
       .between([walletId, Dexie.minKey], [walletId, Dexie.maxKey])
@@ -107,18 +110,6 @@ export function useChainAccountByIndex(
   }, [masterId, networkKind, chainId, index])
 }
 
-export function useChainAccountsAux(id?: number, networkKind?: NetworkKind) {
-  return useLiveQuery(async () => {
-    if (id === undefined || networkKind === undefined) {
-      return undefined
-    }
-    return WALLET_SERVICE.getChainAccountsAux({
-      masterId: id,
-      networkKind
-    })
-  }, [id, networkKind])
-}
-
 export function useWallet(id?: number, hash?: string) {
   return useLiveQuery(() => {
     if (id === undefined && !hash) {
@@ -201,7 +192,7 @@ export function useHdPaths(
 
 export interface ExistingGroupWallet {
   wallet: IWallet
-  addresses: string[]
+  hashes: string[]
 }
 
 export function useExistingGroupWallets(
@@ -232,27 +223,28 @@ export function useExistingGroupWallets(
       return []
     }
 
-    let accountsAux
-    if (!networkKind) {
-      accountsAux = await DB.chainAccountsAux
-        .where('masterId')
-        .anyOf(groupWallets.map((w) => w.id))
-        .toArray()
-    } else {
-      accountsAux = await DB.chainAccountsAux
-        .where('[masterId+networkKind]')
-        .anyOf(groupWallets.map((w) => [w.id, networkKind]))
-        .toArray()
-    }
+    const subWallets = await DB.subWallets
+      .where('masterId')
+      .anyOf(groupWallets.map((w) => w.id))
+      .toArray()
 
     const walletMap = new Map<number, string[]>()
-    for (const aux of accountsAux) {
-      let addresses = walletMap.get(aux.masterId)
-      if (!addresses) {
-        addresses = []
+    for (const subWallet of subWallets) {
+      // filter by network kind
+      if (
+        networkKind &&
+        subWallet.info.networkKind &&
+        subWallet.info.networkKind !== networkKind
+      ) {
+        continue
       }
-      addresses.push(aux.address)
-      walletMap.set(aux.masterId, addresses)
+      assert(subWallet.hash)
+      let hashes = walletMap.get(subWallet.masterId)
+      if (!hashes) {
+        hashes = []
+      }
+      hashes.push(subWallet.hash)
+      walletMap.set(subWallet.masterId, hashes)
     }
 
     return groupWallets
@@ -261,7 +253,7 @@ export function useExistingGroupWallets(
         (wallet) =>
           ({
             wallet,
-            addresses: walletMap.get(wallet.id)!
+            hashes: walletMap.get(wallet.id)!
           } as ExistingGroupWallet)
       )
   }, [walletType, networkKind, wallets])
@@ -275,7 +267,7 @@ export function useNextSubWalletIndex(walletId?: number) {
         value: walletId
       })
     } else {
-      return undefined
+      return 0
     }
   }, [walletId])
 

@@ -1,10 +1,10 @@
 import { fromBech32, toBech32 } from '@cosmjs/encoding'
+import assert from 'assert'
 
 import { NetworkKind } from '~lib/network'
 import { CosmAppChainInfo } from '~lib/network/cosm'
-import { IChainAccountAux } from '~lib/schema/chainAccountAux'
 import { INetwork } from '~lib/schema/network'
-import { SubIndex } from '~lib/schema/subWallet'
+import { ISubWallet, SubIndex } from '~lib/schema/subWallet'
 
 export * from './network'
 export * from './wallet'
@@ -12,7 +12,6 @@ export * from './keystore'
 export * from './hdPath'
 export * from './subWallet'
 export * from './chainAccount'
-export * from './chainAccountAux'
 export * from './pendingTx'
 export * from './transaction'
 export * from './tokenList'
@@ -65,11 +64,13 @@ export function getAddressPrefix(network: INetwork): string | undefined {
   }
 }
 
-export function getAddressFromAux(
-  aux: IChainAccountAux | string,
+export function getAddressFromInfo(
+  subWallet: ISubWallet | string,
   network: INetwork
 ) {
-  const address = typeof aux === 'string' ? aux : aux.address
+  const address =
+    typeof subWallet === 'string' ? subWallet : subWallet.info.address
+  assert(address)
   switch (network.kind) {
     case NetworkKind.COSM: {
       return toBech32(getAddressPrefix(network)!, fromBech32(address).data)
@@ -79,7 +80,10 @@ export function getAddressFromAux(
   }
 }
 
-export function formatAddressForAux(address: string, networkKind: NetworkKind) {
+export function formatAddressForNetwork(
+  address: string,
+  networkKind: NetworkKind
+) {
   switch (networkKind) {
     case NetworkKind.COSM: {
       return toBech32('cosmos', fromBech32(address).data)

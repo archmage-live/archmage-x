@@ -42,7 +42,6 @@ const mnemonicNotBackedUpAtom = atom<boolean>(false)
 const hdPathAtom = atom('')
 const hdPathTemplateAtom = atom('')
 const derivePositionAtom = atom<DerivePosition | undefined>(undefined)
-const privateKeyAtom = atom('')
 const networkKindAtom = atom<NetworkKind>(NetworkKind.EVM)
 const existingWallet = atom<IWallet | undefined>(undefined)
 const accountsAtom = atom<WalletAccount[]>([])
@@ -78,10 +77,6 @@ export function useHdPathTemplate() {
 
 export function useDerivePosition() {
   return useAtom(derivePositionAtom)
-}
-
-export function usePrivateKey() {
-  return useAtom(privateKeyAtom)
 }
 
 export function useNetworkKind() {
@@ -122,7 +117,6 @@ export function useClear() {
   const [, setHdPath] = useHdPath()
   const [, setHdPathTemplate] = useHdPathTemplate()
   const [, setDerivePosition] = useDerivePosition()
-  const [, setPrivateKey] = usePrivateKey()
   const [, setName] = useName()
   const [, setNetworkKind] = useNetworkKind()
   const [, setHwType] = useHwType()
@@ -138,7 +132,6 @@ export function useClear() {
     setHdPath('')
     setHdPathTemplate('')
     setDerivePosition(undefined)
-    setPrivateKey('')
     setName('')
     setNetworkKind(NetworkKind.EVM)
     setHwType(undefined)
@@ -159,7 +152,6 @@ export function useAddWallet() {
   const [hdPath] = useHdPath()
   const [hdPathTemplate] = useHdPathTemplate()
   const [derivePosition] = useDerivePosition()
-  const [privateKey] = usePrivateKey()
   const [name] = useName()
   const [networkKind] = useNetworkKind()
   const [accounts] = useAccounts()
@@ -190,7 +182,12 @@ export function useAddWallet() {
         break
       case AddWalletKind.IMPORT_PRIVATE_KEY:
         opts.type = WalletType.PRIVATE_KEY
-        opts.privateKey = privateKey
+        opts.accounts = accounts
+        opts.addressType = addressType || BtcAddressType.NATIVE_SEGWIT
+        break
+      case AddWalletKind.IMPORT_PRIVATE_KEY_GROUP:
+        opts.type = WalletType.PRIVATE_KEY_GROUP
+        opts.accounts = accounts
         opts.addressType = addressType || BtcAddressType.NATIVE_SEGWIT
         break
       case AddWalletKind.IMPORT_WATCH_ADDRESS:
@@ -269,7 +266,6 @@ export function useAddWallet() {
     notBackedUp,
     mnemonic,
     hdPath,
-    privateKey,
     hdPathTemplate,
     derivePosition,
     hwType,
@@ -292,6 +288,7 @@ export function useAddSubWallets() {
 
     switch (addWalletKind) {
       case AddWalletKind.IMPORT_PRIVATE_KEY_GROUP:
+        opts.accounts = accounts
         break
       case AddWalletKind.IMPORT_WATCH_ADDRESS_GROUP:
       // pass through

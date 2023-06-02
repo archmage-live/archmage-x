@@ -116,8 +116,9 @@ export const StepWalletConnect = () => {
         for (const address of addresses) {
           if (!existing.has(address)) {
             accs.push({
-              address,
-              index: accs.length
+              index: accs.length,
+              hash: address,
+              address
             })
             update = true
           }
@@ -129,7 +130,9 @@ export const StepWalletConnect = () => {
         if (accounts[0].address === addresses[0]) {
           return accounts
         }
-        accs = [{ address: addresses[0], index: PSEUDO_INDEX }]
+        accs = [
+          { index: PSEUDO_INDEX, hash: addresses[0], address: addresses[0] }
+        ]
       }
       refresh()
       return accs
