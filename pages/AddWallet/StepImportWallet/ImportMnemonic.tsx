@@ -20,13 +20,15 @@ import { isMnemonic } from '~lib/utils'
 
 import { NameInput } from '../NameInput'
 import {
-  AddWalletKind,
+  AddWalletKind, useAccounts,
   useAddWallet,
-  useAddWalletKind,
+  useAddWalletKind, useExistingWallet,
   useHdPath,
   useMnemonic,
   useName
-} from '../addWallet'
+} from "../addWallet";
+import { ExistingGroupWallet, useNextSubWalletIndex } from "~lib/services/wallet";
+import { PSEUDO_INDEX } from "~lib/schema";
 
 const wordsNums = [12, 15, 18, 21, 24]
 
@@ -90,6 +92,37 @@ export const ImportMnemonic = () => {
         : AddWalletKind.IMPORT_MNEMONIC_PRIVATE_KEY
     )
   }, [isOneAccountChecked, setAddWalletKind])
+
+  const [, setExistingWallet] = useExistingWallet()
+  const [willAddToExistingGroupChecked, setWillAddToExistingGroupChecked] =
+    useState(false)
+  const [existingGroupWallet, setExistingGroupWallet] = useState<
+    ExistingGroupWallet | undefined
+  >(undefined)
+  useEffect(() => {
+    setWillAddToExistingGroupChecked(false)
+    setExistingGroupWallet(undefined)
+  }, [])
+  useEffect(() => {
+    setExistingWallet(existingGroupWallet?.wallet)
+  }, [setExistingWallet, existingGroupWallet])
+
+  const nextIndex = useNextSubWalletIndex(existingGroupWallet?.wallet.id)
+
+  const [accounts, setAccounts] = useAccounts()
+  useEffect(() => {
+    if (nextIndex === undefined) {
+      return
+    }
+    setAccounts([
+      {
+        index: willAddToExistingGroupChecked ? nextIndex : PSEUDO_INDEX,
+        hash: '',
+        mnemonic: mnemonic.join(' '),
+        path: hdPath,
+      }]
+    )
+  }, [mnemonic, hdPath, nextIndex, willAddToExistingGroupChecked, setAccounts])
 
   const [alert, setAlert] = useState('')
   useEffect(() => {
@@ -155,7 +188,7 @@ export const ImportMnemonic = () => {
             colorScheme="purple"
             isChecked={isOneAccountChecked}
             onChange={(e) => setIsOneAccountChecked(e.target.checked)}>
-            <chakra.span color="gray.500" fontSize="xl">
+            <chakra.span color="gray.500" fontSize="lg">
               Import only one account at specified HD path.
             </chakra.span>
           </Checkbox>

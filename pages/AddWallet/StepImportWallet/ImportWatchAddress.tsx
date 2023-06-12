@@ -188,7 +188,7 @@ export const ImportWatchAddress = () => {
                 setExistingGroupWallet(undefined)
               }
             }}>
-            <chakra.span color="gray.500" fontSize="xl">
+            <chakra.span color="gray.500" fontSize="lg">
               Add addresses to an existing watch group wallet.
             </chakra.span>
           </Checkbox>
@@ -208,7 +208,7 @@ export const ImportWatchAddress = () => {
             colorScheme="purple"
             isChecked={isWatchGroupChecked}
             onChange={(e) => setIsWatchGroupChecked(e.target.checked)}>
-            <chakra.span color="gray.500" fontSize="xl">
+            <chakra.span color="gray.500" fontSize="lg">
               Create group to watch multiple addresses.
             </chakra.span>
           </Checkbox>

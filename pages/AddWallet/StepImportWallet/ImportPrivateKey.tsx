@@ -163,7 +163,7 @@ export const ImportPrivateKey = () => {
                 setExistingGroupWallet(undefined)
               }
             }}>
-            <chakra.span color="gray.500" fontSize="xl">
+            <chakra.span color="gray.500" fontSize="lg">
               Add private-key accounts to an existing private-key group wallet.
             </chakra.span>
           </Checkbox>
@@ -183,7 +183,7 @@ export const ImportPrivateKey = () => {
             colorScheme="purple"
             isChecked={isUseGroupChecked}
             onChange={(e) => setIsUseGroupChecked(e.target.checked)}>
-            <chakra.span color="gray.500" fontSize="xl">
+            <chakra.span color="gray.500" fontSize="lg">
               Create group to manage multiple private-key accounts.
             </chakra.span>
           </Checkbox>
