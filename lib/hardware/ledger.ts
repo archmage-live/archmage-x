@@ -178,14 +178,14 @@ export const LEDGER_PATH_SCHEMAS = new Map<NetworkKind, LedgerPathSchema[]>([
     NetworkKind.EVM,
     [
       {
-        description: 'Ledger Live',
-        pathTemplate: "m/44'/60'/0'/0/0",
-        derivePosition: DerivePosition.ACCOUNT
-      },
-      {
         description: 'BIP44 Standard (e.g., Archmage, MetaMask)',
         pathTemplate: "m/44'/60'/0'/0/0",
         derivePosition: DerivePosition.ADDRESS_INDEX
+      },
+      {
+        description: 'Ledger Live',
+        pathTemplate: "m/44'/60'/0'/0/0",
+        derivePosition: DerivePosition.ACCOUNT
       },
       {
         description: 'Legacy (MEW / MyCrypto)',

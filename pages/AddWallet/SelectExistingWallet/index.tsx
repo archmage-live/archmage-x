@@ -21,7 +21,7 @@ import { WalletList } from './WalletList'
 
 export { WalletItemButton } from './WalletItem'
 
-export const SelectExistingWallet = ({
+export const SelectExistingWalletModal = ({
   networkKind,
   walletType,
   selected,

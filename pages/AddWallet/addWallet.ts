@@ -19,7 +19,6 @@ import {
 export enum AddWalletKind {
   NEW_HD,
   IMPORT_HD,
-  IMPORT_MNEMONIC_PRIVATE_KEY,
   IMPORT_PRIVATE_KEY,
   IMPORT_PRIVATE_KEY_GROUP,
   IMPORT_WATCH_ADDRESS,
@@ -172,12 +171,6 @@ export function useAddWallet() {
       case AddWalletKind.IMPORT_HD:
         opts.type = WalletType.HD
         opts.mnemonic = mnemonic.join(' ')
-        opts.addressType = addressType || BtcAddressType.NATIVE_SEGWIT
-        break
-      case AddWalletKind.IMPORT_MNEMONIC_PRIVATE_KEY:
-        opts.type = WalletType.PRIVATE_KEY
-        opts.mnemonic = mnemonic.join(' ')
-        opts.path = hdPath
         opts.addressType = addressType || BtcAddressType.NATIVE_SEGWIT
         break
       case AddWalletKind.IMPORT_PRIVATE_KEY:

@@ -69,9 +69,28 @@ export function getDefaultPath(networkKind: NetworkKind): string {
   }
 }
 
+export function isMnemonic(mnemonic: string): boolean {
+  try {
+    const _ = ethers.utils.HDNode.fromMnemonic(mnemonic)
+    return true
+  } catch {
+    return false
+  }
+}
+
 export function checkPrivateKey(privateKey: string): ethers.Wallet | false {
   try {
+    // TODO: private key which is not compatible with Ethereum?
     return new ethers.Wallet(privateKey)
+  } catch {
+    return false
+  }
+}
+
+export function checkPrivateKeyFromMnemonic(mnemonic: string, path: string) {
+  try {
+    // TODO: private key which is not compatible with Ethereum?
+    return ethers.Wallet.fromMnemonic(mnemonic, path)
   } catch {
     return false
   }

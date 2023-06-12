@@ -20,7 +20,7 @@ import {
 } from '~lib/services/wallet'
 import { WalletType, checkPrivateKey } from '~lib/wallet'
 import {
-  SelectExistingWallet,
+  SelectExistingWalletModal,
   WalletItemButton
 } from '~pages/AddWallet/SelectExistingWallet'
 
@@ -164,7 +164,7 @@ export const ImportPrivateKey = () => {
               }
             }}>
             <chakra.span color="gray.500" fontSize="lg">
-              Add private-key accounts to an existing private-key group wallet.
+              Add accounts to an existing private-key group wallet.
             </chakra.span>
           </Checkbox>
 
@@ -184,7 +184,7 @@ export const ImportPrivateKey = () => {
             isChecked={isUseGroupChecked}
             onChange={(e) => setIsUseGroupChecked(e.target.checked)}>
             <chakra.span color="gray.500" fontSize="lg">
-              Create group to manage multiple private-key accounts.
+              Create group to manage multiple accounts.
             </chakra.span>
           </Checkbox>
         )}
@@ -270,7 +270,7 @@ export const ImportPrivateKey = () => {
         Import Wallet
       </Button>
 
-      <SelectExistingWallet
+      <SelectExistingWalletModal
         walletType={WalletType.PRIVATE_KEY_GROUP}
         selected={existingGroupWallet}
         onSelected={(w) => {

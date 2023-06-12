@@ -25,7 +25,10 @@ import {
 import { WalletType, checkAddress } from '~lib/wallet'
 
 import { NameInput } from '../NameInput'
-import { SelectExistingWallet, WalletItemButton } from '../SelectExistingWallet'
+import {
+  SelectExistingWalletModal,
+  WalletItemButton
+} from '../SelectExistingWallet'
 import {
   AddWalletKind,
   useAccounts,
@@ -293,7 +296,7 @@ export const ImportWatchAddress = () => {
         Import Wallet
       </Button>
 
-      <SelectExistingWallet
+      <SelectExistingWalletModal
         networkKind={networkKind}
         walletType={WalletType.WATCH_GROUP}
         selected={existingGroupWallet}

@@ -22,7 +22,7 @@ export const StepImportWallet = () => {
           {kind === 'Mnemonic'
             ? 'Import an existing wallet with your secret recovery phrase.'
             : kind === 'Private Key'
-            ? 'Import an existing wallet with your private key.'
+            ? 'Import some existing account(s) with your private key(s).'
             : 'Import some existing address(es) for watching.'}
         </Text>
 
