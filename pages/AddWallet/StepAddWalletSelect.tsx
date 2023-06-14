@@ -1,4 +1,15 @@
-import { Button, HStack, Image, Stack, Text } from '@chakra-ui/react'
+import {
+  Button,
+  HStack,
+  Image,
+  Stack,
+  Tab,
+  TabList,
+  TabPanel,
+  TabPanels,
+  Tabs,
+  Text
+} from '@chakra-ui/react'
 import walletConnectLogo from 'data-base64:~assets/thirdparty/walletconnect.svg'
 import { useEffect } from 'react'
 import { useWizard } from 'react-use-wizard'
@@ -25,73 +36,89 @@ export const StepAddWalletSelect = () => {
         </Text>
       </HStack>
 
-      <Stack pt="8" spacing="4">
-        <Button
-          w="full"
-          h="14"
-          size="lg"
-          variant="outline"
-          borderRadius="8px"
-          onClick={() => {
-            setAddWalletKind(AddWalletKind.NEW_HD)
-            nextStep()
-          }}>
-          Create new wallet
-        </Button>
-        <Button
-          w="full"
-          h="14"
-          size="lg"
-          variant="outline"
-          borderRadius="8px"
-          onClick={() => {
-            setAddWalletKind(AddWalletKind.IMPORT_HD)
-            nextStep()
-          }}>
-          Import existing wallet
-        </Button>
-        <Button
-          w="full"
-          h="14"
-          size="lg"
-          variant="outline"
-          borderRadius="8px"
-          onClick={() => {
-            setAddWalletKind(AddWalletKind.CONNECT_HARDWARE_GROUP)
-            nextStep()
-          }}>
-          Connect hardware wallet
-        </Button>
-        <Button
-          w="full"
-          h="14"
-          size="lg"
-          variant="outline"
-          borderRadius="8px"
-          onClick={() => {
-            setAddWalletKind(AddWalletKind.WALLET_CONNECT)
-            nextStep()
-          }}>
-          <HStack>
-            <Text>Connect with WallectConnect</Text>
-            <Image
-              w={8}
-              fit="cover"
-              src={walletConnectLogo}
-              alt="WallectConnect Logo"
-            />
-          </HStack>
-        </Button>
-      </Stack>
+      <Tabs isFitted variant="enclosed" colorScheme="purple">
+        <TabList my="8">
+          <Tab fontSize="lg" fontWeight="semibold">
+            Regular
+          </Tab>
+          <Tab fontSize="lg" fontWeight="semibold">
+            Keyless
+          </Tab>
+        </TabList>
 
-      <Stack pt="8" spacing="0" align="center">
-        <Text color="gray.500">
-          All sensitive information is stored only on your device.
-        </Text>
-        <Text color="gray.500">
-          This process will never require an internet connection.
-        </Text>
-      </Stack>
+        <TabPanels>
+          <TabPanel p="0">
+            <Stack spacing="4">
+              <Button
+                w="full"
+                h="14"
+                size="lg"
+                variant="outline"
+                borderRadius="8px"
+                onClick={() => {
+                  setAddWalletKind(AddWalletKind.NEW_HD)
+                  nextStep()
+                }}>
+                Create HD wallet
+              </Button>
+              <Button
+                w="full"
+                h="14"
+                size="lg"
+                variant="outline"
+                borderRadius="8px"
+                onClick={() => {
+                  setAddWalletKind(AddWalletKind.IMPORT_HD)
+                  nextStep()
+                }}>
+                Import existing wallet
+              </Button>
+              <Button
+                w="full"
+                h="14"
+                size="lg"
+                variant="outline"
+                borderRadius="8px"
+                onClick={() => {
+                  setAddWalletKind(AddWalletKind.CONNECT_HARDWARE_GROUP)
+                  nextStep()
+                }}>
+                Connect hardware wallet
+              </Button>
+              <Button
+                w="full"
+                h="14"
+                size="lg"
+                variant="outline"
+                borderRadius="8px"
+                onClick={() => {
+                  setAddWalletKind(AddWalletKind.WALLET_CONNECT)
+                  nextStep()
+                }}>
+                <HStack>
+                  <Text>Connect with WallectConnect</Text>
+                  <Image
+                    w={8}
+                    fit="cover"
+                    src={walletConnectLogo}
+                    alt="WallectConnect Logo"
+                  />
+                </HStack>
+              </Button>
+            </Stack>
+
+            <Stack pt="8" spacing="0" align="center">
+              <Text color="gray.500">
+                All sensitive information is stored only on your device.
+              </Text>
+              {/*<Text color="gray.500">*/}
+              {/*  This process will never require an internet connection.*/}
+              {/*</Text>*/}
+            </Stack>
+          </TabPanel>
+          <TabPanel p="0"></TabPanel>
+        </TabPanels>
+      </Tabs>
     </Stack>
   )
 }

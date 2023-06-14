@@ -92,6 +92,7 @@
     "@walletconnect/web3-provider": "^1.8.0",
     "@web3auth/base": "^5.1.0",
     "@web3auth/modal": "^5.1.1",
+    "@web3auth/mpc-core-kit": "^0.1.0",
     "@web3auth/openlogin-adapter": "^5.1.1",
     "@zerodevapp/sdk": "^3.1.29",
     "@zxcvbn-ts/core": "^2.0.3",
