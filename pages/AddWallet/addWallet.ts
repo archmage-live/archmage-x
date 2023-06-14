@@ -26,7 +26,10 @@ export enum AddWalletKind {
   CONNECT_HARDWARE,
   CONNECT_HARDWARE_GROUP,
   WALLET_CONNECT,
-  WALLET_CONNECT_GROUP
+  WALLET_CONNECT_GROUP,
+  KEYLESS,
+  KEYLESS_HD,
+  KEYLESS_GROUP
 }
 
 export const HardwareWalletTransports = [

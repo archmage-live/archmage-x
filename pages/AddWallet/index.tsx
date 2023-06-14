@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom'
 import { ActionWizard } from '~components/ActionWizard'
 import { TitleBar } from '~components/TitleBar'
 import { usePassword } from '~lib/password'
+import { StepOnboardKeyless } from '~pages/AddWallet/StepOnboardKeyless'
 import { StepWalletConnect } from '~pages/AddWallet/StepWalletConnect'
 
 import { StepAddWalletDone } from './StepAddWalletDone'
@@ -31,6 +32,41 @@ export default function AddWallet() {
 
   const [addWalletKind] = useAddWalletKind()
 
+  const StepAddWalletBegin = () => {
+    switch (addWalletKind) {
+      case AddWalletKind.NEW_HD:
+        return <StepGenerateMnemonic />
+      case AddWalletKind.IMPORT_HD:
+      case AddWalletKind.IMPORT_PRIVATE_KEY:
+      case AddWalletKind.IMPORT_PRIVATE_KEY_GROUP:
+      case AddWalletKind.IMPORT_WATCH_ADDRESS:
+      case AddWalletKind.IMPORT_WATCH_ADDRESS_GROUP:
+        return <StepImportWallet />
+      case AddWalletKind.CONNECT_HARDWARE:
+      case AddWalletKind.CONNECT_HARDWARE_GROUP:
+        return <StepConnectHardwareWallet />
+      case AddWalletKind.WALLET_CONNECT:
+      case AddWalletKind.WALLET_CONNECT_GROUP:
+        return <StepWalletConnect />
+      case AddWalletKind.KEYLESS:
+      case AddWalletKind.KEYLESS_HD:
+      case AddWalletKind.KEYLESS_GROUP:
+        return <StepOnboardKeyless />
+    }
+  }
+
+  const StepAddWalletEnd = () => {
+    switch (addWalletKind) {
+      case AddWalletKind.NEW_HD:
+        return <StepRememberMnemonic />
+      case AddWalletKind.CONNECT_HARDWARE:
+      case AddWalletKind.CONNECT_HARDWARE_GROUP:
+        return <StepConnectHardwareWalletAccounts />
+      default:
+        return null
+    }
+  }
+
   return passwordExists !== undefined ? (
     <>
       <TitleBar />
@@ -41,27 +77,9 @@ export default function AddWallet() {
 
           <StepAddWalletSelect />
 
-          {addWalletKind === AddWalletKind.NEW_HD ? (
-            <StepGenerateMnemonic />
-          ) : addWalletKind === AddWalletKind.IMPORT_HD ||
-            addWalletKind === AddWalletKind.IMPORT_PRIVATE_KEY ||
-            addWalletKind === AddWalletKind.IMPORT_PRIVATE_KEY_GROUP ||
-            addWalletKind === AddWalletKind.IMPORT_WATCH_ADDRESS ||
-            addWalletKind === AddWalletKind.IMPORT_WATCH_ADDRESS_GROUP ? (
-            <StepImportWallet />
-          ) : addWalletKind === AddWalletKind.CONNECT_HARDWARE ||
-            addWalletKind === AddWalletKind.CONNECT_HARDWARE_GROUP ? (
-            <StepConnectHardwareWallet />
-          ) : (
-            <StepWalletConnect />
-          )}
+          <StepAddWalletBegin />
 
-          {addWalletKind === AddWalletKind.NEW_HD && <StepRememberMnemonic />}
-
-          {(addWalletKind === AddWalletKind.CONNECT_HARDWARE ||
-            addWalletKind === AddWalletKind.CONNECT_HARDWARE_GROUP) && (
-            <StepConnectHardwareWalletAccounts />
-          )}
+          <StepAddWalletEnd />
 
           <StepAddWalletDone />
         </ActionWizard>

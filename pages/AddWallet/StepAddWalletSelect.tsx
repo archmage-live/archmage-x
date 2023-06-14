@@ -8,9 +8,12 @@ import {
   TabPanel,
   TabPanels,
   Tabs,
-  Text
+  Text,
+  useColorModeValue
 } from '@chakra-ui/react'
 import walletConnectLogo from 'data-base64:~assets/thirdparty/walletconnect.svg'
+import web3authLogoDark from 'data-base64:~assets/thirdparty/web3auth-logo-Dark.svg'
+import web3authLogoLight from 'data-base64:~assets/thirdparty/web3auth-logo.svg'
 import { useEffect } from 'react'
 import { useWizard } from 'react-use-wizard'
 
@@ -21,7 +24,9 @@ export const StepAddWalletSelect = () => {
   const [, setAddWalletKind] = useAddWalletKind()
 
   const clear = useClear()
-  useEffect(clear, [])
+  useEffect(clear, [clear])
+
+  const web3authLogo = useColorModeValue(web3authLogoLight, web3authLogoDark)
 
   return (
     <Stack p="4" pt="16">
@@ -57,7 +62,7 @@ export const StepAddWalletSelect = () => {
                 borderRadius="8px"
                 onClick={() => {
                   setAddWalletKind(AddWalletKind.NEW_HD)
-                  nextStep()
+                  nextStep().then()
                 }}>
                 Create HD wallet
               </Button>
@@ -69,7 +74,7 @@ export const StepAddWalletSelect = () => {
                 borderRadius="8px"
                 onClick={() => {
                   setAddWalletKind(AddWalletKind.IMPORT_HD)
-                  nextStep()
+                  nextStep().then()
                 }}>
                 Import existing wallet
               </Button>
@@ -81,7 +86,7 @@ export const StepAddWalletSelect = () => {
                 borderRadius="8px"
                 onClick={() => {
                   setAddWalletKind(AddWalletKind.CONNECT_HARDWARE_GROUP)
-                  nextStep()
+                  nextStep().then()
                 }}>
                 Connect hardware wallet
               </Button>
@@ -93,7 +98,7 @@ export const StepAddWalletSelect = () => {
                 borderRadius="8px"
                 onClick={() => {
                   setAddWalletKind(AddWalletKind.WALLET_CONNECT)
-                  nextStep()
+                  nextStep().then()
                 }}>
                 <HStack>
                   <Text>Connect with WallectConnect</Text>
@@ -116,7 +121,31 @@ export const StepAddWalletSelect = () => {
               {/*</Text>*/}
             </Stack>
           </TabPanel>
-          <TabPanel p="0"></TabPanel>
+
+          <TabPanel p="0">
+            <Stack spacing={4}>
+              <Button
+                w="full"
+                h="14"
+                size="lg"
+                variant="outline"
+                borderRadius="8px"
+                onClick={() => {
+                  setAddWalletKind(AddWalletKind.KEYLESS)
+                  nextStep().then()
+                }}>
+                <HStack spacing={4}>
+                  <Text>Onboard with</Text>
+                  <Image
+                    w={32}
+                    fit="cover"
+                    src={web3authLogo}
+                    alt="web3auth Logo"
+                  />
+                </HStack>
+              </Button>
+            </Stack>
+          </TabPanel>
         </TabPanels>
       </Tabs>
     </Stack>
