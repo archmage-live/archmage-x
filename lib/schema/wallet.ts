@@ -5,7 +5,8 @@ import { DerivePosition } from '~lib/schema/hdPath'
 import {
   BtcAddressType,
   HardwareWalletType,
-  MpcWalletType,
+  KeylessWalletInfo,
+  KeylessWalletType,
   WalletType
 } from '~lib/wallet'
 
@@ -28,10 +29,9 @@ export interface WalletInfo {
   pathTemplate?: string
   derivePosition?: DerivePosition
   notBackedUp?: boolean
-  mpcType?: MpcWalletType
-  mpcInfo: any
   addressType?: BtcAddressType // for Bitcoin
   isAccountAbstraction?: boolean
+  keyless?: KeylessWalletInfo
 }
 
 const namePrefix = 'Wallet '

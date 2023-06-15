@@ -9,10 +9,13 @@ import {
 import web3authLogoDark from 'data-base64:~assets/thirdparty/web3auth-logo-Dark.svg'
 import web3authLogoLight from 'data-base64:~assets/thirdparty/web3auth-logo.svg'
 import { useState } from 'react'
+import { useAsync } from 'react-use'
 
 import { SwitchBar } from '~components/SwitchBar'
-import { OnboardKeylessHd } from '~pages/AddWallet/StepOnboardKeyless/OnboardKeylessHd'
-import { OnboardKeylessPrivateKey } from '~pages/AddWallet/StepOnboardKeyless/OnboardKeylessPrivateKey'
+import { Web3Auth } from '~lib/keyless/web3auth'
+
+import { OnboardKeylessHd } from './OnboardKeylessHd'
+import { OnboardKeylessPrivateKey } from './OnboardKeylessPrivateKey'
 
 const importKinds = ['Mnemonic', 'Private Key'] as const
 
@@ -20,6 +23,24 @@ export const StepOnboardKeyless = () => {
   const [kind, setKind] = useState<typeof importKinds[number]>(importKinds[0])
 
   const web3authLogo = useColorModeValue(web3authLogoLight, web3authLogoDark)
+
+  const theme = useColorModeValue('light', 'dark')
+
+  useAsync(async () => {
+    const web3auth = await Web3Auth.connect({
+      theme,
+      reconnect: true
+    })
+    try {
+      if (web3auth) {
+        console.log(await web3auth.getUserInfo())
+        console.log(await web3auth.getPrivateKey())
+        console.log(await web3auth.getMnemonic())
+      }
+    } catch (err) {
+      console.error(err)
+    }
+  }, [theme])
 
   return (
     <Stack p="4" pt="16" spacing="6">

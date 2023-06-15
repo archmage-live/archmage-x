@@ -28,6 +28,8 @@ export const StepAddWalletSelect = () => {
 
   const web3authLogo = useColorModeValue(web3authLogoLight, web3authLogoDark)
 
+  const tabBottomColor = useColorModeValue('white', 'gray.900')
+
   return (
     <Stack p="4" pt="16">
       <HStack justify="center">
@@ -43,10 +45,20 @@ export const StepAddWalletSelect = () => {
 
       <Tabs isFitted variant="enclosed" colorScheme="purple">
         <TabList my="8">
-          <Tab fontSize="lg" fontWeight="semibold">
+          <Tab
+            fontSize="lg"
+            fontWeight="semibold"
+            sx={{
+              '&[aria-selected=true]': { borderBottomColor: tabBottomColor }
+            }}>
             Regular
           </Tab>
-          <Tab fontSize="lg" fontWeight="semibold">
+          <Tab
+            fontSize="lg"
+            fontWeight="semibold"
+            sx={{
+              '&[aria-selected=true]': { borderBottomColor: tabBottomColor }
+            }}>
             Keyless
           </Tab>
         </TabList>

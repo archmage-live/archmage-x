@@ -12,6 +12,7 @@ import {
 import {
   BtcAddressType,
   HardwareWalletType,
+  KeylessWalletInfo,
   WalletAccount,
   WalletType
 } from '~lib/wallet'
@@ -51,6 +52,7 @@ const hwTypeAtom = atom<HardwareWalletType | undefined>(undefined)
 const hwTransportAtom = atom<'hid' | 'ble' | undefined>(undefined)
 const hwHash = atom<string>('')
 const addressType = atom<BtcAddressType | undefined>(undefined)
+const keylessInfo = atom<KeylessWalletInfo | undefined>(undefined)
 const createdAtom = atom(false)
 
 export function useAddWalletKind() {
@@ -109,6 +111,10 @@ export function useAddressType() {
   return useAtom(addressType)
 }
 
+export function useKeylessInfo() {
+  return useAtom(keylessInfo)
+}
+
 export function useCreated() {
   return useAtom(createdAtom)
 }
@@ -127,6 +133,7 @@ export function useClear() {
   const [, setAccounts] = useAccounts()
   const [, setExistingWallet] = useExistingWallet()
   const [, setAddressType] = useAddressType()
+  const [, setKeylessInfo] = useKeylessInfo()
   const [, setCreated] = useCreated()
   return useCallback(() => {
     setMnemonic([])
@@ -142,6 +149,7 @@ export function useClear() {
     setAccounts([])
     setExistingWallet(undefined)
     setAddressType(undefined)
+    setKeylessInfo(undefined)
     setCreated(false)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -160,6 +168,7 @@ export function useAddWallet() {
   const [hwType] = useHwType()
   const [hwHash] = useHwHash()
   const [addressType] = useAddressType()
+  const [keylessInfo] = useKeylessInfo()
   const [, setCreated] = useCreated()
 
   return useCallback(async (): Promise<{ error?: string }> => {
@@ -231,6 +240,24 @@ export function useAddWallet() {
         opts.accounts = accounts
         opts.addressType = addressType
         break
+      case AddWalletKind.KEYLESS_HD:
+        opts.type = WalletType.KEYLESS_HD
+        opts.hash = hwHash
+        opts.accounts = accounts
+        opts.keylessInfo = keylessInfo
+        opts.addressType = addressType || BtcAddressType.NATIVE_SEGWIT
+        break
+      case AddWalletKind.KEYLESS:
+        opts.type = WalletType.KEYLESS
+        opts.accounts = accounts
+        opts.keylessInfo = keylessInfo
+        opts.addressType = addressType || BtcAddressType.NATIVE_SEGWIT
+        break
+      case AddWalletKind.KEYLESS_GROUP:
+        opts.type = WalletType.KEYLESS_GROUP
+        opts.accounts = accounts
+        opts.addressType = addressType || BtcAddressType.NATIVE_SEGWIT
+        break
       default:
         throw new Error('unknown wallet type')
     }
@@ -261,12 +288,13 @@ export function useAddWallet() {
     accounts,
     notBackedUp,
     mnemonic,
+    addressType,
     hdPath,
     hdPathTemplate,
     derivePosition,
     hwType,
     hwHash,
-    addressType,
+    keylessInfo,
     setCreated
   ])
 }
@@ -276,6 +304,7 @@ export function useAddSubWallets() {
   const [networkKind] = useNetworkKind()
   const [accounts] = useAccounts()
   const [wallet] = useExistingWallet()
+  const [keylessInfo] = useKeylessInfo()
   const [, setCreated] = useCreated()
 
   return useCallback(async (): Promise<{ error?: string }> => {
@@ -294,6 +323,10 @@ export function useAddSubWallets() {
         opts.networkKind = networkKind
         opts.accounts = accounts
         break
+      case AddWalletKind.KEYLESS_GROUP:
+        opts.accounts = accounts
+        opts.keylessInfo = keylessInfo
+        break
       default:
         throw new Error('unknown wallet type')
     }
@@ -303,5 +336,5 @@ export function useAddSubWallets() {
     })
 
     return {}
-  }, [addWalletKind, accounts, networkKind, setCreated, wallet])
+  }, [wallet, addWalletKind, accounts, networkKind, keylessInfo, setCreated])
 }

@@ -9,19 +9,25 @@ import { DerivePosition, IHdPath, IWallet, Index } from '~lib/schema'
 
 export enum WalletType {
   HD = 'hd', // Hierarchical Deterministic, derived from mnemonic
+
   PRIVATE_KEY = 'private_key', // private key (maybe derived from mnemonic)
   PRIVATE_KEY_GROUP = 'private_key_group', // ditto, but in group
-  WATCH = 'watch', // only watch, no signing
-  WATCH_GROUP = 'watch_group', // ditto, but in group
+
   HW = 'hw', // hardware
   HW_GROUP = 'hw_group', // ditto, but in group
-  MPC_HD = 'mpc_hd', // Hierarchical Deterministic, derived from MPC wallet private key (as seed)
-  MPC = 'mpc', // MPC wallet
-  MPC_GROUP = 'mpc_group', // ditto, but in group
+
   WALLET_CONNECT = 'wallet_connect', // WalletConnect protocol
   WALLET_CONNECT_GROUP = 'wallet_connect_group', // ditto, but in group
+
+  WATCH = 'watch', // only watch, no signing
+  WATCH_GROUP = 'watch_group', // ditto, but in group
+
   MULTI_SIG = 'multi_sig', // multi-sig
-  MULTI_SIG_GROUP = 'multi_sig_group' // ditto, but in group
+  MULTI_SIG_GROUP = 'multi_sig_group', // ditto, but in group
+
+  KEYLESS = 'keyless', // keyless wallet
+  KEYLESS_HD = 'keyless_hd', // Hierarchical Deterministic, derived from keyless wallet private key (as seed)
+  KEYLESS_GROUP = 'keyless_group' // ditto, but in group
 }
 
 export enum AccountAbstractionType {
@@ -39,9 +45,9 @@ export function isWalletGroup(type: WalletType) {
     // pass through
     case WalletType.HW_GROUP:
     // pass through
-    case WalletType.MPC_HD:
+    case WalletType.KEYLESS_HD:
     // pass through
-    case WalletType.MPC_GROUP:
+    case WalletType.KEYLESS_GROUP:
     // pass through
     case WalletType.WALLET_CONNECT_GROUP:
     // pass through
@@ -62,9 +68,9 @@ export function hasMasterKeystore(type: WalletType) {
     // pass through
     case WalletType.PRIVATE_KEY:
     // pass through
-    case WalletType.MPC_HD:
+    case WalletType.KEYLESS_HD:
     // pass through
-    case WalletType.MPC:
+    case WalletType.KEYLESS:
       return true
     default:
       return false
@@ -75,7 +81,7 @@ export function hasSubKeystore(type: WalletType) {
   switch (type) {
     case WalletType.PRIVATE_KEY_GROUP:
     // pass through
-    case WalletType.MPC_GROUP:
+    case WalletType.KEYLESS_GROUP:
       return true
     default:
       return false
@@ -181,8 +187,15 @@ export enum HardwareWalletType {
   LEDGER = 'Ledger'
 }
 
-export enum MpcWalletType {
+export enum KeylessWalletType {
   WEB3AUTH = 'Web3Auth'
+}
+
+export interface KeylessWalletInfo {
+  type: KeylessWalletType
+  loginProvider: string
+  name: string
+  imageUrl?: string
 }
 
 export interface WalletAccount {
@@ -195,6 +208,8 @@ export interface WalletAccount {
   mnemonic?: string
   path?: string
   privateKey?: string
+
+  keyless?: KeylessWalletInfo
 }
 
 export type DecryptedKeystoreAccount = {
@@ -312,13 +327,13 @@ export function buildWalletUniqueHash(
     case WalletType.WALLET_CONNECT_GROUP:
       hash = generateWalletUniqueHash()
       break
-    case WalletType.MPC_HD:
-      hash = keystoreAccounts![0].account.address
+    case WalletType.KEYLESS:
+      hash = accounts![0].hash
       break
-    case WalletType.MPC:
-      hash = keystoreAccounts![0].account.address
+    case WalletType.KEYLESS_HD:
+      assert(hash)
       break
-    case WalletType.MPC_GROUP:
+    case WalletType.KEYLESS_GROUP:
       hash = generateWalletUniqueHash()
       break
     case WalletType.HW:

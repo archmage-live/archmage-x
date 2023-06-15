@@ -207,7 +207,7 @@ export function useExistingGroupWallets(
       case WalletType.WATCH_GROUP:
       case WalletType.HW_GROUP: // hw group not used here
       case WalletType.WALLET_CONNECT_GROUP:
-      case WalletType.MPC_GROUP:
+      case WalletType.KEYLESS_GROUP:
       case WalletType.MULTI_SIG_GROUP:
         break
       default:

@@ -1,4 +1,5 @@
 import { NetworkKind } from '~lib/network'
+import { KeylessWalletInfo } from '~lib/wallet'
 
 export interface ISubWallet {
   id: number
@@ -24,6 +25,8 @@ export interface SubWalletInfo {
   // so may need to be bech32 decoded and encoded.
   address?: string
   publicKey?: string
+
+  keyless?: KeylessWalletInfo
 }
 
 export const PSEUDO_INDEX = -1 // pseudo index for imported single wallet

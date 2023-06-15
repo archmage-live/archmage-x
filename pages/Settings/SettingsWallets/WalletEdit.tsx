@@ -14,14 +14,8 @@ import { useState } from 'react'
 import { HdPathInput } from '~components/HdPathInput'
 import { SaveInput } from '~components/SaveInput'
 import { DB } from '~lib/db'
-import { INetwork } from '~lib/schema'
-import { IWallet } from '~lib/schema/wallet'
-import {
-  WALLET_SERVICE,
-  WalletInfo,
-  useHdPath,
-  useSubWallets
-} from '~lib/services/wallet'
+import { INetwork, IWallet, WalletInfo } from '~lib/schema'
+import { WALLET_SERVICE, useHdPath, useSubWallets } from '~lib/services/wallet'
 import { WalletType, getWalletTypeTitle } from '~lib/wallet'
 import { ChangeHdPathModal } from '~pages/Settings/SettingsWallets/ChangeHdPathModal'
 

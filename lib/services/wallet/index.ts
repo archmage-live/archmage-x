@@ -19,6 +19,7 @@ import {
   Index,
   PSEUDO_INDEX,
   SubIndex,
+  WalletInfo,
   formatAddressForNetwork,
   generateDefaultWalletName,
   getAddressFromInfo
@@ -31,6 +32,7 @@ import {
   BtcAddressType,
   DecryptedKeystoreAccount,
   HardwareWalletType,
+  KeylessWalletInfo,
   KeystoreSigningWallet,
   WalletAccount,
   WalletType,
@@ -56,6 +58,7 @@ export type NewWalletOpts = {
   hash?: string // for WalletType.HW_GROUP
   accounts?: WalletAccount[] // for imported wallets
   addressType?: BtcAddressType
+  keylessInfo?: KeylessWalletInfo
 }
 
 export type CreateWalletOpts = {
@@ -70,11 +73,7 @@ export type AddSubWalletsOpts = {
   wallet: IWallet
   networkKind?: NetworkKind
   accounts?: WalletAccount[] // for WalletType.HW_GROUP
-}
-
-export interface WalletInfo {
-  path?: string
-  notBackedUp?: boolean
+  keylessInfo?: KeylessWalletInfo
 }
 
 function checkAccounts(accounts: WalletAccount[], networkKind?: NetworkKind) {
@@ -83,7 +82,8 @@ function checkAccounts(accounts: WalletAccount[], networkKind?: NetworkKind) {
       [
         account.address,
         account.mnemonic && account.path,
-        account.privateKey
+        account.privateKey,
+        account.keyless
       ].filter(Boolean).length === 1
     )
 
@@ -381,7 +381,8 @@ class WalletServicePartial implements IWalletService {
         info: {
           networkKind,
           address: acc?.address,
-          publicKey: acc?.publicKey
+          publicKey: acc?.publicKey,
+          keyless: acc?.keyless
         }
       } as ISubWallet
     })
@@ -456,12 +457,21 @@ class WalletService extends WalletServicePartial {
     networkKind,
     hash,
     accounts,
-    addressType
+    addressType,
+    keylessInfo
   }: NewWalletOpts): Promise<{
     wallet: IWallet
     decryptedKeystores?: DecryptedKeystoreAccount[]
   }> {
     name = name || (await generateDefaultWalletName(DB.wallets))
+
+    const info = {
+      hwType,
+      path,
+      pathTemplate,
+      derivePosition,
+      addressType
+    } as WalletInfo
 
     let decryptedKeystores: DecryptedKeystoreAccount[] = []
     switch (type) {
@@ -547,6 +557,22 @@ class WalletService extends WalletServicePartial {
         )
         break
       }
+      case WalletType.KEYLESS_HD: {
+        info.keyless = keylessInfo
+        break
+      }
+      case WalletType.KEYLESS:
+      // pass through
+      case WalletType.KEYLESS_GROUP: {
+        assert(addressType)
+        assert(accounts && accounts.length === 1)
+        accounts = checkAccounts(accounts)
+
+        if (type === WalletType.KEYLESS) {
+          info.keyless = keylessInfo
+        }
+        break
+      }
       default:
         throw new Error('unknown wallet type')
     }
@@ -555,13 +581,7 @@ class WalletService extends WalletServicePartial {
       sortId: await getNextField(DB.wallets),
       type,
       name,
-      info: {
-        hwType,
-        path,
-        pathTemplate,
-        derivePosition,
-        addressType
-      },
+      info,
       createdAt: Date.now()
     } as IWallet
 
@@ -709,6 +729,37 @@ class WalletService extends WalletServicePartial {
             )
             break
           }
+          case WalletType.KEYLESS_HD: {
+            // derive one sub wallet
+            await this.deriveSubWallets(wallet.id, 1)
+            break
+          }
+          case WalletType.KEYLESS: {
+            assert(
+              accounts &&
+                accounts.length === 1 &&
+                accounts[0].index === PSEUDO_INDEX
+            )
+            accounts = checkAccounts(accounts)
+            const { hash } = accounts[0]
+            await DB.subWallets.add({
+              masterId: wallet.id,
+              sortId: 0,
+              index: PSEUDO_INDEX,
+              name: '',
+              hash,
+              info: {}
+            } as ISubWallet)
+            break
+          }
+          case WalletType.KEYLESS_GROUP: {
+            assert(accounts && accounts.length === 1)
+            accounts = checkAccounts(accounts)
+            assert(accounts.every(({ index }, i) => index === i))
+
+            await this.deriveSubWallets(wallet.id, accounts.length, accounts)
+            break
+          }
           default:
             throw new Error('unknown wallet type')
         }
@@ -728,7 +779,8 @@ class WalletService extends WalletServicePartial {
   async addSubWallets({
     wallet,
     networkKind,
-    accounts
+    accounts,
+    keylessInfo
   }: AddSubWalletsOpts): Promise<void> {
     await DB.transaction(
       'rw',
@@ -737,7 +789,7 @@ class WalletService extends WalletServicePartial {
         switch (wallet.type) {
           case WalletType.PRIVATE_KEY_GROUP:
           // pass through
-          case WalletType.MPC_GROUP:
+          case WalletType.KEYLESS_GROUP:
             break
 
           case WalletType.WATCH_GROUP:
@@ -765,7 +817,7 @@ class WalletService extends WalletServicePartial {
     )
 
     switch (wallet.type) {
-      case WalletType.PRIVATE_KEY_GROUP:
+      case WalletType.PRIVATE_KEY_GROUP: {
         const decryptedKeystores: DecryptedKeystoreAccount[] = []
         for (const { index, mnemonic, path, privateKey } of accounts!) {
           let acc
@@ -795,6 +847,7 @@ class WalletService extends WalletServicePartial {
             })
           }
         }
+      }
     }
   }
 
