@@ -151,7 +151,7 @@ export const TokenListItem = ({
               borderRadius="28px"
               size="sm"
               leftIcon={existing ? <Icon as={FiCheckCircle} /> : undefined}
-              disabled={existing}
+              isDisabled={existing}
               onClick={onImport}>
               {existing ? 'Loaded' : 'Import'}
             </Button>

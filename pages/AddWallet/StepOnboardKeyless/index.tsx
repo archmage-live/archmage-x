@@ -1,45 +1,75 @@
 import {
+  Box,
+  Button,
+  ButtonGroup,
   Divider,
   HStack,
-  Image,
   Stack,
   Text,
   useColorModeValue
 } from '@chakra-ui/react'
-import web3authLogoDark from 'data-base64:~assets/thirdparty/web3auth-logo-Dark.svg'
-import web3authLogoLight from 'data-base64:~assets/thirdparty/web3auth-logo.svg'
 import { useState } from 'react'
-import { useAsync } from 'react-use'
+import * as React from 'react'
+import { useAsyncRetry } from 'react-use'
 
-import { SwitchBar } from '~components/SwitchBar'
+import { AlertBox } from '~components/AlertBox'
+import { Web3AuthLogo } from '~components/Web3AuthLogo'
 import { Web3Auth } from '~lib/keyless/web3auth'
+import { KeylessWalletInfo, KeylessWalletType } from '~lib/wallet'
 
 import { OnboardKeylessHd } from './OnboardKeylessHd'
 import { OnboardKeylessPrivateKey } from './OnboardKeylessPrivateKey'
 
-const importKinds = ['Mnemonic', 'Private Key'] as const
+const importKinds = ['Private Key', 'HD'] as const
 
 export const StepOnboardKeyless = () => {
   const [kind, setKind] = useState<typeof importKinds[number]>(importKinds[0])
 
-  const web3authLogo = useColorModeValue(web3authLogoLight, web3authLogoDark)
-
   const theme = useColorModeValue('light', 'dark')
 
-  useAsync(async () => {
+  const [info, setInfo] = useState<KeylessWalletInfo | undefined>(undefined)
+  const [mnemonic, setMnemonic] = useState('')
+  const [privateKey, setPrivateKey] = useState('')
+
+  const [alert, setAlert] = useState('')
+
+  const {
+    value: web3auth,
+    retry,
+    loading
+  } = useAsyncRetry(async () => {
+    setAlert('')
+
     const web3auth = await Web3Auth.connect({
       theme,
       reconnect: true
     })
     try {
       if (web3auth) {
-        console.log(await web3auth.getUserInfo())
-        console.log(await web3auth.getPrivateKey())
-        console.log(await web3auth.getMnemonic())
+        const info = await web3auth.getInfo()
+        const privateKey = await web3auth.getPrivateKey()
+        const mnemonic = await web3auth.getMnemonic()
+        if (info && privateKey && mnemonic) {
+          setInfo({
+            type: KeylessWalletType.WEB3AUTH,
+            ...info
+          })
+          setPrivateKey(privateKey)
+          setMnemonic(mnemonic)
+          return web3auth
+        }
       }
     } catch (err) {
       console.error(err)
     }
+
+    setInfo(undefined)
+    setPrivateKey('')
+    setMnemonic('')
+
+    setAlert('Press "Login" button to access web3auth wallet.')
+
+    return undefined
   }, [theme])
 
   return (
@@ -49,29 +79,50 @@ export const StepOnboardKeyless = () => {
           <Text fontSize="4xl" fontWeight="bold">
             Onboard with
           </Text>
-          <Image w={48} fit="cover" src={web3authLogo} alt="web3auth Logo" />
+          <Web3AuthLogo w={48} />
         </HStack>
         <Text fontSize="lg" color="gray.500" textAlign="center">
-          {kind === 'Mnemonic'
-            ? 'Onboard web3auth for a HD wallet.'
-            : 'Onboard web3auth for a private-key wallet.'}
+          {kind === 'Private Key'
+            ? 'Onboard web3auth for a private-key wallet.'
+            : 'Onboard web3auth for a HD wallet.'}
         </Text>
-
-        <HStack justify="center" pt="4">
-          <SwitchBar
-            targets={importKinds}
-            value={kind}
-            onChange={setKind as any}
-          />
-        </HStack>
       </Stack>
 
-      <Divider />
+      <HStack justify="space-between">
+        <Box w="96px"></Box>
 
-      {kind === 'Mnemonic' ? (
-        <OnboardKeylessHd />
-      ) : (
-        <OnboardKeylessPrivateKey />
+        <ButtonGroup size="md" colorScheme="purple" isAttached>
+          <Button
+            minW="96px"
+            variant={kind === 'Private Key' ? 'solid' : 'outline'}
+            onClick={() => setKind('Private Key')}>
+            Private Key
+          </Button>
+          <Button
+            minW="96px"
+            variant={kind === 'HD' ? 'solid' : 'outline'}
+            onClick={() => setKind('HD')}>
+            HD
+          </Button>
+        </ButtonGroup>
+
+        <Button size="md" variant="outline" isLoading={loading} onClick={retry}>
+          {!web3auth ? 'Login' : 'Re-login'}
+        </Button>
+      </HStack>
+
+      <AlertBox>{alert}</AlertBox>
+
+      {info && privateKey && mnemonic && (
+        <>
+          <Divider />
+
+          {kind === 'Private Key' ? (
+            <OnboardKeylessPrivateKey info={info} privateKey={privateKey} />
+          ) : (
+            <OnboardKeylessHd info={info} mnemonic={mnemonic} />
+          )}
+        </>
       )}
     </Stack>
   )

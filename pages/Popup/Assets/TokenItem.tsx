@@ -216,7 +216,7 @@ export const TokenItem = ({
                   <Icon as={FiCheckCircle} />
                 ) : undefined
               }
-              disabled={
+              isDisabled={
                 existing && token.visible !== TokenVisibility.UNSPECIFIED
               }
               onClick={onClick}>

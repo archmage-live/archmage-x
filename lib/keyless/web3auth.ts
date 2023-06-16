@@ -1,4 +1,4 @@
-import { arrayify } from '@ethersproject/bytes'
+import { arrayify, hexlify } from '@ethersproject/bytes'
 import { entropyToMnemonic } from '@ethersproject/hdnode/src.ts'
 import { LOGIN_PROVIDER, LOGIN_PROVIDER_TYPE } from '@toruslabs/openlogin-utils'
 import { CHAIN_NAMESPACES, UserInfo, WALLET_ADAPTERS } from '@web3auth/base'
@@ -8,6 +8,7 @@ import assert from 'assert'
 import { ethers } from 'ethers'
 
 export const WEB3AUTH_LOGIN_PROVIDER = LOGIN_PROVIDER
+export type WEB3AUTH_LOGIN_PROVIDER_TYPE = LOGIN_PROVIDER_TYPE
 
 export class Web3Auth {
   private userInfo?: Partial<UserInfo>
@@ -97,7 +98,15 @@ export class Web3Auth {
         // connect
         let provider
         if (!loginProvider) {
-          provider = await web3auth.connect()
+          let listener: any
+          const modalHidden = new Promise<void>((resolve) => {
+            listener = (visibility: boolean) => {
+              if (!visibility) resolve()
+            }
+          })
+          web3auth.on('MODAL_VISIBILITY', listener)
+          provider = await Promise.any([web3auth.connect(), modalHidden])
+          web3auth.off('MODAL_VISIBILITY', listener)
         } else {
           provider = await web3auth.connectTo(WALLET_ADAPTERS.OPENLOGIN, {
             loginProvider
@@ -116,12 +125,11 @@ export class Web3Auth {
   }
 
   async getUserInfo(): Promise<Partial<UserInfo>> {
-    if (this.userInfo) {
-      return this.userInfo
+    if (!this.userInfo) {
+      // cache
+      this.userInfo = await this.web3auth.getUserInfo()
     }
-    const userInfo = await this.web3auth.getUserInfo()
-    this.userInfo = userInfo // cache
-    return userInfo
+    return this.userInfo
   }
 
   async getInfo(): Promise<
@@ -132,31 +140,48 @@ export class Web3Auth {
       }
     | undefined
   > {
-    const info = await this.getUserInfo()
-    if (!info) {
+    const userInfo = await this.getUserInfo()
+    if (!userInfo) {
       return
     }
+    console.log(userInfo)
 
-    return {
-      loginProvider: info.typeOfLogin as string,
-      name: info.name as string,
-      imageUrl: info.profileImage
+    const info = {
+      loginProvider: userInfo.typeOfLogin as string,
+      name: userInfo.name as string,
+      imageUrl: userInfo.profileImage
     }
+
+    switch (userInfo.typeOfLogin) {
+      case WEB3AUTH_LOGIN_PROVIDER.JWT:
+        if (userInfo.aggregateVerifier?.includes('email-passwordless')) {
+          info.loginProvider = WEB3AUTH_LOGIN_PROVIDER.EMAIL_PASSWORDLESS
+        } else if (userInfo.aggregateVerifier?.includes('sms-passwordless')) {
+          info.loginProvider = WEB3AUTH_LOGIN_PROVIDER.SMS_PASSWORDLESS
+        } else if (userInfo.aggregateVerifier?.includes('wechat')) {
+          info.loginProvider = WEB3AUTH_LOGIN_PROVIDER.WECHAT
+        }
+        break
+    }
+
+    return info
   }
 
   async getPrivateKey() {
-    if (this.privateKey) {
-      return this.privateKey
+    if (!this.privateKey) {
+      const privateKey = await this.web3auth.provider?.request<string>({
+        method: 'private_key'
+      })
+      if (!privateKey) {
+        return
+      }
+      // cache
+      this.privateKey = hexlify(
+        arrayify(privateKey, { allowMissingPrefix: true })
+      )
     }
 
-    const privateKey = await this.web3auth.provider?.request<string>({
-      method: 'private_key'
-    })
-    if (!privateKey) {
-      return
-    }
-    this.privateKey = privateKey // cache
-    return privateKey
+    return this.privateKey
   }
 
   async getMnemonic() {
@@ -165,7 +190,7 @@ export class Web3Auth {
       return
     }
 
-    return entropyToMnemonic(arrayify(privateKey, { allowMissingPrefix: true }))
+    return entropyToMnemonic(privateKey)
   }
 
   async getUniqueHash() {

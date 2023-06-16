@@ -147,7 +147,7 @@ export const StepCreatePassword = () => {
             size="lg"
             colorScheme="purple"
             borderRadius="8px"
-            disabled={!(passwordStrength >= 2 && confirmPassword)}>
+            isDisabled={!(passwordStrength >= 2 && confirmPassword)}>
             Continue
           </Button>
         </Stack>

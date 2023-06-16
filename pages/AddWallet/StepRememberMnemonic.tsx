@@ -85,7 +85,7 @@ export const StepRememberMnemonic = () => {
         size="lg"
         colorScheme="purple"
         borderRadius="8px"
-        disabled={!(skipRemember || remembered)}
+        isDisabled={!(skipRemember || remembered)}
         onClick={onNext}>
         Continue
       </Button>

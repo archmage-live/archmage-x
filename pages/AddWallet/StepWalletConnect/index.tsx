@@ -225,7 +225,9 @@ export const StepWalletConnect = () => {
         size="lg"
         colorScheme="purple"
         borderRadius="8px"
-        disabled={!accounts.length || accounts.some(({ address }) => !address)}
+        isDisabled={
+          !accounts.length || accounts.some(({ address }) => !address)
+        }
         onClick={onImport}>
         Connect
       </Button>

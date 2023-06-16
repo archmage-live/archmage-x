@@ -190,7 +190,7 @@ export async function getHardwareSigningWallet(
   subWallet: ISubWallet,
   account: IChainAccount
 ): Promise<SigningWallet | undefined> {
-  if (hasWalletKeystore(wallet.type) || !canWalletSign(wallet.type)) {
+  if (!isHardwareWallet(wallet.type)) {
     return undefined
   }
   switch (account.networkKind) {

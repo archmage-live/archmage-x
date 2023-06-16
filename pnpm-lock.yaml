@@ -118,6 +118,7 @@ specifiers:
   '@web3auth/modal': ^6.0.1
   '@web3auth/mpc-core-kit': ^0.1.0
   '@web3auth/openlogin-adapter': ^6.0.1
+  '@web3auth/ui': ^6.0.1
   '@zerodevapp/sdk': ^3.1.29
   '@zxcvbn-ts/core': ^2.0.3
   '@zxcvbn-ts/language-common': ^2.0.1
@@ -278,6 +279,7 @@ dependencies:
   '@web3auth/modal': 6.0.1_blttfdxfra6lrykfpmfqqwvuqe
   '@web3auth/mpc-core-kit': 0.1.0_@babel+runtime@7.21.5
   '@web3auth/openlogin-adapter': 6.0.1_2pg3346czp6x5jq7q2awj5gasu
+  '@web3auth/ui': 6.0.1_k3fe6nn6afmaw4tt3qkyc7b6yy
   '@zerodevapp/sdk': 3.1.29_ethers@5.6.9
   '@zxcvbn-ts/core': 2.0.3
   '@zxcvbn-ts/language-common': 2.0.1
@@ -915,7 +917,7 @@ packages:
     resolution: {integrity: sha512-t9wi7/AW6XtKahAe20Yw0/mMljKq0B1r2fPdvaAdV/KPDZewFXdaaa6K7lxmZBZ8FBNpCiAT6iHPmd6QO9bKfQ==}
     engines: {node: '>=6.9.0'}
     dependencies:
-      regenerator-runtime: 0.13.9
+      regenerator-runtime: 0.13.11
 
   /@babel/runtime/7.20.13:
     resolution: {integrity: sha512-gt3PKXs0DBoL9xCvOIIZ2NEqAGZqHjAnmVbfQtB620V0uReIQutpel14KcneZuer7UioY8ALKZ7iocavvzTNFA==}
@@ -928,7 +930,6 @@ packages:
     engines: {node: '>=6.9.0'}
     dependencies:
       regenerator-runtime: 0.13.11
-    dev: false
 
   /@babel/template/7.18.6:
     resolution: {integrity: sha512-JoDWzPe+wgBsTTgdnIma3iHNFC7YVJoPssVBDjiHfNlyt4YcunDtcDOUmfVDfCK5MfdsaIoX9PkijPhjH3nYUw==}
@@ -3651,7 +3652,7 @@ packages:
     engines: {node: '>=10.0.0'}
     dependencies:
       '@babel/generator': 7.18.7
-      '@babel/runtime': 7.20.13
+      '@babel/runtime': 7.21.5
       '@lingui/conf': 3.14.0_typescript@4.7.4
       mkdirp: 1.0.4
     transitivePeerDependencies:
@@ -8081,7 +8082,7 @@ packages:
     resolution: {integrity: sha512-o/HelwhuKpTj/frsOsbNLNgnNGVIFsVP/SW2BSF14gVl7kAfMOJ6/8wUAUvG1R1NHKrfG+2sHZTu0yauT1qBrA==}
     engines: {node: '>=6.0'}
     dependencies:
-      '@babel/runtime': 7.20.13
+      '@babel/runtime': 7.21.5
       '@babel/runtime-corejs3': 7.18.6
     dev: false
 
@@ -8327,7 +8328,7 @@ packages:
   /babel-plugin-macros/2.8.0:
     resolution: {integrity: sha512-SEP5kJpfGYqYKpBrj5XU3ahw5p5GOHJ0U5ssOSQ/WBVdwkD2Dzlce95exQTs3jOVWPPKLBN2rlEWkCK7dSmLvg==}
     dependencies:
-      '@babel/runtime': 7.20.13
+      '@babel/runtime': 7.21.5
       cosmiconfig: 6.0.0
       resolve: 1.22.1
 
@@ -9872,7 +9873,7 @@ packages:
   /dom-helpers/5.2.1:
     resolution: {integrity: sha512-nRCa7CK3VTrM2NmGkIy4cbK7IZlgBE/PYMn55rrXefr5xXDP0LdtfPnblFDoVdcAfslJ7or6iqAUnx0CCGIWQA==}
     dependencies:
-      '@babel/runtime': 7.20.13
+      '@babel/runtime': 7.21.5
       csstype: 3.1.0
     dev: false
 
@@ -10559,7 +10560,7 @@ packages:
     resolution: {integrity: sha512-A8tG4Z4iNg4mw5tP1Vung9N9IjgMNqpiMoJ/FouSFwNCGHv2X0mmOYwtQOJzki6XN7r7Tyo01S29p7b224I4jw==}
     dependencies:
       '@babel/plugin-transform-runtime': 7.19.6_@babel+core@7.18.6
-      '@babel/runtime': 7.20.13
+      '@babel/runtime': 7.21.5
       eth-query: 2.1.2
       json-rpc-random-id: 1.0.1
       pify: 3.0.0
@@ -15368,9 +15369,6 @@ packages:
   /regenerator-runtime/0.13.11:
     resolution: {integrity: sha512-kY1AZVr2Ra+t+piVaJ4gxaFaReZVH40AKNo7UCX6W+dEwBo/2oZJzqfuN1qLq1oL45o56cPaTXELwrTh8Fpggg==}
 
-  /regenerator-runtime/0.13.9:
-    resolution: {integrity: sha512-p3VT+cOEgxFsRRA9X4lkI1E+k2/CtnKtU4gcxyaCUreilL/vqI6CdZ3wxVUx3UOUg+gnUOQQcRI7BmSI656MYA==}
-
   /regexp.prototype.flags/1.4.3:
     resolution: {integrity: sha512-fjggEOO3slI6Wvgjwflkc4NFRCTZAu5CnNfBd5qOMYhWdn67nJBBu34/TkD++eeFmd8C9r9jfXJ27+nSiRkSUA==}
     engines: {node: '>= 0.4'}
@@ -15584,7 +15582,7 @@ packages:
   /rtl-css-js/1.15.0:
     resolution: {integrity: sha512-99Cu4wNNIhrI10xxUaABHsdDqzalrSRTie4GeCmbGVuehm4oj+fIy8fTzB+16pmKe8Bv9rl+hxIBez6KxExTew==}
     dependencies:
-      '@babel/runtime': 7.20.13
+      '@babel/runtime': 7.21.5
     dev: false
 
   /run-async/2.4.1:
@@ -17975,7 +17973,7 @@ packages:
     dev: false
 
   github.com/ethereumjs/ethereumjs-abi/ee3994657fa7a427238e6ba92a84d0b529bbcde0:
-    resolution: {commit: ee3994657fa7a427238e6ba92a84d0b529bbcde0, repo: git+ssh://git@github.com/ethereumjs/ethereumjs-abi.git, type: git}
+    resolution: {tarball: https://codeload.github.com/ethereumjs/ethereumjs-abi/tar.gz/ee3994657fa7a427238e6ba92a84d0b529bbcde0}
     name: ethereumjs-abi
     version: 0.6.8
     dependencies:

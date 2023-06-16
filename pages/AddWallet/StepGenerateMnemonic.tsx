@@ -55,7 +55,7 @@ export const StepGenerateMnemonic = () => {
         size="lg"
         colorScheme="purple"
         borderRadius="8px"
-        disabled={!isChecked}
+        isDisabled={!isChecked}
         onClick={nextStep}>
         Continue
       </Button>

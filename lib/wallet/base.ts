@@ -67,10 +67,6 @@ export function hasMasterKeystore(type: WalletType) {
     case WalletType.HD:
     // pass through
     case WalletType.PRIVATE_KEY:
-    // pass through
-    case WalletType.KEYLESS_HD:
-    // pass through
-    case WalletType.KEYLESS:
       return true
     default:
       return false
@@ -80,8 +76,6 @@ export function hasMasterKeystore(type: WalletType) {
 export function hasSubKeystore(type: WalletType) {
   switch (type) {
     case WalletType.PRIVATE_KEY_GROUP:
-    // pass through
-    case WalletType.KEYLESS_GROUP:
       return true
     default:
       return false
@@ -93,6 +87,17 @@ export function isWatchWallet(type: WalletType) {
     case WalletType.WATCH:
     // pass through
     case WalletType.WATCH_GROUP:
+      return true
+    default:
+      return false
+  }
+}
+
+export function isKeylessWallet(type: WalletType) {
+  switch (type) {
+    case WalletType.KEYLESS_HD:
+    case WalletType.KEYLESS:
+    case WalletType.KEYLESS_GROUP:
       return true
     default:
       return false
@@ -124,6 +129,7 @@ export function isWalletConnectProtocol(type: WalletType) {
 export function canWalletSign(type: WalletType) {
   return (
     hasWalletKeystore(type) ||
+    isKeylessWallet(type) ||
     isHardwareWallet(type) ||
     isWalletConnectProtocol(type)
   )

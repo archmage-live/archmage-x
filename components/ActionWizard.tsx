@@ -35,7 +35,7 @@ export const ActionWizard = ({
             hideLastStepBackButton={hideLastStepBackButton}
           />
         }>
-        {children}
+        {React.Children.toArray(children).filter(Boolean)}
       </Wizard>
     </Card>
   )

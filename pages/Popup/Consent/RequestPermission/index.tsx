@@ -172,7 +172,7 @@ export const RequestPermission = ({
             size="lg"
             w={36}
             colorScheme="purple"
-            disabled={!flatChecked?.length}
+            isDisabled={!flatChecked?.length}
             isLoading={isLoading}
             onClick={async () => {
               if (!network) {

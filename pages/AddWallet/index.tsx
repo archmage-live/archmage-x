@@ -32,41 +32,6 @@ export default function AddWallet() {
 
   const [addWalletKind] = useAddWalletKind()
 
-  const StepAddWalletBegin = () => {
-    switch (addWalletKind) {
-      case AddWalletKind.NEW_HD:
-        return <StepGenerateMnemonic />
-      case AddWalletKind.IMPORT_HD:
-      case AddWalletKind.IMPORT_PRIVATE_KEY:
-      case AddWalletKind.IMPORT_PRIVATE_KEY_GROUP:
-      case AddWalletKind.IMPORT_WATCH_ADDRESS:
-      case AddWalletKind.IMPORT_WATCH_ADDRESS_GROUP:
-        return <StepImportWallet />
-      case AddWalletKind.CONNECT_HARDWARE:
-      case AddWalletKind.CONNECT_HARDWARE_GROUP:
-        return <StepConnectHardwareWallet />
-      case AddWalletKind.WALLET_CONNECT:
-      case AddWalletKind.WALLET_CONNECT_GROUP:
-        return <StepWalletConnect />
-      case AddWalletKind.KEYLESS:
-      case AddWalletKind.KEYLESS_HD:
-      case AddWalletKind.KEYLESS_GROUP:
-        return <StepOnboardKeyless />
-    }
-  }
-
-  const StepAddWalletEnd = () => {
-    switch (addWalletKind) {
-      case AddWalletKind.NEW_HD:
-        return <StepRememberMnemonic />
-      case AddWalletKind.CONNECT_HARDWARE:
-      case AddWalletKind.CONNECT_HARDWARE_GROUP:
-        return <StepConnectHardwareWalletAccounts />
-      default:
-        return null
-    }
-  }
-
   return passwordExists !== undefined ? (
     <>
       <TitleBar />
@@ -77,9 +42,11 @@ export default function AddWallet() {
 
           <StepAddWalletSelect />
 
-          <StepAddWalletBegin />
+          <StepAddWalletBegin addWalletKind={addWalletKind} />
 
-          <StepAddWalletEnd />
+          {hasAddWalletEnd(addWalletKind) && (
+            <StepAddWalletEnd addWalletKind={addWalletKind} />
+          )}
 
           <StepAddWalletDone />
         </ActionWizard>
@@ -88,4 +55,58 @@ export default function AddWallet() {
   ) : (
     <></>
   )
+}
+
+const StepAddWalletBegin = ({
+  addWalletKind
+}: {
+  addWalletKind: AddWalletKind
+}) => {
+  switch (addWalletKind) {
+    case AddWalletKind.NEW_HD:
+      return <StepGenerateMnemonic />
+    case AddWalletKind.IMPORT_HD:
+    case AddWalletKind.IMPORT_PRIVATE_KEY:
+    case AddWalletKind.IMPORT_PRIVATE_KEY_GROUP:
+    case AddWalletKind.IMPORT_WATCH_ADDRESS:
+    case AddWalletKind.IMPORT_WATCH_ADDRESS_GROUP:
+      return <StepImportWallet />
+    case AddWalletKind.CONNECT_HARDWARE:
+    case AddWalletKind.CONNECT_HARDWARE_GROUP:
+      return <StepConnectHardwareWallet />
+    case AddWalletKind.WALLET_CONNECT:
+    case AddWalletKind.WALLET_CONNECT_GROUP:
+      return <StepWalletConnect />
+    case AddWalletKind.KEYLESS:
+    case AddWalletKind.KEYLESS_HD:
+    case AddWalletKind.KEYLESS_GROUP:
+      return <StepOnboardKeyless />
+  }
+}
+
+const StepAddWalletEnd = ({
+  addWalletKind
+}: {
+  addWalletKind: AddWalletKind
+}) => {
+  switch (addWalletKind) {
+    case AddWalletKind.NEW_HD:
+      return <StepRememberMnemonic />
+    case AddWalletKind.CONNECT_HARDWARE:
+    case AddWalletKind.CONNECT_HARDWARE_GROUP:
+      return <StepConnectHardwareWalletAccounts />
+    default:
+      return null
+  }
+}
+
+function hasAddWalletEnd(addWalletKind: AddWalletKind) {
+  switch (addWalletKind) {
+    case AddWalletKind.NEW_HD:
+    case AddWalletKind.CONNECT_HARDWARE:
+    case AddWalletKind.CONNECT_HARDWARE_GROUP:
+      return true
+    default:
+      return false
+  }
 }

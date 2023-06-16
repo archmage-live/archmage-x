@@ -265,9 +265,9 @@ export const ImportPrivateKey = () => {
         size="lg"
         colorScheme="purple"
         borderRadius="8px"
-        disabled={!privateKeys.length || !privateKeys.every(Boolean)}
+        isDisabled={!privateKeys.length || !privateKeys.every(Boolean)}
         onClick={onImport}>
-        Import Wallet
+        Continue
       </Button>
 
       <SelectExistingWalletModal

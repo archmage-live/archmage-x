@@ -50,7 +50,7 @@ const existingWallet = atom<IWallet | undefined>(undefined)
 const accountsAtom = atom<WalletAccount[]>([])
 const hwTypeAtom = atom<HardwareWalletType | undefined>(undefined)
 const hwTransportAtom = atom<'hid' | 'ble' | undefined>(undefined)
-const hwHash = atom<string>('')
+const walletHash = atom<string>('')
 const addressType = atom<BtcAddressType | undefined>(undefined)
 const keylessInfo = atom<KeylessWalletInfo | undefined>(undefined)
 const createdAtom = atom(false)
@@ -103,8 +103,8 @@ export function useHwTransport() {
   return useAtom(hwTransportAtom)
 }
 
-export function useHwHash() {
-  return useAtom(hwHash)
+export function useWalletHash() {
+  return useAtom(walletHash)
 }
 
 export function useAddressType() {
@@ -129,7 +129,7 @@ export function useClear() {
   const [, setNetworkKind] = useNetworkKind()
   const [, setHwType] = useHwType()
   const [, setHwTransport] = useHwTransport()
-  const [, setHwHash] = useHwHash()
+  const [, setWalletHash] = useWalletHash()
   const [, setAccounts] = useAccounts()
   const [, setExistingWallet] = useExistingWallet()
   const [, setAddressType] = useAddressType()
@@ -145,7 +145,7 @@ export function useClear() {
     setNetworkKind(NetworkKind.EVM)
     setHwType(undefined)
     setHwTransport(undefined)
-    setHwHash('')
+    setWalletHash('')
     setAccounts([])
     setExistingWallet(undefined)
     setAddressType(undefined)
@@ -166,7 +166,7 @@ export function useAddWallet() {
   const [networkKind] = useNetworkKind()
   const [accounts] = useAccounts()
   const [hwType] = useHwType()
-  const [hwHash] = useHwHash()
+  const [walletHash] = useWalletHash()
   const [addressType] = useAddressType()
   const [keylessInfo] = useKeylessInfo()
   const [, setCreated] = useCreated()
@@ -236,13 +236,13 @@ export function useAddWallet() {
         opts.pathTemplate = hdPathTemplate
         opts.derivePosition = derivePosition
         opts.hwType = hwType
-        opts.hash = hwHash
+        opts.hash = walletHash
         opts.accounts = accounts
         opts.addressType = addressType
         break
       case AddWalletKind.KEYLESS_HD:
         opts.type = WalletType.KEYLESS_HD
-        opts.hash = hwHash
+        opts.hash = walletHash
         opts.accounts = accounts
         opts.keylessInfo = keylessInfo
         opts.addressType = addressType || BtcAddressType.NATIVE_SEGWIT
@@ -293,7 +293,7 @@ export function useAddWallet() {
     hdPathTemplate,
     derivePosition,
     hwType,
-    hwHash,
+    walletHash,
     keylessInfo,
     setCreated
   ])

@@ -12,10 +12,10 @@ import {
   useColorModeValue
 } from '@chakra-ui/react'
 import walletConnectLogo from 'data-base64:~assets/thirdparty/walletconnect.svg'
-import web3authLogoDark from 'data-base64:~assets/thirdparty/web3auth-logo-Dark.svg'
-import web3authLogoLight from 'data-base64:~assets/thirdparty/web3auth-logo.svg'
 import { useEffect } from 'react'
 import { useWizard } from 'react-use-wizard'
+
+import { Web3AuthLogo } from '~components/Web3AuthLogo'
 
 import { AddWalletKind, useAddWalletKind, useClear } from './addWallet'
 
@@ -25,8 +25,6 @@ export const StepAddWalletSelect = () => {
 
   const clear = useClear()
   useEffect(clear, [clear])
-
-  const web3authLogo = useColorModeValue(web3authLogoLight, web3authLogoDark)
 
   const tabBottomColor = useColorModeValue('white', 'gray.900')
 
@@ -148,12 +146,7 @@ export const StepAddWalletSelect = () => {
                 }}>
                 <HStack spacing={4}>
                   <Text>Onboard with</Text>
-                  <Image
-                    w={32}
-                    fit="cover"
-                    src={web3authLogo}
-                    alt="web3auth Logo"
-                  />
+                  <Web3AuthLogo w={32} />
                 </HStack>
               </Button>
             </Stack>

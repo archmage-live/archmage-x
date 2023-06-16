@@ -43,7 +43,7 @@ export const StepAddWalletDone = () => {
           size="lg"
           variant="outline"
           borderRadius="8px"
-          disabled={!created}
+          isDisabled={!created}
           onClick={() => {
             clear()
             goToStep(0)

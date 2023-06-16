@@ -291,9 +291,9 @@ export const ImportWatchAddress = () => {
         size="lg"
         colorScheme="purple"
         borderRadius="8px"
-        disabled={!addresses.length || addresses.some((addr) => !addr)}
+        isDisabled={!addresses.length || addresses.some((addr) => !addr)}
         onClick={onImport}>
-        Import Wallet
+        Continue
       </Button>
 
       <SelectExistingWalletModal

@@ -53,7 +53,7 @@ export const SelectExistingWalletModal = ({
       type = 'WalletConnect'
       break
     case WalletType.KEYLESS_GROUP:
-      type = 'MPC'
+      type = 'Keyless'
       break
     case WalletType.MULTI_SIG_GROUP:
       type = 'MultiSig'

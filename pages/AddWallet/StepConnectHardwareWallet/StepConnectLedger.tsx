@@ -65,9 +65,9 @@ import {
   useExistingWallet,
   useHdPath,
   useHdPathTemplate,
-  useHwHash,
   useHwTransport,
-  useNetworkKind
+  useNetworkKind,
+  useWalletHash
 } from '~pages/AddWallet/addWallet'
 
 import { NameInput } from '../NameInput'
@@ -83,7 +83,7 @@ export const StepConnectLedger = ({}: {}) => {
   const [, setHdPathTemplate] = useHdPathTemplate()
   const [, setDerivePosition] = useDerivePosition()
   const [hwTransport] = useHwTransport()
-  const [hwHash, setHwHash] = useHwHash()
+  const [walletHash, setWalletHash] = useWalletHash()
   const [accounts, setAccounts] = useAccounts()
 
   const networksOfKind = useNetworks(networkKind)
@@ -143,7 +143,7 @@ export const StepConnectLedger = ({}: {}) => {
         }
         const [hwApp, hwHash] = hwGot
 
-        setHwHash(hwHash)
+        setWalletHash(hwHash)
 
         for (let index = start; index < end; index++) {
           if (addrs.length !== index) {
@@ -183,7 +183,7 @@ export const StepConnectLedger = ({}: {}) => {
       addresses,
       publicKeys,
       networkKind,
-      setHwHash
+      setWalletHash
     ]
   )
 
@@ -288,7 +288,7 @@ export const StepConnectLedger = ({}: {}) => {
     // find wallet by hash
     addWalletKind === AddWalletKind.CONNECT_HARDWARE
       ? accounts[0]?.address!
-      : hwHash
+      : walletHash
   )
   const existingSubWallets = useSubWallets(existingWallet?.id)
   const existingAddresses = useMemo(
@@ -468,7 +468,7 @@ export const StepConnectLedger = ({}: {}) => {
         size="lg"
         colorScheme="purple"
         borderRadius="8px"
-        disabled={!accounts.length}
+        isDisabled={!accounts.length}
         onClick={onNext}>
         Connect
       </Button>

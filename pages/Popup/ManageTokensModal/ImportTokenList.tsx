@@ -58,7 +58,7 @@ export const ImportTokenList = ({ tokenList }: { tokenList?: ITokenList }) => {
       <Button
         size="lg"
         colorScheme="purple"
-        disabled={!isChecked}
+        isDisabled={!isChecked}
         onClick={async () => {
           tokenList.enabled = true
           await TOKEN_SERVICE.addTokenList(tokenList)

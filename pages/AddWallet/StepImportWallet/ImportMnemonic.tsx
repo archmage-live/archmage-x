@@ -351,9 +351,9 @@ export const ImportMnemonic = () => {
         size="lg"
         colorScheme="purple"
         borderRadius="8px"
-        disabled={mnemonic.length !== wordsNum || !mnemonic.every((w) => w)}
+        isDisabled={mnemonic.length !== wordsNum || !mnemonic.every((w) => w)}
         onClick={onImport}>
-        Import Wallet
+        Continue
       </Button>
 
       <SelectHdPathModal
