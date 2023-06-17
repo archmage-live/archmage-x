@@ -69,7 +69,9 @@ export function getAddressFromInfo(
   network: INetwork
 ) {
   const address =
-    typeof subWallet === 'string' ? subWallet : subWallet.info.address
+    typeof subWallet === 'string'
+      ? subWallet
+      : subWallet.info.accounts?.[network.kind]?.address
   assert(address)
   switch (network.kind) {
     case NetworkKind.COSM: {

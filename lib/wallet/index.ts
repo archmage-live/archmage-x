@@ -16,7 +16,6 @@ import {
   SigningWallet,
   WalletOpts,
   WalletType,
-  canWalletSign,
   getDerivePosition,
   hasSubKeystore,
   hasWalletKeystore,
@@ -211,7 +210,8 @@ export async function getHardwareSigningWallet(
           derivePosition: wallet.info.derivePosition
         },
         wallet.type === WalletType.HW ? wallet.info.path! : account.index,
-        account.info.publicKey || subWallet?.info.publicKey
+        account.info.publicKey ||
+          subWallet?.info.accounts?.[account.networkKind]?.publicKey
       )
     }
     case NetworkKind.EVM:
@@ -223,7 +223,8 @@ export async function getHardwareSigningWallet(
           derivePosition: wallet.info.derivePosition
         },
         wallet.type === WalletType.HW ? wallet.info.path! : account.index,
-        account.info.publicKey || subWallet?.info.publicKey
+        account.info.publicKey ||
+          subWallet?.info.accounts?.[account.networkKind]?.publicKey
       )
   }
 }

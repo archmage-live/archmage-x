@@ -189,6 +189,17 @@ export function getWalletTypeTitle(wallet: IWallet) {
   }
 }
 
+export interface AccountInfo {
+  // the same in all networks under the specified network kind;
+  // for Cosmos, always has prefix 'cosmos',
+  // so may need to be bech32 decoded and encoded.
+  address: string
+  publicKey?: string
+}
+
+// accounts for various network kinds stored inside the sub wallet
+export type AccountsInfo = Partial<Record<NetworkKind, AccountInfo>>
+
 export enum HardwareWalletType {
   LEDGER = 'Ledger'
 }
@@ -208,8 +219,7 @@ export interface WalletAccount {
   index: Index
   hash: string
 
-  address?: string
-  publicKey?: string
+  addresses?: AccountsInfo
 
   mnemonic?: string
   path?: string
@@ -322,13 +332,13 @@ export function buildWalletUniqueHash(
       hash = generateWalletUniqueHash()
       break
     case WalletType.WATCH:
-      hash = accounts![0].address!
+      hash = accounts![0].hash
       break
     case WalletType.WATCH_GROUP:
       hash = generateWalletUniqueHash()
       break
     case WalletType.WALLET_CONNECT:
-      hash = accounts![0].address!
+      hash = accounts![0].hash
       break
     case WalletType.WALLET_CONNECT_GROUP:
       hash = generateWalletUniqueHash()
@@ -343,14 +353,14 @@ export function buildWalletUniqueHash(
       hash = generateWalletUniqueHash()
       break
     case WalletType.HW:
-      hash = accounts![0].address!
+      hash = accounts![0].hash
       break
     case WalletType.HW_GROUP:
       // read from hardware wallet
       assert(hash)
       break
     case WalletType.MULTI_SIG:
-      hash = accounts![0].address!
+      hash = accounts![0].hash
       break
     case WalletType.MULTI_SIG_GROUP:
       hash = generateWalletUniqueHash()

@@ -3,6 +3,7 @@ import {
   Box,
   BoxProps,
   Button,
+  ComponentWithAs,
   HStack,
   Icon,
   Menu,
@@ -157,7 +158,10 @@ export const SubWalletItem = ({
   )
 }
 
-export const MenuBtn = forwardRef<BoxProps, 'div'>((props, ref) => (
+export const MenuBtn: ComponentWithAs<'div', BoxProps> = forwardRef<
+  BoxProps,
+  'div'
+>((props, ref) => (
   <BtnBox ref={ref} {...props} fontSize="xl" height="1em">
     <Icon
       as={MdOutlineMoreHoriz}

@@ -233,8 +233,8 @@ export function useExistingGroupWallets(
       // filter by network kind
       if (
         networkKind &&
-        subWallet.info.networkKind &&
-        subWallet.info.networkKind !== networkKind
+        subWallet.info.accounts &&
+        !subWallet.info.accounts[networkKind]
       ) {
         continue
       }

@@ -2,7 +2,6 @@ import assert from 'assert'
 import { atom, useAtom } from 'jotai'
 import { useCallback } from 'react'
 
-import { NetworkKind } from '~lib/network'
 import { DerivePosition, IWallet } from '~lib/schema'
 import {
   AddSubWalletsOpts,
@@ -45,7 +44,6 @@ const mnemonicNotBackedUpAtom = atom<boolean>(false)
 const hdPathAtom = atom('')
 const hdPathTemplateAtom = atom('')
 const derivePositionAtom = atom<DerivePosition | undefined>(undefined)
-const networkKindAtom = atom<NetworkKind>(NetworkKind.EVM)
 const existingWallet = atom<IWallet | undefined>(undefined)
 const accountsAtom = atom<WalletAccount[]>([])
 const hwTypeAtom = atom<HardwareWalletType | undefined>(undefined)
@@ -81,10 +79,6 @@ export function useHdPathTemplate() {
 
 export function useDerivePosition() {
   return useAtom(derivePositionAtom)
-}
-
-export function useNetworkKind() {
-  return useAtom(networkKindAtom)
 }
 
 export function useExistingWallet() {
@@ -126,7 +120,6 @@ export function useClear() {
   const [, setHdPathTemplate] = useHdPathTemplate()
   const [, setDerivePosition] = useDerivePosition()
   const [, setName] = useName()
-  const [, setNetworkKind] = useNetworkKind()
   const [, setHwType] = useHwType()
   const [, setHwTransport] = useHwTransport()
   const [, setWalletHash] = useWalletHash()
@@ -142,7 +135,6 @@ export function useClear() {
     setHdPathTemplate('')
     setDerivePosition(undefined)
     setName('')
-    setNetworkKind(NetworkKind.EVM)
     setHwType(undefined)
     setHwTransport(undefined)
     setWalletHash('')
@@ -163,7 +155,6 @@ export function useAddWallet() {
   const [hdPathTemplate] = useHdPathTemplate()
   const [derivePosition] = useDerivePosition()
   const [name] = useName()
-  const [networkKind] = useNetworkKind()
   const [accounts] = useAccounts()
   const [hwType] = useHwType()
   const [walletHash] = useWalletHash()
@@ -197,31 +188,26 @@ export function useAddWallet() {
         break
       case AddWalletKind.IMPORT_WATCH_ADDRESS:
         opts.type = WalletType.WATCH
-        opts.networkKind = networkKind
         opts.accounts = accounts
         opts.addressType = addressType
         break
       case AddWalletKind.IMPORT_WATCH_ADDRESS_GROUP:
         opts.type = WalletType.WATCH_GROUP
-        opts.networkKind = networkKind
         opts.accounts = accounts
         opts.addressType = addressType
         break
       case AddWalletKind.WALLET_CONNECT:
         opts.type = WalletType.WALLET_CONNECT
-        opts.networkKind = networkKind
         opts.accounts = accounts
         opts.addressType = addressType
         break
       case AddWalletKind.WALLET_CONNECT_GROUP:
         opts.type = WalletType.WALLET_CONNECT_GROUP
-        opts.networkKind = networkKind
         opts.accounts = accounts
         opts.addressType = addressType
         break
       case AddWalletKind.CONNECT_HARDWARE:
         opts.type = WalletType.HW
-        opts.networkKind = networkKind
         opts.path = hdPath
         opts.pathTemplate = hdPathTemplate
         opts.derivePosition = derivePosition
@@ -231,7 +217,6 @@ export function useAddWallet() {
         break
       case AddWalletKind.CONNECT_HARDWARE_GROUP:
         opts.type = WalletType.HW_GROUP
-        opts.networkKind = networkKind
         opts.path = hdPath
         opts.pathTemplate = hdPathTemplate
         opts.derivePosition = derivePosition
@@ -273,7 +258,6 @@ export function useAddWallet() {
     WALLET_SERVICE.createWallet({
       wallet,
       decryptedKeystores,
-      networkKind,
       accounts,
       notBackedUp
     }).finally(() => {
@@ -284,7 +268,6 @@ export function useAddWallet() {
   }, [
     name,
     addWalletKind,
-    networkKind,
     accounts,
     notBackedUp,
     mnemonic,
@@ -301,7 +284,6 @@ export function useAddWallet() {
 
 export function useAddSubWallets() {
   const [addWalletKind] = useAddWalletKind()
-  const [networkKind] = useNetworkKind()
   const [accounts] = useAccounts()
   const [wallet] = useExistingWallet()
   const [keylessInfo] = useKeylessInfo()
@@ -320,7 +302,6 @@ export function useAddSubWallets() {
       case AddWalletKind.CONNECT_HARDWARE_GROUP:
       // pass through
       case AddWalletKind.WALLET_CONNECT_GROUP:
-        opts.networkKind = networkKind
         opts.accounts = accounts
         break
       case AddWalletKind.KEYLESS_GROUP:
@@ -336,5 +317,5 @@ export function useAddSubWallets() {
     })
 
     return {}
-  }, [wallet, addWalletKind, accounts, networkKind, keylessInfo, setCreated])
+  }, [wallet, addWalletKind, accounts, keylessInfo, setCreated])
 }

@@ -66,7 +66,6 @@ import {
   useHdPath,
   useHdPathTemplate,
   useHwTransport,
-  useNetworkKind,
   useWalletHash
 } from '~pages/AddWallet/addWallet'
 
@@ -77,7 +76,6 @@ export const StepConnectLedger = ({}: {}) => {
 
   const [connectError, setConnectError] = useState('')
 
-  const [networkKind, setNetworkKind] = useNetworkKind()
   const [addWalletKind, setAddWalletKind] = useAddWalletKind()
   const [, setHdPath] = useHdPath()
   const [, setHdPathTemplate] = useHdPathTemplate()
@@ -86,6 +84,7 @@ export const StepConnectLedger = ({}: {}) => {
   const [walletHash, setWalletHash] = useWalletHash()
   const [accounts, setAccounts] = useAccounts()
 
+  const [networkKind, setNetworkKind] = useState(NetworkKind.EVM)
   const networksOfKind = useNetworks(networkKind)
   const [networkId, setNetworkId] = useState<number>()
   useEffect(() => {
@@ -249,8 +248,12 @@ export const StepConnectLedger = ({}: {}) => {
         accounts.push({
           index,
           hash: address,
-          address,
-          publicKey: publicKeys[index]
+          addresses: {
+            [networkKind]: {
+              address,
+              publicKey: publicKeys[index]
+            }
+          }
         })
       }
     })
@@ -287,13 +290,18 @@ export const StepConnectLedger = ({}: {}) => {
     undefined,
     // find wallet by hash
     addWalletKind === AddWalletKind.CONNECT_HARDWARE
-      ? accounts[0]?.address!
+      ? accounts[0]?.addresses?.[networkKind]?.address
       : walletHash
   )
   const existingSubWallets = useSubWallets(existingWallet?.id)
   const existingAddresses = useMemo(
-    () => new Set(existingSubWallets?.map(({ info: { address } }) => address!)),
-    [existingSubWallets]
+    () =>
+      new Set(
+        existingSubWallets?.map(
+          ({ info: { accounts } }) => accounts?.[networkKind]?.address!
+        )
+      ),
+    [networkKind, existingSubWallets]
   )
 
   const [, setExistingWallet] = useExistingWallet()

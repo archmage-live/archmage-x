@@ -1,5 +1,5 @@
 import { NetworkKind } from '~lib/network'
-import { KeylessWalletInfo } from '~lib/wallet'
+import { AccountsInfo, KeylessWalletInfo } from '~lib/wallet'
 
 export interface ISubWallet {
   id: number
@@ -18,14 +18,7 @@ export const subWalletSchemaV1 =
   '++id, [masterId+sortId], &[masterId+index], &[masterId+name]'
 
 export interface SubWalletInfo {
-  // it exists so that the sub wallet serves only this network kind
-  networkKind?: NetworkKind
-  // the same in all networks under the specified network kind;
-  // for Cosmos, always has prefix 'cosmos',
-  // so may need to be bech32 decoded and encoded.
-  address?: string
-  publicKey?: string
-
+  accounts?: AccountsInfo
   keyless?: KeylessWalletInfo
 }
 

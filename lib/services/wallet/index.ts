@@ -29,6 +29,8 @@ import { ISubWallet, getDefaultSubName } from '~lib/schema/subWallet'
 import { IWallet } from '~lib/schema/wallet'
 import { NETWORK_SERVICE } from '~lib/services/network'
 import {
+  AccountInfo,
+  AccountsInfo,
   BtcAddressType,
   DecryptedKeystoreAccount,
   HardwareWalletType,
@@ -54,7 +56,6 @@ export type NewWalletOpts = {
   path?: string // for WalletType.PRIVATE_KEY (by mnemonic) / WalletType.HW
   pathTemplate?: string // for WalletType.HW / WalletType.HW_GROUP
   derivePosition?: DerivePosition // for WalletType.HW / WalletType.HW_GROUP
-  networkKind?: NetworkKind
   hash?: string // for WalletType.HW_GROUP
   accounts?: WalletAccount[] // for imported wallets
   addressType?: BtcAddressType
@@ -64,38 +65,45 @@ export type NewWalletOpts = {
 export type CreateWalletOpts = {
   wallet: IWallet
   decryptedKeystores?: DecryptedKeystoreAccount[]
-  networkKind?: NetworkKind
   accounts?: WalletAccount[] // for imported wallets
   notBackedUp?: boolean
 }
 
 export type AddSubWalletsOpts = {
   wallet: IWallet
-  networkKind?: NetworkKind
   accounts?: WalletAccount[] // for WalletType.HW_GROUP
   keylessInfo?: KeylessWalletInfo
 }
 
-function checkAccounts(accounts: WalletAccount[], networkKind?: NetworkKind) {
+function checkAccounts(accounts: WalletAccount[]) {
   return accounts.map((account) => {
     assert(
       [
-        account.address,
+        account.addresses,
         account.mnemonic && account.path,
         account.privateKey,
         account.keyless
       ].filter(Boolean).length === 1
     )
 
-    if (account.address) {
-      assert(networkKind)
+    if (account.addresses) {
+      const addresses: AccountsInfo = {}
+      for (const [networkKind, info] of Object.entries(account.addresses) as [
+        NetworkKind,
+        AccountInfo
+      ][]) {
+        addresses[networkKind] = {
+          ...info,
+          address: formatAddressForNetwork(
+            checkAddressMayThrow(networkKind, info.address),
+            networkKind
+          )
+        }
+      }
       return {
         ...account,
-        address: formatAddressForNetwork(
-          checkAddressMayThrow(networkKind, account.address),
-          networkKind
-        )
-      } as WalletAccount
+        addresses
+      }
     } else {
       return account
     }
@@ -152,8 +160,7 @@ export interface IWalletService {
   deriveSubWallets(
     id: number,
     num: number,
-    accounts?: WalletAccount[],
-    networkKind?: NetworkKind
+    accounts?: WalletAccount[]
   ): Promise<ISubWallet[]>
 
   ensureAllChainAccounts(
@@ -340,12 +347,7 @@ class WalletServicePartial implements IWalletService {
     }
   }
 
-  async deriveSubWallets(
-    id: number,
-    num: number,
-    accounts?: WalletAccount[],
-    networkKind?: NetworkKind
-  ) {
+  async deriveSubWallets(id: number, num: number, accounts?: WalletAccount[]) {
     assert(!accounts || accounts.length === num)
 
     const wallet = await this.getWallet(id)
@@ -363,11 +365,14 @@ class WalletServicePartial implements IWalletService {
       const acc = accounts?.[n]
       const index = !acc ? nextIndex + n : acc.index
 
-      if (networkKind && acc?.address) {
-        assert(
-          formatAddressForNetwork(acc.address, networkKind) === acc.address
-        )
-      }
+      Object.entries(acc?.addresses || {}).forEach(
+        ([networkKind, { address }]) => {
+          assert(
+            formatAddressForNetwork(address, networkKind as NetworkKind) ===
+              address
+          )
+        }
+      )
 
       // there should be no conflict when using default sub name for specific index
       const name = getDefaultSubName(index)
@@ -379,9 +384,7 @@ class WalletServicePartial implements IWalletService {
         name,
         hash: acc?.hash,
         info: {
-          networkKind,
-          address: acc?.address,
-          publicKey: acc?.publicKey,
+          accounts: acc?.addresses,
           keyless: acc?.keyless
         }
       } as ISubWallet
@@ -454,7 +457,6 @@ class WalletService extends WalletServicePartial {
     path,
     pathTemplate,
     derivePosition,
-    networkKind,
     hash,
     accounts,
     addressType,
@@ -523,35 +525,27 @@ class WalletService extends WalletServicePartial {
       case WalletType.WATCH:
       // pass through
       case WalletType.WALLET_CONNECT: {
-        assert(networkKind)
-        assert(networkKind !== NetworkKind.BTC || addressType)
         assert(accounts && accounts.length === 1)
-        accounts = checkAccounts(accounts, networkKind)
+        accounts = checkAccounts(accounts)
         break
       }
       case WalletType.WATCH_GROUP:
       // pass through
       case WalletType.WALLET_CONNECT_GROUP: {
-        assert(networkKind)
-        assert(networkKind !== NetworkKind.BTC || addressType)
         assert(accounts && accounts.length >= 1)
-        accounts = checkAccounts(accounts, networkKind)
+        accounts = checkAccounts(accounts)
         break
       }
       case WalletType.HW: {
         assert(hwType && path && pathTemplate && derivePosition)
-        assert(networkKind)
-        assert(networkKind !== NetworkKind.BTC || addressType)
         assert(accounts && accounts.length === 1)
-        accounts = checkAccounts(accounts, networkKind)
+        accounts = checkAccounts(accounts)
         break
       }
       case WalletType.HW_GROUP: {
         assert(hwType && pathTemplate && derivePosition)
-        assert(networkKind)
-        assert(networkKind !== NetworkKind.BTC || addressType)
         assert(accounts && accounts.length >= 1)
-        accounts = checkAccounts(accounts, networkKind)
+        accounts = checkAccounts(accounts)
         assert(
           new Set(accounts.map(({ index }) => index)).size === accounts.length
         )
@@ -601,7 +595,6 @@ class WalletService extends WalletServicePartial {
   async createWallet({
     wallet,
     decryptedKeystores,
-    networkKind,
     accounts,
     notBackedUp
   }: CreateWalletOpts) {
@@ -652,14 +645,13 @@ class WalletService extends WalletServicePartial {
           case WalletType.WATCH:
           // pass through
           case WalletType.WALLET_CONNECT: {
-            assert(networkKind)
             assert(
               accounts &&
                 accounts.length === 1 &&
                 accounts[0].index === PSEUDO_INDEX
             )
-            accounts = checkAccounts(accounts, networkKind)
-            const { hash, address, publicKey } = accounts[0]
+            accounts = checkAccounts(accounts)
+            const { hash, addresses } = accounts[0]
             await DB.subWallets.add({
               masterId: wallet.id,
               sortId: 0,
@@ -667,9 +659,7 @@ class WalletService extends WalletServicePartial {
               name: '',
               hash,
               info: {
-                networkKind,
-                address,
-                publicKey
+                accounts: addresses
               }
             } as ISubWallet)
             break
@@ -677,28 +667,21 @@ class WalletService extends WalletServicePartial {
           case WalletType.WATCH_GROUP:
           // pass through
           case WalletType.WALLET_CONNECT_GROUP: {
-            assert(networkKind)
             assert(accounts && accounts.length >= 1)
-            accounts = checkAccounts(accounts, networkKind)
+            accounts = checkAccounts(accounts)
             assert(accounts.every(({ index }, i) => index === i))
 
-            await this.deriveSubWallets(
-              wallet.id,
-              accounts.length,
-              accounts,
-              networkKind
-            )
+            await this.deriveSubWallets(wallet.id, accounts.length, accounts)
             break
           }
           case WalletType.HW: {
-            assert(networkKind)
             assert(
               accounts &&
                 accounts.length === 1 &&
                 accounts[0].index === PSEUDO_INDEX
             )
-            accounts = checkAccounts(accounts, networkKind)
-            const { hash, address, publicKey } = accounts[0]
+            accounts = checkAccounts(accounts)
+            const { hash, addresses } = accounts[0]
 
             await DB.subWallets.add({
               masterId: wallet.id,
@@ -707,26 +690,18 @@ class WalletService extends WalletServicePartial {
               name: '',
               hash,
               info: {
-                networkKind,
-                address,
-                publicKey
+                accounts: addresses
               }
             } as ISubWallet)
             break
           }
           case WalletType.HW_GROUP: {
-            assert(networkKind)
             assert(accounts && accounts.length >= 1)
-            accounts = checkAccounts(accounts, networkKind)
+            accounts = checkAccounts(accounts)
             const indices = accounts.map(({ index }) => index)
             assert(new Set(indices).size === accounts.length)
 
-            await this.deriveSubWallets(
-              wallet.id,
-              accounts.length,
-              accounts,
-              networkKind
-            )
+            await this.deriveSubWallets(wallet.id, accounts.length, accounts)
             break
           }
           case WalletType.KEYLESS_HD: {
@@ -778,7 +753,6 @@ class WalletService extends WalletServicePartial {
 
   async addSubWallets({
     wallet,
-    networkKind,
     accounts,
     keylessInfo
   }: AddSubWalletsOpts): Promise<void> {
@@ -799,20 +773,14 @@ class WalletService extends WalletServicePartial {
           case WalletType.WALLET_CONNECT_GROUP:
           // pass through
           case WalletType.MULTI_SIG_GROUP:
-            assert(networkKind)
             break
         }
 
         assert(accounts && accounts.length >= 1)
-        accounts = checkAccounts(accounts, networkKind)
+        accounts = checkAccounts(accounts)
         const indices = accounts.map(({ index }) => index)
         assert(new Set(indices).size === accounts.length)
-        await this.deriveSubWallets(
-          wallet.id,
-          accounts.length,
-          accounts,
-          networkKind
-        )
+        await this.deriveSubWallets(wallet.id, accounts.length, accounts)
       }
     )
 
@@ -1198,52 +1166,54 @@ async function ensureChainAccounts(
     if (existing.has(subWallet.index)) {
       continue
     }
-    queue.add(async () => {
-      let address
-      switch (wallet.type) {
-        case WalletType.HD: {
-          assert(signingWallet && hdPath)
-          const subSigningWallet = await signingWallet.derive(
-            hdPath.path,
-            subWallet.index,
-            getDerivePosition(hdPath, networkKind)
-          )
-          address = subSigningWallet.address
-          break
-        }
-        case WalletType.PRIVATE_KEY_GROUP: {
-          const signingWallet = await getStructuralSigningWallet(
-            wallet,
-            networkKind,
-            chainId,
-            subWallet.index
-          )
-          address = signingWallet?.address
-          break
-        }
-        case WalletType.WATCH_GROUP:
-        // pass through
-        case WalletType.WALLET_CONNECT_GROUP:
-        // pass through
-        case WalletType.HW_GROUP: {
-          const network = await NETWORK_SERVICE.getNetwork({
-            kind: networkKind,
-            chainId
-          })
-          if (network) {
-            address = getAddressFromInfo(subWallet, network)
+    queue
+      .add(async () => {
+        let address
+        switch (wallet.type) {
+          case WalletType.HD: {
+            assert(signingWallet && hdPath)
+            const subSigningWallet = await signingWallet.derive(
+              hdPath.path,
+              subWallet.index,
+              getDerivePosition(hdPath, networkKind)
+            )
+            address = subSigningWallet.address
+            break
           }
-          break
+          case WalletType.PRIVATE_KEY_GROUP: {
+            const signingWallet = await getStructuralSigningWallet(
+              wallet,
+              networkKind,
+              chainId,
+              subWallet.index
+            )
+            address = signingWallet?.address
+            break
+          }
+          case WalletType.WATCH_GROUP:
+          // pass through
+          case WalletType.WALLET_CONNECT_GROUP:
+          // pass through
+          case WalletType.HW_GROUP: {
+            const network = await NETWORK_SERVICE.getNetwork({
+              kind: networkKind,
+              chainId
+            })
+            if (network) {
+              address = getAddressFromInfo(subWallet, network)
+            }
+            break
+          }
         }
-      }
-      bulkAdd.push({
-        masterId,
-        index: subWallet.index,
-        networkKind,
-        chainId,
-        address
-      } as IChainAccount)
-    })
+        bulkAdd.push({
+          masterId,
+          index: subWallet.index,
+          networkKind,
+          chainId,
+          address
+        } as IChainAccount)
+      })
+      .then()
   }
   await queue.onIdle()
   console.log(`derive chain accounts: ${(Date.now() - tick) / 1000}s`)

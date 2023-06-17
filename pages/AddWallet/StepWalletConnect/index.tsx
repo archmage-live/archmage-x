@@ -32,15 +32,14 @@ import {
   useAccounts,
   useAddWallet,
   useAddWalletKind,
-  useName,
-  useNetworkKind
+  useName
 } from '../addWallet'
 
 export const StepWalletConnect = () => {
   const { nextStep } = useWizard()
 
   const [, setAddWalletKind] = useAddWalletKind()
-  const [networkKind, setNetworkKind] = useNetworkKind()
+  const [networkKind, setNetworkKind] = useState(NetworkKind.EVM)
   const [accounts, setAccounts] = useAccounts()
   const [name, setName] = useName()
   useEffect(() => {
@@ -70,8 +69,10 @@ export const StepWalletConnect = () => {
   const addWallet = useAddWallet()
 
   const onImport = useCallback(async () => {
-    const addrs = accounts.map(({ address }) =>
-      checkAddress(networkKind, address!)
+    const addrs = accounts.map(({ addresses }) =>
+      Object.entries(addresses!).every(([networkKind, { address }]) =>
+        checkAddress(networkKind as any, address)
+      )
     )
     if (addrs.some((addr) => !addr)) {
       setAlert('Invalid address')
@@ -89,7 +90,7 @@ export const StepWalletConnect = () => {
     }
 
     await nextStep()
-  }, [accounts, addWallet, nextStep, networkKind])
+  }, [accounts, addWallet, nextStep])
 
   // WalletConnect 1.0 only supports Ethereum networks
   // Here we only connect it with Ethereum mainnet
@@ -112,13 +113,19 @@ export const StepWalletConnect = () => {
       let accs = accounts.slice()
       if (isGroupChecked) {
         let update = false
-        const existing = new Set(accs.map((c) => c.address!))
+        const existing = new Set(
+          accs.map((c) => c.addresses![networkKind]!.address)
+        )
         for (const address of addresses) {
           if (!existing.has(address)) {
             accs.push({
               index: accs.length,
               hash: address,
-              address
+              addresses: {
+                [networkKind]: {
+                  address
+                }
+              }
             })
             update = true
           }
@@ -127,17 +134,25 @@ export const StepWalletConnect = () => {
           return accounts
         }
       } else {
-        if (accounts[0].address === addresses[0]) {
+        if (accounts[0].addresses![networkKind]!.address === addresses[0]) {
           return accounts
         }
         accs = [
-          { index: PSEUDO_INDEX, hash: addresses[0], address: addresses[0] }
+          {
+            index: PSEUDO_INDEX,
+            hash: addresses[0],
+            addresses: {
+              [networkKind]: {
+                address: addresses[0]
+              }
+            }
+          }
         ]
       }
-      refresh()
+      refresh().then()
       return accs
     })
-  }, [addresses, refresh, setAccounts, isGroupChecked])
+  }, [networkKind, addresses, refresh, setAccounts, isGroupChecked])
 
   return (
     <Stack p="4" pt="16" spacing={8}>
@@ -184,7 +199,8 @@ export const StepWalletConnect = () => {
           </Checkbox>
 
           <Stack spacing={3}>
-            {accounts.map(({ address }, i) => {
+            {accounts.map(({ addresses }, i) => {
+              const address = addresses![networkKind]!.address
               return (
                 <HStack key={i}>
                   <Input size="lg" value={address} readOnly />
@@ -226,7 +242,8 @@ export const StepWalletConnect = () => {
         colorScheme="purple"
         borderRadius="8px"
         isDisabled={
-          !accounts.length || accounts.some(({ address }) => !address)
+          !accounts.length ||
+          accounts.some(({ addresses }) => !addresses![networkKind]!.address)
         }
         onClick={onImport}>
         Connect

@@ -36,8 +36,7 @@ import {
   useAddWallet,
   useAddWalletKind,
   useExistingWallet,
-  useName,
-  useNetworkKind
+  useName
 } from '../addWallet'
 
 export const ImportWatchAddress = () => {
@@ -45,7 +44,7 @@ export const ImportWatchAddress = () => {
 
   const [, setAddWalletKind] = useAddWalletKind()
   const [, setExistingWallet] = useExistingWallet()
-  const [networkKind, setNetworkKind] = useNetworkKind()
+  const [networkKind, setNetworkKind] = useState(NetworkKind.EVM)
   const [addresses, setAddresses] = useState<string[]>([])
   const [accounts, setAccounts] = useAccounts()
   const [name, setName] = useName()
@@ -109,7 +108,11 @@ export const ImportWatchAddress = () => {
         return {
           index: isWatchGroupChecked ? nextIndex! + i : PSEUDO_INDEX,
           hash: address,
-          address
+          addresses: {
+            [networkKind]: {
+              address
+            }
+          }
         }
       })
     )
