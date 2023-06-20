@@ -1,10 +1,12 @@
 import assert from 'assert'
 import { ethers } from 'ethers'
 
+import { Web3Auth } from '~lib/keyless/web3auth'
+import { KEYSTORE } from '~lib/keystore'
 import { NetworkKind } from '~lib/network'
 import { BtcChainInfo } from '~lib/network/btc'
 import { CosmAppChainInfo } from '~lib/network/cosm'
-import { IChainAccount, ISubWallet, Index, PSEUDO_INDEX } from '~lib/schema'
+import { IChainAccount, ISubWallet } from '~lib/schema'
 import { IWallet } from '~lib/schema/wallet'
 import { NETWORK_SERVICE } from '~lib/services/network'
 import { WALLET_SERVICE } from '~lib/services/wallet'
@@ -19,7 +21,8 @@ import {
   getDerivePosition,
   hasSubKeystore,
   hasWalletKeystore,
-  isHardwareWallet
+  isHardwareWallet,
+  isKeylessWallet
 } from './base'
 import { BtcWallet, BtcWalletOpts } from './btc'
 import { CosmWallet, CosmWalletOpts } from './cosm'
@@ -124,24 +127,37 @@ export function checkAddressMayThrow(
 
 export async function getStructuralSigningWallet(
   wallet: IWallet,
+  subWallet: ISubWallet | undefined,
   networkKind: NetworkKind,
-  chainId: number | string,
-  index?: Index
+  chainId: number | string
 ): Promise<KeystoreSigningWallet | undefined> {
-  if (!hasWalletKeystore(wallet.type)) {
+  if (!hasWalletKeystore(wallet.type) && !isKeylessWallet(wallet.type)) {
     return undefined
   }
 
-  assert(
-    hasSubKeystore(wallet.type) ===
-      (typeof index === 'number' && index > PSEUDO_INDEX)
-  )
+  let keystore
+  if (hasWalletKeystore(wallet.type)) {
+    keystore = await KEYSTORE.get(
+      wallet.id,
+      hasSubKeystore(wallet.type) ? subWallet!.index : undefined,
+      true
+    )
+  } else {
+    const wa = await Web3Auth.init({})
+    if (!wa.connected) {
+      return
+    }
+    keystore = await wa.getKeystore(wallet, subWallet)
+  }
+
+  if (!keystore) {
+    return undefined
+  }
 
   const opts: WalletOpts = {
-    id: wallet.id,
     type: wallet.type,
-    index,
-    path: wallet.info.path
+    path: wallet.info.path,
+    keystore
   }
   switch (networkKind) {
     case NetworkKind.BTC: {
@@ -233,14 +249,18 @@ export async function getSigningWallet(
   account: IChainAccount
 ): Promise<SigningWallet | undefined> {
   const master = await WALLET_SERVICE.getWallet(account.masterId)
-  assert(master)
+  const subWallet = await WALLET_SERVICE.getSubWallet({
+    masterId: account.masterId,
+    index: account.index
+  })
+  assert(master && subWallet)
 
   if (hasWalletKeystore(master.type)) {
     let signingWallet = await getStructuralSigningWallet(
       master,
+      subWallet,
       account.networkKind,
-      account.chainId,
-      hasSubKeystore(master.type) ? account.index : undefined
+      account.chainId
     )
     if (!signingWallet) {
       return undefined
@@ -264,11 +284,6 @@ export async function getSigningWallet(
     assert(signingWallet.address === account.address)
     return signingWallet
   } else if (isHardwareWallet(master.type)) {
-    const subWallet = await WALLET_SERVICE.getSubWallet({
-      masterId: account.masterId,
-      index: account.index
-    })
-    assert(subWallet)
     return getHardwareSigningWallet(master, subWallet, account)
   }
 }

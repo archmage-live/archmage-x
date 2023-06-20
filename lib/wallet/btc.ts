@@ -7,7 +7,6 @@ import ECPairFactory from 'ecpair'
 import { ethers } from 'ethers'
 import * as wif from 'wif'
 
-import { KEYSTORE } from '~lib/keystore'
 import { DerivePosition } from '~lib/schema'
 import { BtcTxParams } from '~lib/services/provider/btc'
 
@@ -97,25 +96,22 @@ export class BtcWallet implements KeystoreSigningWallet {
   }
 
   static async from({
-    id,
     type,
-    index,
     path,
-    extra: { addressType, isTestnet, network }
+    extra: { addressType, isTestnet, network },
+    keystore
   }: BtcWalletOpts): Promise<BtcWallet | undefined> {
-    const ks = await KEYSTORE.get(id, index, true)
-    if (!ks) {
-      return undefined
-    }
-    const mnemonic = ks.mnemonic
+    const mnemonic = keystore.mnemonic
 
     let wallet
-    if (type === WalletType.HD) {
+    if (type === WalletType.HD || type === WalletType.KEYLESS_HD) {
       assert(!path && mnemonic)
       wallet = ethers.utils.HDNode.fromMnemonic(mnemonic.phrase)
     } else if (
       type === WalletType.PRIVATE_KEY ||
-      type === WalletType.PRIVATE_KEY_GROUP
+      type === WalletType.PRIVATE_KEY_GROUP ||
+      type === WalletType.KEYLESS ||
+      type === WalletType.KEYLESS_GROUP
     ) {
       if (mnemonic) {
         if (!path) {
@@ -124,7 +120,7 @@ export class BtcWallet implements KeystoreSigningWallet {
         wallet = ethers.Wallet.fromMnemonic(mnemonic.phrase, path)
       } else {
         assert(!path)
-        wallet = new ethers.Wallet(ks.privateKey)
+        wallet = new ethers.Wallet(keystore.privateKey)
       }
     }
     assert(wallet)

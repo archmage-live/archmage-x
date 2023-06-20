@@ -1,10 +1,10 @@
 import { Box, useColorModeValue } from '@chakra-ui/react'
-import { atom, useAtom } from 'jotai'
 import { useState } from 'react'
-import { Route, Routes, useLocation, useNavigate } from 'react-router-dom'
+import { Route, Routes, useNavigate } from 'react-router-dom'
 
 import { LazyTabs } from '~components/LazyTabs'
 import { NavTarget, Navbar } from '~components/Navbar'
+import { useIsPopupWindow } from '~lib/hooks/useIsPopupWindow'
 import { CONSENT_SERVICE } from '~lib/services/consentService'
 import ActivityPage from '~pages/Popup/Activity'
 import AssetsPage from '~pages/Popup/Assets'
@@ -16,23 +16,6 @@ import SettingsPage from '~pages/Popup/Settings'
 import UnlockPage from '~pages/Unlock'
 
 import { Toolbar } from './Toolbar'
-
-const isPopupWindowAtom = atom<boolean>(false)
-
-export function useIsPopupWindow() {
-  const location = useLocation()
-  const [isPopupWindow, setIsPopupWindowAtom] = useAtom(isPopupWindowAtom)
-  if (isPopupWindow) {
-    return true
-  }
-
-  if (new URLSearchParams(location.search).get('popup') === 'window') {
-    setIsPopupWindowAtom(true)
-    return true
-  }
-
-  return false
-}
 
 function tabIndex(navTarget: NavTarget) {
   switch (navTarget) {

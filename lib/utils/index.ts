@@ -1,5 +1,3 @@
-import { ethers } from 'ethers'
-
 export function stall(duration: number): Promise<void> {
   return new Promise((resolve) => {
     setTimeout(resolve, duration)

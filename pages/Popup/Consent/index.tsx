@@ -23,6 +23,7 @@ import { ReactNode, useCallback, useEffect, useMemo, useState } from 'react'
 import * as React from 'react'
 import { useNavigate } from 'react-router-dom'
 
+import { useIsPopupWindow } from '~lib/hooks/useIsPopupWindow'
 import { useCheckUnlocked } from '~lib/password'
 import {
   CONSENT_SERVICE,
@@ -30,7 +31,6 @@ import {
   ConsentType,
   useConsentRequests
 } from '~lib/services/consentService'
-import { useIsPopupWindow } from '~pages/Popup'
 import { useSendModal } from '~pages/Popup/Assets/Send'
 
 import { useModalBox } from '../ModalBox'

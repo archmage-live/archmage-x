@@ -1,11 +1,16 @@
 import { arrayify, hexlify } from '@ethersproject/bytes'
 import { entropyToMnemonic } from '@ethersproject/hdnode/src.ts'
+import type { KeystoreAccount } from '@ethersproject/json-wallets/lib/keystore'
 import { LOGIN_PROVIDER, LOGIN_PROVIDER_TYPE } from '@toruslabs/openlogin-utils'
 import { CHAIN_NAMESPACES, UserInfo, WALLET_ADAPTERS } from '@web3auth/base'
 import { Web3Auth as Web3AuthModal } from '@web3auth/modal'
 import { OpenloginAdapter } from '@web3auth/openlogin-adapter'
 import assert from 'assert'
 import { ethers } from 'ethers'
+
+import { ISubWallet, IWallet } from '~lib/schema'
+import { SingleSynchronizer } from '~lib/utils/synchronizer'
+import { WalletType } from '~lib/wallet'
 
 export const WEB3AUTH_LOGIN_PROVIDER = LOGIN_PROVIDER
 export type WEB3AUTH_LOGIN_PROVIDER_TYPE = LOGIN_PROVIDER_TYPE
@@ -16,82 +21,85 @@ export class Web3Auth {
 
   private constructor(public web3auth: Web3AuthModal) {}
 
-  static async connect({
-    theme,
-    reconnect = false,
-    loginProvider
-  }: {
-    reconnect?: boolean
-    theme: 'light' | 'dark'
-    loginProvider?: LOGIN_PROVIDER_TYPE
-  }): Promise<Web3Auth | undefined> {
-    try {
-      assert(process.env.PLASMO_PUBLIC_WEB3AUTH_CYAN_MAINNET_CLIENT_ID)
+  static async init({ theme = 'light' }: { theme?: 'light' | 'dark' }) {
+    assert(process.env.PLASMO_PUBLIC_WEB3AUTH_CYAN_MAINNET_CLIENT_ID)
 
-      const web3auth = new Web3AuthModal({
-        clientId: process.env.PLASMO_PUBLIC_WEB3AUTH_CYAN_MAINNET_CLIENT_ID,
-        chainConfig: {
-          chainNamespace: CHAIN_NAMESPACES.OTHER,
-          chainId: '0x1',
-          rpcTarget: 'https://rpc.ankr.com/eth',
-          displayName: 'Ethereum',
-          ticker: 'ETH',
-          tickerName: 'ether'
-        },
-        enableLogging: true,
-        storageKey: 'local',
-        sessionTime: 86400 * 7, // 7 days
-        web3AuthNetwork: 'cyan',
-        useCoreKitKey: true,
-        authMode: 'WALLET',
-        uiConfig: {
-          appName: 'Archmage',
-          appLogo:
+    const web3auth = new Web3AuthModal({
+      clientId: process.env.PLASMO_PUBLIC_WEB3AUTH_CYAN_MAINNET_CLIENT_ID,
+      chainConfig: {
+        chainNamespace: CHAIN_NAMESPACES.OTHER,
+        chainId: '0x1',
+        rpcTarget: 'https://rpc.ankr.com/eth',
+        displayName: 'Ethereum',
+        ticker: 'ETH',
+        tickerName: 'ether'
+      },
+      enableLogging: true,
+      storageKey: 'local',
+      sessionTime: 86400 * 7, // 7 days
+      web3AuthNetwork: 'cyan',
+      useCoreKitKey: true,
+      authMode: 'WALLET',
+      uiConfig: {
+        appName: 'Archmage',
+        appLogo:
+          'https://github.com/archmage-live/archmage-x/raw/main/assets/archmage.svg',
+        theme,
+        loginMethodsOrder: [
+          'google',
+          'twitter',
+          'discord',
+          'github',
+          'facebook'
+        ],
+        defaultLanguage: 'en',
+        modalZIndex: '99999',
+        displayErrorsOnModal: true,
+        primaryButton: 'socialLogin'
+      }
+    })
+
+    const openloginAdapter = new OpenloginAdapter({
+      adapterSettings: {
+        network: 'cyan',
+        uxMode: 'popup',
+        whiteLabel: {
+          name: 'Archmage',
+          logoLight:
             'https://github.com/archmage-live/archmage-x/raw/main/assets/archmage.svg',
-          theme,
-          loginMethodsOrder: [
-            'google',
-            'twitter',
-            'discord',
-            'github',
-            'facebook'
-          ],
+          logoDark:
+            'https://github.com/archmage-live/archmage-x/raw/main/assets/archmage.svg',
           defaultLanguage: 'en',
-          modalZIndex: '99999',
-          displayErrorsOnModal: true,
-          primaryButton: 'socialLogin'
+          dark: true
         }
-      })
+      },
+      loginSettings: {
+        mfaLevel: 'optional'
+      }
+    })
+    web3auth.configureAdapter(openloginAdapter)
 
-      const openloginAdapter = new OpenloginAdapter({
-        adapterSettings: {
-          network: 'cyan',
-          uxMode: 'popup',
-          whiteLabel: {
-            name: 'Archmage',
-            logoLight:
-              'https://github.com/archmage-live/archmage-x/raw/main/assets/archmage.svg',
-            logoDark:
-              'https://github.com/archmage-live/archmage-x/raw/main/assets/archmage.svg',
-            defaultLanguage: 'en',
-            dark: true
-          }
-        },
-        loginSettings: {
-          mfaLevel: 'optional'
-        }
-      })
-      web3auth.configureAdapter(openloginAdapter)
+    await web3auth.initModal()
 
-      await web3auth.initModal()
+    return new Web3Auth(web3auth)
+  }
+
+  private async connect({
+    loginProvider,
+    reconnect = false
+  }: {
+    loginProvider?: LOGIN_PROVIDER_TYPE
+    reconnect?: boolean
+  }): Promise<boolean | undefined> {
+    try {
+      const web3auth = this.web3auth
 
       if (web3auth.connected && reconnect) {
         // since it is connected, we disconnect it for reconnecting
-        await web3auth.logout({ cleanup: true })
-        web3auth.clearCache()
+        await this.disconnect()
 
-        // reconnect
-        return await Web3Auth.connect({ theme, reconnect })
+        // for reconnecting
+        return undefined
       }
 
       if (!web3auth.connected) {
@@ -113,20 +121,96 @@ export class Web3Auth {
           })
         }
         if (!provider) {
-          return undefined
+          return false
         }
       }
 
-      return new Web3Auth(web3auth)
+      return true
     } catch (err) {
       console.error(err)
-      return undefined
+      return false
     }
   }
 
-  async getUserInfo(): Promise<Partial<UserInfo>> {
+  get connected() {
+    return this.web3auth.connected
+  }
+
+  async disconnect() {
+    const web3auth = this.web3auth
+    if (web3auth.connected) {
+      await web3auth.logout({ cleanup: true })
+      web3auth.clearCache()
+    }
+  }
+
+  private static SYNCHRONIZER = new SingleSynchronizer()
+
+  static async connect({
+    loginProvider,
+    reconnect = false,
+    theme = 'light'
+  }: {
+    loginProvider?: LOGIN_PROVIDER_TYPE
+    reconnect?: boolean
+    theme?: 'light' | 'dark'
+  }): Promise<Web3Auth | undefined> {
+    const { promise, resolve } = Web3Auth.SYNCHRONIZER.get()
+    if (promise) {
+      return promise
+    }
+
+    const wa = await Web3Auth.init({
+      theme
+    })
+    const connected = wa.connect({ loginProvider, reconnect })
+    if (connected === undefined) {
+      // reconnect
+      return await Web3Auth.connect({ loginProvider, theme })
+    } else if (!connected) {
+      // failed
+      resolve(undefined)
+      return undefined
+    }
+
+    resolve(wa)
+    return wa
+  }
+
+  static async getOrConnect({
+    loginProvider,
+    hash,
+    connect
+  }: {
+    loginProvider: LOGIN_PROVIDER_TYPE
+    hash: string
+    connect: boolean
+  }): Promise<Web3Auth | undefined> {
+    const wa = await Web3Auth.init({})
+    if (wa.connected) {
+      if (hash === (await wa.getUniqueHash())) {
+        return wa
+      }
+    }
+
+    if (!connect) {
+      return undefined
+    }
+
+    await wa.disconnect()
+
+    const w = await Web3Auth.connect({ loginProvider })
+    if (w?.connected && hash === (await w.getUniqueHash())) {
+      return w
+    }
+    return undefined
+  }
+
+  async getUserInfo(): Promise<Partial<UserInfo> | undefined> {
     if (!this.userInfo) {
-      // cache
+      if (!this.connected) {
+        return
+      }
       this.userInfo = await this.web3auth.getUserInfo()
     }
     return this.userInfo
@@ -144,7 +228,7 @@ export class Web3Auth {
     if (!userInfo) {
       return
     }
-    console.log(userInfo)
+    // console.log(userInfo)
 
     const info = {
       loginProvider: userInfo.typeOfLogin as string,
@@ -169,6 +253,9 @@ export class Web3Auth {
 
   async getPrivateKey() {
     if (!this.privateKey) {
+      if (!this.connected) {
+        return
+      }
       const privateKey = await this.web3auth.provider?.request<string>({
         method: 'private_key'
       })
@@ -200,5 +287,64 @@ export class Web3Auth {
     }
 
     return new ethers.Wallet(privateKey).address
+  }
+
+  async getKeystore(
+    wallet: IWallet,
+    subWallet?: ISubWallet
+  ): Promise<KeystoreAccount | undefined> {
+    let storedHash
+    switch (wallet.type) {
+      case WalletType.KEYLESS_HD:
+      // pass through
+      case WalletType.KEYLESS:
+        storedHash = wallet.hash
+        break
+      case WalletType.KEYLESS_GROUP:
+        storedHash = subWallet?.hash!
+        break
+      default:
+        return
+    }
+
+    const hash = await this.getUniqueHash()
+    if (!hash) {
+      return
+    }
+
+    if (hash !== storedHash) {
+      return
+    }
+
+    let acc
+    switch (wallet.type) {
+      case WalletType.KEYLESS_HD: {
+        const mnemonic = await this.getMnemonic()
+        if (!mnemonic) {
+          return
+        }
+        acc = ethers.utils.HDNode.fromMnemonic(mnemonic)
+        break
+      }
+      case WalletType.KEYLESS:
+      // pass through
+      case WalletType.KEYLESS_GROUP: {
+        const privateKey = await this.getPrivateKey()
+        if (!privateKey) {
+          return
+        }
+        acc = new ethers.Wallet(privateKey)
+        break
+      }
+      default:
+        return
+    }
+
+    return {
+      address: acc.address,
+      privateKey: acc.privateKey,
+      mnemonic: acc.mnemonic,
+      _isKeystoreAccount: true
+    } as KeystoreAccount
   }
 }

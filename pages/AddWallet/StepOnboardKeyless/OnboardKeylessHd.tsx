@@ -1,14 +1,28 @@
-import { Button, Stack } from '@chakra-ui/react'
+import {
+  Button,
+  FormControl,
+  FormLabel,
+  HStack,
+  NumberDecrementStepper,
+  NumberIncrementStepper,
+  NumberInput,
+  NumberInputField,
+  NumberInputStepper,
+  Stack,
+  Text
+} from '@chakra-ui/react'
 import { ethers } from 'ethers'
 import { useCallback, useEffect, useState } from 'react'
 import * as React from 'react'
 import { useWizard } from 'react-use-wizard'
 
 import { AlertBox } from '~components/AlertBox'
+import { HardenedBit } from '~lib/crypto/ed25519'
 import { KeylessWalletInfo, isMnemonic } from '~lib/wallet'
 import { NameInput } from '~pages/AddWallet/NameInput'
 import {
   AddWalletKind,
+  useAccounts,
   useAddWallet,
   useAddWalletKind,
   useKeylessInfo,
@@ -28,8 +42,11 @@ export const OnboardKeylessHd = ({
   const { nextStep } = useWizard()
 
   const [name, setName] = useName()
+  const [accountsNum, setAccountsNum] = useState(1)
+  const [accounts, setAccounts] = useAccounts()
   useEffect(() => {
     setName('')
+    setAccountsNum(1)
   }, [setName])
 
   const [, setAddWalletKind] = useAddWalletKind()
@@ -70,6 +87,25 @@ export const OnboardKeylessHd = ({
 
       <Stack spacing={8}>
         <NameInput value={name} onChange={setName} />
+
+        <FormControl>
+          <FormLabel>Num of accounts</FormLabel>
+          <NumberInput
+            value={accountsNum}
+            onChange={(_, value) => setAccountsNum(value)}
+            precision={0}
+            step={1}
+            min={1}
+            max={10}
+            keepWithinRange>
+            <NumberInputField />
+            <NumberInputStepper>
+              <NumberIncrementStepper />
+              <NumberDecrementStepper />
+            </NumberInputStepper>
+          </NumberInput>
+        </FormControl>
+
         <AlertBox>{alert}</AlertBox>
       </Stack>
 

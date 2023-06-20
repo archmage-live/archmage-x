@@ -1,5 +1,6 @@
 import { Slip10RawIndex, pathToString, stringToPath } from '@cosmjs/crypto'
 import type { _KeystoreAccount } from '@ethersproject/json-wallets/lib.esm/keystore'
+import type { KeystoreAccount } from '@ethersproject/json-wallets/lib/keystore'
 import assert from 'assert'
 import walletConnectLogo from 'data-base64:~assets/thirdparty/walletconnect.svg'
 import { ethers } from 'ethers'
@@ -76,6 +77,17 @@ export function hasMasterKeystore(type: WalletType) {
 export function hasSubKeystore(type: WalletType) {
   switch (type) {
     case WalletType.PRIVATE_KEY_GROUP:
+      return true
+    default:
+      return false
+  }
+}
+
+export function isHdWallet(type: WalletType) {
+  switch (type) {
+    case WalletType.HD:
+    // pass through
+    case WalletType.KEYLESS_HD:
       return true
     default:
       return false
@@ -234,11 +246,11 @@ export type DecryptedKeystoreAccount = {
 }
 
 export interface WalletOpts {
-  id: number // wallet id in db
   type: WalletType
-  index?: Index
   path?: string
   extra?: any
+
+  keystore: KeystoreAccount
 }
 
 export interface WalletPathSchema {

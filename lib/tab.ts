@@ -26,6 +26,27 @@ export function isUrlSupported(url?: string) {
   )
 }
 
+// whether in background page or popup view
+export async function isNonTabContext() {
+  return !(await browser.tabs.getCurrent())
+}
+
+// whether in popup window
+export async function isPopupWindowContext() {
+  if (await isNonTabContext()) {
+    return false
+  }
+  return (
+    globalThis.location &&
+    new URLSearchParams(globalThis.location.search).get('popup') === 'window'
+  )
+}
+
+// whether in tab window
+export async function isTabContext() {
+  return !(await isNonTabContext()) && !(await isPopupWindowContext())
+}
+
 export async function createTab(to: string) {
   if (!to.startsWith('#/')) {
     if (to.startsWith('/')) {

@@ -4,7 +4,6 @@ import { randomBytes } from '@ethersproject/random'
 import assert from 'assert'
 import Dexie from 'dexie'
 import { ethers } from 'ethers'
-import PQueue from 'p-queue'
 
 import { DB, getNextField } from '~lib/db'
 import { ENV } from '~lib/env'
@@ -21,13 +20,11 @@ import {
   SubIndex,
   WalletInfo,
   formatAddressForNetwork,
-  generateDefaultWalletName,
-  getAddressFromInfo
+  generateDefaultWalletName
 } from '~lib/schema'
 import { IChainAccount } from '~lib/schema/chainAccount'
 import { ISubWallet, getDefaultSubName } from '~lib/schema/subWallet'
 import { IWallet } from '~lib/schema/wallet'
-import { NETWORK_SERVICE } from '~lib/services/network'
 import {
   AccountInfo,
   AccountsInfo,
@@ -35,16 +32,19 @@ import {
   DecryptedKeystoreAccount,
   HardwareWalletType,
   KeylessWalletInfo,
-  KeystoreSigningWallet,
   WalletAccount,
   WalletType,
   buildWalletUniqueHash,
   checkAddressMayThrow,
   getDefaultPath,
-  getDerivePosition,
-  getStructuralSigningWallet,
   isWalletGroup
 } from '~lib/wallet'
+
+import {
+  ensureChainAccount,
+  ensureChainAccounts,
+  getChainAccount
+} from './ensure'
 
 export * from './hooks'
 
@@ -189,6 +189,12 @@ export interface IWalletService {
   ): Promise<IHdPath | undefined>
 
   getHdPaths(masterId: number): Promise<IHdPath[]>
+
+  getOrAddHdPath(
+    masterId: number,
+    networkKind: NetworkKind,
+    useLock: boolean
+  ): Promise<IHdPath | undefined>
 
   updateHdPath(
     masterId: number,
@@ -422,7 +428,7 @@ class WalletServicePartial implements IWalletService {
     if (hdPath) {
       return hdPath
     }
-    return (WALLET_SERVICE as any)._getHdPath(masterId, networkKind, true)
+    return WALLET_SERVICE.getOrAddHdPath(masterId, networkKind, true)
   }
 
   async getHdPaths(masterId: number) {
@@ -994,7 +1000,7 @@ class WalletService extends WalletServicePartial {
     await DB.chainAccounts.put(account)
   }
 
-  async _getHdPath(
+  async getOrAddHdPath(
     masterId: number,
     networkKind: NetworkKind,
     useLock: boolean
@@ -1092,295 +1098,3 @@ function createWalletService(): IWalletService {
 }
 
 export const WALLET_SERVICE = createWalletService()
-
-async function ensureChainAccounts(
-  wallet: IWallet,
-  networkKind: NetworkKind,
-  chainId: ChainId
-) {
-  if (!isWalletGroup(wallet.type)) {
-    await ensureChainAccount(wallet, PSEUDO_INDEX, networkKind, chainId)
-    return
-  }
-
-  const masterId = wallet.id
-
-  const subWalletsNum = await DB.subWallets
-    .where('masterId')
-    .equals(masterId)
-    .count()
-  if (!subWalletsNum) {
-    return
-  }
-
-  const chainAccountsNum = await DB.chainAccounts
-    .where('[masterId+networkKind+chainId]')
-    .equals([masterId, networkKind, chainId])
-    .count()
-  if (chainAccountsNum === subWalletsNum) {
-    return
-  }
-  assert(chainAccountsNum < subWalletsNum)
-
-  const subWallets = await DB.subWallets
-    .where('masterId')
-    .equals(masterId)
-    .toArray()
-
-  const chainAccounts = await DB.chainAccounts
-    .where('[masterId+networkKind+chainId]')
-    .equals([masterId, networkKind, chainId])
-    .toArray()
-
-  let signingWallet: KeystoreSigningWallet | undefined
-  let hdPath: IHdPath | undefined
-  if (wallet.type === WalletType.HD) {
-    signingWallet = await getStructuralSigningWallet(
-      wallet,
-      networkKind,
-      chainId
-    )
-    if (!signingWallet) {
-      return
-    }
-
-    hdPath = await (WALLET_SERVICE as any)._getHdPath(
-      masterId,
-      networkKind,
-      false
-    )
-    if (!hdPath) {
-      return
-    }
-  }
-
-  const existing = new Set()
-  for (const acc of chainAccounts) {
-    existing.add(acc.index)
-  }
-  const bulkAdd: IChainAccount[] = []
-
-  const tick = Date.now()
-  const queue = new PQueue({ concurrency: 4 })
-  for (const subWallet of subWallets) {
-    if (existing.has(subWallet.index)) {
-      continue
-    }
-    queue
-      .add(async () => {
-        let address
-        switch (wallet.type) {
-          case WalletType.HD: {
-            assert(signingWallet && hdPath)
-            const subSigningWallet = await signingWallet.derive(
-              hdPath.path,
-              subWallet.index,
-              getDerivePosition(hdPath, networkKind)
-            )
-            address = subSigningWallet.address
-            break
-          }
-          case WalletType.PRIVATE_KEY_GROUP: {
-            const signingWallet = await getStructuralSigningWallet(
-              wallet,
-              networkKind,
-              chainId,
-              subWallet.index
-            )
-            address = signingWallet?.address
-            break
-          }
-          case WalletType.WATCH_GROUP:
-          // pass through
-          case WalletType.WALLET_CONNECT_GROUP:
-          // pass through
-          case WalletType.HW_GROUP: {
-            const network = await NETWORK_SERVICE.getNetwork({
-              kind: networkKind,
-              chainId
-            })
-            if (network) {
-              address = getAddressFromInfo(subWallet, network)
-            }
-            break
-          }
-        }
-        bulkAdd.push({
-          masterId,
-          index: subWallet.index,
-          networkKind,
-          chainId,
-          address
-        } as IChainAccount)
-      })
-      .then()
-  }
-  await queue.onIdle()
-  console.log(`derive chain accounts: ${(Date.now() - tick) / 1000}s`)
-
-  await DB.transaction('rw', [DB.subWallets, DB.chainAccounts], async () => {
-    // check sub wallet existence, to avoid issue of deletion before add
-    const subWalletsNum = await DB.subWallets
-      .where('[masterId+index]')
-      .anyOf(bulkAdd.map((account) => [account.masterId, account.index]))
-      .count()
-    if (bulkAdd.length !== subWalletsNum) {
-      return
-    }
-
-    await DB.chainAccounts.bulkAdd(bulkAdd)
-  })
-  console.log(
-    `ensured info for derived wallets: master wallet ${wallet.id}, network: ${networkKind}, chainID: ${chainId}`
-  )
-}
-
-async function getChainAccount(
-  wallet: IWallet,
-  index: Index,
-  networkKind: NetworkKind,
-  chainId: number | string
-): Promise<IChainAccount | undefined> {
-  assert(
-    index !== PSEUDO_INDEX
-      ? isWalletGroup(wallet.type)
-      : !isWalletGroup(wallet.type)
-  )
-
-  return DB.chainAccounts
-    .where({
-      masterId: wallet.id,
-      index: index,
-      networkKind,
-      chainId
-    })
-    .first()
-}
-
-async function ensureChainAccount(
-  wallet: IWallet,
-  index: Index,
-  networkKind: NetworkKind,
-  chainId: number | string
-): Promise<IChainAccount | undefined> {
-  const existing = await getChainAccount(wallet, index, networkKind, chainId)
-  if (existing) {
-    return existing
-  }
-
-  let address
-  switch (wallet.type) {
-    case WalletType.HD: {
-      const signingWallet = await getStructuralSigningWallet(
-        wallet,
-        networkKind,
-        chainId
-      )
-      if (!signingWallet) {
-        return
-      }
-      const hdPath = await (WALLET_SERVICE as any)._getHdPath(
-        wallet.id,
-        networkKind,
-        false
-      )
-      if (!hdPath) {
-        return
-      }
-      const subSigningWallet = await signingWallet.derive(
-        hdPath.path,
-        index,
-        getDerivePosition(hdPath, networkKind)
-      )
-      address = subSigningWallet.address
-      break
-    }
-    case WalletType.PRIVATE_KEY: {
-      const signingWallet = await getStructuralSigningWallet(
-        wallet,
-        networkKind,
-        chainId
-      )
-      if (!signingWallet) {
-        return
-      }
-      address = signingWallet.address
-      break
-    }
-    case WalletType.PRIVATE_KEY_GROUP: {
-      const subWallet = await WALLET_SERVICE.getSubWallet({
-        masterId: wallet.id,
-        index
-      })
-      if (!subWallet) {
-        return
-      }
-      const signingWallet = await getStructuralSigningWallet(
-        wallet,
-        networkKind,
-        chainId,
-        subWallet.index
-      )
-      if (!signingWallet) {
-        return
-      }
-      address = signingWallet?.address
-      break
-    }
-    case WalletType.WATCH:
-    // pass through
-    case WalletType.WALLET_CONNECT:
-    // pass through
-    case WalletType.HW: {
-      const subWallet = await WALLET_SERVICE.getSubWallet({
-        masterId: wallet.id,
-        index
-      })
-      const network = await NETWORK_SERVICE.getNetwork({
-        kind: networkKind,
-        chainId
-      })
-      if (subWallet && network) {
-        address = getAddressFromInfo(subWallet, network)
-      }
-      break
-    }
-    case WalletType.WATCH_GROUP:
-    // pass through
-    case WalletType.WALLET_CONNECT_GROUP:
-    // pass through
-    case WalletType.HW_GROUP: {
-      const subWallet = await WALLET_SERVICE.getSubWallet({
-        masterId: wallet.id,
-        index
-      })
-      const network = await NETWORK_SERVICE.getNetwork({
-        kind: networkKind,
-        chainId
-      })
-      if (subWallet && network) {
-        address = getAddressFromInfo(subWallet, network)
-      }
-      break
-    }
-  }
-
-  const account = {
-    masterId: wallet.id,
-    index,
-    networkKind,
-    chainId,
-    address,
-    info: {}
-  } as IChainAccount
-
-  return DB.transaction('rw', [DB.subWallets, DB.chainAccounts], async () => {
-    // check sub wallet existence, to avoid issue of deletion before add
-    if (!(await WALLET_SERVICE.getSubWallet({ masterId: wallet.id, index }))) {
-      return
-    }
-
-    account.id = await DB.chainAccounts.add(account)
-    return account
-  })
-}

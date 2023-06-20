@@ -16,7 +16,6 @@ import assert from 'assert'
 import { SignDoc } from 'cosmjs-types/cosmos/tx/v1beta1/tx'
 import { ethers } from 'ethers'
 
-import { KEYSTORE } from '~lib/keystore'
 import { DerivePosition } from '~lib/schema'
 
 import { KeystoreSigningWallet, WalletOpts, WalletType, generatePath } from '.'
@@ -47,26 +46,23 @@ export class CosmWallet implements KeystoreSigningWallet {
   private constructor() {}
 
   static async from({
-    id,
     type,
-    index,
     path,
-    prefix
+    prefix,
+    keystore
   }: CosmWalletOpts): Promise<CosmWallet | undefined> {
-    const ks = await KEYSTORE.get(id, index, true)
-    if (!ks) {
-      return undefined
-    }
-    const mnemonic = ks.mnemonic
+    const mnemonic = keystore.mnemonic
 
     const wallet = new CosmWallet()
-    if (type === WalletType.HD) {
+    if (type === WalletType.HD || type === WalletType.KEYLESS_HD) {
       assert(!path && mnemonic)
       wallet.mnemonic = mnemonic.phrase
       wallet.prefix = prefix
     } else if (
       type === WalletType.PRIVATE_KEY ||
-      type === WalletType.PRIVATE_KEY_GROUP
+      type === WalletType.PRIVATE_KEY_GROUP ||
+      type === WalletType.KEYLESS ||
+      type === WalletType.KEYLESS_GROUP
     ) {
       if (mnemonic) {
         if (!path) {
@@ -88,7 +84,7 @@ export class CosmWallet implements KeystoreSigningWallet {
       } else {
         assert(!path)
         const w = await DirectSecp256k1Wallet.fromKey(
-          ethers.utils.arrayify(ks.privateKey),
+          ethers.utils.arrayify(keystore.privateKey),
           prefix
         )
         wallet.wallet = w
@@ -96,7 +92,7 @@ export class CosmWallet implements KeystoreSigningWallet {
         const account = (await w.getAccounts())[0]
         assert(account.algo === 'secp256k1')
         wallet.address = account.address
-        wallet.privateKey = ks.privateKey
+        wallet.privateKey = keystore.privateKey
         wallet.publicKey = ethers.utils.hexlify(account.pubkey)
       }
     }

@@ -72,7 +72,11 @@ export function getAddressFromInfo(
     typeof subWallet === 'string'
       ? subWallet
       : subWallet.info.accounts?.[network.kind]?.address
-  assert(address)
+
+  if (!address) {
+    return undefined
+  }
+
   switch (network.kind) {
     case NetworkKind.COSM: {
       return toBech32(getAddressPrefix(network)!, fromBech32(address).data)

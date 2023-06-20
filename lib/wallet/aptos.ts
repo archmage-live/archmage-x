@@ -5,7 +5,6 @@ import assert from 'assert'
 import { sign } from 'tweetnacl'
 
 import { HDNode, HardenedBit } from '~lib/crypto/ed25519'
-import { KEYSTORE } from '~lib/keystore'
 import { DerivePosition } from '~lib/schema'
 
 import { KeystoreSigningWallet, WalletOpts, WalletType, generatePath } from '.'
@@ -16,24 +15,21 @@ export class AptosWallet implements KeystoreSigningWallet {
   private constructor(private wallet: HDNode | AptosAccount) {}
 
   static async from({
-    id,
     type,
-    index,
-    path
+    path,
+    keystore
   }: WalletOpts): Promise<AptosWallet | undefined> {
-    const ks = await KEYSTORE.get(id, index, true)
-    if (!ks) {
-      return undefined
-    }
-    const mnemonic = ks.mnemonic
+    const mnemonic = keystore.mnemonic
 
     let wallet
-    if (type === WalletType.HD) {
+    if (type === WalletType.HD || type === WalletType.KEYLESS_HD) {
       assert(!path && mnemonic)
       wallet = HDNode.fromMnemonic(mnemonic.phrase)
     } else if (
       type === WalletType.PRIVATE_KEY ||
-      type === WalletType.PRIVATE_KEY_GROUP
+      type === WalletType.PRIVATE_KEY_GROUP ||
+      type === WalletType.KEYLESS ||
+      type === WalletType.KEYLESS_GROUP
     ) {
       if (mnemonic) {
         if (!path) {
@@ -43,7 +39,7 @@ export class AptosWallet implements KeystoreSigningWallet {
         wallet = new AptosAccount(arrayify(node.privateKey))
       } else {
         assert(!path)
-        wallet = new AptosAccount(arrayify(ks.privateKey))
+        wallet = new AptosAccount(arrayify(keystore.privateKey))
       }
     }
     assert(wallet)
