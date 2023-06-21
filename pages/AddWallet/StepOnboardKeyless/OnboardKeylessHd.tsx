@@ -2,22 +2,19 @@ import {
   Button,
   FormControl,
   FormLabel,
-  HStack,
   NumberDecrementStepper,
   NumberIncrementStepper,
   NumberInput,
   NumberInputField,
   NumberInputStepper,
   Stack,
-  Text
 } from '@chakra-ui/react'
-import { ethers } from 'ethers'
 import { useCallback, useEffect, useState } from 'react'
 import * as React from 'react'
 import { useWizard } from 'react-use-wizard'
 
 import { AlertBox } from '~components/AlertBox'
-import { HardenedBit } from '~lib/crypto/ed25519'
+import { KeylessOnboardInfo } from '~pages/KeylessOnboard'
 import { KeylessWalletInfo, isMnemonic } from '~lib/wallet'
 import { NameInput } from '~pages/AddWallet/NameInput'
 import {
@@ -30,12 +27,12 @@ import {
   useWalletHash
 } from '~pages/AddWallet/addWallet'
 
-import { OnboardKeylessInfo } from './OnboardInfo'
-
 export const OnboardKeylessHd = ({
+  hash,
   mnemonic,
   info
 }: {
+  hash: string
   mnemonic: string
   info: KeylessWalletInfo
 }) => {
@@ -54,15 +51,14 @@ export const OnboardKeylessHd = ({
   const [, setKeylessInfo] = useKeylessInfo()
   useEffect(() => {
     setAddWalletKind(AddWalletKind.KEYLESS_HD)
-    const acc = ethers.utils.HDNode.fromMnemonic(mnemonic)
-    setWalletHash(acc.address)
+    setWalletHash(hash)
     setKeylessInfo(info)
-  }, [mnemonic, info, setAddWalletKind, setWalletHash, setKeylessInfo])
+  }, [hash, mnemonic, info, setAddWalletKind, setWalletHash, setKeylessInfo])
 
   const [alert, setAlert] = useState('')
   useEffect(() => {
     setAlert('')
-  }, [mnemonic, info, name])
+  }, [hash, mnemonic, info, name])
 
   const addWallet = useAddWallet()
 
@@ -83,7 +79,7 @@ export const OnboardKeylessHd = ({
 
   return (
     <Stack spacing={12}>
-      <OnboardKeylessInfo info={info} />
+      <KeylessOnboardInfo info={info} />
 
       <Stack spacing={8}>
         <NameInput value={name} onChange={setName} />

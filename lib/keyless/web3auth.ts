@@ -3,28 +3,28 @@ import { entropyToMnemonic } from '@ethersproject/hdnode/src.ts'
 import type { KeystoreAccount } from '@ethersproject/json-wallets/lib/keystore'
 import { LOGIN_PROVIDER, LOGIN_PROVIDER_TYPE } from '@toruslabs/openlogin-utils'
 import { CHAIN_NAMESPACES, UserInfo, WALLET_ADAPTERS } from '@web3auth/base'
-import { Web3Auth as Web3AuthModal } from '@web3auth/modal'
+import type { Web3AuthNoModalOptions } from '@web3auth/no-modal'
+import { Web3AuthNoModal } from '@web3auth/no-modal'
 import { OpenloginAdapter } from '@web3auth/openlogin-adapter'
+import type { OpenloginAdapterOptions } from '@web3auth/openlogin-adapter'
 import assert from 'assert'
 import { ethers } from 'ethers'
 
 import { ISubWallet, IWallet } from '~lib/schema'
 import { SingleSynchronizer } from '~lib/utils/synchronizer'
-import { WalletType } from '~lib/wallet'
+import { WalletType, extractWalletHash } from '~lib/wallet'
 
 export const WEB3AUTH_LOGIN_PROVIDER = LOGIN_PROVIDER
 export type WEB3AUTH_LOGIN_PROVIDER_TYPE = LOGIN_PROVIDER_TYPE
 
-export class Web3Auth {
-  private userInfo?: Partial<UserInfo>
-  private privateKey?: string
+export function web3AuthInitOptions(): [
+  Web3AuthNoModalOptions,
+  OpenloginAdapterOptions
+] {
+  assert(process.env.PLASMO_PUBLIC_WEB3AUTH_CYAN_MAINNET_CLIENT_ID)
 
-  private constructor(public web3auth: Web3AuthModal) {}
-
-  static async init({ theme = 'light' }: { theme?: 'light' | 'dark' }) {
-    assert(process.env.PLASMO_PUBLIC_WEB3AUTH_CYAN_MAINNET_CLIENT_ID)
-
-    const web3auth = new Web3AuthModal({
+  return [
+    {
       clientId: process.env.PLASMO_PUBLIC_WEB3AUTH_CYAN_MAINNET_CLIENT_ID,
       chainConfig: {
         chainNamespace: CHAIN_NAMESPACES.OTHER,
@@ -38,28 +38,9 @@ export class Web3Auth {
       storageKey: 'local',
       sessionTime: 86400 * 7, // 7 days
       web3AuthNetwork: 'cyan',
-      useCoreKitKey: true,
-      authMode: 'WALLET',
-      uiConfig: {
-        appName: 'Archmage',
-        appLogo:
-          'https://github.com/archmage-live/archmage-x/raw/main/assets/archmage.svg',
-        theme,
-        loginMethodsOrder: [
-          'google',
-          'twitter',
-          'discord',
-          'github',
-          'facebook'
-        ],
-        defaultLanguage: 'en',
-        modalZIndex: '99999',
-        displayErrorsOnModal: true,
-        primaryButton: 'socialLogin'
-      }
-    })
-
-    const openloginAdapter = new OpenloginAdapter({
+      useCoreKitKey: true
+    } as Web3AuthNoModalOptions,
+    {
       adapterSettings: {
         network: 'cyan',
         uxMode: 'popup',
@@ -76,60 +57,52 @@ export class Web3Auth {
       loginSettings: {
         mfaLevel: 'optional'
       }
-    })
+    } as OpenloginAdapterOptions
+  ]
+}
+
+export class Web3auth {
+  protected userInfo?: Partial<UserInfo>
+  protected privateKey?: string
+
+  protected constructor(public web3auth: Web3AuthNoModal) {}
+
+  static async create() {
+    const [web3authOptions, openloginOptions] = web3AuthInitOptions()
+
+    const web3auth = new Web3AuthNoModal(web3authOptions)
+
+    const openloginAdapter = new OpenloginAdapter(openloginOptions)
     web3auth.configureAdapter(openloginAdapter)
 
-    await web3auth.initModal()
-
-    return new Web3Auth(web3auth)
+    return new Web3auth(web3auth)
   }
 
-  private async connect({
-    loginProvider,
-    reconnect = false
-  }: {
-    loginProvider?: LOGIN_PROVIDER_TYPE
-    reconnect?: boolean
-  }): Promise<boolean | undefined> {
-    try {
-      const web3auth = this.web3auth
+  private async connectTo(
+    loginProvider: LOGIN_PROVIDER_TYPE,
+    reconnect: boolean = false
+  ): Promise<boolean | undefined> {
+    const web3auth = this.web3auth
 
-      if (web3auth.connected && reconnect) {
-        // since it is connected, we disconnect it for reconnecting
-        await this.disconnect()
+    if (web3auth.connected && reconnect) {
+      // since it is connected, we disconnect it for reconnecting
+      await this.disconnect()
 
-        // for reconnecting
-        return undefined
-      }
-
-      if (!web3auth.connected) {
-        // connect
-        let provider
-        if (!loginProvider) {
-          let listener: any
-          const modalHidden = new Promise<void>((resolve) => {
-            listener = (visibility: boolean) => {
-              if (!visibility) resolve()
-            }
-          })
-          web3auth.on('MODAL_VISIBILITY', listener)
-          provider = await Promise.any([web3auth.connect(), modalHidden])
-          web3auth.off('MODAL_VISIBILITY', listener)
-        } else {
-          provider = await web3auth.connectTo(WALLET_ADAPTERS.OPENLOGIN, {
-            loginProvider
-          })
-        }
-        if (!provider) {
-          return false
-        }
-      }
-
-      return true
-    } catch (err) {
-      console.error(err)
-      return false
+      // for reconnecting
+      return undefined
     }
+
+    if (!web3auth.connected) {
+      // connect
+      const provider = await web3auth.connectTo(WALLET_ADAPTERS.OPENLOGIN, {
+        loginProvider
+      })
+      if (!provider) {
+        return false
+      }
+    }
+
+    return true
   }
 
   get connected() {
@@ -144,66 +117,39 @@ export class Web3Auth {
     }
   }
 
-  private static SYNCHRONIZER = new SingleSynchronizer()
+  protected static SYNCHRONIZER = new SingleSynchronizer()
 
   static async connect({
     loginProvider,
-    reconnect = false,
-    theme = 'light'
+    reconnect = false
   }: {
-    loginProvider?: LOGIN_PROVIDER_TYPE
+    loginProvider: LOGIN_PROVIDER_TYPE
     reconnect?: boolean
-    theme?: 'light' | 'dark'
-  }): Promise<Web3Auth | undefined> {
-    const { promise, resolve } = Web3Auth.SYNCHRONIZER.get()
+  }): Promise<Web3auth | undefined> {
+    const { promise, resolve } = Web3auth.SYNCHRONIZER.get()
     if (promise) {
       return promise
     }
 
-    const wa = await Web3Auth.init({
-      theme
-    })
-    const connected = wa.connect({ loginProvider, reconnect })
-    if (connected === undefined) {
-      // reconnect
-      return await Web3Auth.connect({ loginProvider, theme })
-    } else if (!connected) {
-      // failed
+    try {
+      const wa = await Web3auth.create()
+      const connected = wa.connectTo(loginProvider, reconnect)
+      if (connected === undefined) {
+        // reconnect
+        return await Web3auth.connect({ loginProvider })
+      } else if (!connected) {
+        // failed
+        resolve(undefined)
+        return undefined
+      }
+
+      resolve(wa)
+      return wa
+    } catch (err) {
+      console.error(err)
       resolve(undefined)
       return undefined
     }
-
-    resolve(wa)
-    return wa
-  }
-
-  static async getOrConnect({
-    loginProvider,
-    hash,
-    connect
-  }: {
-    loginProvider: LOGIN_PROVIDER_TYPE
-    hash: string
-    connect: boolean
-  }): Promise<Web3Auth | undefined> {
-    const wa = await Web3Auth.init({})
-    if (wa.connected) {
-      if (hash === (await wa.getUniqueHash())) {
-        return wa
-      }
-    }
-
-    if (!connect) {
-      return undefined
-    }
-
-    await wa.disconnect()
-
-    const w = await Web3Auth.connect({ loginProvider })
-    if (w?.connected && hash === (await w.getUniqueHash())) {
-      return w
-    }
-    return undefined
   }
 
   async getUserInfo(): Promise<Partial<UserInfo> | undefined> {
@@ -312,7 +258,7 @@ export class Web3Auth {
       return
     }
 
-    if (hash !== storedHash) {
+    if (hash !== extractWalletHash(storedHash)) {
       return
     }
 

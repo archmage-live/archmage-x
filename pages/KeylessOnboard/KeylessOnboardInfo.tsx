@@ -18,10 +18,10 @@ import weiboLogo from 'data-base64:~assets/thirdparty/login-weibo-active.svg'
 import {
   WEB3AUTH_LOGIN_PROVIDER,
   WEB3AUTH_LOGIN_PROVIDER_TYPE
-} from '~lib/keyless/web3auth'
+} from '~lib/keyless/web3authModal'
 import { KeylessWalletInfo, KeylessWalletType } from '~lib/wallet'
 
-export const OnboardKeylessInfo = ({ info }: { info: KeylessWalletInfo }) => {
+export const KeylessOnboardInfo = ({ info }: { info: KeylessWalletInfo }) => {
   const LoginProviderLogo = () => {
     switch (info.loginProvider as WEB3AUTH_LOGIN_PROVIDER_TYPE) {
       case WEB3AUTH_LOGIN_PROVIDER.GOOGLE:

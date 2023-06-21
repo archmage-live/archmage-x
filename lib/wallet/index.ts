@@ -1,7 +1,7 @@
 import assert from 'assert'
 import { ethers } from 'ethers'
 
-import { Web3Auth } from '~lib/keyless/web3auth'
+import { Web3auth } from '~lib/keyless/web3auth'
 import { KEYSTORE } from '~lib/keystore'
 import { NetworkKind } from '~lib/network'
 import { BtcChainInfo } from '~lib/network/btc'
@@ -143,7 +143,7 @@ export async function getStructuralSigningWallet(
       true
     )
   } else {
-    const wa = await Web3Auth.init({})
+    const wa = await Web3auth.create()
     if (!wa.connected) {
       return
     }

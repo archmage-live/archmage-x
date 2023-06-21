@@ -117,6 +117,7 @@ specifiers:
   '@web3auth/base': ^6.0.1
   '@web3auth/modal': ^6.0.1
   '@web3auth/mpc-core-kit': ^0.1.0
+  '@web3auth/no-modal': ^6.1.1
   '@web3auth/openlogin-adapter': ^6.0.1
   '@web3auth/ui': ^6.0.1
   '@zerodevapp/sdk': ^3.1.29
@@ -278,6 +279,7 @@ dependencies:
   '@web3auth/base': 6.0.1_@babel+runtime@7.21.5
   '@web3auth/modal': 6.0.1_blttfdxfra6lrykfpmfqqwvuqe
   '@web3auth/mpc-core-kit': 0.1.0_@babel+runtime@7.21.5
+  '@web3auth/no-modal': 6.1.1_@babel+runtime@7.21.5
   '@web3auth/openlogin-adapter': 6.0.1_2pg3346czp6x5jq7q2awj5gasu
   '@web3auth/ui': 6.0.1_k3fe6nn6afmaw4tt3qkyc7b6yy
   '@zerodevapp/sdk': 3.1.29_ethers@5.6.9
@@ -3831,8 +3833,33 @@ packages:
       tweetnacl-util: 0.15.1
     dev: false
 
+  /@metamask/rpc-errors/5.1.1:
+    resolution: {integrity: sha512-JjZnDi2y2CfvbohhBl+FOQRzmFlJpybcQlIk37zEX8B96eVSPbH/T8S0p7cSF8IE33IWx6JkD8Ycsd+2TXFxCw==}
+    engines: {node: '>=16.0.0'}
+    dependencies:
+      '@metamask/utils': 5.0.2
+      fast-safe-stringify: 2.1.1
+    transitivePeerDependencies:
+      - c-kzg
+      - supports-color
+    dev: false
+
   /@metamask/safe-event-emitter/2.0.0:
     resolution: {integrity: sha512-/kSXhY692qiV1MXu6EeOZvg5nECLclxNXcKCxJ3cXQgYuRymRHpdx/t7JXfsK+JLjwA1e1c1/SBrlQYpusC29Q==}
+    dev: false
+
+  /@metamask/utils/5.0.2:
+    resolution: {integrity: sha512-yfmE79bRQtnMzarnKfX7AEJBwFTxvTyw3nBQlu/5rmGXrjAeAMltoGxO62TFurxrQAFMNa/fEjIHNvungZp0+g==}
+    engines: {node: '>=14.0.0'}
+    dependencies:
+      '@ethereumjs/tx': 4.1.2
+      '@types/debug': 4.1.8
+      debug: 4.3.4
+      semver: 7.3.8
+      superstruct: 1.0.3
+    transitivePeerDependencies:
+      - c-kzg
+      - supports-color
     dev: false
 
   /@mischnic/json-sourcemap/0.1.0:
@@ -5851,7 +5878,7 @@ packages:
       '@ethereumjs/util': 8.0.6
       '@toruslabs/broadcast-channel': 7.0.0
       '@toruslabs/http-helpers': 4.0.0_@babel+runtime@7.21.5
-      '@toruslabs/openlogin-jrpc': 4.5.1_@babel+runtime@7.21.5
+      '@toruslabs/openlogin-jrpc': 4.6.0_@babel+runtime@7.21.5
       async-mutex: 0.4.0
       bignumber.js: 9.1.1
       bowser: 2.11.0
@@ -5862,6 +5889,32 @@ packages:
     transitivePeerDependencies:
       - '@sentry/types'
       - bufferutil
+      - c-kzg
+      - supports-color
+      - utf-8-validate
+    dev: false
+
+  /@toruslabs/base-controllers/3.1.0_@babel+runtime@7.21.5:
+    resolution: {integrity: sha512-1f3L2c0JI5PG5TGWCG6vE866WHptVz1pTb8C6nX47+9xFsctCKn0kIaGfjwxh6+vh8XECm8yDnM/esElAmtrLw==}
+    engines: {node: '>=16.18.1', npm: '>=8.x'}
+    peerDependencies:
+      '@babel/runtime': 7.x
+    dependencies:
+      '@babel/runtime': 7.21.5
+      '@ethereumjs/util': 8.0.6
+      '@metamask/rpc-errors': 5.1.1
+      '@toruslabs/broadcast-channel': 7.0.0
+      '@toruslabs/http-helpers': 4.0.0_@babel+runtime@7.21.5
+      '@toruslabs/openlogin-jrpc': 4.6.0_@babel+runtime@7.21.5
+      async-mutex: 0.4.0
+      bignumber.js: 9.1.1
+      bowser: 2.11.0
+      lodash: 4.17.21
+      loglevel: 1.8.1
+    transitivePeerDependencies:
+      - '@sentry/types'
+      - bufferutil
+      - c-kzg
       - supports-color
       - utf-8-validate
     dev: false
@@ -6171,6 +6224,26 @@ packages:
       readable-stream: 4.1.0
     dev: false
 
+  /@toruslabs/openlogin-jrpc/4.6.0_@babel+runtime@7.21.5:
+    resolution: {integrity: sha512-8Ntpb7NjzXa/fRLTIjyD1jSiMZhzsdV3SqYg5iJHkQSISNj2GOZ8Y1QhQksmJP/4JYhTDU0i6n220jUQPhwbbw==}
+    engines: {node: '>=16.18.1', npm: '>=8.x'}
+    peerDependencies:
+      '@babel/runtime': 7.x
+    dependencies:
+      '@babel/runtime': 7.21.5
+      '@metamask/rpc-errors': 5.1.1
+      '@toruslabs/openlogin-utils': 4.5.1_@babel+runtime@7.21.5
+      end-of-stream: 1.4.4
+      events: 3.3.0
+      fast-safe-stringify: 2.1.1
+      once: 1.4.0
+      pump: 3.0.0
+      readable-stream: 4.1.0
+    transitivePeerDependencies:
+      - c-kzg
+      - supports-color
+    dev: false
+
   /@toruslabs/openlogin-session-manager/1.1.0_@babel+runtime@7.21.5:
     resolution: {integrity: sha512-S4Wad1VRrfcCVvJ/vRAPOUuwOa1h7N/QZIvd/NgJe5o29YgEFxF2pHw+ZaPFMNjyvPJiX+hUEl548qbEkY9NsQ==}
     engines: {node: '>=16.18.1', npm: '>=8.x'}
@@ -6285,9 +6358,9 @@ packages:
     dependencies:
       '@babel/runtime': 7.21.5
       '@solana/web3.js': 1.77.3
-      '@toruslabs/base-controllers': 3.0.3_@babel+runtime@7.21.5
+      '@toruslabs/base-controllers': 3.1.0_@babel+runtime@7.21.5
       '@toruslabs/http-helpers': 4.0.0_@babel+runtime@7.21.5
-      '@toruslabs/openlogin-jrpc': 4.5.1_@babel+runtime@7.21.5
+      '@toruslabs/openlogin-jrpc': 4.6.0_@babel+runtime@7.21.5
       eth-rpc-errors: 4.0.3
       fast-deep-equal: 3.1.3
       is-stream: 2.0.1
@@ -6297,6 +6370,7 @@ packages:
     transitivePeerDependencies:
       - '@sentry/types'
       - bufferutil
+      - c-kzg
       - encoding
       - supports-color
       - utf-8-validate
@@ -6310,7 +6384,7 @@ packages:
     dependencies:
       '@babel/runtime': 7.21.5
       '@toruslabs/http-helpers': 4.0.0_@babel+runtime@7.21.5
-      '@toruslabs/openlogin-jrpc': 4.5.1_@babel+runtime@7.21.5
+      '@toruslabs/openlogin-jrpc': 4.6.0_@babel+runtime@7.21.5
       eth-rpc-errors: 4.0.3
       events: 3.3.0
       fast-deep-equal: 3.1.3
@@ -6321,6 +6395,8 @@ packages:
       readable-stream: 4.1.0
     transitivePeerDependencies:
       - '@sentry/types'
+      - c-kzg
+      - supports-color
     dev: false
 
   /@toruslabs/torus.js/6.2.0-alpha.1_@babel+runtime@7.21.5:
@@ -7326,23 +7402,25 @@ packages:
       '@babel/runtime': ^7.x
     dependencies:
       '@babel/runtime': 7.21.5
-      '@web3auth/base': 6.0.1_@babel+runtime@7.21.5
+      '@web3auth/base': 6.1.1_@babel+runtime@7.21.5
     transitivePeerDependencies:
       - '@sentry/types'
       - bufferutil
+      - c-kzg
       - supports-color
       - utf-8-validate
     dev: false
 
-  /@web3auth/base-plugin/6.0.1_@babel+runtime@7.21.5:
-    resolution: {integrity: sha512-L3WcQIO41wSKcaEFPjmt7vDcdyGUSFgnrx5Ro7/VRvyOAKnQd0BOr1svgye93JvctekUw9ThRPKjyWFP+O9i0g==}
+  /@web3auth/base-plugin/6.1.1_@babel+runtime@7.21.5:
+    resolution: {integrity: sha512-3YVH6cBV5ir0S6sjIKDJAPNSIUN1Uhw0H3sTRQ33XAP7Gg/t3xF4+MqAXDzAtpP6oRnWMjj9dEsxvlMtzJwu1w==}
     engines: {node: '>=16.18.1', npm: '>=8.x'}
     dependencies:
-      '@web3auth/base': 6.0.1_@babel+runtime@7.21.5
+      '@web3auth/base': 6.1.1_@babel+runtime@7.21.5
     transitivePeerDependencies:
       - '@babel/runtime'
       - '@sentry/types'
       - bufferutil
+      - c-kzg
       - supports-color
       - utf-8-validate
     dev: false
@@ -7380,6 +7458,27 @@ packages:
     transitivePeerDependencies:
       - '@sentry/types'
       - bufferutil
+      - c-kzg
+      - supports-color
+      - utf-8-validate
+    dev: false
+
+  /@web3auth/base-provider/6.1.1_@babel+runtime@7.21.5:
+    resolution: {integrity: sha512-QX1dbsCTfK0VE09At5vnhS9qFxeU1IBSwkJ9gP6Z5XED7mj1buMU24PGXp1InSGMY3XHjbMsgKpP9al9CIGclw==}
+    engines: {node: '>=16.18.1', npm: '>=8.x'}
+    peerDependencies:
+      '@babel/runtime': 7.x
+    dependencies:
+      '@babel/runtime': 7.21.5
+      '@toruslabs/base-controllers': 3.1.0_@babel+runtime@7.21.5
+      '@toruslabs/openlogin-jrpc': 4.6.0_@babel+runtime@7.21.5
+      '@web3auth/base': 6.1.1_@babel+runtime@7.21.5
+      eth-rpc-errors: 4.0.3
+      json-rpc-random-id: 1.0.1
+    transitivePeerDependencies:
+      - '@sentry/types'
+      - bufferutil
+      - c-kzg
       - supports-color
       - utf-8-validate
     dev: false
@@ -7391,11 +7490,12 @@ packages:
       '@babel/runtime': ^7.x
     dependencies:
       '@babel/runtime': 7.21.5
-      '@web3auth/base': 6.0.1_@babel+runtime@7.21.5
+      '@web3auth/base': 6.1.1_@babel+runtime@7.21.5
       bs58: 5.0.0
     transitivePeerDependencies:
       - '@sentry/types'
       - bufferutil
+      - c-kzg
       - supports-color
       - utf-8-validate
     dev: false
@@ -7433,6 +7533,28 @@ packages:
     transitivePeerDependencies:
       - '@sentry/types'
       - bufferutil
+      - supports-color
+      - utf-8-validate
+    dev: false
+
+  /@web3auth/base/6.1.1_@babel+runtime@7.21.5:
+    resolution: {integrity: sha512-IjTIJjbJzwEpRz8xSqkDlzKDdQ76rIHA5Q7/JnkE0b9TNFG0q/LNzYyhJaTQgGNDbOowbpOlrFXOK4p2qRjyww==}
+    engines: {node: '>=16.18.1', npm: '>=8.x'}
+    peerDependencies:
+      '@babel/runtime': ^7.x
+    dependencies:
+      '@babel/runtime': 7.21.5
+      '@toruslabs/http-helpers': 4.0.0_@babel+runtime@7.21.5
+      '@toruslabs/openlogin': 4.5.4_@babel+runtime@7.21.5
+      '@toruslabs/openlogin-jrpc': 4.6.0_@babel+runtime@7.21.5
+      '@toruslabs/openlogin-utils': 4.5.1_@babel+runtime@7.21.5
+      jwt-decode: 3.1.2
+      loglevel: 1.8.1
+      ts-custom-error: 3.3.1
+    transitivePeerDependencies:
+      - '@sentry/types'
+      - bufferutil
+      - c-kzg
       - supports-color
       - utf-8-validate
     dev: false
@@ -7483,6 +7605,7 @@ packages:
     transitivePeerDependencies:
       - '@sentry/types'
       - bufferutil
+      - c-kzg
       - supports-color
       - utf-8-validate
     dev: false
@@ -7500,7 +7623,7 @@ packages:
       '@web3auth/base-provider': 6.0.1_@babel+runtime@7.21.5
       '@web3auth/ethereum-provider': 6.0.1_@babel+runtime@7.21.5
       '@web3auth/metamask-adapter': 6.0.1_@babel+runtime@7.21.5
-      '@web3auth/no-modal': 6.0.1_@babel+runtime@7.21.5
+      '@web3auth/no-modal': 6.1.1_@babel+runtime@7.21.5
       '@web3auth/openlogin-adapter': 6.0.1_2pg3346czp6x5jq7q2awj5gasu
       '@web3auth/phantom-adapter': 6.0.1_2pg3346czp6x5jq7q2awj5gasu
       '@web3auth/solana-provider': 6.0.1_2pg3346czp6x5jq7q2awj5gasu
@@ -7562,22 +7685,23 @@ packages:
       - utf-8-validate
     dev: false
 
-  /@web3auth/no-modal/6.0.1_@babel+runtime@7.21.5:
-    resolution: {integrity: sha512-DgGgTJ+Zh9TMBCfy1UZN2LDU1BYO/hcsZR0if8HeuOdZkFa62Vgafphn55rzgtlWC99Ajes+3vgP+juT2tpxqw==}
+  /@web3auth/no-modal/6.1.1_@babel+runtime@7.21.5:
+    resolution: {integrity: sha512-9zF3BdfBrL5S8s/L9tZQORRiKOsgfEmobUP0tiFqBe1dc+pBPeI3QodC8B5MO4bNzRm23EYPDKzhusGwkPpyqw==}
     engines: {node: '>=16.18.1', npm: '>=8.x'}
     peerDependencies:
       '@babel/runtime': ^7.x
     dependencies:
       '@babel/runtime': 7.21.5
       '@toruslabs/openlogin': 4.5.4_@babel+runtime@7.21.5
-      '@toruslabs/openlogin-jrpc': 4.5.1_@babel+runtime@7.21.5
+      '@toruslabs/openlogin-jrpc': 4.6.0_@babel+runtime@7.21.5
       '@toruslabs/openlogin-utils': 4.5.1_@babel+runtime@7.21.5
-      '@web3auth/base': 6.0.1_@babel+runtime@7.21.5
-      '@web3auth/base-plugin': 6.0.1_@babel+runtime@7.21.5
-      '@web3auth/base-provider': 6.0.1_@babel+runtime@7.21.5
+      '@web3auth/base': 6.1.1_@babel+runtime@7.21.5
+      '@web3auth/base-plugin': 6.1.1_@babel+runtime@7.21.5
+      '@web3auth/base-provider': 6.1.1_@babel+runtime@7.21.5
     transitivePeerDependencies:
       - '@sentry/types'
       - bufferutil
+      - c-kzg
       - supports-color
       - utf-8-validate
     dev: false
@@ -7599,6 +7723,7 @@ packages:
     transitivePeerDependencies:
       - '@sentry/types'
       - bufferutil
+      - c-kzg
       - supports-color
       - utf-8-validate
     dev: false
@@ -7620,6 +7745,7 @@ packages:
     transitivePeerDependencies:
       - '@sentry/types'
       - bufferutil
+      - c-kzg
       - supports-color
       - utf-8-validate
     dev: false
@@ -7646,6 +7772,7 @@ packages:
     transitivePeerDependencies:
       - '@sentry/types'
       - bufferutil
+      - c-kzg
       - supports-color
       - utf-8-validate
     dev: false
@@ -7663,6 +7790,7 @@ packages:
     transitivePeerDependencies:
       - '@sentry/types'
       - bufferutil
+      - c-kzg
       - supports-color
       - utf-8-validate
     dev: false
@@ -7684,6 +7812,7 @@ packages:
     transitivePeerDependencies:
       - '@sentry/types'
       - bufferutil
+      - c-kzg
       - encoding
       - supports-color
       - utf-8-validate
@@ -16268,6 +16397,11 @@ packages:
     resolution: {integrity: sha512-nPewA6m9mR3d6k7WkZ8N8zpTWfenFH3q9pA2PkuiZxINr9DKB2+40wEQf0ixn8VaGuJ78AB6iWOtStI+/4FKZQ==}
     dev: false
 
+  /superstruct/1.0.3:
+    resolution: {integrity: sha512-8iTn3oSS8nRGn+C2pgXSKPI3jmpm6FExNazNpjvqS6ZUJQCej3PUXEKM8NjHBOs54ExM+LPW/FBRhymrdcCiSg==}
+    engines: {node: '>=14.0.0'}
+    dev: false
+
   /supports-color/2.0.0:
     resolution: {integrity: sha512-KKNVtd6pCYgPIKU4cp2733HWYCpplQhddZLBUryaAHou723x+FRzQ5Df824Fj+IyyuiQTRoub4SnIFfIcrp70g==}
     engines: {node: '>=0.8.0'}
@@ -17973,7 +18107,7 @@ packages:
     dev: false
 
   github.com/ethereumjs/ethereumjs-abi/ee3994657fa7a427238e6ba92a84d0b529bbcde0:
-    resolution: {tarball: https://codeload.github.com/ethereumjs/ethereumjs-abi/tar.gz/ee3994657fa7a427238e6ba92a84d0b529bbcde0}
+    resolution: {commit: ee3994657fa7a427238e6ba92a84d0b529bbcde0, repo: git+ssh://git@github.com/ethereumjs/ethereumjs-abi.git, type: git}
     name: ethereumjs-abi
     version: 0.6.8
     dependencies:

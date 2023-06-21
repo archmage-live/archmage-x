@@ -5,6 +5,7 @@ import { QueryProvider } from '~components/QueryProvider'
 import { useActiveBuild } from '~lib/active'
 import { LanguageProvider } from '~lib/i18n'
 import AddWalletPage from '~pages/AddWallet'
+import KeylessOnboardPage from '~pages/KeylessOnboard'
 import PopupPage from '~pages/Popup'
 import SettingsPage from '~pages/Settings'
 import WelcomePage from '~pages/Welcome'
@@ -27,6 +28,10 @@ export default function Popup() {
                     <Route path="/welcome" element={<WelcomePage />} />
                     <Route path="/add-wallet" element={<AddWalletPage />} />
                     <Route path="/settings/*" element={<SettingsPage />} />
+                    <Route
+                      path="/keyless-onboard"
+                      element={<KeylessOnboardPage />}
+                    />
                   </Routes>
                 }
               />

@@ -390,3 +390,7 @@ function generateWalletUniqueHash() {
     )
   )
 }
+
+export function extractWalletHash(hash: string) {
+  return hash.split('-').pop()
+}

@@ -14,7 +14,8 @@ import {
   ExistingGroupWallet,
   useNextSubWalletIndex
 } from '~lib/services/wallet'
-import { KeylessWalletInfo, WalletType, checkPrivateKey } from '~lib/wallet'
+import { KeylessWalletInfo, WalletType } from '~lib/wallet'
+import { KeylessOnboardInfo } from '~pages/KeylessOnboard'
 
 import { NameInput } from '../NameInput'
 import {
@@ -31,12 +32,13 @@ import {
   useKeylessInfo,
   useName
 } from '../addWallet'
-import { OnboardKeylessInfo } from './OnboardInfo'
 
 export const OnboardKeylessPrivateKey = ({
+  hash,
   privateKey,
   info
 }: {
+  hash: string
   privateKey: string
   info: KeylessWalletInfo
 }) => {
@@ -97,15 +99,15 @@ export const OnboardKeylessPrivateKey = ({
     setKeylessInfo(info)
     setAccounts(
       privateKeys.map((privateKey, i) => {
-        const w = checkPrivateKey(privateKey)
         return {
           index: isUseGroupChecked ? nextIndex! + i : PSEUDO_INDEX,
-          hash: w ? w.address : '',
+          hash,
           keyless: info
         }
       })
     )
   }, [
+    hash,
     info,
     privateKeys,
     isUseGroupChecked,
@@ -160,7 +162,7 @@ export const OnboardKeylessPrivateKey = ({
 
   return (
     <Stack spacing={12}>
-      <OnboardKeylessInfo info={info} />
+      <KeylessOnboardInfo info={info} />
 
       <Stack spacing={8}>
         <Stack>

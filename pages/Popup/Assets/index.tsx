@@ -30,8 +30,9 @@ import { useConnectedSiteAccess } from '~lib/services/connectedSiteService'
 import { useCryptoComparePrice } from '~lib/services/datasource/cryptocompare'
 import { getNetworkInfo } from '~lib/services/network'
 import { useBalance, useNetworkStatus } from '~lib/services/provider'
-import { createTab, useCurrentSiteUrl } from '~lib/tab'
+import { useCurrentSiteUrl } from '~lib/tab'
 import { shortenAddress } from '~lib/utils'
+import { useKeylessOnboardToast } from '~pages/KeylessOnboard/useKeylessOnboardToast'
 import { ConnectedAccountsModal } from '~pages/Popup/Assets/ConnectedAccounts'
 import { useDepositModal } from '~pages/Popup/Assets/Deposit'
 import { useSendModal } from '~pages/Popup/Assets/Send'
@@ -86,6 +87,8 @@ export default function Assets({ onLoaded }: { onLoaded?: () => void }) {
 
   const { onOpen: onSendOpen } = useSendModal()
   const { onOpen: onDepositOpen } = useDepositModal()
+
+  useKeylessOnboardToast(wallet, subWallet, network)
 
   return (
     <Stack w="full" px={4} pt={2} pb={4} spacing={8}>

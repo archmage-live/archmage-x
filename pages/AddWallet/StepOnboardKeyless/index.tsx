@@ -14,7 +14,7 @@ import { useAsyncRetry } from 'react-use'
 
 import { AlertBox } from '~components/AlertBox'
 import { Web3AuthLogo } from '~components/Web3AuthLogo'
-import { Web3Auth } from '~lib/keyless/web3auth'
+import { Web3authModal } from '~lib/keyless/web3authModal'
 import { KeylessWalletInfo, KeylessWalletType } from '~lib/wallet'
 
 import { OnboardKeylessHd } from './OnboardKeylessHd'
@@ -30,6 +30,7 @@ export const StepOnboardKeyless = () => {
   const [info, setInfo] = useState<KeylessWalletInfo | undefined>(undefined)
   const [mnemonic, setMnemonic] = useState('')
   const [privateKey, setPrivateKey] = useState('')
+  const [hash, setHash] = useState('')
 
   const [alert, setAlert] = useState('')
 
@@ -40,7 +41,7 @@ export const StepOnboardKeyless = () => {
   } = useAsyncRetry(async () => {
     setAlert('')
 
-    const web3auth = await Web3Auth.connect({
+    const web3auth = await Web3authModal.connect({
       theme,
       reconnect: true
     })
@@ -49,13 +50,15 @@ export const StepOnboardKeyless = () => {
         const info = await web3auth.getInfo()
         const privateKey = await web3auth.getPrivateKey()
         const mnemonic = await web3auth.getMnemonic()
-        if (info && privateKey && mnemonic) {
+        const hash = await web3auth.getUniqueHash()
+        if (info && privateKey && mnemonic && hash) {
           setInfo({
             type: KeylessWalletType.WEB3AUTH,
             ...info
           })
           setPrivateKey(privateKey)
           setMnemonic(mnemonic)
+          setHash(hash)
           return web3auth
         }
       }
@@ -113,14 +116,18 @@ export const StepOnboardKeyless = () => {
 
       <AlertBox>{alert}</AlertBox>
 
-      {info && privateKey && mnemonic && (
+      {info && privateKey && mnemonic && hash && (
         <>
           <Divider />
 
           {kind === 'Private Key' ? (
-            <OnboardKeylessPrivateKey info={info} privateKey={privateKey} />
+            <OnboardKeylessPrivateKey
+              info={info}
+              privateKey={privateKey}
+              hash={hash}
+            />
           ) : (
-            <OnboardKeylessHd info={info} mnemonic={mnemonic} />
+            <OnboardKeylessHd info={info} mnemonic={mnemonic} hash={hash} />
           )}
         </>
       )}
