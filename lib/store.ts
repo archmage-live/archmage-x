@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import browser from 'webextension-polyfill'
 
 import { Storage, StorageAreaName, useStorage } from '@plasmohq/storage'
 
@@ -10,9 +11,10 @@ export enum StoreArea {
 export enum StoreKey {
   PASSWORD_HASH = 'passwordHash',
   PASSWORD = 'password',
+  KEYSTORE_PREFIX = 'keystore',
+  KEYLESS_PREFIX = 'keyless',
   LAST_UNLOCK_TIME = 'lastUnlockTime',
   AUTO_LOCK_TIME = 'autoLockTime',
-  KEYSTORE_PREFIX = 'keystore',
   NETWORK_KINDS = 'networkKinds',
   ACTIVE_NETWORK = 'activeNetwork',
   ACTIVE_WALLET = 'activeWallet',
@@ -41,6 +43,22 @@ export const SESSION_STORE = new Storage({
   area: StoreArea.SESSION,
   secretKeyList: [StoreKey.PASSWORD]
 })
+
+export async function clearLocalStorage(keyPrefix: string) {
+  for (const key of Object.keys(await browser.storage.local.get())) {
+    if (key.startsWith(keyPrefix)) {
+      await LOCAL_STORE.remove(key)
+    }
+  }
+}
+
+export async function clearSessionStorage(keyPrefix: string) {
+  for (const key of Object.keys(await (browser.storage as any).session.get())) {
+    if (key.startsWith(keyPrefix)) {
+      await SESSION_STORE.remove(key)
+    }
+  }
+}
 
 function _useStorage<T = any>(
   key: StoreKey | string,

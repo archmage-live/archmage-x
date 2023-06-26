@@ -2,7 +2,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { useMemo } from 'react'
 
 import { DB, getNextField } from '~lib/db'
-import { ENV } from '~lib/env'
+import { isBackgroundWorker } from '~lib/detect'
 import { NetworkKind } from '~lib/network'
 import { AptosChainInfo } from '~lib/network/aptos'
 import { BtcChainInfo } from '~lib/network/btc'
@@ -251,7 +251,7 @@ export function getTokenUrl(
 
 export class NetworkService {
   static async init() {
-    if (ENV.inServiceWorker) {
+    if (isBackgroundWorker()) {
       await BtcNetworkService.init()
       await EvmNetworkService.init()
       await CosmNetworkService.init()

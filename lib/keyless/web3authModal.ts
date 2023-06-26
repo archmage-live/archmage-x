@@ -1,5 +1,6 @@
 import { Web3Auth } from '@web3auth/modal'
 import { OpenloginAdapter } from '@web3auth/openlogin-adapter'
+import assert from 'assert'
 
 import { Web3auth, web3AuthInitOptions } from './web3auth'
 
@@ -70,6 +71,7 @@ export class Web3authModal extends Web3auth {
       if (!provider) {
         return false
       }
+      assert(web3auth.connected)
     }
 
     return true
@@ -82,28 +84,20 @@ export class Web3authModal extends Web3auth {
     reconnect?: boolean
     theme?: 'light' | 'dark'
   }): Promise<Web3authModal | undefined> {
-    const { promise, resolve } = Web3auth.SYNCHRONIZER.get()
-    if (promise) {
-      return promise
-    }
-
     try {
       const wa = await Web3authModal.create(theme)
-      const connected = wa.connect(reconnect)
+      const connected = await wa.connect(reconnect)
       if (connected === undefined) {
         // reconnect
         return await Web3authModal.connect({ theme })
       } else if (!connected) {
         // failed
-        resolve(undefined)
         return undefined
       }
 
-      resolve(wa)
       return wa
     } catch (err) {
       console.error(err)
-      resolve(undefined)
       return undefined
     }
   }

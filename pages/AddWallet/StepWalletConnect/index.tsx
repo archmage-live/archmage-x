@@ -52,7 +52,16 @@ export const StepWalletConnect = () => {
   const [isGroupChecked, setIsGroupChecked] = useState(false)
   useEffect(() => {
     if (!isGroupChecked) {
-      setAccounts((accounts) => accounts.slice(0, 1))
+      setAccounts((accounts) =>
+        accounts.length
+          ? [
+              {
+                ...accounts[0],
+                index: PSEUDO_INDEX
+              }
+            ]
+          : accounts
+      )
     }
     setAddWalletKind(
       !isGroupChecked
@@ -70,9 +79,7 @@ export const StepWalletConnect = () => {
 
   const onImport = useCallback(async () => {
     const addrs = accounts.map(({ addresses }) =>
-      Object.entries(addresses!).every(([networkKind, { address }]) =>
-        checkAddress(networkKind as any, address)
-      )
+      checkAddress(networkKind, addresses![networkKind]!.address)
     )
     if (addrs.some((addr) => !addr)) {
       setAlert('Invalid address')
@@ -90,7 +97,7 @@ export const StepWalletConnect = () => {
     }
 
     await nextStep()
-  }, [accounts, addWallet, nextStep])
+  }, [networkKind, accounts, addWallet, nextStep])
 
   // WalletConnect 1.0 only supports Ethereum networks
   // Here we only connect it with Ethereum mainnet
@@ -130,11 +137,15 @@ export const StepWalletConnect = () => {
             update = true
           }
         }
+        if (accs.at(0)?.index === PSEUDO_INDEX) {
+          accs[0].index = 0
+          update = true
+        }
         if (!update) {
           return accounts
         }
       } else {
-        if (accounts[0].addresses![networkKind]!.address === addresses[0]) {
+        if (accounts[0]?.addresses![networkKind]!.address === addresses[0]) {
           return accounts
         }
         accs = [
@@ -149,7 +160,9 @@ export const StepWalletConnect = () => {
           }
         ]
       }
+
       refresh().then()
+
       return accs
     })
   }, [networkKind, addresses, refresh, setAccounts, isGroupChecked])

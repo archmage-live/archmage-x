@@ -5,7 +5,7 @@ import { useAsync } from 'react-use'
 
 import { getActive, useActiveAccount } from '~lib/active'
 import { DB } from '~lib/db'
-import { ENV } from '~lib/env'
+import { isBackgroundWorker } from '~lib/detect'
 import { SERVICE_WORKER_CLIENT, SERVICE_WORKER_SERVER } from '~lib/rpc'
 import {
   IChainAccount,
@@ -247,7 +247,7 @@ class ConnectedSiteService extends ConnectedSiteServicePartial {
 
 function createConnectedSiteService() {
   const serviceName = 'connectedSiteService'
-  if (ENV.inServiceWorker) {
+  if (isBackgroundWorker()) {
     const service = new ConnectedSiteService()
     SERVICE_WORKER_SERVER.registerService(serviceName, service)
     return service

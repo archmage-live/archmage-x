@@ -1,4 +1,4 @@
-import { ENV } from '~lib/env'
+import { isBackgroundWorker } from '~lib/detect'
 
 import { Context, EventEmitter, RpcClientInjected } from './client'
 
@@ -24,7 +24,7 @@ declare global {
 }
 
 if (
-  !ENV.inServiceWorker &&
+  !isBackgroundWorker() &&
   process.env.PLASMO_PUBLIC_ENABLE_EVM &&
   !globalThis.archmage.evm
 ) {

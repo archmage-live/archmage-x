@@ -7,14 +7,13 @@ import {
   NumberInput,
   NumberInputField,
   NumberInputStepper,
-  Stack,
+  Stack
 } from '@chakra-ui/react'
 import { useCallback, useEffect, useState } from 'react'
 import * as React from 'react'
 import { useWizard } from 'react-use-wizard'
 
 import { AlertBox } from '~components/AlertBox'
-import { KeylessOnboardInfo } from '~pages/KeylessOnboard'
 import { KeylessWalletInfo, isMnemonic } from '~lib/wallet'
 import { NameInput } from '~pages/AddWallet/NameInput'
 import {
@@ -26,15 +25,18 @@ import {
   useName,
   useWalletHash
 } from '~pages/AddWallet/addWallet'
+import { KeylessOnboardInfo } from '~pages/KeylessOnboard'
 
 export const OnboardKeylessHd = ({
   hash,
   mnemonic,
-  info
+  info,
+  done
 }: {
   hash: string
   mnemonic: string
   info: KeylessWalletInfo
+  done: () => {}
 }) => {
   const { nextStep } = useWizard()
 
@@ -74,8 +76,10 @@ export const OnboardKeylessHd = ({
       return
     }
 
+    done()
+
     nextStep().then()
-  }, [mnemonic, nextStep, addWallet])
+  }, [mnemonic, addWallet, done, nextStep])
 
   return (
     <Stack spacing={12}>

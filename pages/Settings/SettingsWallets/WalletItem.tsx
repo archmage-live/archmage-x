@@ -2,10 +2,8 @@ import { Box, HStack, Icon, Stack, Text } from '@chakra-ui/react'
 import { MdDragIndicator } from '@react-icons/all-files/md/MdDragIndicator'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { DraggableProvidedDragHandleProps } from 'react-beautiful-dnd'
-import { useDebounce } from 'react-use'
 
 import { AccountAvatar } from '~components/AccountAvatar'
-import { Badge } from '~components/Badge'
 import { TypeBadge } from '~components/TypeBadge'
 import { dayjs } from '~lib/dayjs'
 import { SelectedWalletId, WalletEntry } from '~lib/services/wallet/tree'
@@ -106,12 +104,15 @@ export const WalletItem = ({
                 {wallet.name}
               </Text>
               {typeIdentifier && (
-                <Text mt="-4px" mb="-7px">
+                <HStack mt="-4px" mb="-7px">
                   <TypeBadge
                     identifier={typeIdentifier.identifier}
                     logo={typeIdentifier.logo}
+                    logoLight={typeIdentifier.logoLight}
+                    logoDark={typeIdentifier.logoDark}
+                    logoHeight={typeIdentifier.logoHeight}
                   />
-                </Text>
+                </HStack>
               )}
             </Box>
           </HStack>

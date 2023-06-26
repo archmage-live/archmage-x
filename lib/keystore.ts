@@ -1,16 +1,20 @@
 import { decryptKeystore, encryptKeystore } from '@ethersproject/json-wallets'
 import type { KeystoreAccount } from '@ethersproject/json-wallets/lib/keystore'
-import browser from 'webextension-polyfill'
 
 import { Storage } from '@plasmohq/storage'
 
 import { DB } from '~lib/db'
-import { ENV } from '~lib/env'
+import { isBackgroundWorker } from '~lib/detect'
 import { PASSWORD } from '~lib/password'
 import { IKeystore, Index, PSEUDO_INDEX } from '~lib/schema'
 import { IWallet } from '~lib/schema/wallet'
 import { WALLET_SERVICE } from '~lib/services/wallet'
-import { SESSION_STORE, StoreKey } from '~lib/store'
+import {
+  SESSION_STORE,
+  StoreArea,
+  StoreKey,
+  clearSessionStorage
+} from '~lib/store'
 import { WalletType, hasWalletKeystore } from '~lib/wallet'
 
 function keystoreKey(id: number, index: Index): string {
@@ -31,7 +35,7 @@ class Accounts {
     this.accounts.set(key, account)
 
     await new Storage({
-      area: 'session',
+      area: StoreArea.SESSION,
       secretKeyList: [key]
     }).set(key, account)
   }
@@ -57,14 +61,7 @@ class Accounts {
   async clear() {
     this.accounts.clear()
 
-    // TODO: session
-    for (const key of Object.keys(
-      await (browser.storage as any).session.get()
-    )) {
-      if (key.startsWith(StoreKey.KEYSTORE_PREFIX)) {
-        await SESSION_STORE.remove(key)
-      }
-    }
+    await clearSessionStorage(StoreKey.KEYSTORE_PREFIX)
   }
 }
 
@@ -77,7 +74,7 @@ export class Keystore {
   }
 
   async unlock() {
-    if (!ENV.inServiceWorker) {
+    if (!isBackgroundWorker()) {
       return
     }
     const password = await PASSWORD.get()

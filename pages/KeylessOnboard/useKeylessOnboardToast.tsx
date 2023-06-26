@@ -28,7 +28,7 @@ export function useKeylessOnboardToast(
       chainId: network.chainId
     })
 
-    if (account) {
+    if (account?.address) {
       toast.close(id)
       return
     }

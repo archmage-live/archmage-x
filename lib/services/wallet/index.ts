@@ -6,7 +6,7 @@ import Dexie from 'dexie'
 import { ethers } from 'ethers'
 
 import { DB, getNextField } from '~lib/db'
-import { ENV } from '~lib/env'
+import { isBackgroundWorker } from '~lib/detect'
 import { KEYSTORE } from '~lib/keystore'
 import { NetworkKind } from '~lib/network'
 import { SERVICE_WORKER_CLIENT, SERVICE_WORKER_SERVER } from '~lib/rpc'
@@ -37,6 +37,8 @@ import {
   buildWalletUniqueHash,
   checkAddressMayThrow,
   getDefaultPath,
+  isHdWallet,
+  isKeylessWallet,
   isWalletGroup
 } from '~lib/wallet'
 
@@ -411,7 +413,7 @@ class WalletServicePartial implements IWalletService {
   ): Promise<IChainAccount | undefined> {
     // fast path
     const account = await getChainAccount(wallet, index, networkKind, chainId)
-    if (account) {
+    if (account && (!isKeylessWallet(wallet.type) || account.address)) {
       return account
     }
     // slow path
@@ -1012,7 +1014,7 @@ class WalletService extends WalletServicePartial {
       if (!wallet) {
         return
       }
-      assert(wallet.type === WalletType.HD)
+      assert(isHdWallet(wallet.type))
       const unlock = useLock && (await this._ensureLock(masterId))
       try {
         hdPath = await DB.hdPaths.where({ masterId, networkKind }).first()
@@ -1084,7 +1086,7 @@ class WalletService extends WalletServicePartial {
 function createWalletService(): IWalletService {
   const serviceName = 'walletService'
   let service
-  if (ENV.inServiceWorker) {
+  if (isBackgroundWorker()) {
     service = new WalletService()
     SERVICE_WORKER_SERVER.registerService(serviceName, service)
   } else {

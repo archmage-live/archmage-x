@@ -2,7 +2,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { useCallback } from 'react'
 
 import { DB } from '~lib/db'
-import { ENV } from '~lib/env'
+import { isBackgroundWorker } from '~lib/detect'
 import { SERVICE_WORKER_CLIENT, SERVICE_WORKER_SERVER } from '~lib/rpc'
 import { ActiveBindingAccount, IActiveBinding, TAB_ID_NONE } from '~lib/schema'
 
@@ -68,7 +68,7 @@ class ActiveBindingService extends ActiveBindingServicePartial {
 
 function createActiveBindingService() {
   const serviceName = 'ActiveBindingService'
-  if (ENV.inServiceWorker) {
+  if (isBackgroundWorker()) {
     const service = new ActiveBindingService()
     SERVICE_WORKER_SERVER.registerService(serviceName, service)
     return service

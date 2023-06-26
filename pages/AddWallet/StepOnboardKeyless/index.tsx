@@ -8,7 +8,7 @@ import {
   Text,
   useColorModeValue
 } from '@chakra-ui/react'
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import * as React from 'react'
 import { useAsyncRetry } from 'react-use'
 
@@ -75,6 +75,10 @@ export const StepOnboardKeyless = () => {
     return undefined
   }, [theme])
 
+  const done = useCallback(async () => {
+    await web3auth?.cacheKeystore()
+  }, [web3auth])
+
   return (
     <Stack p="4" pt="16" spacing="6">
       <Stack>
@@ -125,9 +129,15 @@ export const StepOnboardKeyless = () => {
               info={info}
               privateKey={privateKey}
               hash={hash}
+              done={done}
             />
           ) : (
-            <OnboardKeylessHd info={info} mnemonic={mnemonic} hash={hash} />
+            <OnboardKeylessHd
+              info={info}
+              mnemonic={mnemonic}
+              hash={hash}
+              done={done}
+            />
           )}
         </>
       )}

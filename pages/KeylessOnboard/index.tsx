@@ -9,6 +9,7 @@ import { Card } from '~components/Card'
 import { TitleBar } from '~components/TitleBar'
 import { Web3AuthLogo } from '~components/Web3AuthLogo'
 import { Web3auth } from '~lib/keyless/web3auth'
+import { useCheckUnlocked } from '~lib/password'
 import { useSubWallet, useWallet } from '~lib/services/wallet'
 import { WalletType, extractWalletHash } from '~lib/wallet'
 import { KeylessOnboardInfo } from '~pages/KeylessOnboard/KeylessOnboardInfo'
@@ -16,12 +17,14 @@ import { KeylessOnboardInfo } from '~pages/KeylessOnboard/KeylessOnboardInfo'
 export * from './KeylessOnboardInfo'
 
 export default function KeylessOnboard() {
+  useCheckUnlocked()
+
   const [searchParams] = useSearchParams()
   const id = Number(searchParams.get('wallet'))
   const subId = Number(searchParams.get('subWallet'))
 
-  const wallet = useWallet(!Number.isInteger(id) ? id : undefined)
-  const subWallet = useSubWallet(!Number.isInteger(subId) ? subId : undefined)
+  const wallet = useWallet(Number.isInteger(id) ? id : undefined)
+  const subWallet = useSubWallet(Number.isInteger(subId) ? subId : undefined)
 
   const [info, storedHash] = useMemo(() => {
     if (!wallet || !subWallet) {
@@ -58,6 +61,8 @@ export default function KeylessOnboard() {
       if (web3auth) {
         const hash = await web3auth.getUniqueHash()
         if (hash === extractWalletHash(storedHash)) {
+          await web3auth.cacheKeystore()
+
           setDone(true)
         } else {
           setAlert(

@@ -3,7 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { useCallback } from 'react'
 import { useAsync } from 'react-use'
 
-import { ENV } from '~lib/env'
+import { isBackgroundWorker } from '~lib/detect'
 import { NetworkKind } from '~lib/network'
 import { SERVICE_WORKER_CLIENT, SERVICE_WORKER_SERVER } from '~lib/rpc'
 import {
@@ -166,7 +166,7 @@ export class TokenService extends TokenServicePartial {
   private synchronizer = new Synchronizer()
 
   static async init() {
-    if (ENV.inServiceWorker) {
+    if (isBackgroundWorker()) {
       await EVM_TOKEN_SERVICE.init()
       await COSM_TOKEN_SERVICE.init()
     }
@@ -325,7 +325,7 @@ export class TokenService extends TokenServicePartial {
 function createTokenService(): ITokenService {
   const serviceName = 'tokenService'
   let service
-  if (ENV.inServiceWorker) {
+  if (isBackgroundWorker()) {
     service = new TokenService()
     SERVICE_WORKER_SERVER.registerService(serviceName, service)
   } else {

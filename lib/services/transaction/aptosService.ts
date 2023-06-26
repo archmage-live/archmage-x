@@ -9,7 +9,7 @@ import { useMemo } from 'react'
 import { useAsync } from 'react-use'
 
 import { DB } from '~lib/db'
-import { ENV } from '~lib/env'
+import { isBackgroundWorker } from '~lib/detect'
 import { NetworkKind } from '~lib/network'
 import { SERVICE_WORKER_CLIENT, SERVICE_WORKER_SERVER } from '~lib/rpc'
 import {
@@ -587,7 +587,7 @@ async function fetchEvents(client: AptosClient, account: IChainAccount) {
 function createAptosTransactionService(): ITransactionService {
   const serviceName = 'aptosTransactionService'
   let service
-  if (ENV.inServiceWorker) {
+  if (isBackgroundWorker()) {
     service = new AptosTransactionService()
     SERVICE_WORKER_SERVER.registerService(serviceName, service)
   } else {

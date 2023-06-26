@@ -4,7 +4,7 @@ import { ethErrors } from 'eth-rpc-errors'
 import browser from 'webextension-polyfill'
 
 import { setActiveNetwork } from '~lib/active'
-import { ENV } from '~lib/env'
+import { isBackgroundWorker } from '~lib/detect'
 import { EXTENSION } from '~lib/extension'
 import { NetworkKind } from '~lib/network'
 import { Context, SERVICE_WORKER_CLIENT, SERVICE_WORKER_SERVER } from '~lib/rpc'
@@ -566,7 +566,7 @@ class ConsentService extends ConsentServicePartial {
 
 function createConsentService() {
   const serviceName = 'consentService'
-  if (ENV.inServiceWorker) {
+  if (isBackgroundWorker()) {
     const service = new ConsentService()
     SERVICE_WORKER_SERVER.registerService(serviceName, service)
     return service

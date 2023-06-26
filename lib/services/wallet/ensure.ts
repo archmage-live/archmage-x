@@ -19,6 +19,7 @@ import {
   getDerivePosition,
   getStructuralSigningWallet,
   isHdWallet,
+  isKeylessWallet,
   isWalletGroup
 } from '~lib/wallet'
 
@@ -48,10 +49,10 @@ export async function ensureChainAccounts(
     .where('[masterId+networkKind+chainId]')
     .equals([masterId, networkKind, chainId])
     .count()
-  if (chainAccountsNum === subWalletsNum) {
+  if (chainAccountsNum === subWalletsNum && !isKeylessWallet(wallet.type)) {
     return
   }
-  assert(chainAccountsNum < subWalletsNum)
+  assert(chainAccountsNum <= subWalletsNum)
 
   const subWallets = await DB.subWallets
     .where('masterId')
@@ -73,7 +74,11 @@ export async function ensureChainAccounts(
       chainId
     )
     if (!signingHdWallet) {
-      return
+      if (wallet.type === WalletType.HD) {
+        return
+      } else if (wallet.type === WalletType.KEYLESS_HD) {
+        // go on
+      }
     }
 
     hdPath = await WALLET_SERVICE.getOrAddHdPath(masterId, networkKind, false)
@@ -82,94 +87,145 @@ export async function ensureChainAccounts(
     }
   }
 
-  const existing = new Set()
+  const existing = new Map<Index, IChainAccount>()
   for (const acc of chainAccounts) {
-    existing.add(acc.index)
+    existing.set(acc.index, acc)
   }
+
   const bulkAdd: IChainAccount[] = []
+  const bulkPut: IChainAccount[] = []
 
   const tick = Date.now()
   const queue = new PQueue({ concurrency: 4 })
   for (const subWallet of subWallets) {
-    if (existing.has(subWallet.index)) {
-      continue
+    const acc = existing.get(subWallet.index)
+    if (!acc) {
+      queue
+        .add(async () => {
+          let address
+          switch (wallet.type) {
+            case WalletType.HD:
+              assert(signingHdWallet)
+            // pass through
+            case WalletType.KEYLESS_HD: {
+              assert(hdPath)
+              const subSigningWallet = await signingHdWallet?.derive(
+                hdPath.path,
+                subWallet.index,
+                getDerivePosition(hdPath, networkKind)
+              )
+              address = subSigningWallet?.address
+              break
+            }
+            case WalletType.PRIVATE_KEY_GROUP:
+            // pass through
+            case WalletType.KEYLESS_GROUP: {
+              const signingWallet = await getStructuralSigningWallet(
+                wallet,
+                subWallet,
+                networkKind,
+                chainId
+              )
+              address = signingWallet?.address
+              break
+            }
+            case WalletType.WATCH_GROUP:
+            // pass through
+            case WalletType.WALLET_CONNECT_GROUP:
+            // pass through
+            case WalletType.HW_GROUP: {
+              const network = await NETWORK_SERVICE.getNetwork({
+                kind: networkKind,
+                chainId
+              })
+              if (!network) {
+                return
+              }
+              address = getAddressFromInfo(subWallet, network)
+              break
+            }
+          }
+          bulkAdd.push({
+            masterId,
+            index: subWallet.index,
+            networkKind,
+            chainId,
+            address
+          } as IChainAccount)
+        })
+        .then()
+    } else if (!acc.address && isKeylessWallet(wallet.type)) {
+      queue
+        .add(async () => {
+          switch (wallet.type) {
+            case WalletType.KEYLESS_HD: {
+              assert(hdPath)
+              const subSigningWallet = await signingHdWallet?.derive(
+                hdPath.path,
+                subWallet.index,
+                getDerivePosition(hdPath, networkKind)
+              )
+              if (subSigningWallet) {
+                acc.address = subSigningWallet.address
+                bulkPut.push(acc)
+              }
+              break
+            }
+            case WalletType.KEYLESS_GROUP: {
+              const signingWallet = await getStructuralSigningWallet(
+                wallet,
+                subWallet,
+                networkKind,
+                chainId
+              )
+              if (signingWallet) {
+                acc.address = signingWallet.address
+                bulkPut.push(acc)
+              }
+              break
+            }
+          }
+        })
+        .then()
     }
-    queue
-      .add(async () => {
-        let address
-        switch (wallet.type) {
-          case WalletType.HD:
-          // pass through
-          case WalletType.KEYLESS_HD: {
-            assert(signingHdWallet && hdPath)
-            const subSigningWallet = await signingHdWallet.derive(
-              hdPath.path,
-              subWallet.index,
-              getDerivePosition(hdPath, networkKind)
-            )
-            address = subSigningWallet.address
-            break
-          }
-          case WalletType.PRIVATE_KEY_GROUP:
-          // pass through
-          case WalletType.KEYLESS_GROUP: {
-            const signingWallet = await getStructuralSigningWallet(
-              wallet,
-              subWallet,
-              networkKind,
-              chainId
-            )
-            if (!signingWallet) {
-              return
-            }
-            address = signingWallet.address
-            break
-          }
-          case WalletType.WATCH_GROUP:
-          // pass through
-          case WalletType.WALLET_CONNECT_GROUP:
-          // pass through
-          case WalletType.HW_GROUP: {
-            const network = await NETWORK_SERVICE.getNetwork({
-              kind: networkKind,
-              chainId
-            })
-            if (!network) {
-              return
-            }
-            address = getAddressFromInfo(subWallet, network)
-            break
-          }
-        }
-        bulkAdd.push({
-          masterId,
-          index: subWallet.index,
-          networkKind,
-          chainId,
-          address
-        } as IChainAccount)
-      })
-      .then()
   }
   await queue.onIdle()
 
-  if (!bulkAdd.length) {
+  if (!bulkAdd.length && !bulkPut.length) {
     return
   }
 
   console.log(`derive chain accounts: ${(Date.now() - tick) / 1000}s`)
 
   await DB.transaction('rw', [DB.subWallets, DB.chainAccounts], async () => {
-    // check sub wallet existence, to avoid issue of deletion before add
-    const subWalletsNum = await DB.subWallets
-      .where('[masterId+index]')
-      .anyOf(bulkAdd.map((account) => [account.masterId, account.index]))
-      .count()
-    if (bulkAdd.length !== subWalletsNum) {
-      return
+    {
+      // check sub wallet existence, to avoid issue of deletion before add
+      const subWalletsNum = await DB.subWallets
+        .where('[masterId+index]')
+        .anyOf(bulkAdd.map((account) => [account.masterId, account.index]))
+        .count()
+      if (bulkAdd.length !== subWalletsNum) {
+        return
+      }
     }
 
-    await DB.chainAccounts.bulkAdd(bulkAdd)
+    {
+      // check sub wallet existence, to avoid issue of deletion before put
+      const subWalletsNum = await DB.subWallets
+        .where('[masterId+index]')
+        .anyOf(bulkPut.map((account) => [account.masterId, account.index]))
+        .count()
+      if (bulkPut.length !== subWalletsNum) {
+        return
+      }
+    }
+
+    if (bulkAdd.length) {
+      await DB.chainAccounts.bulkAdd(bulkAdd)
+    }
+    if (bulkPut.length) {
+      await DB.chainAccounts.bulkPut(bulkPut)
+    }
   })
   console.log(
     `ensured chain accounts for sub wallets: master wallet ${wallet.id}, network: ${networkKind}, chainID: ${chainId}`
@@ -183,7 +239,7 @@ export async function ensureChainAccount(
   chainId: number | string
 ): Promise<IChainAccount | undefined> {
   const existing = await getChainAccount(wallet, index, networkKind, chainId)
-  if (existing) {
+  if (existing && (!isKeylessWallet(wallet.type) || existing.address)) {
     return existing
   }
 
@@ -207,7 +263,11 @@ export async function ensureChainAccount(
         chainId
       )
       if (!signingWallet) {
-        return
+        if (wallet.type === WalletType.HD) {
+          return
+        } else if (wallet.type === WalletType.KEYLESS_HD) {
+          // go on
+        }
       }
       const hdPath = await WALLET_SERVICE.getOrAddHdPath(
         wallet.id,
@@ -217,12 +277,12 @@ export async function ensureChainAccount(
       if (!hdPath) {
         return
       }
-      const subSigningWallet = await signingWallet.derive(
+      const subSigningWallet = await signingWallet?.derive(
         hdPath.path,
         index,
         getDerivePosition(hdPath, networkKind)
       )
-      address = subSigningWallet.address
+      address = subSigningWallet?.address
       break
     }
     case WalletType.PRIVATE_KEY:
@@ -234,10 +294,7 @@ export async function ensureChainAccount(
         networkKind,
         chainId
       )
-      if (!signingWallet) {
-        return
-      }
-      address = signingWallet.address
+      address = signingWallet?.address
       break
     }
     case WalletType.PRIVATE_KEY_GROUP:
@@ -249,10 +306,7 @@ export async function ensureChainAccount(
         networkKind,
         chainId
       )
-      if (!signingWallet) {
-        return
-      }
-      address = signingWallet.address
+      address = signingWallet?.address
       break
     }
     case WalletType.WATCH:
@@ -287,14 +341,25 @@ export async function ensureChainAccount(
     }
   }
 
-  const account = {
-    masterId: wallet.id,
-    index,
-    networkKind,
-    chainId,
-    address,
-    info: {}
-  } as IChainAccount
+  let account: IChainAccount
+  if (!existing) {
+    account = {
+      masterId: wallet.id,
+      index,
+      networkKind,
+      chainId,
+      address,
+      info: {}
+    } as IChainAccount
+  } else {
+    if (!address) {
+      return
+    }
+    account = {
+      ...existing,
+      address
+    }
+  }
 
   return DB.transaction('rw', [DB.subWallets, DB.chainAccounts], async () => {
     // check sub wallet existence, to avoid issue of deletion before add
@@ -302,7 +367,11 @@ export async function ensureChainAccount(
       return
     }
 
-    account.id = await DB.chainAccounts.add(account)
+    if (!existing) {
+      account.id = await DB.chainAccounts.add(account)
+    } else {
+      await DB.chainAccounts.put(account)
+    }
     return account
   })
 }

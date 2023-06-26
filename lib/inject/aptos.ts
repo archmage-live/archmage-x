@@ -1,4 +1,4 @@
-import { ENV } from '~lib/env'
+import { isBackgroundWorker } from '~lib/detect'
 
 import {
   Context,
@@ -22,7 +22,7 @@ declare global {
 }
 
 if (
-  !ENV.inServiceWorker &&
+  !isBackgroundWorker() &&
   process.env.PLASMO_PUBLIC_ENABLE_APTOS &&
   !globalThis.archmage.aptos
 ) {

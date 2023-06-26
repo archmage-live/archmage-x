@@ -1,27 +1,36 @@
-import { Image } from '@chakra-ui/react'
+import { Image, useColorModeValue } from '@chakra-ui/react'
 
 import { Badge } from '~components/Badge'
 
 export const TypeBadge = ({
   identifier,
-  logo
+  logo,
+  logoLight,
+  logoDark,
+  logoHeight
 }: {
   identifier?: string
   logo?: string
+  logoLight?: string
+  logoDark?: string
+  logoHeight?: string | number
 }) => {
+  const themedLogo = useColorModeValue(logoLight, logoDark)
+
   return (
     <>
-      {identifier && <Badge>{identifier}</Badge>}
-      {logo && (
+      {(logo || themedLogo) && (
         <Image
-          h={4}
+          h={logoHeight || 4}
           py="2px"
           display="inline-block"
           fit="cover"
-          src={logo}
+          src={logo || themedLogo}
           alt={identifier}
         />
       )}
+
+      {identifier && <Badge>{identifier}</Badge>}
     </>
   )
 }

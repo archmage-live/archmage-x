@@ -1,4 +1,4 @@
-import { ENV } from '~lib/env'
+import { isBackgroundWorker } from '~lib/detect'
 import { setUnlockTime } from '~lib/hooks/useLockTime'
 import { KEYSTORE } from '~lib/keystore'
 import { PASSWORD } from '~lib/password'
@@ -61,7 +61,7 @@ class PasswordService implements IPasswordService {
 
 function createPasswordService() {
   const serviceName = 'passwordService'
-  if (ENV.inServiceWorker) {
+  if (isBackgroundWorker()) {
     const service = new PasswordService()
     SERVICE_WORKER_SERVER.registerService(serviceName, service)
     return service

@@ -16,7 +16,7 @@ import {
 import { useMemo } from 'react'
 
 import { DB } from '~lib/db'
-import { ENV } from '~lib/env'
+import { isBackgroundWorker } from '~lib/detect'
 import { NetworkKind } from '~lib/network'
 import { CosmAppChainInfo } from '~lib/network/cosm'
 import { pubkeyToAddress } from '~lib/network/cosm/amino'
@@ -602,7 +602,7 @@ export class CosmTransactionService extends CosmTransactionServicePartial {
 function createCosmTransactionService(): ITransactionService {
   const serviceName = 'cosmTransactionService'
   let service
-  if (ENV.inServiceWorker) {
+  if (isBackgroundWorker()) {
     service = new CosmTransactionService()
     SERVICE_WORKER_SERVER.registerService(serviceName, service)
   } else {

@@ -80,7 +80,7 @@ export const ImportPrivateKey = () => {
   const [alert, setAlert] = useState('')
   useEffect(() => {
     setAlert('')
-  }, [privateKeys, name])
+  }, [privateKeys, name, willAddToExistingGroupChecked, isUseGroupChecked])
 
   const addWallet = useAddWallet()
   const addSubWallets = useAddSubWallets()

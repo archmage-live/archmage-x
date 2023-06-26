@@ -2,7 +2,13 @@ import { arrayify, hexlify } from '@ethersproject/bytes'
 import { entropyToMnemonic } from '@ethersproject/hdnode/src.ts'
 import type { KeystoreAccount } from '@ethersproject/json-wallets/lib/keystore'
 import { LOGIN_PROVIDER, LOGIN_PROVIDER_TYPE } from '@toruslabs/openlogin-utils'
-import { CHAIN_NAMESPACES, UserInfo, WALLET_ADAPTERS } from '@web3auth/base'
+import {
+  CHAIN_NAMESPACES,
+  CustomChainConfig,
+  UserInfo,
+  WALLET_ADAPTERS
+} from '@web3auth/base'
+import { CommonPrivateKeyProvider } from '@web3auth/base-provider'
 import type { Web3AuthNoModalOptions } from '@web3auth/no-modal'
 import { Web3AuthNoModal } from '@web3auth/no-modal'
 import { OpenloginAdapter } from '@web3auth/openlogin-adapter'
@@ -10,8 +16,10 @@ import type { OpenloginAdapterOptions } from '@web3auth/openlogin-adapter'
 import assert from 'assert'
 import { ethers } from 'ethers'
 
-import { ISubWallet, IWallet } from '~lib/schema'
-import { SingleSynchronizer } from '~lib/utils/synchronizer'
+import { Storage } from '@plasmohq/storage'
+
+import { ISubWallet, IWallet, Index, PSEUDO_INDEX } from '~lib/schema'
+import { SESSION_STORE, StoreArea, StoreKey } from '~lib/store'
 import { WalletType, extractWalletHash } from '~lib/wallet'
 
 export const WEB3AUTH_LOGIN_PROVIDER = LOGIN_PROVIDER
@@ -38,7 +46,7 @@ export function web3AuthInitOptions(): [
       storageKey: 'local',
       sessionTime: 86400 * 7, // 7 days
       web3AuthNetwork: 'cyan',
-      useCoreKitKey: true
+      useCoreKitKey: false
     } as Web3AuthNoModalOptions,
     {
       adapterSettings: {
@@ -52,7 +60,8 @@ export function web3AuthInitOptions(): [
             'https://github.com/archmage-live/archmage-x/raw/main/assets/archmage.svg',
           defaultLanguage: 'en',
           dark: true
-        }
+        },
+        redirectUrl: globalThis.location.origin // not used
       },
       loginSettings: {
         mfaLevel: 'optional'
@@ -73,7 +82,18 @@ export class Web3auth {
     const web3auth = new Web3AuthNoModal(web3authOptions)
 
     const openloginAdapter = new OpenloginAdapter(openloginOptions)
+
     web3auth.configureAdapter(openloginAdapter)
+
+    openloginAdapter.setAdapterSettings({
+      privateKeyProvider: new CommonPrivateKeyProvider({
+        config: {
+          chainConfig: openloginAdapter.chainConfigProxy as CustomChainConfig
+        }
+      })
+    })
+
+    await web3auth.init()
 
     return new Web3auth(web3auth)
   }
@@ -117,8 +137,6 @@ export class Web3auth {
     }
   }
 
-  protected static SYNCHRONIZER = new SingleSynchronizer()
-
   static async connect({
     loginProvider,
     reconnect = false
@@ -126,28 +144,20 @@ export class Web3auth {
     loginProvider: LOGIN_PROVIDER_TYPE
     reconnect?: boolean
   }): Promise<Web3auth | undefined> {
-    const { promise, resolve } = Web3auth.SYNCHRONIZER.get()
-    if (promise) {
-      return promise
-    }
-
     try {
       const wa = await Web3auth.create()
-      const connected = wa.connectTo(loginProvider, reconnect)
+      const connected = await wa.connectTo(loginProvider, reconnect)
       if (connected === undefined) {
         // reconnect
         return await Web3auth.connect({ loginProvider })
       } else if (!connected) {
         // failed
-        resolve(undefined)
         return undefined
       }
 
-      resolve(wa)
       return wa
     } catch (err) {
       console.error(err)
-      resolve(undefined)
       return undefined
     }
   }
@@ -235,6 +245,23 @@ export class Web3auth {
     return new ethers.Wallet(privateKey).address
   }
 
+  async cacheKeystore() {
+    const privateKey = await this.getPrivateKey()
+    const hash = await this.getUniqueHash()
+    if (!privateKey || !hash) {
+      return false
+    }
+
+    const key = keylessKey(hash)
+
+    await new Storage({
+      area: StoreArea.SESSION,
+      secretKeyList: [key]
+    }).set(key, privateKey)
+
+    return true
+  }
+
   async getKeystore(
     wallet: IWallet,
     subWallet?: ISubWallet
@@ -253,32 +280,44 @@ export class Web3auth {
         return
     }
 
-    const hash = await this.getUniqueHash()
-    if (!hash) {
+    storedHash = extractWalletHash(storedHash)
+    if (!storedHash) {
       return
     }
 
-    if (hash !== extractWalletHash(storedHash)) {
+    const key = keylessKey(storedHash)
+    let privateKey: string | undefined = await SESSION_STORE.get(key)
+
+    if (!privateKey) {
+      // check hash consistency
+      const hash = await this.getUniqueHash()
+      if (!hash) {
+        return
+      }
+
+      if (hash !== storedHash) {
+        return
+      }
+
+      await this.cacheKeystore()
+
+      privateKey = await this.getPrivateKey()
+    }
+
+    if (!privateKey) {
       return
     }
 
     let acc
     switch (wallet.type) {
       case WalletType.KEYLESS_HD: {
-        const mnemonic = await this.getMnemonic()
-        if (!mnemonic) {
-          return
-        }
+        const mnemonic = entropyToMnemonic(privateKey)
         acc = ethers.utils.HDNode.fromMnemonic(mnemonic)
         break
       }
       case WalletType.KEYLESS:
       // pass through
       case WalletType.KEYLESS_GROUP: {
-        const privateKey = await this.getPrivateKey()
-        if (!privateKey) {
-          return
-        }
         acc = new ethers.Wallet(privateKey)
         break
       }
@@ -293,4 +332,8 @@ export class Web3auth {
       _isKeystoreAccount: true
     } as KeystoreAccount
   }
+}
+
+function keylessKey(hash: string): string {
+  return `${StoreKey.KEYLESS_PREFIX}_web3auth_${hash}`
 }

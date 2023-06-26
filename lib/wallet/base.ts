@@ -3,6 +3,8 @@ import type { _KeystoreAccount } from '@ethersproject/json-wallets/lib.esm/keyst
 import type { KeystoreAccount } from '@ethersproject/json-wallets/lib/keystore'
 import assert from 'assert'
 import walletConnectLogo from 'data-base64:~assets/thirdparty/walletconnect.svg'
+import web3authLogoDark from 'data-base64:~assets/thirdparty/web3auth-favicon-Dark.svg'
+import web3authLogoLight from 'data-base64:~assets/thirdparty/web3auth-favicon.svg'
 import { ethers } from 'ethers'
 
 import { NetworkKind } from '~lib/network'
@@ -150,15 +152,24 @@ export function canWalletSign(type: WalletType) {
 export function getWalletTypeIdentifier(wallet: IWallet): {
   identifier?: string
   logo?: string
+  logoLight?: string
+  logoDark?: string
+  logoHeight?: string | number
 } {
   let identifier = undefined
   let logo = undefined
+  let logoLight = undefined
+  let logoDark = undefined
+  let logoHeight = undefined
   switch (wallet.type) {
     case WalletType.HD:
       identifier = 'HD'
       break
     case WalletType.PRIVATE_KEY:
       identifier = '' // empty for simple wallet
+      break
+    case WalletType.PRIVATE_KEY_GROUP:
+      identifier = 'PrivKey Group'
       break
     case WalletType.WATCH:
       identifier = 'Watch'
@@ -176,8 +187,19 @@ export function getWalletTypeIdentifier(wallet: IWallet): {
     // pass through
     case WalletType.WALLET_CONNECT_GROUP:
       logo = walletConnectLogo
+      break
+    case WalletType.KEYLESS_HD:
+      identifier = 'HD'
+    // pass through
+    case WalletType.KEYLESS:
+    // pass through
+    case WalletType.KEYLESS_GROUP:
+      logoLight = web3authLogoLight
+      logoDark = web3authLogoDark
+      logoHeight = '20px'
+      break
   }
-  return { identifier, logo }
+  return { identifier, logo, logoLight, logoDark, logoHeight }
 }
 
 export function getWalletTypeTitle(wallet: IWallet) {
@@ -185,7 +207,9 @@ export function getWalletTypeTitle(wallet: IWallet) {
     case WalletType.HD:
       return 'Hierarchical Deterministic (HD)'
     case WalletType.PRIVATE_KEY:
-      return 'Controlled by Private Key'
+      return 'Private-key'
+    case WalletType.PRIVATE_KEY_GROUP:
+      return 'Private-key Group'
     case WalletType.WATCH:
       return 'Watch Address'
     case WalletType.WATCH_GROUP:
@@ -198,6 +222,12 @@ export function getWalletTypeTitle(wallet: IWallet) {
       return 'WalletConnect'
     case WalletType.WALLET_CONNECT_GROUP:
       return 'WalletConnect Group'
+    case WalletType.KEYLESS_HD:
+      return 'Keyless Hierarchical Deterministic (HD)'
+    case WalletType.KEYLESS:
+      return 'Keyless'
+    case WalletType.KEYLESS_GROUP:
+      return 'Keyless Group'
   }
 }
 

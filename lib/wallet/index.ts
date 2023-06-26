@@ -144,9 +144,9 @@ export async function getStructuralSigningWallet(
     )
   } else {
     const wa = await Web3auth.create()
-    if (!wa.connected) {
+    /* if (!wa.connected) {
       return
-    }
+    } */
     keystore = await wa.getKeystore(wallet, subWallet)
   }
 

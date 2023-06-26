@@ -214,12 +214,15 @@ export const WalletItem = ({
                 </Text>
               )}
               {typeIdentifier && (
-                <Text textAlign="start">
+                <HStack>
                   <TypeBadge
                     identifier={typeIdentifier.identifier}
                     logo={typeIdentifier.logo}
+                    logoLight={typeIdentifier.logoLight}
+                    logoDark={typeIdentifier.logoDark}
+                    logoHeight={typeIdentifier.logoHeight}
                   />
-                </Text>
+                </HStack>
               )}
             </HStack>
 

@@ -11,6 +11,8 @@ import '~lib/services/transaction'
 import '~lib/services/wallet'
 
 async function init() {
+  ;(globalThis as any).window = globalThis
+
   SERVICE_WORKER_SERVER.listen()
 
   checkLockTime(async () => {

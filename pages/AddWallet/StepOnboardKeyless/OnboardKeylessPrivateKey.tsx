@@ -36,11 +36,13 @@ import {
 export const OnboardKeylessPrivateKey = ({
   hash,
   privateKey,
-  info
+  info,
+  done
 }: {
   hash: string
   privateKey: string
   info: KeylessWalletInfo
+  done: () => {}
 }) => {
   const { nextStep } = useWizard()
 
@@ -85,7 +87,7 @@ export const OnboardKeylessPrivateKey = ({
   const [alert, setAlert] = useState('')
   useEffect(() => {
     setAlert('')
-  }, [privateKeys, name])
+  }, [privateKeys, name, willAddToExistingGroupChecked, isUseGroupChecked])
 
   const addWallet = useAddWallet()
   const addSubWallets = useAddSubWallets()
@@ -144,6 +146,8 @@ export const OnboardKeylessPrivateKey = ({
       }
     }
 
+    done()
+
     nextStep().then()
   }, [
     accounts,
@@ -151,6 +155,7 @@ export const OnboardKeylessPrivateKey = ({
     willAddToExistingGroupChecked,
     addWallet,
     addSubWallets,
+    done,
     nextStep
   ])
 

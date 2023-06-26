@@ -5,7 +5,7 @@ import { useAsync } from 'react-use'
 
 import { StorageCallbackMap, useStorage } from '@plasmohq/storage'
 
-import { ENV } from '~lib/env'
+import { isBackgroundWorker } from '~lib/detect'
 import { useSubWalletsCount } from '~lib/services/wallet'
 import { LOCAL_STORE, SESSION_STORE, StoreArea, StoreKey } from '~lib/store'
 
@@ -107,7 +107,7 @@ class Password {
   }
 }
 
-export const PASSWORD = new Password(ENV.inServiceWorker)
+export const PASSWORD = new Password(isBackgroundWorker())
 
 export function watchPasswordUnlocked(handler: (isUnlocked: boolean) => void) {
   const callbackMap: StorageCallbackMap = {

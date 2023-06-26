@@ -13,7 +13,7 @@ import {
   ec
 } from 'starknet'
 
-import { ENV } from '~lib/env'
+import { isBackgroundWorker } from '~lib/detect'
 import type {
   AddStarknetChainParameters,
   SwitchStarknetChainParameter,
@@ -43,7 +43,7 @@ declare global {
 }
 
 if (
-  !ENV.inServiceWorker &&
+  !isBackgroundWorker() &&
   process.env.PLASMO_PUBLIC_ENABLE_STARKNET &&
   !globalThis.archmage.starknet
 ) {

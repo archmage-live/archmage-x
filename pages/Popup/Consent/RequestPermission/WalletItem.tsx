@@ -2,7 +2,6 @@ import { Box, Button, Checkbox, HStack, Text } from '@chakra-ui/react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { AccountAvatar } from '~components/AccountAvatar'
-import { Badge } from '~components/Badge'
 import { TypeBadge } from '~components/TypeBadge'
 import { WalletId } from '~lib/active'
 import { formatNumber } from '~lib/formatNumber'
@@ -137,12 +136,15 @@ export const WalletItem = ({
                 </Text>
               )}
               {typeIdentifier && (
-                <Text textAlign="start">
+                <HStack>
                   <TypeBadge
                     identifier={typeIdentifier.identifier}
                     logo={typeIdentifier.logo}
+                    logoLight={typeIdentifier.logoLight}
+                    logoDark={typeIdentifier.logoDark}
+                    logoHeight={typeIdentifier.logoHeight}
                   />
-                </Text>
+                </HStack>
               )}
             </HStack>
           </HStack>

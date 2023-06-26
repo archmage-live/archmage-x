@@ -13,7 +13,7 @@ import { arrayify, hexlify } from '@ethersproject/bytes'
 import type { SignDoc } from 'cosmjs-types/cosmos/tx/v1beta1/tx'
 import Long from 'long'
 
-import { ENV } from '~lib/env'
+import { isBackgroundWorker } from '~lib/detect'
 
 import {
   Context,
@@ -37,7 +37,7 @@ declare global {
 }
 
 if (
-  !ENV.inServiceWorker &&
+  !isBackgroundWorker() &&
   process.env.PLASMO_PUBLIC_ENABLE_COSMOS &&
   !globalThis.archmage.cosm
 ) {
