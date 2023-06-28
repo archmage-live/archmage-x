@@ -42,7 +42,7 @@ export function web3AuthInitOptions(): [
         ticker: 'ETH',
         tickerName: 'ether'
       },
-      enableLogging: true,
+      enableLogging: false,
       storageKey: 'local',
       sessionTime: 86400 * 7, // 7 days
       web3AuthNetwork: 'cyan',

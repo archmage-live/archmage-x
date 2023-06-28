@@ -532,13 +532,27 @@ function markSubWalletItem(
 }
 
 export function isSameWallet(a: IWallet, b: IWallet) {
-  return a.id === b.id && a.sortId === b.sortId && a.name === b.name
+  return (
+    a.id === b.id &&
+    a.sortId === b.sortId &&
+    a.name === b.name &&
+    stableHash(a.info) === stableHash(b.info)
+  )
 }
 
 export function isSameSubWallet(a: ISubWallet, b: ISubWallet) {
-  return a.id === b.id && a.sortId === b.sortId && a.name === b.name
+  return (
+    a.id === b.id &&
+    a.sortId === b.sortId &&
+    a.name === b.name &&
+    stableHash(a.info) === stableHash(b.info)
+  )
 }
 
 export function isSameAccount(a: IChainAccount, b: IChainAccount) {
-  return a.id === b.id && stableHash(a.info) === stableHash(b.info)
+  return (
+    a.id === b.id &&
+    a.address === b.address &&
+    stableHash(a.info) === stableHash(b.info)
+  )
 }

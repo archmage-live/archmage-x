@@ -42,7 +42,7 @@ export function useKeylessOnboardToast(
         description: (
           <HStack justify="end" spacing={4}>
             <Button
-              colorScheme="purple"
+              colorScheme="blue"
               onClick={async () => {
                 await createTab(
                   `#/tab/keyless-onboard?wallet=${wallet.id}&subWallet=${subWallet.id}`

@@ -32,6 +32,7 @@ import { getNetworkInfo } from '~lib/services/network'
 import { useBalance, useNetworkStatus } from '~lib/services/provider'
 import { useCurrentSiteUrl } from '~lib/tab'
 import { shortenAddress } from '~lib/utils'
+import { KeylessOnboardPopover } from '~pages/KeylessOnboard/KeylessOnboardPopover'
 import { useKeylessOnboardToast } from '~pages/KeylessOnboard/useKeylessOnboardToast'
 import { ConnectedAccountsModal } from '~pages/Popup/Assets/ConnectedAccounts'
 import { useDepositModal } from '~pages/Popup/Assets/Deposit'
@@ -96,7 +97,7 @@ export default function Assets({ onLoaded }: { onLoaded?: () => void }) {
         <Stack w="full" spacing={4}>
           <Stack w="full" spacing={2}>
             <HStack justify="space-between" minH={16} position="relative">
-              <HStack w={16} spacing={2} left="-4px" position="relative">
+              <HStack w={20} spacing={2} left="-4px" position="relative">
                 <Box w={4}>
                   {(isInternetOk === false || isNetworkOk === false) && (
                     <Tooltip
@@ -225,7 +226,9 @@ export default function Assets({ onLoaded }: { onLoaded?: () => void }) {
                 </Button>
               </Tooltip>
 
-              <HStack w="56px" justify="end">
+              <HStack w={20} spacing={2} justify="end">
+                <KeylessOnboardPopover wallet={wallet} subWallet={subWallet} />
+
                 <AccountMenu />
               </HStack>
             </HStack>

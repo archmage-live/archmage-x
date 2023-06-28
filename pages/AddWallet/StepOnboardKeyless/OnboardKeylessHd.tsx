@@ -18,7 +18,7 @@ import { KeylessWalletInfo, isMnemonic } from '~lib/wallet'
 import { NameInput } from '~pages/AddWallet/NameInput'
 import {
   AddWalletKind,
-  useAccounts,
+  useAccountsNum,
   useAddWallet,
   useAddWalletKind,
   useKeylessInfo,
@@ -41,12 +41,11 @@ export const OnboardKeylessHd = ({
   const { nextStep } = useWizard()
 
   const [name, setName] = useName()
-  const [accountsNum, setAccountsNum] = useState(1)
-  const [accounts, setAccounts] = useAccounts()
+  const [accountsNum, setAccountsNum] = useAccountsNum()
   useEffect(() => {
     setName('')
     setAccountsNum(1)
-  }, [setName])
+  }, [setName, setAccountsNum])
 
   const [, setAddWalletKind] = useAddWalletKind()
   const [, setWalletHash] = useWalletHash()

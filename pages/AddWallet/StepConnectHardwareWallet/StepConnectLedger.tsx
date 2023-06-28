@@ -257,8 +257,11 @@ export const StepConnectLedger = ({}: {}) => {
         })
       }
     })
-    setAccounts(accounts)
-  }, [addresses, publicKeys, checked, setAccounts, networkKind])
+    setAccounts(
+      accounts,
+      addWalletKind === AddWalletKind.CONNECT_HARDWARE_GROUP
+    )
+  }, [addresses, publicKeys, checked, setAccounts, networkKind, addWalletKind])
 
   useEffect(() => {
     if (!pathSchema) {
@@ -268,9 +271,13 @@ export const StepConnectLedger = ({}: {}) => {
       return
     }
     if (addWalletKind === AddWalletKind.CONNECT_HARDWARE && accounts.length) {
+      const index = addresses.indexOf(
+        accounts[0].addresses![networkKind]!.address
+      )
+      assert(index >= 0)
       const path = generatePath(
         pathSchema.pathTemplate,
-        accounts[0].index,
+        index,
         pathSchema.derivePosition
       )
       setHdPath(path)
@@ -283,7 +290,9 @@ export const StepConnectLedger = ({}: {}) => {
     setHdPathTemplate,
     setDerivePosition,
     addWalletKind,
-    accounts
+    networkKind,
+    accounts,
+    addresses
   ])
 
   const existingWallet = useWallet(
@@ -611,7 +620,7 @@ const AddressItem = ({
   network: INetwork
   index: number
   path: string
-  address: string
+  address?: string
   addressPrefix?: string
   isDisabled: boolean
   isChecked: boolean

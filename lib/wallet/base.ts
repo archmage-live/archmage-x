@@ -3,8 +3,7 @@ import type { _KeystoreAccount } from '@ethersproject/json-wallets/lib.esm/keyst
 import type { KeystoreAccount } from '@ethersproject/json-wallets/lib/keystore'
 import assert from 'assert'
 import walletConnectLogo from 'data-base64:~assets/thirdparty/walletconnect.svg'
-import web3authLogoDark from 'data-base64:~assets/thirdparty/web3auth-favicon-Dark.svg'
-import web3authLogoLight from 'data-base64:~assets/thirdparty/web3auth-favicon.svg'
+import web3authLogo from 'data-base64:~assets/thirdparty/web3auth-favicon.svg'
 import { ethers } from 'ethers'
 
 import { NetworkKind } from '~lib/network'
@@ -194,8 +193,7 @@ export function getWalletTypeIdentifier(wallet: IWallet): {
     case WalletType.KEYLESS:
     // pass through
     case WalletType.KEYLESS_GROUP:
-      logoLight = web3authLogoLight
-      logoDark = web3authLogoDark
+      logo = web3authLogo
       logoHeight = '20px'
       break
   }

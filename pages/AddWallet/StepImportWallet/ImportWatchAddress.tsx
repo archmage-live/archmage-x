@@ -114,7 +114,8 @@ export const ImportWatchAddress = () => {
             }
           }
         }
-      })
+      }),
+      isWatchGroupChecked
     )
   }, [networkKind, addresses, isWatchGroupChecked, setAccounts, nextIndex])
 

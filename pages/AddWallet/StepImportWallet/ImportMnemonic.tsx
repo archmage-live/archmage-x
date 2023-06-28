@@ -152,14 +152,17 @@ export const ImportMnemonic = () => {
     }
     const m = mnemonic.join(' ')
     const w = checkPrivateKeyFromMnemonic(m, hdPath)
-    setAccounts([
-      {
-        index: isUseGroupChecked ? nextIndex : PSEUDO_INDEX,
-        hash: w ? w.address : '',
-        mnemonic: m,
-        path: hdPath
-      }
-    ])
+    setAccounts(
+      [
+        {
+          index: isUseGroupChecked ? nextIndex : PSEUDO_INDEX,
+          hash: w ? w.address : '',
+          mnemonic: m,
+          path: hdPath
+        }
+      ],
+      isUseGroupChecked
+    )
   }, [mnemonic, hdPath, nextIndex, isUseGroupChecked, setAccounts])
 
   const [alert, setAlert] = useState('')

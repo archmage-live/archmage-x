@@ -24,7 +24,7 @@ specifiers:
   '@bitcoinerlab/secp256k1': ^1.0.2
   '@chain-registry/types': ^0.14.0
   '@chakra-ui/icons': ^2.0.19
-  '@chakra-ui/react': ^2.7.0
+  '@chakra-ui/react': ^2.7.1
   '@chakra-ui/system': ^2.5.8
   '@chakra-ui/theme-tools': ^2.0.18
   '@cosmjs/amino': ^0.29.5
@@ -206,7 +206,7 @@ dependencies:
   '@archmagelive/plasmo': 0.56.0_biqbaboplfbrettd7655fr4n2y
   '@bitcoinerlab/secp256k1': 1.0.2
   '@chakra-ui/icons': 2.0.19_62ez5scglruzijw4rniqq4y54y
-  '@chakra-ui/react': 2.7.0_i6hofmxeu4jfwv6ommxokm3npq
+  '@chakra-ui/react': 2.7.1_i6hofmxeu4jfwv6ommxokm3npq
   '@chakra-ui/theme-tools': 2.0.18_hq32mhfiotloi5hecuixt2e454
   '@cosmjs/amino': 0.29.5
   '@cosmjs/crypto': file:resolutions/@cosmjs/crypto
@@ -279,7 +279,7 @@ dependencies:
   '@walletconnect/web3-provider': 1.8.0_@babel+core@7.18.6
   '@web3auth/base': 6.1.1_@babel+runtime@7.22.5
   '@web3auth/base-provider': 6.1.1_@babel+runtime@7.22.5
-  '@web3auth/modal': 6.1.1_ambfthdkldu63bpz37i65gpeme
+  '@web3auth/modal': 6.1.1_urkw7jxu2z2zh5fgmbvlctfccu
   '@web3auth/mpc-core-kit': 0.1.0_@babel+runtime@7.22.5
   '@web3auth/no-modal': 6.1.1_@babel+runtime@7.22.5
   '@web3auth/openlogin-adapter': 6.1.1_w4ppat5lekm6og7r62lkirdk7q
@@ -1792,8 +1792,8 @@ packages:
       '@chakra-ui/utils': 2.0.15
       react: 18.2.0
 
-  /@chakra-ui/react/2.7.0_i6hofmxeu4jfwv6ommxokm3npq:
-    resolution: {integrity: sha512-+FcUFQMsPfhWuM9Iu7uqufwwhmHN2IX6FWsBixYGOalO86dpgETsILMZP9PuWfgj7GpWiy2Dum6HXekh0Tk2Mg==}
+  /@chakra-ui/react/2.7.1_i6hofmxeu4jfwv6ommxokm3npq:
+    resolution: {integrity: sha512-uIYIAg+gnUoRbgdCfSEVvQnrEz0oWWXATGGSQpxmuJovNVyZKnX/Xug7NkWQfBUJPYRSG+VB69ZmsAFpyLSMtA==}
     peerDependencies:
       '@emotion/react': ^11.0.0
       '@emotion/styled': ^11.0.0
@@ -1835,6 +1835,7 @@ packages:
       '@chakra-ui/react-env': 3.0.0_react@18.2.0
       '@chakra-ui/select': 2.0.19_62ez5scglruzijw4rniqq4y54y
       '@chakra-ui/skeleton': 2.0.24_62ez5scglruzijw4rniqq4y54y
+      '@chakra-ui/skip-nav': 2.0.15_62ez5scglruzijw4rniqq4y54y
       '@chakra-ui/slider': 2.0.25_62ez5scglruzijw4rniqq4y54y
       '@chakra-ui/spinner': 2.0.13_62ez5scglruzijw4rniqq4y54y
       '@chakra-ui/stat': 2.0.18_62ez5scglruzijw4rniqq4y54y
@@ -1886,6 +1887,16 @@ packages:
       '@chakra-ui/media-query': 3.2.12_62ez5scglruzijw4rniqq4y54y
       '@chakra-ui/react-use-previous': 2.0.5_react@18.2.0
       '@chakra-ui/shared-utils': 2.0.5
+      '@chakra-ui/system': 2.5.8_fdnqutfacy7v3gmlcm66flps3q
+      react: 18.2.0
+    dev: false
+
+  /@chakra-ui/skip-nav/2.0.15_62ez5scglruzijw4rniqq4y54y:
+    resolution: {integrity: sha512-5UtmlnV4BmIgEk6lQ0h81JEYhPX04wJEk5ZMoilQ2zEQYL6TkVVHkhRXyc1Zfq76hmHuZPXZV/yJeTecj6jIrA==}
+    peerDependencies:
+      '@chakra-ui/system': '>=2.0.0'
+      react: '>=18'
+    dependencies:
       '@chakra-ui/system': 2.5.8_fdnqutfacy7v3gmlcm66flps3q
       react: 18.2.0
     dev: false
@@ -7051,8 +7062,8 @@ packages:
       - utf-8-validate
     dev: false
 
-  /@walletconnect/core/2.8.2:
-    resolution: {integrity: sha512-24ygQe1RIjcBQEh+I1KlhpLgKONrL0ll+2HIoLlSs/NLvsvNT7Ib2ku+ded8o82Pgji3DSSl5h0RNknkw2L5pQ==}
+  /@walletconnect/core/2.8.4:
+    resolution: {integrity: sha512-3CQHud4As0kPRvlW1w/wSWS2F3yXlAo5kSEJyRWLRPqXG+aSCVWM8cVM8ch5yoeyNIfOHhEINdsYMuJG1+yIJQ==}
     dependencies:
       '@walletconnect/heartbeat': 1.2.1
       '@walletconnect/jsonrpc-provider': 1.0.13
@@ -7065,8 +7076,8 @@ packages:
       '@walletconnect/relay-auth': 1.0.4
       '@walletconnect/safe-json': 1.0.2
       '@walletconnect/time': 1.0.2
-      '@walletconnect/types': 2.8.2
-      '@walletconnect/utils': 2.8.2
+      '@walletconnect/types': 2.8.4
+      '@walletconnect/utils': 2.8.4
       events: 3.3.0
       lodash.isequal: 4.5.0
       uint8arrays: 3.1.1
@@ -7265,17 +7276,17 @@ packages:
       tslib: 1.14.1
     dev: false
 
-  /@walletconnect/sign-client/2.8.2:
-    resolution: {integrity: sha512-TcViLWHE55SqYeFPDny1JTuktMOszffzYK5R22VAGOeHW3PhUqJoMcMXUEhSHuEeLcvGT1F25CiyNOWo2url/g==}
+  /@walletconnect/sign-client/2.8.4:
+    resolution: {integrity: sha512-eRvWtKBAgzo/rbIkw+rkKco2ulSW8Wor/58UsOBsl9DKr1rIazZd4ZcUdaTjg9q8AT1476IQakCAIuv+1FvJwQ==}
     dependencies:
-      '@walletconnect/core': 2.8.2
+      '@walletconnect/core': 2.8.4
       '@walletconnect/events': 1.0.1
       '@walletconnect/heartbeat': 1.2.1
       '@walletconnect/jsonrpc-utils': 1.0.8
       '@walletconnect/logger': 2.0.1
       '@walletconnect/time': 1.0.2
-      '@walletconnect/types': 2.8.2
-      '@walletconnect/utils': 2.8.2
+      '@walletconnect/types': 2.8.4
+      '@walletconnect/utils': 2.8.4
       events: 3.3.0
     transitivePeerDependencies:
       - '@react-native-async-storage/async-storage'
@@ -7318,6 +7329,20 @@ packages:
       - lokijs
     dev: false
 
+  /@walletconnect/types/2.8.4:
+    resolution: {integrity: sha512-Fgqe87R7rjMOGSvx28YPLTtXM6jj+oUOorx8cE+jEw2PfpWp5myF21aCdaMBR39h0QHij5H1Z0/W9e7gm4oC1Q==}
+    dependencies:
+      '@walletconnect/events': 1.0.1
+      '@walletconnect/heartbeat': 1.2.1
+      '@walletconnect/jsonrpc-types': 1.0.3
+      '@walletconnect/keyvaluestorage': 1.0.2
+      '@walletconnect/logger': 2.0.1
+      events: 3.3.0
+    transitivePeerDependencies:
+      - '@react-native-async-storage/async-storage'
+      - lokijs
+    dev: false
+
   /@walletconnect/utils/1.8.0:
     resolution: {integrity: sha512-zExzp8Mj1YiAIBfKNm5u622oNw44WOESzo6hj+Q3apSMIb0Jph9X3GDIdbZmvVZsNPxWDL7uodKgZcCInZv2vA==}
     dependencies:
@@ -7342,6 +7367,28 @@ packages:
       '@walletconnect/safe-json': 1.0.2
       '@walletconnect/time': 1.0.2
       '@walletconnect/types': 2.8.2
+      '@walletconnect/window-getters': 1.0.1
+      '@walletconnect/window-metadata': 1.0.1
+      detect-browser: 5.3.0
+      query-string: 7.1.3
+      uint8arrays: 3.1.1
+    transitivePeerDependencies:
+      - '@react-native-async-storage/async-storage'
+      - lokijs
+    dev: false
+
+  /@walletconnect/utils/2.8.4:
+    resolution: {integrity: sha512-NGw6BINYNeT9JrQrnxldAPheO2ymRrwGrgfExZMyrkb1MShnIX4nzo4KirKInM4LtrY6AA/v0Lu3ooUdfO+xIg==}
+    dependencies:
+      '@stablelib/chacha20poly1305': 1.0.1
+      '@stablelib/hkdf': 1.0.1
+      '@stablelib/random': 1.0.2
+      '@stablelib/sha256': 1.0.1
+      '@stablelib/x25519': 1.0.3
+      '@walletconnect/relay-api': 1.0.9
+      '@walletconnect/safe-json': 1.0.2
+      '@walletconnect/time': 1.0.2
+      '@walletconnect/types': 2.8.4
       '@walletconnect/window-getters': 1.0.1
       '@walletconnect/window-metadata': 1.0.1
       detect-browser: 5.3.0
@@ -7629,7 +7676,7 @@ packages:
       - utf-8-validate
     dev: false
 
-  /@web3auth/modal/6.1.1_ambfthdkldu63bpz37i65gpeme:
+  /@web3auth/modal/6.1.1_urkw7jxu2z2zh5fgmbvlctfccu:
     resolution: {integrity: sha512-FXOptc+z06RCczSnVP8t3cDsrNU3lSV/iFMtkDVcQGE9Ogit0jr6D9xnkNFeekSS4WrMa6J+68RQNl/2j1N8Hw==}
     engines: {node: '>=16.18.1', npm: '>=8.x'}
     peerDependencies:
@@ -7649,7 +7696,7 @@ packages:
       '@web3auth/torus-evm-adapter': 6.1.1_@babel+runtime@7.22.5
       '@web3auth/torus-solana-adapter': 6.1.1_w4ppat5lekm6og7r62lkirdk7q
       '@web3auth/ui': 6.1.1_77ur6f7lacfuw5aqqkxpqkguwm
-      '@web3auth/wallet-connect-v2-adapter': 6.1.1_hmjisure63wgx5lh2hx5xgco5a
+      '@web3auth/wallet-connect-v2-adapter': 6.1.1_xdcuysfavq7ti67tzywyjfdtzq
     transitivePeerDependencies:
       - '@react-native-async-storage/async-storage'
       - '@sentry/types'
@@ -7870,7 +7917,7 @@ packages:
       - utf-8-validate
     dev: false
 
-  /@web3auth/wallet-connect-v2-adapter/6.1.1_hmjisure63wgx5lh2hx5xgco5a:
+  /@web3auth/wallet-connect-v2-adapter/6.1.1_xdcuysfavq7ti67tzywyjfdtzq:
     resolution: {integrity: sha512-xXcrXHrhEgE7CqetD7ZSmKYaI+e5cQYsGZQuFllAlsjA/BJRt9BpHR10afo6vysPFHHp1xIRsJc2YL/XwNBeZw==}
     engines: {node: '>=16.18.1', npm: '>=8.x'}
     peerDependencies:
@@ -7880,9 +7927,9 @@ packages:
       '@walletconnect/utils': ^2.x
     dependencies:
       '@babel/runtime': 7.22.5
-      '@walletconnect/sign-client': 2.8.2
+      '@walletconnect/sign-client': 2.8.4
       '@walletconnect/types': 1.8.0
-      '@walletconnect/utils': 2.8.2
+      '@walletconnect/utils': 2.8.4
       '@web3auth/base': 6.1.1_@babel+runtime@7.22.5
       '@web3auth/base-evm-adapter': 6.1.1_@babel+runtime@7.22.5
       '@web3auth/ethereum-provider': 6.1.1_@babel+runtime@7.22.5
@@ -18127,7 +18174,7 @@ packages:
     dev: false
 
   github.com/ethereumjs/ethereumjs-abi/ee3994657fa7a427238e6ba92a84d0b529bbcde0:
-    resolution: {tarball: https://codeload.github.com/ethereumjs/ethereumjs-abi/tar.gz/ee3994657fa7a427238e6ba92a84d0b529bbcde0}
+    resolution: {commit: ee3994657fa7a427238e6ba92a84d0b529bbcde0, repo: git+ssh://git@github.com/ethereumjs/ethereumjs-abi.git, type: git}
     name: ethereumjs-abi
     version: 0.6.8
     dependencies:

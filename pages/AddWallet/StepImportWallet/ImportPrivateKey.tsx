@@ -99,7 +99,8 @@ export const ImportPrivateKey = () => {
           hash: w ? w.address : '',
           privateKey: w ? w.privateKey : ''
         }
-      })
+      }),
+      isUseGroupChecked
     )
   }, [privateKeys, isUseGroupChecked, setAccounts, nextIndex])
 

@@ -106,7 +106,8 @@ export const OnboardKeylessPrivateKey = ({
           hash,
           keyless: info
         }
-      })
+      }),
+      isUseGroupChecked
     )
   }, [
     hash,

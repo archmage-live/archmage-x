@@ -30,6 +30,12 @@ export const theme: Record<string, any> = extendTheme(
         '*': {
           msOverflowStyle: 'none',
           scrollbarWidth: 'none'
+        },
+        '--toast-z-index': 1300,
+        // TODO: Remove this once --toast-z-index takes effect
+        // https://github.com/chakra-ui/chakra-ui/issues/7505
+        'div[id^="chakra-toast"]': {
+          zIndex: `1300 !important`
         }
       })
     },
@@ -44,11 +50,11 @@ export const theme: Record<string, any> = extendTheme(
       Drawer: {
         ...baseTheme.components.Drawer,
         baseStyle: (props: StyleFunctionProps) => {
-          const baseStyle = baseTheme.components.Drawer.baseStyle(props)
+          const baseStyle = baseTheme.components.Drawer.baseStyle?.(props)
           return {
             ...baseStyle,
             dialog: {
-              ...baseStyle.dialog,
+              ...baseStyle?.dialog,
               bg: mode('white', 'gray.800')(props)
             }
           }
@@ -72,11 +78,11 @@ export const theme: Record<string, any> = extendTheme(
       Modal: {
         ...baseTheme.components.Modal,
         baseStyle: (props: StyleFunctionProps) => {
-          const baseStyle = baseTheme.components.Modal.baseStyle(props)
+          const baseStyle = baseTheme.components.Modal.baseStyle?.(props)
           return {
             ...baseStyle,
             dialog: {
-              ...baseStyle.dialog,
+              ...baseStyle?.dialog,
               bg: mode('white', 'gray.800')(props)
             }
           }
@@ -89,7 +95,7 @@ export const theme: Record<string, any> = extendTheme(
           solid: (props: StyleFunctionProps) => {
             const { colorScheme: c } = props
             if (c === 'gray') {
-              return baseTheme.components.Button.variants.solid
+              return baseTheme.components.Button.variants?.solid
             }
 
             const bg = mode(`${c}.600`, `${c}.500`)(props)

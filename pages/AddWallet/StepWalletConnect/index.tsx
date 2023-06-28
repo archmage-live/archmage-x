@@ -51,24 +51,12 @@ export const StepWalletConnect = () => {
 
   const [isGroupChecked, setIsGroupChecked] = useState(false)
   useEffect(() => {
-    if (!isGroupChecked) {
-      setAccounts((accounts) =>
-        accounts.length
-          ? [
-              {
-                ...accounts[0],
-                index: PSEUDO_INDEX
-              }
-            ]
-          : accounts
-      )
-    }
     setAddWalletKind(
       !isGroupChecked
         ? AddWalletKind.WALLET_CONNECT
         : AddWalletKind.WALLET_CONNECT_GROUP
     )
-  }, [isGroupChecked, setAddWalletKind, setAccounts])
+  }, [isGroupChecked, setAddWalletKind])
 
   const [alert, setAlert] = useState('')
   useEffect(() => {
@@ -113,17 +101,14 @@ export const StepWalletConnect = () => {
   const { addresses, refresh } = useWalletConnect(network, setUrl)
 
   useEffect(() => {
-    if (!addresses?.length) {
-      return
-    }
     setAccounts((accounts) => {
       let accs = accounts.slice()
       if (isGroupChecked) {
         let update = false
         const existing = new Set(
-          accs.map((c) => c.addresses![networkKind]!.address)
+          accounts.map((c) => c.addresses![networkKind]!.address)
         )
-        for (const address of addresses) {
+        for (const address of addresses || []) {
           if (!existing.has(address)) {
             accs.push({
               index: accs.length,
@@ -137,17 +122,18 @@ export const StepWalletConnect = () => {
             update = true
           }
         }
-        if (accs.at(0)?.index === PSEUDO_INDEX) {
-          accs[0].index = 0
-          update = true
-        }
+
         if (!update) {
           return accounts
         }
       } else {
-        if (accounts[0]?.addresses![networkKind]!.address === addresses[0]) {
+        if (
+          !addresses?.length ||
+          accounts[0]?.addresses![networkKind]!.address === addresses[0]
+        ) {
           return accounts
         }
+
         accs = [
           {
             index: PSEUDO_INDEX,
@@ -164,7 +150,7 @@ export const StepWalletConnect = () => {
       refresh().then()
 
       return accs
-    })
+    }, isGroupChecked)
   }, [networkKind, addresses, refresh, setAccounts, isGroupChecked])
 
   return (

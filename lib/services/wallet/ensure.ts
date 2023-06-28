@@ -353,7 +353,7 @@ export async function ensureChainAccount(
     } as IChainAccount
   } else {
     if (!address) {
-      return
+      return existing
     }
     account = {
       ...existing,

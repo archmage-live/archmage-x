@@ -68,6 +68,7 @@ export type CreateWalletOpts = {
   wallet: IWallet
   decryptedKeystores?: DecryptedKeystoreAccount[]
   accounts?: WalletAccount[] // for imported wallets
+  accountsNum?: number // for HD wallets
   notBackedUp?: boolean
 }
 
@@ -604,6 +605,7 @@ class WalletService extends WalletServicePartial {
     wallet,
     decryptedKeystores,
     accounts,
+    accountsNum,
     notBackedUp
   }: CreateWalletOpts) {
     await DB.transaction(
@@ -620,7 +622,7 @@ class WalletService extends WalletServicePartial {
         switch (wallet.type) {
           case WalletType.HD: {
             // derive one sub wallet
-            await this.deriveSubWallets(wallet.id, 1)
+            await this.deriveSubWallets(wallet.id, accountsNum || 1)
             break
           }
           case WalletType.PRIVATE_KEY: {
@@ -714,7 +716,7 @@ class WalletService extends WalletServicePartial {
           }
           case WalletType.KEYLESS_HD: {
             // derive one sub wallet
-            await this.deriveSubWallets(wallet.id, 1)
+            await this.deriveSubWallets(wallet.id, accountsNum || 1)
             break
           }
           case WalletType.KEYLESS: {

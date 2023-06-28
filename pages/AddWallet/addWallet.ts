@@ -2,7 +2,7 @@ import assert from 'assert'
 import { atom, useAtom } from 'jotai'
 import { useCallback } from 'react'
 
-import { DerivePosition, IWallet } from '~lib/schema'
+import { DerivePosition, IWallet, PSEUDO_INDEX } from '~lib/schema'
 import {
   AddSubWalletsOpts,
   NewWalletOpts,
@@ -46,6 +46,7 @@ const hdPathTemplateAtom = atom('')
 const derivePositionAtom = atom<DerivePosition | undefined>(undefined)
 const existingWallet = atom<IWallet | undefined>(undefined)
 const accountsAtom = atom<WalletAccount[]>([])
+const accountsNumAtom = atom(0)
 const hwTypeAtom = atom<HardwareWalletType | undefined>(undefined)
 const hwTransportAtom = atom<'hid' | 'ble' | undefined>(undefined)
 const walletHash = atom<string>('')
@@ -86,7 +87,50 @@ export function useExistingWallet() {
 }
 
 export function useAccounts() {
-  return useAtom(accountsAtom)
+  const [accounts, setAccounts] = useAtom(accountsAtom)
+
+  const setAccountsCb = useCallback(
+    (
+      update:
+        | WalletAccount[]
+        | ((prevAccounts: WalletAccount[]) => WalletAccount[]),
+      isGroup: boolean = false
+    ) => {
+      setAccounts((prevAccounts) => {
+        let accounts
+        if (Array.isArray(update)) {
+          accounts = update
+        } else {
+          accounts = update(prevAccounts)
+        }
+
+        const accs = accounts.slice()
+        let changed = false
+        if (isGroup && accs[0]?.index === PSEUDO_INDEX) {
+          accs[0].index = 0
+          changed = true
+        } else if (!isGroup && accs.length) {
+          if (accs[0].index !== PSEUDO_INDEX) {
+            accs[0].index = PSEUDO_INDEX
+            changed = true
+          }
+          if (accs.length > 1) {
+            accs.splice(1)
+            changed = true
+          }
+        }
+
+        return changed ? accs : accounts
+      })
+    },
+    [setAccounts]
+  )
+
+  return [accounts, setAccountsCb] as [typeof accounts, typeof setAccountsCb]
+}
+
+export function useAccountsNum() {
+  return useAtom(accountsNumAtom)
 }
 
 export function useHwType() {
@@ -124,6 +168,7 @@ export function useClear() {
   const [, setHwTransport] = useHwTransport()
   const [, setWalletHash] = useWalletHash()
   const [, setAccounts] = useAccounts()
+  const [, setAccountsNum] = useAccountsNum()
   const [, setExistingWallet] = useExistingWallet()
   const [, setAddressType] = useAddressType()
   const [, setKeylessInfo] = useKeylessInfo()
@@ -139,6 +184,7 @@ export function useClear() {
     setHwTransport(undefined)
     setWalletHash('')
     setAccounts([])
+    setAccountsNum(0)
     setExistingWallet(undefined)
     setAddressType(undefined)
     setKeylessInfo(undefined)
@@ -156,6 +202,7 @@ export function useAddWallet() {
   const [derivePosition] = useDerivePosition()
   const [name] = useName()
   const [accounts] = useAccounts()
+  const [accountsNum] = useAccountsNum()
   const [hwType] = useHwType()
   const [walletHash] = useWalletHash()
   const [addressType] = useAddressType()
@@ -228,7 +275,6 @@ export function useAddWallet() {
       case AddWalletKind.KEYLESS_HD:
         opts.type = WalletType.KEYLESS_HD
         opts.hash = walletHash
-        opts.accounts = accounts
         opts.keylessInfo = keylessInfo
         opts.addressType = addressType || BtcAddressType.NATIVE_SEGWIT
         break
@@ -259,6 +305,7 @@ export function useAddWallet() {
       wallet,
       decryptedKeystores,
       accounts,
+      accountsNum,
       notBackedUp
     }).finally(() => {
       setCreated(true)
@@ -269,6 +316,7 @@ export function useAddWallet() {
     name,
     addWalletKind,
     accounts,
+    accountsNum,
     notBackedUp,
     mnemonic,
     addressType,
