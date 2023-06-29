@@ -22,6 +22,7 @@ import {
   hasSubKeystore,
   hasWalletKeystore,
   isHardwareWallet,
+  isHdWallet,
   isKeylessWallet
 } from './base'
 import { BtcWallet, BtcWalletOpts } from './btc'
@@ -255,7 +256,7 @@ export async function getSigningWallet(
   })
   assert(master && subWallet)
 
-  if (hasWalletKeystore(master.type)) {
+  if (hasWalletKeystore(master.type) || isKeylessWallet(master.type)) {
     let signingWallet = await getStructuralSigningWallet(
       master,
       subWallet,
@@ -266,7 +267,7 @@ export async function getSigningWallet(
       return undefined
     }
 
-    if (master.type === WalletType.HD) {
+    if (isHdWallet(master.type)) {
       const hdPath = await WALLET_SERVICE.getHdPath(
         account.masterId,
         account.networkKind

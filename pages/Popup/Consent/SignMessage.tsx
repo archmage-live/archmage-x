@@ -13,7 +13,6 @@ import {
 import { arrayify } from '@ethersproject/bytes'
 import { Utf8ErrorFuncs, toUtf8String } from '@ethersproject/strings'
 import { FaGlobeAmericas } from '@react-icons/all-files/fa/FaGlobeAmericas'
-import * as React from 'react'
 import { ReactNode, useCallback, useState } from 'react'
 
 import {
@@ -29,10 +28,12 @@ import {
 } from '~lib/services/wallet'
 import { useSiteIconUrl } from '~lib/tab'
 import { isWalletConnectProtocol } from '~lib/wallet'
+
+import { SignableChecker, useSignableChecker } from './Checker'
 import {
   WalletConnectSigningModel,
   useWalletConnectSigning
-} from '~pages/Popup/Consent/WallectConnectSigningModel'
+} from './WallectConnectSigningModel'
 
 export const SignMessage = ({
   request,
@@ -92,6 +93,8 @@ export const SignMessage = ({
       await process()
     }
   }, [onComplete, onWcOpen, onWcSignedRef, request, setWcPayload, wallet])
+
+  const signable = useSignableChecker(network, account)
 
   return (
     <Box w="full" h="full" overflowY="auto">
@@ -157,6 +160,12 @@ export const SignMessage = ({
         </Stack>
 
         <Stack spacing={8} px={8} pb={8}>
+          <SignableChecker
+            wallet={wallet}
+            subWallet={subWallet}
+            signable={signable}
+          />
+
           <HStack justify="space-between">
             <Button
               size="lg"
@@ -173,6 +182,7 @@ export const SignMessage = ({
               w={40}
               colorScheme="purple"
               isLoading={isLoading}
+              isDisabled={signable === false}
               onClick={onConfirm}>
               Sign
             </Button>

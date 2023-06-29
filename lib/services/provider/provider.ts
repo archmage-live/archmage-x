@@ -40,6 +40,8 @@ export interface Provider {
   getTypedData(typedData: any): Promise<any>
 
   signTypedData(account: IChainAccount, typedData: any): Promise<any>
+
+  isSignable(account: IChainAccount): Promise<boolean>
 }
 
 export async function getProvider(network: INetwork): Promise<Provider> {

@@ -75,6 +75,7 @@ import {
   useWalletConnectSigning
 } from '~pages/Popup/Consent/WallectConnectSigningModel'
 
+import { SignableChecker, useSignableChecker } from '../Checker'
 import { EvmAdvancedGasFeeModal } from './EvmAdvancedGasFeeModal'
 import {
   EvmGasFeeEditModal,
@@ -379,6 +380,8 @@ export const EvmTransaction = ({
     onWcSignedRef,
     onWcOpen
   ])
+
+  const signable = useSignableChecker(network, account)
 
   return (
     <>
@@ -707,6 +710,12 @@ export const EvmTransaction = ({
             </AlertBox>
           )}
 
+          <SignableChecker
+            wallet={wallet}
+            subWallet={subWallet}
+            signable={signable}
+          />
+
           <HStack justify="center" spacing={12}>
             <Button
               size="lg"
@@ -725,7 +734,8 @@ export const EvmTransaction = ({
               isDisabled={
                 (populated.code && !ignoreEstimateError) ||
                 insufficientBalance !== false ||
-                !isGasLimitValid
+                !isGasLimitValid ||
+                signable === false
               }
               onClick={onConfirm}>
               Confirm

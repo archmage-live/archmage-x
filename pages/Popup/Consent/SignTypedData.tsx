@@ -29,10 +29,12 @@ import {
 } from '~lib/services/wallet'
 import { useSiteIconUrl } from '~lib/tab'
 import { isWalletConnectProtocol } from '~lib/wallet'
+
+import { SignableChecker, useSignableChecker } from './Checker'
 import {
   WalletConnectSigningModel,
   useWalletConnectSigning
-} from '~pages/Popup/Consent/WallectConnectSigningModel'
+} from './WallectConnectSigningModel'
 
 export const SignTypedData = ({
   request,
@@ -110,6 +112,8 @@ export const SignTypedData = ({
     payload,
     wallet
   ])
+
+  const signable = useSignableChecker(network, account)
 
   return (
     <Box w="full" h="full" overflowY="auto">
@@ -197,6 +201,12 @@ export const SignTypedData = ({
         </Stack>
 
         <Stack spacing={8} px={8} pb={8}>
+          <SignableChecker
+            wallet={wallet}
+            subWallet={subWallet}
+            signable={signable}
+          />
+
           <HStack justify="space-between">
             <Button
               size="lg"
@@ -213,6 +223,7 @@ export const SignTypedData = ({
               w={40}
               colorScheme="purple"
               isLoading={isLoading}
+              isDisabled={signable === false}
               onClick={onConfirm}>
               Sign
             </Button>

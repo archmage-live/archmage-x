@@ -210,4 +210,8 @@ export class AptosProvider implements Provider {
     ).slice(2)
     return typedData
   }
+
+  async isSignable(account: IChainAccount): Promise<boolean> {
+    return !!(await getSigningWallet(account))
+  }
 }

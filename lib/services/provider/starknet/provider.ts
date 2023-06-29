@@ -2,6 +2,7 @@ import { defaultProvider } from 'starknet'
 
 import { IChainAccount, INetwork } from '~lib/schema'
 import { Provider, TransactionPayload } from '~lib/services/provider'
+import { getSigningWallet } from '~lib/wallet'
 
 import { StarknetClient, getStarknetClient } from './client'
 
@@ -77,5 +78,9 @@ export class StarknetProvider implements Provider {
 
   signTypedData(account: IChainAccount, typedData: any): Promise<any> {
     return Promise.resolve(undefined)
+  }
+
+  async isSignable(account: IChainAccount): Promise<boolean> {
+    return !!(await getSigningWallet(account))
   }
 }

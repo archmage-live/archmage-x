@@ -151,6 +151,10 @@ export class BtcProvider implements Provider {
     throw new Error('not implemented')
   }
 
+  async isSignable(account: IChainAccount): Promise<boolean> {
+    return !!(await getSigningWallet(account))
+  }
+
   async buildBtcTransfer(account: IChainAccount, params: BtcTxParams) {
     assert(account.address)
 

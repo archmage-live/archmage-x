@@ -137,6 +137,10 @@ export class CosmProvider implements Provider {
   async signTypedData(account: IChainAccount, typedData: any): Promise<any> {
     throw new Error('not implemented')
   }
+
+  async isSignable(account: IChainAccount): Promise<boolean> {
+    return !!(await getSigningWallet(account))
+  }
 }
 
 export function makeADR36AminoSignDoc(

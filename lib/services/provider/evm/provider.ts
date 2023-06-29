@@ -362,8 +362,8 @@ export class EvmProvider implements Provider {
     return this.provider.sendTransaction(signedTransaction)
   }
 
-  async signMessage(wallet: IChainAccount, message: any): Promise<any> {
-    const signer = await getSigningWallet(wallet)
+  async signMessage(account: IChainAccount, message: any): Promise<any> {
+    const signer = await getSigningWallet(account)
     if (!signer) {
       throw ethErrors.rpc.internal()
     }
@@ -393,12 +393,16 @@ export class EvmProvider implements Provider {
     return typedData
   }
 
-  async signTypedData(wallet: IChainAccount, typedData: any): Promise<any> {
-    const signer = await getSigningWallet(wallet)
+  async signTypedData(account: IChainAccount, typedData: any): Promise<any> {
+    const signer = await getSigningWallet(account)
     if (!signer) {
       throw ethErrors.rpc.internal()
     }
     return signer.signTypedData(typedData)
+  }
+
+  async isSignable(account: IChainAccount): Promise<boolean> {
+    return !!(await getSigningWallet(account))
   }
 }
 
