@@ -1,6 +1,7 @@
 import { ChakraProvider } from '@chakra-ui/react'
 import { HashRouter, Route, Routes } from 'react-router-dom'
 
+import { ColorModeEffectProvider } from '~components/ColorModeEffectProvider'
 import { QueryProvider } from '~components/QueryProvider'
 import { useActiveBuild } from '~lib/active'
 import { LanguageProvider } from '~lib/i18n'
@@ -18,25 +19,27 @@ export default function Popup() {
     <QueryProvider>
       <LanguageProvider>
         <ChakraProvider resetCSS theme={theme}>
-          <HashRouter>
-            <Routes>
-              <Route path="/*" element={<PopupPage />} />
-              <Route
-                path="/tab/*"
-                element={
-                  <Routes>
-                    <Route path="/welcome" element={<WelcomePage />} />
-                    <Route path="/add-wallet" element={<AddWalletPage />} />
-                    <Route path="/settings/*" element={<SettingsPage />} />
-                    <Route
-                      path="/keyless-onboard"
-                      element={<KeylessOnboardPage />}
-                    />
-                  </Routes>
-                }
-              />
-            </Routes>
-          </HashRouter>
+          <ColorModeEffectProvider>
+            <HashRouter>
+              <Routes>
+                <Route path="/*" element={<PopupPage />} />
+                <Route
+                  path="/tab/*"
+                  element={
+                    <Routes>
+                      <Route path="/welcome" element={<WelcomePage />} />
+                      <Route path="/add-wallet" element={<AddWalletPage />} />
+                      <Route path="/settings/*" element={<SettingsPage />} />
+                      <Route
+                        path="/keyless-onboard"
+                        element={<KeylessOnboardPage />}
+                      />
+                    </Routes>
+                  }
+                />
+              </Routes>
+            </HashRouter>
+          </ColorModeEffectProvider>
         </ChakraProvider>
       </LanguageProvider>
     </QueryProvider>

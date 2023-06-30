@@ -153,7 +153,9 @@ export const SignMessage = ({
                 borderWidth="1px"
                 borderColor="gray.500"
                 bg={bg}>
-                <Text noOfLines={100}>{readableMsg}</Text>
+                <Text noOfLines={100} whiteSpace="pre-line">
+                  {readableMsg}
+                </Text>
               </Box>
             </Stack>
           </Stack>

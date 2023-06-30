@@ -31,7 +31,7 @@ export const Deposit = ({ onClose }: { onClose: () => void }) => {
   const qrCodeBg = useColorModeValue('white', 'black')
   const qrCodeFg = useColorModeValue('black', 'white')
 
-  if (!network || !account?.address) {
+  if (!network || !account) {
     return <></>
   }
 
@@ -56,30 +56,36 @@ export const Deposit = ({ onClose }: { onClose: () => void }) => {
             <Box w={10}></Box>
           </HStack>
 
-          <Stack align="center" spacing={6}>
-            <QRCodeSVG
-              value={account.address}
-              size={144}
-              bgColor={qrCodeBg}
-              fgColor={qrCodeFg}
-              level={'L'}
-              includeMargin={false}
-            />
+          {account.address && (
+            <Stack align="center" spacing={6}>
+              <QRCodeSVG
+                value={account.address}
+                size={144}
+                bgColor={qrCodeBg}
+                fgColor={qrCodeFg}
+                level={'L'}
+                includeMargin={false}
+              />
 
-            <CopyArea name="Address" copy={account.address} props={{ w: 64 }} />
+              <CopyArea
+                name="Address"
+                copy={account.address}
+                props={{ w: 64 }}
+              />
 
-            {wallet && !canWalletSign(wallet.type) ? (
-              <AlertBox level="error">
-                Don&apos;t use this watch-only wallet to receive tokens.
-                Otherwise you may lose your assets.
-              </AlertBox>
-            ) : (
-              <Text color="gray.500" textAlign="center">
-                This address can be used to receive tokens on&nbsp;
-                {getNetworkInfo(network).name}.
-              </Text>
-            )}
-          </Stack>
+              {wallet && !canWalletSign(wallet.type) ? (
+                <AlertBox level="error">
+                  Don&apos;t use this watch-only wallet to receive tokens.
+                  Otherwise you may lose your assets.
+                </AlertBox>
+              ) : (
+                <Text color="gray.500" textAlign="center">
+                  This address can be used to receive tokens on&nbsp;
+                  {getNetworkInfo(network).name}.
+                </Text>
+              )}
+            </Stack>
+          )}
         </Stack>
       </Stack>
 
