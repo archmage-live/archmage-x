@@ -4,6 +4,7 @@ import { HashRouter, Route, Routes } from 'react-router-dom'
 import { ColorModeEffectProvider } from '~components/ColorModeEffectProvider'
 import { QueryProvider } from '~components/QueryProvider'
 import { useActiveBuild } from '~lib/active'
+import { colorModeManager } from '~lib/hooks/useColorModeEffect'
 import { LanguageProvider } from '~lib/i18n'
 import AddWalletPage from '~pages/AddWallet'
 import KeylessOnboardPage from '~pages/KeylessOnboard'
@@ -18,7 +19,10 @@ export default function Popup() {
   return (
     <QueryProvider>
       <LanguageProvider>
-        <ChakraProvider resetCSS theme={theme}>
+        <ChakraProvider
+          resetCSS
+          theme={theme}
+          colorModeManager={colorModeManager}>
           <ColorModeEffectProvider>
             <HashRouter>
               <Routes>
