@@ -18,7 +18,7 @@ import { formatNumber } from '~lib/formatNumber'
 import { INetwork, IPendingTx, ITransaction } from '~lib/schema'
 import { getNetworkInfo } from '~lib/services/network'
 import { TransactionType, getTransactionInfo } from '~lib/services/transaction'
-import { shortenAddress } from '~lib/utils'
+import { shortenString } from '~lib/utils'
 
 import { Status } from './ActivityDetail/evm'
 
@@ -99,7 +99,7 @@ export const ActivityItem = ({
                   </Tooltip>
                 )}
                 <Text>
-                  {txInfo.origin || (txInfo.to && shortenAddress(txInfo.to))}
+                  {txInfo.origin || (txInfo.to && shortenString(txInfo.to))}
                 </Text>
               </HStack>
             </Stack>

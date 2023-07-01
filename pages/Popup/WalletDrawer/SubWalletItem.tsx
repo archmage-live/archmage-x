@@ -28,7 +28,7 @@ import { formatNumber } from '~lib/formatNumber'
 import { INetwork } from '~lib/schema'
 import { Amount } from '~lib/services/token'
 import { SubWalletEntry } from '~lib/services/wallet/tree'
-import { shortenAddress } from '~lib/utils'
+import { shortenString } from '~lib/utils'
 import { DeleteWalletOpts } from '~pages/Settings/SettingsWallets/DeleteWalletModal'
 
 export const SubWalletItem = ({
@@ -83,7 +83,7 @@ export const SubWalletItem = ({
                 sx={{ fontFeatureSettings: '"tnum"' }}
                 fontSize="sm"
                 color="gray.500">
-                {shortenAddress(account.address)}
+                {shortenString(account.address)}
               </Text>
             </HStack>
           </HStack>

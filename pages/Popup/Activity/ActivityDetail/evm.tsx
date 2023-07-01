@@ -35,7 +35,7 @@ import {
   getTransactionInfo
 } from '~lib/services/transaction'
 import { EvmTransactionInfo } from '~lib/services/transaction/evmService'
-import { shortenAddress } from '~lib/utils'
+import { shortenString } from '~lib/utils'
 
 import { FromTo } from '../../Consent/Transaction/FromTo'
 
@@ -136,7 +136,7 @@ export const EvmActivityDetail = ({
       <HStack justify="space-between">
         <Text>Tx Hash</Text>
         <HStack fontSize="sm" color="gray.500" spacing={1}>
-          <Text>{shortenAddress(info.tx.hash, { prefixChars: 4 })}</Text>
+          <Text>{shortenString(info.tx.hash, { prefixChars: 4 })}</Text>
           <Tooltip
             label={!hasCopied ? 'Copy Tx Hash' : 'Copied'}
             placement="top"

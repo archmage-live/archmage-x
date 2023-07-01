@@ -39,7 +39,7 @@ import {
   CosmTransactionInfo,
   isCosmPendingTxInfo
 } from '~lib/services/transaction/cosmService'
-import { shortenAddress } from '~lib/utils'
+import { shortenString } from '~lib/utils'
 
 import { Status } from './evm'
 
@@ -103,7 +103,7 @@ export const CosmActivityDetail = ({
         <Text>Tx Hash</Text>
         <HStack fontSize="sm" color="gray.500" spacing={1}>
           <Text>
-            {shortenAddress(txInfo.hash, {
+            {shortenString(txInfo.hash, {
               prefixChars: 4
             })}
           </Text>
@@ -161,7 +161,7 @@ export const CosmActivityDetail = ({
         <HStack justify="space-between">
           <Text>Signer</Text>
           <Text>
-            {shortenAddress(signer, {
+            {shortenString(signer, {
               prefixChars: 4,
               leadingChars: (network.info as CosmAppChainInfo).bech32Config
                 .bech32PrefixAccAddr

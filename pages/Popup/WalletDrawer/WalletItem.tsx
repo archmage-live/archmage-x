@@ -29,7 +29,7 @@ import {
   persistReorderSubWallets
 } from '~lib/services/wallet/reorder'
 import { SubWalletEntry, WalletEntry } from '~lib/services/wallet/tree'
-import { shortenAddress } from '~lib/utils'
+import { shortenString } from '~lib/utils'
 import { WalletType, getWalletTypeIdentifier, isWalletGroup } from '~lib/wallet'
 import { useDeleteWalletModal } from '~pages/Settings/SettingsWallets/DeleteWalletModal'
 
@@ -184,7 +184,7 @@ export const WalletItem = ({
                     sx={{ fontFeatureSettings: '"tnum"' }}
                     fontSize="sm"
                     color="gray.500">
-                    {shortenAddress(account.address)}
+                    {shortenString(account.address)}
                   </Text>
                 )}
 

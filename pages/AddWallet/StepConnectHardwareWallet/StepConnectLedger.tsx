@@ -53,7 +53,7 @@ import {
 import { getNetworkInfo, useNetwork, useNetworks } from '~lib/services/network'
 import { useBalance } from '~lib/services/provider'
 import { useSubWallets, useWallet } from '~lib/services/wallet'
-import { shortenAddress } from '~lib/utils'
+import { shortenString } from '~lib/utils'
 import { WalletAccount, generatePath } from '~lib/wallet'
 import {
   AddWalletKind,
@@ -678,7 +678,7 @@ const AddressItem = ({
                     sx={{ fontFeatureSettings: '"tnum"' }}
                     fontSize="sm"
                     color="gray.500">
-                    {shortenAddress(address, { leadingChars: addressPrefix })}
+                    {shortenString(address, { leadingChars: addressPrefix })}
                   </Text>
 
                   <Text fontSize="xs" color="gray.500" textAlign="start">

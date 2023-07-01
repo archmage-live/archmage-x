@@ -8,7 +8,7 @@ import { ReactNode } from 'react'
 import { CosmAppChainInfo } from '~lib/network/cosm'
 import { TokenInfo } from '~lib/services/datasource/cosmostation'
 import { TransactionType } from '~lib/services/transaction'
-import { shortenAddress } from '~lib/utils'
+import { shortenString } from '~lib/utils'
 import { FromTo } from '~pages/Popup/Consent/Transaction/FromTo'
 
 import { CosmMsg, CosmTxInfo } from '.'
@@ -213,7 +213,7 @@ export function msgTimeout(
       <HStack justify="space-between">
         <Text>Refund Receiver</Text>
         <Text>
-          {shortenAddress(refundReceiver, {
+          {shortenString(refundReceiver, {
             leadingChars: refundReceiver && fromBech32(refundReceiver).prefix
           })}
         </Text>

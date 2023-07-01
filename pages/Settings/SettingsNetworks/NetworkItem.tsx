@@ -6,6 +6,7 @@ import { DraggableProvidedDragHandleProps } from 'react-beautiful-dnd'
 
 import { INetwork } from '~lib/schema'
 import { NetworkInfo, useNetworkLogoUrl } from '~lib/services/network'
+import { shortenString } from '~lib/utils'
 
 export const NetworkItem = ({
   network,
@@ -82,7 +83,7 @@ export const NetworkItem = ({
           <Stack fontSize="sm" color="gray.500">
             <Text noOfLines={1}>{info.description}</Text>
             <HStack>
-              <Text>Chain ID: {info.chainId}</Text>
+              <Text>Chain ID: {shortenString(String(info.chainId))}</Text>
               <Text>Currency: {info.currencySymbol}</Text>
             </HStack>
           </Stack>

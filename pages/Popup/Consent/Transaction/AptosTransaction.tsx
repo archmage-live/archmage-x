@@ -53,7 +53,7 @@ import {
   useAptosTxCoinInfos,
   useAptosTxInfo
 } from '~lib/services/transaction/aptosService'
-import { shortenAddress } from '~lib/utils'
+import { shortenString } from '~lib/utils'
 import {
   AptosTransactionChanges,
   AptosTransactionEvents,
@@ -383,7 +383,7 @@ export const AptosTransaction = ({
                 ) : (
                   <Text fontSize="md" noOfLines={3}>
                     <chakra.span color="blue.500">
-                      {shortenAddress(moduleAddr)}
+                      {shortenString(moduleAddr)}
                     </chakra.span>
                     <chakra.span color="gray.500">&nbsp;::&nbsp;</chakra.span>
                     <chakra.span color="purple.500">{moduleName}</chakra.span>

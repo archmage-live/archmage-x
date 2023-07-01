@@ -27,7 +27,7 @@ import {
   AptosTransactionInfo,
   isAptosPendingTransaction
 } from '~lib/services/transaction/aptosService'
-import { shortenAddress } from '~lib/utils'
+import { shortenString } from '~lib/utils'
 
 import { FromTo } from '../../Consent/Transaction/FromTo'
 import { Status } from './evm'
@@ -87,7 +87,7 @@ export const AptosActivityDetail = ({
       <HStack justify="space-between">
         <Text>Tx Hash</Text>
         <HStack fontSize="sm" color="gray.500" spacing={1}>
-          <Text>{shortenAddress(info.tx.hash, { prefixChars: 4 })}</Text>
+          <Text>{shortenString(info.tx.hash, { prefixChars: 4 })}</Text>
           <Tooltip
             label={!hasCopied ? 'Copy Tx Hash' : 'Copied'}
             placement="top"

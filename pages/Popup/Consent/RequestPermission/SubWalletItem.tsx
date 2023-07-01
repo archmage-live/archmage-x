@@ -6,7 +6,7 @@ import { formatNumber } from '~lib/formatNumber'
 import { INetwork } from '~lib/schema'
 import { useBalance } from '~lib/services/provider'
 import { SubWalletEntry } from '~lib/services/wallet/tree'
-import { shortenAddress } from '~lib/utils'
+import { shortenString } from '~lib/utils'
 
 export const SubWalletItem = ({
   network,
@@ -55,7 +55,7 @@ export const SubWalletItem = ({
                 sx={{ fontFeatureSettings: '"tnum"' }}
                 fontSize="sm"
                 color="gray.500">
-                {shortenAddress(account.address)}
+                {shortenString(account.address)}
               </Text>
             </HStack>
           </HStack>

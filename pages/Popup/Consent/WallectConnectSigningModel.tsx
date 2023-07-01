@@ -21,7 +21,7 @@ import { AlertBox } from '~components/AlertBox'
 import { WallectConnectQRCode } from '~components/WalletConnectQRCode'
 import { IChainAccount, INetwork } from '~lib/schema'
 import { getNetworkInfo } from '~lib/services/network'
-import { shortenAddress } from '~lib/utils'
+import { shortenString } from '~lib/utils'
 import { useWalletConnect } from '~lib/walletConnect'
 
 export function useWalletConnectSigning() {
@@ -198,7 +198,7 @@ const WalletConnectSigning = ({
               Open any wallet app which supports WallectConnect
             </ListItem>
             <ListItem>
-              Make sure you are using account {shortenAddress(account.address)}{' '}
+              Make sure you are using account {shortenString(account.address)}{' '}
               on {getNetworkInfo(network).name}
             </ListItem>
             <ListItem>Scan the QR code above</ListItem>

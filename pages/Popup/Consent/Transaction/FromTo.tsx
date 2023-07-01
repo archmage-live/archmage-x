@@ -5,7 +5,7 @@ import { ReactNode } from 'react'
 import { AccountAvatar } from '~components/AccountAvatar'
 import { useActiveWallet } from '~lib/active'
 import { ISubWallet } from '~lib/schema'
-import { shortenAddress } from '~lib/utils'
+import { shortenString } from '~lib/utils'
 
 export const FromTo = ({
   from,
@@ -25,7 +25,7 @@ export const FromTo = ({
       <HStack minW={36}>
         {from && <AccountAvatar text={from} scale={0.8} />}
         <Text fontSize="md">
-          {from ? shortenAddress(from, { leadingChars }) : 'n/a'}
+          {from ? shortenString(from, { leadingChars }) : 'n/a'}
         </Text>
         {checkFrom}
       </HStack>
@@ -43,7 +43,7 @@ export const FromTo = ({
         {to && <AccountAvatar text={to} scale={0.8} />}
         <Text fontSize="md">
           {to
-            ? shortenAddress(to, {
+            ? shortenString(to, {
                 leadingChars:
                   leadingChars2 === undefined ? leadingChars : leadingChars2
               })

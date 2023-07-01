@@ -20,7 +20,7 @@ import { setActiveWallet } from '~lib/active'
 import { INetwork } from '~lib/schema'
 import { CONNECTED_SITE_SERVICE } from '~lib/services/connectedSiteService'
 import { getCurrentTab } from '~lib/tab'
-import { shortenAddress } from '~lib/utils'
+import { shortenString } from '~lib/utils'
 
 import { SubEntry } from '.'
 
@@ -65,7 +65,7 @@ export const SubWalletItem = ({
                 sx={{ fontFeatureSettings: '"tnum"' }}
                 fontSize="sm"
                 color="gray.500">
-                {shortenAddress(account.address)}
+                {shortenString(account.address)}
               </Text>
             </HStack>
           </HStack>

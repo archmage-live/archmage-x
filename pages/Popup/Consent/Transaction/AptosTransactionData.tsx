@@ -16,7 +16,7 @@ import {
   isAptosScriptPayload
 } from '~lib/services/provider/aptos/types'
 import { extractAptosIdentifier } from '~lib/services/transaction/aptosParse'
-import { shortenAddress } from '~lib/utils'
+import { shortenString } from '~lib/utils'
 
 export const AptosTransactionPayload = ({
   tx
@@ -215,7 +215,7 @@ export const AptosTransactionEvents = ({
                 <CopyArea
                   name="Address"
                   copy={event.guid.account_address}
-                  area={shortenAddress(event.guid.account_address)}
+                  area={shortenString(event.guid.account_address)}
                   props={{ maxW: 'calc(100% - 120px)' }}
                 />
               </HStack>
@@ -296,7 +296,7 @@ export const AptosTransactionChanges = ({
                       <CopyArea
                         name="Address"
                         copy={value as string}
-                        area={shortenAddress(value as string)}
+                        area={shortenString(value as string)}
                         props={{ maxW: 'calc(100% - 120px)' }}
                       />
                     ) : isJson ? (

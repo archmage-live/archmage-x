@@ -31,7 +31,7 @@ import {
   useSubWalletsCount,
   useWallet
 } from '~lib/services/wallet'
-import { shortenAddress } from '~lib/utils'
+import { shortenString } from '~lib/utils'
 import { WalletType } from '~lib/wallet'
 
 interface DeleteWalletModalProps {
@@ -129,7 +129,7 @@ export const DeleteWalletModal = ({
                 <CopyArea
                   name="Address"
                   copy={account!.address!}
-                  area={shortenAddress(account!.address)}
+                  area={shortenString(account!.address)}
                   props={{
                     bg: undefined,
                     color: undefined,

@@ -4,24 +4,24 @@ export function stall(duration: number): Promise<void> {
   })
 }
 
-// shorten the checksummed version of the input address
-export function shortenAddress(
-  address?: string,
+// shorten the input string
+export function shortenString(
+  str?: string,
   opts?: {
     leadingChars?: number | string
     prefixChars?: number
     suffixChars?: number
   }
 ): string {
-  if (!address) {
+  if (!str) {
     return 'Not Available'
   }
 
   const { leadingChars = 2, prefixChars = 3, suffixChars = 4 } = opts || {}
 
-  return `${address.substring(
+  return `${str.substring(
     0,
     (typeof leadingChars === 'number' ? leadingChars : leadingChars.length) +
       prefixChars
-  )}...${address.substring(address.length - suffixChars)}`
+  )}...${str.substring(str.length - suffixChars)}`
 }

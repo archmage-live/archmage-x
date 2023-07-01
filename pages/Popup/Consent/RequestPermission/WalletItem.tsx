@@ -8,7 +8,7 @@ import { formatNumber } from '~lib/formatNumber'
 import { INetwork } from '~lib/schema/network'
 import { useBalance } from '~lib/services/provider'
 import { WalletEntry } from '~lib/services/wallet/tree'
-import { shortenAddress } from '~lib/utils'
+import { shortenString } from '~lib/utils'
 import { getWalletTypeIdentifier, isWalletGroup } from '~lib/wallet'
 
 import { SubWalletList } from './SubWalletList'
@@ -110,7 +110,7 @@ export const WalletItem = ({
                     sx={{ fontFeatureSettings: '"tnum"' }}
                     fontSize="sm"
                     color="gray.500">
-                    {shortenAddress(account.address)}
+                    {shortenString(account.address)}
                   </Text>
                 )}
 

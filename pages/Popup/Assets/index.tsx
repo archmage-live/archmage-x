@@ -31,7 +31,7 @@ import { useCryptoComparePrice } from '~lib/services/datasource/cryptocompare'
 import { getNetworkInfo } from '~lib/services/network'
 import { useBalance, useNetworkStatus } from '~lib/services/provider'
 import { useCurrentSiteUrl } from '~lib/tab'
-import { shortenAddress } from '~lib/utils'
+import { shortenString } from '~lib/utils'
 import { KeylessOnboardPopover } from '~pages/KeylessOnboard/KeylessOnboardPopover'
 import { useKeylessOnboardToast } from '~pages/KeylessOnboard/useKeylessOnboardToast'
 import { ConnectedAccountsModal } from '~pages/Popup/Assets/ConnectedAccounts'
@@ -214,7 +214,7 @@ export default function Assets({ onLoaded }: { onLoaded?: () => void }) {
                     </Stack>
                     <HStack justify="center" color="gray.500" ps={5}>
                       <Text fontSize="md">
-                        {shortenAddress(account?.address)}
+                        {shortenString(account?.address)}
                       </Text>
                       <Icon
                         w={3}

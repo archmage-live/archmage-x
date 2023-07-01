@@ -6,7 +6,7 @@ import { DraggableProvidedDragHandleProps } from 'react-beautiful-dnd'
 import { AccountAvatar } from '~components/AccountAvatar'
 import { IChainAccount, ISubWallet } from '~lib/schema'
 import { SubWalletEntry } from '~lib/services/wallet/tree'
-import { shortenAddress } from '~lib/utils'
+import { shortenString } from '~lib/utils'
 
 export const SubWalletItem = ({
   subWallet,
@@ -73,7 +73,7 @@ export const SubWalletItem = ({
           _groupHover={{ visibility: infoVisibility || 'visible' }}>
           <Stack fontSize="sm" color="gray.500" spacing={1}>
             <Text noOfLines={1}>
-              {shortenAddress(account?.address, {
+              {shortenString(account?.address, {
                 prefixChars: 6,
                 suffixChars: 6
               })}

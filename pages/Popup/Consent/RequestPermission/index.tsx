@@ -17,7 +17,7 @@ import { CONSENT_SERVICE, ConsentRequest } from '~lib/services/consentService'
 import { WALLET_SERVICE } from '~lib/services/wallet'
 import { useWalletTree } from '~lib/services/wallet/tree'
 import { useSiteIconUrl } from '~lib/tab'
-import { shortenAddress } from '~lib/utils'
+import { shortenString } from '~lib/utils'
 
 import { WalletList } from './WalletList'
 
@@ -142,7 +142,7 @@ export const RequestPermission = ({
                     <chakra.span fontStyle="italic">{info?.name}</chakra.span>
                   </Text>
                   <Text fontSize="lg" color="gray.500">
-                    {shortenAddress(info?.address)}
+                    {shortenString(info?.address)}
                   </Text>
                 </>
               ) : (

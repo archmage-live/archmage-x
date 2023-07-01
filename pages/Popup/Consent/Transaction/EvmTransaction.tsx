@@ -67,7 +67,7 @@ import {
 } from '~lib/services/provider/evm'
 import { Amount } from '~lib/services/token'
 import { useTransactionDescription } from '~lib/services/transaction/evmService'
-import { shortenAddress } from '~lib/utils'
+import { shortenString } from '~lib/utils'
 import { isHardwareWallet, isWalletConnectProtocol } from '~lib/wallet'
 import { EvmGasFeeEditSection } from '~pages/Popup/Consent/Transaction/EvmGasFeeEditSection'
 import {
@@ -431,7 +431,7 @@ export const EvmTransaction = ({
                   {isContract ? (
                     <>
                       <Text fontSize="md" color="blue.500">
-                        {shortenAddress(txParams.to)}
+                        {shortenString(txParams.to)}
                       </Text>
 
                       <HStack spacing={1} fontSize="md" color="gray.500">

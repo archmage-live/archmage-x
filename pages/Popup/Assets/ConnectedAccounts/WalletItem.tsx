@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef } from 'react'
 import { AccountAvatar } from '~components/AccountAvatar'
 import { useTransparentize } from '~lib/hooks/useColor'
 import { INetwork } from '~lib/schema/network'
-import { shortenAddress } from '~lib/utils'
+import { shortenString } from '~lib/utils'
 import { isWalletGroup } from '~lib/wallet'
 
 import { Entry } from '.'
@@ -83,7 +83,7 @@ export const WalletItem = ({
                       sx={{ fontFeatureSettings: '"tnum"' }}
                       fontSize="sm"
                       color="gray.500">
-                      {shortenAddress(account.address)}
+                      {shortenString(account.address)}
                     </Text>
                   )}
 
