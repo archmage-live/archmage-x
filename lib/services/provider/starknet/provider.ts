@@ -33,7 +33,7 @@ export class StarknetProvider implements Provider {
     return Promise.resolve('')
   }
 
-  estimateGasPrice(): Promise<any> {
+  estimateGasPrice(account: IChainAccount): Promise<any> {
     return Promise.resolve(undefined)
   }
 
@@ -49,7 +49,7 @@ export class StarknetProvider implements Provider {
     return Promise.resolve([])
   }
 
-  getNextNonce(address: string, tag?: string | number): Promise<number> {
+  getNextNonce(account: IChainAccount, tag?: string | number): Promise<number> {
     return Promise.resolve(0)
   }
 
@@ -64,7 +64,10 @@ export class StarknetProvider implements Provider {
     return Promise.resolve({} as any)
   }
 
-  sendTransaction(signedTransaction: any): Promise<any> {
+  sendTransaction(
+    account: IChainAccount,
+    signedTransaction: any
+  ): Promise<any> {
     return Promise.resolve(undefined)
   }
 

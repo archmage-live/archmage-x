@@ -7,7 +7,7 @@ import web3authLogo from 'data-base64:~assets/thirdparty/web3auth-favicon.svg'
 import { ethers } from 'ethers'
 
 import { NetworkKind } from '~lib/network'
-import { DerivePosition, IHdPath, IWallet, Index } from '~lib/schema'
+import { DerivePosition, IHdPath, INetwork, IWallet, Index } from '~lib/schema'
 
 export enum WalletType {
   HD = 'hd', // Hierarchical Deterministic, derived from mnemonic
@@ -30,11 +30,6 @@ export enum WalletType {
   KEYLESS = 'keyless', // keyless wallet
   KEYLESS_HD = 'keyless_hd', // Hierarchical Deterministic, derived from keyless wallet private key (as seed)
   KEYLESS_GROUP = 'keyless_group' // ditto, but in group
-}
-
-export enum AccountAbstractionType {
-  ERC4337 = 'erc4337',
-  SAFE = 'safe'
 }
 
 export function isWalletGroup(type: WalletType) {
@@ -244,6 +239,16 @@ export enum HardwareWalletType {
   LEDGER = 'Ledger'
 }
 
+export enum AccountAbstractionType {
+  // NATIVE = 'native', // starknet
+  ERC4337 = 'erc4337'
+  // SAFE = 'safe'
+}
+
+export interface AccountAbstractionInfo {
+  type: AccountAbstractionType
+}
+
 export enum KeylessWalletType {
   WEB3AUTH = 'Web3Auth'
 }
@@ -357,7 +362,7 @@ export function buildWalletUniqueHash(
 ) {
   let prefix: string = wallet.type
 
-  if (wallet.info.isAccountAbstraction) {
+  if (wallet.info.accountAbstraction) {
     prefix += '-aa'
   }
 

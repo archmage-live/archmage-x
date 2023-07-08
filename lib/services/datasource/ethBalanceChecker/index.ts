@@ -1,12 +1,13 @@
 // https://github.com/wbobeirne/eth-balance-checker
 // A smart contract and library pair that allows you to check for multiple ERC20 and Ether balances across multiple addresses in a single RPC call.
 import { AddressZero } from '@ethersproject/constants'
+import { BaseProvider } from '@ethersproject/providers'
 import {
   getAddressBalances,
   getAddressesBalances
 } from 'eth-balance-checker/lib/ethers'
 
-import { EvmClient } from '~lib/services/provider/evm/client'
+import { EvmClientManager } from '~lib/services/provider/evm/client'
 
 const NATIVE_TOKEN = AddressZero
 
@@ -31,7 +32,7 @@ class EthBalanceCheckerApi {
   NATIVE_TOKEN = NATIVE_TOKEN
 
   async getAddressBalances(
-    provider: EvmClient,
+    provider: BaseProvider,
     address: string,
     tokens: (string | typeof NATIVE_TOKEN)[] = [NATIVE_TOKEN] // '0x0' means native currency token
   ): Promise<Record<string, string> | undefined> {
@@ -53,7 +54,7 @@ class EthBalanceCheckerApi {
   }
 
   async getAddressesBalances(
-    provider: EvmClient,
+    provider: BaseProvider,
     addresses: string[],
     tokens: (string | typeof NATIVE_TOKEN)[] = [NATIVE_TOKEN] // '0x0' means native currency token
   ): Promise<Record<string, Record<string, string>> | undefined> {

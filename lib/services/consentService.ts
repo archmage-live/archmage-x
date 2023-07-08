@@ -438,7 +438,7 @@ class ConsentService extends ConsentServicePartial {
         case NetworkKind.COSM:
           break
         default:
-          txResponse = await provider.sendTransaction(signedTx)
+          txResponse = await provider.sendTransaction(account, signedTx)
           break
       }
     } else {

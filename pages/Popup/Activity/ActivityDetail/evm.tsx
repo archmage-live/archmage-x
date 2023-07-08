@@ -29,7 +29,7 @@ import { formatNumber } from '~lib/formatNumber'
 import { useTransparentize } from '~lib/hooks/useColor'
 import { INetwork, IPendingTx, ITransaction } from '~lib/schema'
 import { getNetworkInfo, getTransactionUrl } from '~lib/services/network'
-import { EvmClient } from '~lib/services/provider/evm'
+import { EvmClientManager } from '~lib/services/provider/evm'
 import {
   TransactionStatus,
   getTransactionInfo
@@ -90,7 +90,7 @@ export const EvmActivityDetail = ({
   const [baseFeePerGas, setBaseFeePerGas] = useState<BigNumber | null>()
 
   useAsync(async () => {
-    const provider = await EvmClient.from(network)
+    const provider = await EvmClientManager.from(network)
     let receipt
     if (info.receipt) {
       receipt = info.receipt

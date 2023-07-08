@@ -4,9 +4,9 @@ import assert from 'assert'
 import { NetworkKind } from '~lib/network'
 import { INetwork } from '~lib/schema'
 
-const defaultApiKey = '_gg7wSSi0KMBsdKnGVfHDueq6xMB9EkC'
+export const defaultApiKey = '_gg7wSSi0KMBsdKnGVfHDueq6xMB9EkC'
 
-const networkByChain = new Map([
+export const networkByChain = new Map([
   [1, Network.ETH_MAINNET],
   [5, Network.ETH_GOERLI],
   [10, Network.OPT_MAINNET],

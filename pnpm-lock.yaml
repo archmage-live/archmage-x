@@ -124,7 +124,8 @@ specifiers:
   '@web3auth/no-modal': ^6.1.1
   '@web3auth/openlogin-adapter': ^6.1.1
   '@web3auth/ui': ^6.1.1
-  '@zerodevapp/sdk': ^3.1.29
+  '@zerodevapp/contracts': 2.0.8
+  '@zerodevapp/sdk': ^3.1.47
   '@zxcvbn-ts/core': ^2.0.3
   '@zxcvbn-ts/language-common': ^2.0.1
   '@zxcvbn-ts/language-en': ^2.0.1
@@ -291,7 +292,8 @@ dependencies:
   '@web3auth/no-modal': 6.1.1_@babel+runtime@7.22.5
   '@web3auth/openlogin-adapter': 6.1.1_w4ppat5lekm6og7r62lkirdk7q
   '@web3auth/ui': 6.1.1_77ur6f7lacfuw5aqqkxpqkguwm
-  '@zerodevapp/sdk': 3.1.29_ethers@5.6.9
+  '@zerodevapp/contracts': 2.0.8
+  '@zerodevapp/sdk': 3.1.47_ethers@5.6.9
   '@zxcvbn-ts/core': 2.0.3
   '@zxcvbn-ts/language-common': 2.0.1
   '@zxcvbn-ts/language-en': 2.0.1
@@ -1082,24 +1084,11 @@ packages:
       '@chainsafe/as-sha256': 0.3.1
     dev: false
 
-  /@chainsafe/persistent-merkle-tree/0.5.0:
-    resolution: {integrity: sha512-l0V1b5clxA3iwQLXP40zYjyZYospQLZXzBVIhhr9kDg/1qHZfzzHw0jj4VPBijfYCArZDlPkRi1wZaV2POKeuw==}
-    dependencies:
-      '@chainsafe/as-sha256': 0.3.1
-    dev: false
-
   /@chainsafe/persistent-merkle-tree/0.6.1:
     resolution: {integrity: sha512-gcENLemRR13+1MED2NeZBMA7FRS0xQPM7L2vhMqvKkjqtFT4YfjSVADq5U0iLuQLhFUJEMVuA8fbv5v+TN6O9A==}
     dependencies:
       '@chainsafe/as-sha256': 0.4.1
       '@noble/hashes': file:resolutions/@noble/hashes
-    dev: false
-
-  /@chainsafe/ssz/0.10.2:
-    resolution: {integrity: sha512-/NL3Lh8K+0q7A3LsiFq09YXS9fPE+ead2rr7vM2QK8PLzrNsw3uqrif9bpRX5UxgeRjM+vYi+boCM3+GM4ovXg==}
-    dependencies:
-      '@chainsafe/as-sha256': 0.3.1
-      '@chainsafe/persistent-merkle-tree': 0.5.0
     dev: false
 
   /@chainsafe/ssz/0.11.1:
@@ -2483,14 +2472,14 @@ packages:
   /@ethereumjs/common/3.1.1:
     resolution: {integrity: sha512-iEl4gQtcrj2udNhEizs04z7WA15ez1QoXL0XzaCyaNgwRyXezIg1DnfNeZUUpJnkrOF/0rYXyq2UFSLxt1NPQg==}
     dependencies:
-      '@ethereumjs/util': 8.0.6
+      '@ethereumjs/util': 8.1.0
       crc-32: 1.2.2
     dev: false
 
   /@ethereumjs/common/3.1.2:
     resolution: {integrity: sha512-YV+bZfRlFhAXg+FfwC5r4UQKVj4OG7vDP5/JvvNXLLbYpNplH5Vca9jD0L+ab8y0YlTYJMQM1ALyHFu3AE3eBA==}
     dependencies:
-      '@ethereumjs/util': 8.0.6
+      '@ethereumjs/util': 8.1.0
       crc-32: 1.2.2
     dev: false
 
@@ -2526,7 +2515,7 @@ packages:
       '@chainsafe/ssz': 0.9.4
       '@ethereumjs/common': 3.1.1
       '@ethereumjs/rlp': 4.0.1
-      '@ethereumjs/util': 8.0.6
+      '@ethereumjs/util': 8.1.0
       '@ethersproject/providers': 5.7.2
       ethereum-cryptography: 1.1.2
     transitivePeerDependencies:
@@ -2546,7 +2535,7 @@ packages:
       '@chainsafe/ssz': 0.11.1
       '@ethereumjs/common': 3.1.2
       '@ethereumjs/rlp': 4.0.1
-      '@ethereumjs/util': 8.0.6
+      '@ethereumjs/util': 8.1.0
       ethereum-cryptography: 2.0.0
     dev: false
 
@@ -2558,15 +2547,6 @@ packages:
       '@ethereumjs/rlp': 4.0.1
       '@ethereumjs/util': 8.1.0
       ethereum-cryptography: 2.0.0
-    dev: false
-
-  /@ethereumjs/util/8.0.4:
-    resolution: {integrity: sha512-tX2k9fG6eWBq5qby3VT1KgQT8iqnmwMYeDPJ/oyVdOcYKTiCBdkSBNtCWLh0vp3bIWUOjNRyPdwsYu73CyFCNA==}
-    engines: {node: '>=14'}
-    dependencies:
-      '@chainsafe/ssz': 0.10.2
-      '@ethereumjs/rlp': 4.0.1
-      ethereum-cryptography: 1.1.2
     dev: false
 
   /@ethereumjs/util/8.0.5:
@@ -3912,7 +3892,7 @@ packages:
     resolution: {integrity: sha512-RU6fG/H6/UlBol221uBkq5C7w3TwLK611nEZliO2u+kO0vHKGBXnIPlhI0tzKUigjhUeOd9mhCNbNvhh0LKt9Q==}
     engines: {node: '>=14.0.0'}
     dependencies:
-      '@ethereumjs/util': 8.0.5
+      '@ethereumjs/util': 8.1.0
       bn.js: 4.12.0
       ethereum-cryptography: 1.1.2
       ethjs-util: 0.1.6
@@ -5962,7 +5942,7 @@ packages:
       '@babel/runtime': 7.x
     dependencies:
       '@babel/runtime': 7.22.5
-      '@ethereumjs/util': 8.0.6
+      '@ethereumjs/util': 8.1.0
       '@toruslabs/broadcast-channel': 6.2.0
       '@toruslabs/http-helpers': 3.3.0_@babel+runtime@7.22.5
       '@toruslabs/openlogin-jrpc': 3.2.0_@babel+runtime@7.22.5
@@ -8030,14 +8010,21 @@ packages:
       '@account-abstraction/contracts': 0.6.0
     dev: false
 
-  /@zerodevapp/sdk/3.1.29_ethers@5.6.9:
-    resolution: {integrity: sha512-M2BVXZ/NZzfJC2nVTT8453h1auLII7c0u0tZYuUEhb12mYhhbEEp3T8BNDZ4v1KdKQeLyh2oOUeK+1wxgxUWKQ==}
+  /@zerodevapp/contracts/4.0.0-beta.15:
+    resolution: {integrity: sha512-NtNvINg2nzE5ZyskvJtMQjm2XMc26GNcHEsDkDxs6cEAnRomsBb7J8EdniJbF+8xYqszuBGCzwG9fxe6fFYKLw==}
+    dependencies:
+      '@account-abstraction/contracts': 0.6.0
+      dotenv: 16.0.3
+    dev: false
+
+  /@zerodevapp/sdk/3.1.47_ethers@5.6.9:
+    resolution: {integrity: sha512-zH8Tt8vzeg/z1Jq72fKpp8miXMEbAuGY47CP5j39ZV1oDd7qyoM+RBZQBJ/Sbas0Yo038Ik5U+pQVugpIB5I8A==}
     peerDependencies:
       ethers: ^5.7.0
     dependencies:
+      '@account-abstraction/contracts': 0.6.0
       '@account-abstraction/utils': 0.4.0
       '@ambire/signature-validator': 1.3.0
-      '@ethereumjs/util': 8.0.4
       '@ethersproject/abstract-provider': 5.7.0
       '@ethersproject/abstract-signer': 5.7.0
       '@ethersproject/networks': 5.7.1
@@ -8049,6 +8036,7 @@ packages:
       '@types/debug': 4.1.8
       '@zerodevapp/contracts': 2.0.8
       '@zerodevapp/contracts-new': /@zerodevapp/contracts/3.0.0-rc.5
+      '@zerodevapp/kernel-contracts-v2': /@zerodevapp/contracts/4.0.0-beta.15
       base64-js: 1.5.1
       debug: 4.3.4
       ethers: 5.6.9
@@ -8412,7 +8400,7 @@ packages:
     engines: {node: '>= 0.4'}
     dependencies:
       call-bind: 1.0.2
-      define-properties: 1.1.4
+      define-properties: 1.2.0
       es-abstract: 1.21.2
       is-string: 1.0.7
     dev: false
@@ -10388,7 +10376,7 @@ packages:
       has: 1.0.3
       has-property-descriptors: 1.0.0
       has-symbols: 1.0.3
-      internal-slot: 1.0.3
+      internal-slot: 1.0.5
       is-callable: 1.2.7
       is-negative-zero: 2.0.2
       is-regex: 1.1.4
@@ -10398,7 +10386,7 @@ packages:
       object-inspect: 1.12.3
       object-keys: 1.1.1
       object.assign: 4.1.4
-      regexp.prototype.flags: 1.4.3
+      regexp.prototype.flags: 1.5.0
       string.prototype.trimend: 1.0.5
       string.prototype.trimstart: 1.0.5
       unbox-primitive: 1.0.2
@@ -11985,7 +11973,7 @@ packages:
   /has-property-descriptors/1.0.0:
     resolution: {integrity: sha512-62DVLZGoiEBDHQyqG4w9xCuZ7eJEwNmJRWw2VY84Oedb7WFcA27fiEVe8oUQx9hAUJ4ekurquucTGwsyO1XGdQ==}
     dependencies:
-      get-intrinsic: 1.1.2
+      get-intrinsic: 1.2.1
     dev: false
 
   /has-proto/1.0.1:
@@ -14394,7 +14382,7 @@ packages:
     engines: {node: '>= 0.4'}
     dependencies:
       call-bind: 1.0.2
-      define-properties: 1.1.4
+      define-properties: 1.2.0
       has-symbols: 1.0.3
       object-keys: 1.1.1
     dev: false
@@ -14404,7 +14392,7 @@ packages:
     engines: {node: '>= 0.4'}
     dependencies:
       call-bind: 1.0.2
-      define-properties: 1.1.4
+      define-properties: 1.2.0
       has-symbols: 1.0.3
       object-keys: 1.1.1
     dev: false
@@ -15666,7 +15654,7 @@ packages:
     engines: {node: '>= 0.4'}
     dependencies:
       call-bind: 1.0.2
-      define-properties: 1.1.4
+      define-properties: 1.2.0
       functions-have-names: 1.2.3
     dev: false
 
@@ -16442,7 +16430,7 @@ packages:
     engines: {node: '>= 0.4'}
     dependencies:
       call-bind: 1.0.2
-      define-properties: 1.1.4
+      define-properties: 1.2.0
       es-abstract: 1.21.2
     dev: false
 

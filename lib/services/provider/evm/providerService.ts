@@ -1,4 +1,5 @@
 import { EventFilter } from '@ethersproject/abstract-provider'
+import { BaseProvider } from '@ethersproject/providers'
 import { ethErrors } from 'eth-rpc-errors'
 import { ethers } from 'ethers'
 
@@ -9,14 +10,14 @@ import { INetwork } from '~lib/schema'
 import { PASSWORD_SERVICE } from '~lib/services/passwordService'
 import { BaseProviderService } from '~lib/services/provider/base'
 
-import { EvmClient } from './client'
+import { EvmClientManager } from './client'
 import { EvmPermissionedProvider } from './permissionedProvider'
 
 class EvmProviderService
   extends BaseProviderService
   implements IEvmProviderService
 {
-  private provider?: EvmClient
+  private provider?: BaseProvider
   private subscriptions = new Map<string, [string | EventFilter, Listener]>()
 
   constructor() {
@@ -49,7 +50,7 @@ class EvmProviderService
     this.provider?.removeAllListeners('block')
     this.provider?.removeAllListeners('pending')
 
-    this.provider = network ? await EvmClient.from(network) : undefined
+    this.provider = network ? await EvmClientManager.from(network) : undefined
 
     // add subscriptions to new provider
     blockSub?.forEach((listener) => this.provider?.on('block', listener))

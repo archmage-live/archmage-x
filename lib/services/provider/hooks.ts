@@ -191,6 +191,7 @@ export function useProvider(network?: INetwork) {
 
 export function useEstimateGasPrice(
   network?: INetwork,
+  account?: IChainAccount,
   retryInterval?: number
 ) {
   const provider = useProvider(network)
@@ -200,10 +201,10 @@ export function useEstimateGasPrice(
     retry,
     loading
   } = useAsyncRetry(async () => {
-    if (!network || !provider) {
+    if (!network || !account || !provider) {
       return
     }
-    const gasPrice = await provider.estimateGasPrice()
+    const gasPrice = await provider.estimateGasPrice(account)
     const gasPriceBrief = getGasFeeBrief(network, gasPrice)
     return [gasPrice, gasPriceBrief]
   }, [network, provider])
@@ -249,7 +250,7 @@ export function useEstimateGasFee(
   tx?: any,
   retryInterval?: number
 ) {
-  const { gasPriceBrief } = useEstimateGasPrice(network, retryInterval)
+  const { gasPriceBrief } = useEstimateGasPrice(network, account, retryInterval)
   const gas = useEstimateGas(network, account, tx)
 
   return useMemo(() => {
@@ -269,9 +270,7 @@ export async function getNonce(
   tag?: string | number
 ) {
   assert(account.address)
-  let nextNonce = await Promise.resolve(
-    provider.getNextNonce(account.address, tag)
-  )
+  let nextNonce = await Promise.resolve(provider.getNextNonce(account, tag))
 
   const pendingTxs = await getTransactionService(
     account.networkKind

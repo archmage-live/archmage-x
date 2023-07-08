@@ -23,7 +23,7 @@ import { useEffect, useState } from 'react'
 import browser from 'webextension-polyfill'
 
 import { INetwork, ITokenList } from '~lib/schema'
-import { EvmClient } from '~lib/services/provider/evm'
+import { EvmClientManager, resolveEvmUrl } from '~lib/services/provider/evm'
 import { TOKEN_SERVICE, getTokenListBrief } from '~lib/services/token'
 
 export const TokenListItem = ({
@@ -44,8 +44,8 @@ export const TokenListItem = ({
   useEffect(() => {
     const effect = async () => {
       if (!brief.iconUrl) return
-      const provider = await EvmClient.from(network)
-      setIconUrl(await provider.resolveUrl(brief.iconUrl))
+      const provider = await EvmClientManager.from(network)
+      setIconUrl(await resolveEvmUrl(provider, brief.iconUrl))
     }
 
     effect()

@@ -1,5 +1,6 @@
 export * from './types'
 export * from './gasFee'
 export * from './client'
+export * from './clientErc4337'
 export * from './provider'
 export * from './hooks'

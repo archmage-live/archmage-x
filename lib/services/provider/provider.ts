@@ -12,7 +12,7 @@ export interface Provider {
 
   isContract(address: string): Promise<boolean>
 
-  getNextNonce(address: string, tag?: string | number): Promise<number>
+  getNextNonce(account: IChainAccount, tag?: string | number): Promise<number>
 
   getBalance(
     accountOrAddress: IChainAccount | string
@@ -22,7 +22,7 @@ export interface Provider {
     accountsOrAddresses: IChainAccount[] | string[]
   ): Promise<(string | undefined)[]>
 
-  estimateGasPrice(): Promise<any>
+  estimateGasPrice(account: IChainAccount): Promise<any>
 
   estimateGas(account: IChainAccount, tx: any): Promise<string>
 
@@ -33,7 +33,11 @@ export interface Provider {
 
   signTransaction(account: IChainAccount, transaction: any): Promise<any>
 
-  sendTransaction(signedTransaction: any): Promise<any>
+  sendTransaction(
+    account: IChainAccount,
+    signedTransaction: any,
+    extra?: any
+  ): Promise<any>
 
   signMessage(account: IChainAccount, message: any): Promise<any>
 

@@ -10,10 +10,10 @@ import { IChainAccount, ISubWallet } from '~lib/schema'
 import { IWallet } from '~lib/schema/wallet'
 import { NETWORK_SERVICE } from '~lib/services/network'
 import { WALLET_SERVICE } from '~lib/services/wallet'
-import { BtcHwWallet } from '~lib/wallet/btcHw'
 
 import { AptosWallet } from './aptos'
 import {
+  AccountAbstractionType,
   KeystoreSigningWallet,
   SigningWallet,
   WalletOpts,
@@ -26,8 +26,10 @@ import {
   isKeylessWallet
 } from './base'
 import { BtcWallet, BtcWalletOpts } from './btc'
+import { BtcHwWallet } from './btcHw'
 import { CosmWallet, CosmWalletOpts } from './cosm'
 import { EvmWallet } from './evm'
+import { EvmErc4337Wallet, EvmErc4337WalletOpts } from './evmErc4337'
 import { EvmHwWallet } from './evmHw'
 import { SolWallet } from './sol'
 import { StarknetWallet } from './starknet'
@@ -155,6 +157,12 @@ export async function getStructuralSigningWallet(
     return undefined
   }
 
+  const network = await NETWORK_SERVICE.getNetwork({
+    kind: networkKind,
+    chainId
+  })
+  assert(network)
+
   const opts: WalletOpts = {
     type: wallet.type,
     path: wallet.info.path,
@@ -162,11 +170,6 @@ export async function getStructuralSigningWallet(
   }
   switch (networkKind) {
     case NetworkKind.BTC: {
-      const network = await NETWORK_SERVICE.getNetwork({
-        kind: networkKind,
-        chainId
-      })
-      assert(network)
       const info = network.info as BtcChainInfo
       assert(wallet.info.addressType)
       return BtcWallet.from({
@@ -178,14 +181,23 @@ export async function getStructuralSigningWallet(
         }
       } as BtcWalletOpts)
     }
-    case NetworkKind.EVM:
-      return EvmWallet.from(opts)
+    case NetworkKind.EVM: {
+      if (!wallet.info.accountAbstraction) {
+        return EvmWallet.from(opts)
+      } else {
+        switch (wallet.info.accountAbstraction.type) {
+          case AccountAbstractionType.ERC4337:
+            return EvmErc4337Wallet.from({
+              ...opts,
+              extra: {
+                network
+              }
+            } as EvmErc4337WalletOpts)
+        }
+      }
+      return
+    }
     case NetworkKind.COSM: {
-      const network = await NETWORK_SERVICE.getNetwork({
-        kind: networkKind,
-        chainId
-      })
-      assert(network)
       const info = network.info as CosmAppChainInfo
       return CosmWallet.from({
         ...opts,

@@ -3,7 +3,7 @@ import { hexValue } from '@ethersproject/bytes'
 import { Logger } from '@ethersproject/logger'
 import { Network } from '@ethersproject/networks'
 import { resolveProperties } from '@ethersproject/properties'
-import { BlockTag } from '@ethersproject/providers'
+import { BaseProvider, BlockTag } from '@ethersproject/providers'
 import {
   UrlJsonRpcProvider as BaseUrlJsonRpcProvider,
   JsonRpcProvider,
@@ -15,9 +15,11 @@ import { version } from 'ethers'
 
 import { NetworkKind } from '~lib/network'
 import { EvmChainInfo } from '~lib/network/evm'
-import { INetwork } from '~lib/schema'
+import { ChainId, INetwork } from '~lib/schema'
 import { IPFS_GATEWAY_API } from '~lib/services/datasource/ipfsGateway'
 import { NETWORK_SERVICE } from '~lib/services/network'
+
+import { EvmErc4337Client } from './clientErc4337'
 
 export type EthFeeHistoryResponse = {
   oldestBlock: number
@@ -83,25 +85,49 @@ export class UrlJsonRpcProvider extends BaseUrlJsonRpcProvider {
         return super.prepareRequest(method, params)
     }
   }
+
+  static getUrl(network: Network, apiKey: any): ConnectionInfo {
+    const rpcUrls: string[] = (network as any).rpcUrls
+    if (!rpcUrls?.length) {
+      throw new Error('empty evm rpc urls')
+    }
+    return { url: rpcUrls[0], allowGzip: true } as ConnectionInfo
+  }
 }
 
 export class EvmClient extends UrlJsonRpcProvider {
-  private static providers = new Map<number, EvmClient>()
+  constructor(network: INetwork) {
+    const info = network.info as EvmChainInfo
+    super({
+      name: info.name,
+      chainId: +network.chainId,
+      ensAddress: info.ens?.registry,
+      rpcUrls: info.rpc // extra field
+    } as Network)
+  }
+}
+
+export class EvmClientManager {
+  private static providers = new Map<
+    number,
+    BaseProvider | Promise<BaseProvider>
+  >()
 
   static async from(
-    network: INetwork | number | 'Ethereum Mainnet'
-  ): Promise<EvmClient> {
+    network: INetwork | ChainId,
+    isErc4337 = false
+  ): Promise<BaseProvider> {
     if (typeof network !== 'object') {
       const net = await NETWORK_SERVICE.getNetwork({
         kind: NetworkKind.EVM,
-        chainId: network === 'Ethereum Mainnet' ? 1 : network
+        chainId: network
       })
       assert(net)
       network = net
     }
 
     const info = network.info as EvmChainInfo
-    const cached = await EvmClient.providers.get(+network.chainId)
+    const cached = await EvmClientManager.providers.get(+network.chainId)
     if (cached) {
       const net = (await cached.getNetwork()) as Network & {
         rpcUrls: string[]
@@ -117,59 +143,45 @@ export class EvmClient extends UrlJsonRpcProvider {
       }
     }
 
-    const provider = new EvmClient(network)
-    EvmClient.providers.set(+network.chainId, provider)
+    let provider
+    if (!isErc4337) {
+      provider = new EvmClient(network)
+    } else {
+      provider = EvmErc4337Client.from(network)
+    }
+
+    EvmClientManager.providers.set(+network.chainId, provider)
+
     return provider
   }
+}
 
-  constructor(network: INetwork) {
-    const info = network.info as EvmChainInfo
-    super({
-      name: info.name,
-      chainId: +network.chainId,
-      ensAddress: info.ens?.registry,
-      rpcUrls: info.rpc // extra field
-    } as Network)
-  }
-
-  static getUrl(network: Network, apiKey: any): ConnectionInfo {
-    const rpcUrls: string[] = (network as any).rpcUrls
-    if (!rpcUrls?.length) {
-      throw new Error('empty evm rpc urls')
-    }
-    return { url: rpcUrls[0], allowGzip: true } as ConnectionInfo
-  }
-
-  async resolveUrl(url: string): Promise<string | undefined> {
-    if (url.startsWith('https://') || url.startsWith('http://')) {
-      return url
+export async function resolveEvmUrl(
+  provider: BaseProvider,
+  url: string
+): Promise<string | undefined> {
+  if (url.startsWith('https://') || url.startsWith('http://')) {
+    return url
+  } else {
+    let ipfsHash
+    if (!url.startsWith('ipfs://') && url.endsWith('.eth')) {
+      const resolver = await provider.getResolver(url)
+      if (!resolver) {
+        return undefined
+      }
+      ipfsHash = await resolver.getContentHash()
+      if (!ipfsHash) {
+        return undefined
+      }
     } else {
-      let ipfsHash
-      if (!url.startsWith('ipfs://') && url.endsWith('.eth')) {
-        const resolver = await this.getResolver(url)
-        if (!resolver) {
-          return undefined
-        }
-        ipfsHash = await resolver.getContentHash()
-        if (!ipfsHash) {
-          return undefined
-        }
-      } else {
-        ipfsHash = url
-      }
-
-      if (ipfsHash.startsWith('ipfs://')) {
-        ipfsHash = ipfsHash.slice('ipfs://'.length)
-      }
-
-      return IPFS_GATEWAY_API.buildUrl(ipfsHash)
+      ipfsHash = url
     }
-  }
 
-  async getBlockInterval(): Promise<number> {
-    const thisBlock = await this.getBlock('latest')
-    const lastBlock = await this.getBlock(thisBlock.number - 1)
-    return thisBlock.timestamp - lastBlock.timestamp // seconds
+    if (ipfsHash.startsWith('ipfs://')) {
+      ipfsHash = ipfsHash.slice('ipfs://'.length)
+    }
+
+    return IPFS_GATEWAY_API.buildUrl(ipfsHash)
   }
 }
 

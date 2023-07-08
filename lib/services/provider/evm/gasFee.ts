@@ -1,4 +1,5 @@
 import { BigNumber, BigNumberish } from '@ethersproject/bignumber'
+import { BaseProvider } from '@ethersproject/providers'
 import Decimal from 'decimal.js'
 import { ethers } from 'ethers'
 
@@ -370,14 +371,14 @@ export function getEvmGasFeeBrief({
 }
 
 export async function fetchGasFeeEstimates(
-  provider: EvmClient
+  provider: BaseProvider
 ): Promise<GasFeeEstimation> {
   const network = await provider.getNetwork()
   const latestBlock = await provider.getBlock('latest')
   const supportEip1559 = !!latestBlock.baseFeePerGas
 
   try {
-    if (supportEip1559) {
+    if (supportEip1559 && provider instanceof EvmClient) {
       let gasFeeEstimates: GasFeeEstimates
       try {
         gasFeeEstimates = await CODEFI_GAS_API.suggestedGasFees(network.chainId)

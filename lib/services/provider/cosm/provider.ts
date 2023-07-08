@@ -38,8 +38,11 @@ export class CosmProvider implements Provider {
     throw new Error('not implemented')
   }
 
-  async getNextNonce(address: string, tag?: string | number): Promise<number> {
-    const { sequence } = await this.client.getSequence(address)
+  async getNextNonce(
+    account: IChainAccount,
+    tag?: string | number
+  ): Promise<number> {
+    const { sequence } = await this.client.getSequence(account.address!)
     return sequence
   }
 
@@ -70,7 +73,7 @@ export class CosmProvider implements Provider {
     )
   }
 
-  async estimateGasPrice(): Promise<any> {
+  async estimateGasPrice(account: IChainAccount): Promise<any> {
     throw new Error('not implemented')
   }
 
@@ -116,6 +119,7 @@ export class CosmProvider implements Provider {
   }
 
   async sendTransaction(
+    account: IChainAccount,
     signedTransaction: Uint8Array
   ): Promise<Required<GetTxResponse>> {
     const response = await this.client.broadcastTx(signedTransaction)

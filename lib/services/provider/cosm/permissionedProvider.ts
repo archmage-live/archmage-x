@@ -28,7 +28,7 @@ import { COSM_NETWORKS_PRESET, CosmAppChainInfo } from '~lib/network/cosm'
 import { pubkeyToAddress } from '~lib/network/cosm/amino'
 import { decodePubkey } from '~lib/network/cosm/proto-signing'
 import { validateCosmChainInfo } from '~lib/network/cosm/validate'
-import { INetwork, PSEUDO_INDEX } from '~lib/schema'
+import { IChainAccount, INetwork, PSEUDO_INDEX } from '~lib/schema'
 import { CONSENT_SERVICE, ConsentType } from '~lib/services/consentService'
 import { NETWORK_SERVICE } from '~lib/services/network'
 import { BasePermissionedProvider } from '~lib/services/provider/base'
@@ -304,6 +304,7 @@ export class CosmPermissionedProvider extends BasePermissionedProvider {
 
     // consent request is not required, since tx has been signed
     const { tx, txResponse } = await provider.sendTransaction(
+      {} as IChainAccount, // not used
       arrayify(signedTx)
     )
 

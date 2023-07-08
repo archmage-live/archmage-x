@@ -143,6 +143,7 @@ export const EvmTransaction = ({
 
   const { gasPrice: gasFeeEstimation } = useEstimateGasPrice(
     network,
+    account,
     15000
   ) as {
     gasPrice: GasFeeEstimation | undefined

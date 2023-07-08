@@ -37,7 +37,7 @@ export class BtcProvider implements Provider {
     throw new Error('not implemented')
   }
 
-  getNextNonce(address: string, tag?: string | number): Promise<number> {
+  getNextNonce(account: IChainAccount, tag?: string | number): Promise<number> {
     throw new Error('not implemented')
   }
 
@@ -109,7 +109,9 @@ export class BtcProvider implements Provider {
     )
   }
 
-  async estimateGasPrice(): Promise<Record<string, number>> {
+  async estimateGasPrice(
+    account: IChainAccount
+  ): Promise<Record<string, number>> {
     return await this.api.getFeeEstimates()
   }
 
@@ -135,7 +137,10 @@ export class BtcProvider implements Provider {
     return signer.signTransaction(transaction)
   }
 
-  async sendTransaction(signedTransaction: any): Promise<string> {
+  async sendTransaction(
+    account: IChainAccount,
+    signedTransaction: any
+  ): Promise<string> {
     return await this.api.postTx(signedTransaction)
   }
 

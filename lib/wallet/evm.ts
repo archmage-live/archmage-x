@@ -11,13 +11,23 @@ import { KeystoreSigningWallet, WalletOpts, WalletType, generatePath } from '.'
 export class EvmWallet implements KeystoreSigningWallet {
   static defaultPath = "m/44'/60'/0'/0/0"
 
-  private constructor(private wallet: ethers.utils.HDNode | ethers.Wallet) {}
+  protected constructor(
+    public wallet: ethers.utils.HDNode | ethers.Wallet
+  ) {}
 
   static async from({
     type,
     path,
     keystore
   }: WalletOpts): Promise<EvmWallet | undefined> {
+    return new EvmWallet(await EvmWallet.buildWallet({ type, path, keystore }))
+  }
+
+  protected static async buildWallet({
+    type,
+    path,
+    keystore
+  }: WalletOpts): Promise<ethers.utils.HDNode | ethers.Wallet> {
     const mnemonic = keystore.mnemonic
 
     let wallet
@@ -41,8 +51,7 @@ export class EvmWallet implements KeystoreSigningWallet {
       }
     }
     assert(wallet)
-
-    return new EvmWallet(wallet)
+    return wallet
   }
 
   async derive(
@@ -68,14 +77,14 @@ export class EvmWallet implements KeystoreSigningWallet {
     return this.wallet.publicKey
   }
 
-  private get signingWallet() {
+  get signingWallet() {
     return this.wallet instanceof ethers.utils.HDNode
       ? new ethers.Wallet(this.wallet)
       : this.wallet
   }
 
-  signTransaction(transaction: TransactionRequest): Promise<string> {
-    return this.signingWallet.signTransaction(transaction)
+  signTransaction(transaction: any): Promise<any> {
+    return this.signingWallet.signTransaction(transaction as TransactionRequest)
   }
 
   signMessage(message: any): Promise<string> {

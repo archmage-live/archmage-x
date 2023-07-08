@@ -45,9 +45,12 @@ export class AptosProvider implements Provider {
     throw new Error('not implemented')
   }
 
-  async getNextNonce(address: string, tag?: string | number): Promise<number> {
+  async getNextNonce(
+    account: IChainAccount,
+    tag?: string | number
+  ): Promise<number> {
     const { sequence_number: sequenceNumber } = await this.client.getAccount(
-      address
+      account.address!
     )
     return +sequenceNumber
   }
@@ -86,7 +89,7 @@ export class AptosProvider implements Provider {
     )
   }
 
-  async estimateGasPrice(): Promise<number> {
+  async estimateGasPrice(account: IChainAccount): Promise<number> {
     const estimation = await this.client.estimateGasPrice()
     return estimation.gas_estimate
   }
@@ -180,6 +183,7 @@ export class AptosProvider implements Provider {
   }
 
   async sendTransaction(
+    account: IChainAccount,
     signedTransaction: string
   ): Promise<Types.PendingTransaction> {
     const pendingTx = await this.client.submitSignedBCSTransaction(

@@ -23,6 +23,10 @@ const ZERO_DEV_PROJECTS = new Map([
   [84531, process.env.PLASMO_PUBLIC_ZERODEV_BASE_GOERLI]
 ])
 
+export async function isZeroDevSupported(chainId: ChainId) {
+   return Boolean(ZERO_DEV_PROJECTS.get(chainId as number))
+}
+
 export async function makeZeroDevProvider({
   chainId,
   ownerAddress,

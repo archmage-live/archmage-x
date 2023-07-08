@@ -24,12 +24,12 @@ import { BasePermissionedProvider } from '~lib/services/provider/base'
 import { TOKEN_SERVICE } from '~lib/services/token'
 import { checkAddress } from '~lib/wallet'
 
-import { EvmClient, EvmProvider, getEvmChainId } from '.'
+import { EvmProvider, getEvmChainId } from '.'
 
 export class EvmPermissionedProvider extends BasePermissionedProvider {
   private constructor(
     network: INetwork,
-    public provider: EvmClient,
+    public provider: EvmProvider,
     origin: string
   ) {
     super(network, origin)
@@ -53,7 +53,7 @@ export class EvmPermissionedProvider extends BasePermissionedProvider {
       return
     }
 
-    const provider = await EvmClient.from(network)
+    const provider = await EvmProvider.from(network)
     const permissionedProvider = new EvmPermissionedProvider(
       network,
       provider,
@@ -109,7 +109,7 @@ export class EvmPermissionedProvider extends BasePermissionedProvider {
       }
 
       // always allow readonly calls to provider, regardless of whether locked
-      return await this.provider.send(method, params)
+      return await this.provider.send(this.account, method, params)
     } catch (err: any) {
       console.error(err)
       // pick out ethers error
@@ -134,8 +134,10 @@ export class EvmPermissionedProvider extends BasePermissionedProvider {
       throw ethErrors.provider.unauthorized()
     }
 
-    const provider = new EvmProvider(this.provider)
-    const txPayload = await provider.populateTransaction(this.account, params)
+    const txPayload = await this.provider.populateTransaction(
+      this.account,
+      params
+    )
 
     const response: TransactionResponse = await CONSENT_SERVICE.requestConsent(
       {
@@ -191,9 +193,8 @@ export class EvmPermissionedProvider extends BasePermissionedProvider {
       throw ethErrors.provider.unauthorized()
     }
 
-    const provider = new EvmProvider(this.provider)
     const originalTypedData = JSON.parse(typedData)
-    typedData = await provider.getTypedData(originalTypedData)
+    typedData = await this.provider.getTypedData(originalTypedData)
 
     const { chainId, name, version, verifyingContract } = typedData.domain
 
@@ -324,7 +325,7 @@ export class EvmPermissionedProvider extends BasePermissionedProvider {
     } = params.options
 
     const token = ethers.utils.getAddress(address)
-    const tokenContract = ERC20__factory.connect(token, this.provider)
+    const tokenContract = ERC20__factory.connect(token, this.provider.provider)
     const name = await tokenContract.name()
     const symbol = await tokenContract.symbol()
     const decimals = await tokenContract.decimals()

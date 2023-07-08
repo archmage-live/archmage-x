@@ -3,10 +3,10 @@ import Dexie from 'dexie'
 import { generateName } from '~lib/db'
 import { DerivePosition } from '~lib/schema/hdPath'
 import {
+  AccountAbstractionInfo,
   BtcAddressType,
   HardwareWalletType,
   KeylessWalletInfo,
-  KeylessWalletType,
   WalletType
 } from '~lib/wallet'
 
@@ -30,7 +30,7 @@ export interface WalletInfo {
   derivePosition?: DerivePosition
   notBackedUp?: boolean
   addressType?: BtcAddressType // for Bitcoin
-  isAccountAbstraction?: boolean
+  accountAbstraction?: AccountAbstractionInfo
   keyless?: KeylessWalletInfo
 }
 

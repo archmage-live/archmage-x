@@ -1,23 +1,10 @@
 import { FunctionFragment } from '@ethersproject/abi'
 import { BytesLike, hexlify } from '@ethersproject/bytes'
 import { useCallback, useMemo } from 'react'
-import { useAsync } from 'react-use'
 
-import { INetwork } from '~lib/schema'
 import { useEvmSignatureFrom4Bytes } from '~lib/services/datasource/4byte'
-import { EvmClient } from '~lib/services/provider/evm/client'
 import { GasOption, MaxFeePerGas } from '~lib/services/provider/evm/gasFee'
 import { StoreKey, useLocalStorage } from '~lib/store'
-
-export function useEvmProvider(network?: INetwork) {
-  const { value } = useAsync(async () => {
-    if (!network) {
-      return
-    }
-    return EvmClient.from(network)
-  }, [network])
-  return value
-}
 
 export function useEvmFunctionSignature(
   data?: BytesLike

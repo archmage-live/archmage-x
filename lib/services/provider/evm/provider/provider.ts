@@ -3,31 +3,27 @@ import { BigNumber } from '@ethersproject/bignumber'
 import { _TypedDataEncoder } from '@ethersproject/hash'
 import { Logger } from '@ethersproject/logger'
 import { shallowCopy } from '@ethersproject/properties'
+import { BaseProvider } from '@ethersproject/providers'
 import { ethErrors } from 'eth-rpc-errors'
 import PQueue from 'p-queue'
 
-import { IChainAccount, INetwork } from '~lib/schema'
+import { IChainAccount } from '~lib/schema'
 import { ETH_BALANCE_CHECKER_API } from '~lib/services/datasource/ethBalanceChecker'
 import { getNonce } from '~lib/services/provider/hooks'
 import { Provider, TransactionPayload } from '~lib/services/provider/provider'
 import { getSigningWallet } from '~lib/wallet'
 
-import { EvmClient, logger } from './client'
-import { fetchGasFeeEstimates } from './gasFee'
-import { reduceTypes } from './typedData'
+import { logger } from '../client'
+import { fetchGasFeeEstimates } from '../gasFee'
+import { reduceTypes } from '../typedData'
 import {
   EvmTxParams,
   EvmTxPopulatedParams,
   allowedTransactionKeys
-} from './types'
+} from '../types'
 
-export class EvmProvider implements Provider {
-  constructor(public provider: EvmClient) {}
-
-  static async from(network: INetwork): Promise<EvmProvider> {
-    const provider = await EvmClient.from(network)
-    return new EvmProvider(provider)
-  }
+export class EvmBasicProvider implements Provider {
+  protected constructor(public provider: BaseProvider) {}
 
   async isOk(): Promise<boolean> {
     try {
@@ -47,8 +43,11 @@ export class EvmProvider implements Provider {
     return false
   }
 
-  async getNextNonce(address: string, tag?: string | number): Promise<number> {
-    return this.provider.getTransactionCount(address, tag || 'pending')
+  async getNextNonce(
+    account: IChainAccount,
+    tag?: string | number
+  ): Promise<number> {
+    return this.provider.getTransactionCount(account.address!, tag || 'pending')
   }
 
   async getBalance(
@@ -98,7 +97,7 @@ export class EvmProvider implements Provider {
     )
   }
 
-  async estimateGasPrice(): Promise<any> {
+  async estimateGasPrice(account: IChainAccount): Promise<any> {
     return fetchGasFeeEstimates(this.provider)
   }
 
@@ -358,7 +357,11 @@ export class EvmProvider implements Provider {
     return signer.signTransaction(transaction)
   }
 
-  async sendTransaction(signedTransaction: any): Promise<any> {
+  async sendTransaction(
+    account: IChainAccount,
+    signedTransaction: any,
+    extra?: any
+  ): Promise<any> {
     return this.provider.sendTransaction(signedTransaction)
   }
 
