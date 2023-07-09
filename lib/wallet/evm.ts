@@ -11,9 +11,7 @@ import { KeystoreSigningWallet, WalletOpts, WalletType, generatePath } from '.'
 export class EvmWallet implements KeystoreSigningWallet {
   static defaultPath = "m/44'/60'/0'/0/0"
 
-  protected constructor(
-    public wallet: ethers.utils.HDNode | ethers.Wallet
-  ) {}
+  protected constructor(public wallet: ethers.utils.HDNode | ethers.Wallet) {}
 
   static async from({
     type,

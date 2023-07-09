@@ -76,30 +76,7 @@ export class EvmErc4337Wallet extends EvmWallet {
     transaction: TransactionRequest
   ): Promise<UserOperationStruct> {
     const signer = await this.getSigner()
-
-    const {
-      to,
-      data: _data,
-      value,
-      gasLimit,
-      maxFeePerGas,
-      maxPriorityFeePerGas,
-      nonce
-    } = transaction
-
-    const target = (to as string) ?? ''
-    const data = _data?.toString() ?? '0x'
-
-    const userOp = await signer.smartAccountAPI.createSignedUserOp({
-      target,
-      data,
-      value,
-      gasLimit,
-      maxFeePerGas,
-      maxPriorityFeePerGas,
-      nonce
-    })
-    return await resolveProperties(userOp)
+    return await signErc4337Transaction(signer, transaction)
   }
 
   async signMessage(message: any): Promise<string> {
@@ -111,4 +88,33 @@ export class EvmErc4337Wallet extends EvmWallet {
     const signer = await this.getSigner()
     return await signer.signTypedData({ domain, types, message })
   }
+}
+
+export async function signErc4337Transaction(
+  signer: ZeroDevSigner,
+  transaction: TransactionRequest
+): Promise<UserOperationStruct> {
+  const {
+    to,
+    data: _data,
+    value,
+    gasLimit,
+    maxFeePerGas,
+    maxPriorityFeePerGas,
+    nonce
+  } = transaction
+
+  const target = (to as string) ?? ''
+  const data = _data?.toString() ?? '0x'
+
+  const userOp = await signer.smartAccountAPI.createSignedUserOp({
+    target,
+    data,
+    value,
+    gasLimit,
+    maxFeePerGas,
+    maxPriorityFeePerGas,
+    nonce
+  })
+  return await resolveProperties(userOp)
 }

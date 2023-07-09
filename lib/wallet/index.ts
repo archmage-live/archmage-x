@@ -17,6 +17,7 @@ import {
   KeystoreSigningWallet,
   SigningWallet,
   WalletOpts,
+  WalletPathSchema,
   WalletType,
   getDerivePosition,
   hasSubKeystore,
@@ -31,6 +32,7 @@ import { CosmWallet, CosmWalletOpts } from './cosm'
 import { EvmWallet } from './evm'
 import { EvmErc4337Wallet, EvmErc4337WalletOpts } from './evmErc4337'
 import { EvmHwWallet } from './evmHw'
+import { EvmHwErc4337Wallet } from './evmHwErc4337'
 import { SolWallet } from './sol'
 import { StarknetWallet } from './starknet'
 import { SuiWallet } from './sui'
@@ -221,13 +223,15 @@ export async function getHardwareSigningWallet(
   if (!isHardwareWallet(wallet.type)) {
     return undefined
   }
+
+  const network = await NETWORK_SERVICE.getNetwork({
+    kind: account.networkKind,
+    chainId: account.chainId
+  })
+  assert(network)
+
   switch (account.networkKind) {
     case NetworkKind.BTC: {
-      const network = await NETWORK_SERVICE.getNetwork({
-        kind: account.networkKind,
-        chainId: account.chainId
-      })
-      assert(network)
       const info = network.info as BtcChainInfo
       return new BtcHwWallet(
         wallet.hash,
@@ -244,7 +248,7 @@ export async function getHardwareSigningWallet(
       )
     }
     case NetworkKind.EVM:
-      return new EvmHwWallet(
+      const args = [
         wallet.hash,
         account.address!,
         {
@@ -254,7 +258,16 @@ export async function getHardwareSigningWallet(
         wallet.type === WalletType.HW ? wallet.info.path! : account.index,
         account.info.publicKey ||
           subWallet?.info.accounts?.[account.networkKind]?.publicKey
-      )
+      ] as [string, string, WalletPathSchema, string | number, string?]
+
+      if (!wallet.info.accountAbstraction) {
+        return new EvmHwWallet(...args)
+      } else {
+        switch (wallet.info.accountAbstraction.type) {
+          case AccountAbstractionType.ERC4337:
+            return new EvmHwErc4337Wallet(network, ...args)
+        }
+      }
   }
 }
 

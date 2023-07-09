@@ -24,7 +24,7 @@ const ZERO_DEV_PROJECTS = new Map([
 ])
 
 export async function isZeroDevSupported(chainId: ChainId) {
-   return Boolean(ZERO_DEV_PROJECTS.get(chainId as number))
+  return Boolean(ZERO_DEV_PROJECTS.get(chainId as number))
 }
 
 export async function makeZeroDevProvider({

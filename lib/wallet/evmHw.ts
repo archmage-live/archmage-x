@@ -32,7 +32,7 @@ export class EvmHwWallet implements SigningWallet {
     }
   }
 
-  private async getLedgerApp() {
+  protected async getLedgerApp() {
     const [appEth, hwHash] = await getLedgerEthApp(this.pathSchema)
     assert(
       this.hwHash === this.address || hwHash === this.hwHash,
@@ -68,7 +68,7 @@ export class EvmHwWallet implements SigningWallet {
       {},
       {}
     )
-    const sig = await appEth.signTransaction(this.path!, unsignedTx, resolution)
+    const sig = await appEth.signTransaction(this.path, unsignedTx, resolution)
 
     return ethers.utils.serializeTransaction(baseTx, {
       v: ethers.BigNumber.from('0x' + sig.v).toNumber(),
@@ -80,7 +80,7 @@ export class EvmHwWallet implements SigningWallet {
   async signTypedData(typedData: any): Promise<string> {
     const appEth = await this.getLedgerApp()
 
-    const sig = await appEth.signEIP712Message(this.path!, typedData)
+    const sig = await appEth.signEIP712Message(this.path, typedData)
     sig.r = '0x' + sig.r
     sig.s = '0x' + sig.s
     return ethers.utils.joinSignature(sig)
@@ -93,7 +93,7 @@ export class EvmHwWallet implements SigningWallet {
       .hexlify(arrayify(message as string))
       .substring(2)
 
-    const sig = await appEth.signPersonalMessage(this.path!, messageHex)
+    const sig = await appEth.signPersonalMessage(this.path, messageHex)
     sig.r = '0x' + sig.r
     sig.s = '0x' + sig.s
     return ethers.utils.joinSignature(sig)
