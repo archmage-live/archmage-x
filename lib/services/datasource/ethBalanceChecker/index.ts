@@ -7,8 +7,6 @@ import {
   getAddressesBalances
 } from 'eth-balance-checker/lib/ethers'
 
-import { EvmClientManager } from '~lib/services/provider/evm/client'
-
 const NATIVE_TOKEN = AddressZero
 
 class EthBalanceCheckerApi {

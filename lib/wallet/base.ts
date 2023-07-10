@@ -314,6 +314,10 @@ export interface KeystoreSigningWallet extends SigningWallet {
   ): Promise<KeystoreSigningWallet>
 }
 
+export interface Erc4337Wallet {
+  owner: string
+}
+
 export function getDefaultDerivePosition(
   networkKind: NetworkKind
 ): DerivePosition {
@@ -362,8 +366,9 @@ export function buildWalletUniqueHash(
 ) {
   let prefix: string = wallet.type
 
-  if (wallet.info.accountAbstraction) {
-    prefix += '-aa'
+  const aa = wallet.info.accountAbstraction
+  if (aa) {
+    prefix += `-aa-${aa.type}`
   }
 
   switch (wallet.type) {

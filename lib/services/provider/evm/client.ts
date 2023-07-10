@@ -19,8 +19,6 @@ import { ChainId, INetwork } from '~lib/schema'
 import { IPFS_GATEWAY_API } from '~lib/services/datasource/ipfsGateway'
 import { NETWORK_SERVICE } from '~lib/services/network'
 
-import { EvmErc4337Client } from './clientErc4337'
-
 export type EthFeeHistoryResponse = {
   oldestBlock: number
   baseFeePerGas?: BigNumber[]
@@ -105,54 +103,64 @@ export class EvmClient extends UrlJsonRpcProvider {
       rpcUrls: info.rpc // extra field
     } as Network)
   }
-}
 
-export class EvmClientManager {
-  private static providers = new Map<
+  private static clients = new Map<
     number,
     BaseProvider | Promise<BaseProvider>
   >()
 
-  static async from(
-    network: INetwork | ChainId,
-    isErc4337 = false
-  ): Promise<BaseProvider> {
-    if (typeof network !== 'object') {
-      const net = await NETWORK_SERVICE.getNetwork({
-        kind: NetworkKind.EVM,
-        chainId: network
-      })
-      assert(net)
-      network = net
-    }
-
-    const info = network.info as EvmChainInfo
-    const cached = await EvmClientManager.providers.get(+network.chainId)
+  static async from(network: INetwork | ChainId): Promise<EvmClient> {
+    const { cached, network: net } = await getCachedProvider(
+      this.clients,
+      network
+    )
     if (cached) {
-      const net = (await cached.getNetwork()) as Network & {
-        rpcUrls: string[]
-      }
-      if (
-        net.name === info.name &&
-        net.ensAddress === info.ens?.registry &&
-        net.rpcUrls.length === info.rpc.length &&
-        net.rpcUrls.every((url, i) => url === info.rpc[i])
-      ) {
-        // all the same, so return cached
-        return cached
-      }
+      return cached as EvmClient
     }
 
-    let provider
-    if (!isErc4337) {
-      provider = new EvmClient(network)
-    } else {
-      provider = EvmErc4337Client.from(network)
+    const client = new EvmClient(net)
+
+    this.clients.set(+net.chainId, client)
+
+    return client
+  }
+}
+
+export async function getCachedProvider(
+  providers: Map<number, BaseProvider | Promise<BaseProvider>>,
+  network: INetwork | ChainId
+) {
+  if (typeof network !== 'object') {
+    const net = await NETWORK_SERVICE.getNetwork({
+      kind: NetworkKind.EVM,
+      chainId: network
+    })
+    assert(net)
+    network = net
+  }
+
+  const info = network.info as EvmChainInfo
+  const cached = await providers.get(+network.chainId)
+  if (cached) {
+    const net = (await cached.getNetwork()) as Network & {
+      rpcUrls: string[]
     }
+    if (
+      net.name === info.name &&
+      net.ensAddress === info.ens?.registry &&
+      net.rpcUrls.length === info.rpc.length &&
+      net.rpcUrls.every((url, i) => url === info.rpc[i])
+    ) {
+      // all the same, so return cached
+      return {
+        cached,
+        network
+      }
+    }
+  }
 
-    EvmClientManager.providers.set(+network.chainId, provider)
-
-    return provider
+  return {
+    network
   }
 }
 

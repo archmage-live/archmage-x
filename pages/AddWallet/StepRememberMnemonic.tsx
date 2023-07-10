@@ -5,6 +5,7 @@ import { useWizard } from 'react-use-wizard'
 import { AlertBox } from '~components/AlertBox'
 import { MnemonicRemember } from '~components/MnemonicRemember'
 
+import { AccountAbstractionChecker } from './AccountAbstractionChecker'
 import { NameInput } from './NameInput'
 import {
   useAddWallet,
@@ -77,6 +78,8 @@ export const StepRememberMnemonic = () => {
       </Checkbox>
 
       <NameInput value={name} onChange={setName} />
+
+      <AccountAbstractionChecker />
 
       <AlertBox>{alert}</AlertBox>
 

@@ -8,8 +8,8 @@ import { ethers } from 'ethers'
 import { makeZeroDevSigner } from '~lib/erc4337/zerodev'
 import { DerivePosition, INetwork } from '~lib/schema'
 import { EvmErc4337Client } from '~lib/services/provider/evm'
-import { WalletOpts } from '~lib/wallet/base'
 
+import { Erc4337Wallet, WalletOpts } from './base'
 import { EvmWallet } from './evm'
 
 export interface EvmErc4337WalletOpts extends WalletOpts {
@@ -18,7 +18,7 @@ export interface EvmErc4337WalletOpts extends WalletOpts {
   }
 }
 
-export class EvmErc4337Wallet extends EvmWallet {
+export class EvmErc4337Wallet extends EvmWallet implements Erc4337Wallet {
   protected constructor(
     wallet: ethers.utils.HDNode | ethers.Wallet,
     private network: INetwork
@@ -34,7 +34,9 @@ export class EvmErc4337Wallet extends EvmWallet {
   }: EvmErc4337WalletOpts): Promise<EvmErc4337Wallet | undefined> {
     const base = await EvmWallet.buildWallet({ type, path, keystore })
     const wallet = new EvmErc4337Wallet(base, network)
-    await wallet.getSigner()
+    if (!(await wallet.getSigner())) {
+      return
+    }
     return wallet
   }
 
@@ -45,26 +47,32 @@ export class EvmErc4337Wallet extends EvmWallet {
   ): Promise<EvmErc4337Wallet> {
     const base = await super.derive(pathTemplate, index, derivePosition)
     const wallet = new EvmErc4337Wallet(base.wallet, this.network)
-    await wallet.getSigner()
+    assert(await wallet.getSigner())
     return wallet
   }
 
-  private _signer: Promise<ZeroDevSigner> | undefined
+  private _signer: ZeroDevSigner | undefined
   private _address: string | undefined
+  private _owner: string | undefined
 
   private async getSigner() {
-    if (!this._signer) {
-      this._signer = (async () => {
-        const provider = await EvmErc4337Client.from(this.network)
-        const signer = await makeZeroDevSigner({
-          provider: provider.provider,
-          signer: this.signingWallet
-        })
-        this._address = await signer.getAddress()
-        return signer
-      })()
+    const provider = await EvmErc4337Client.fromMayUndefined(this.network)
+    if (!provider) {
+      return
     }
-    return await this._signer
+    const signer = await makeZeroDevSigner({
+      provider: provider.provider,
+      signer: this.signingWallet
+    })
+    this._signer = signer
+    this._address = await signer.getAddress()
+    this._owner = this.signingWallet.address
+    return signer
+  }
+
+  get signer(): ZeroDevSigner {
+    assert(this._signer)
+    return this._signer
   }
 
   get address(): string {
@@ -72,21 +80,23 @@ export class EvmErc4337Wallet extends EvmWallet {
     return this._address
   }
 
+  get owner(): string {
+    assert(this._owner)
+    return this._owner
+  }
+
   async signTransaction(
     transaction: TransactionRequest
   ): Promise<UserOperationStruct> {
-    const signer = await this.getSigner()
-    return await signErc4337Transaction(signer, transaction)
+    return await signErc4337Transaction(this.signer, transaction)
   }
 
   async signMessage(message: any): Promise<string> {
-    const signer = await this.getSigner()
-    return await signer.signMessage(message)
+    return await this.signer.signMessage(message)
   }
 
   async signTypedData({ domain, types, message }: any): Promise<string> {
-    const signer = await this.getSigner()
-    return await signer.signTypedData({ domain, types, message })
+    return await this.signer.signTypedData({ domain, types, message })
   }
 }
 

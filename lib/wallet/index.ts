@@ -265,7 +265,7 @@ export async function getHardwareSigningWallet(
       } else {
         switch (wallet.info.accountAbstraction.type) {
           case AccountAbstractionType.ERC4337:
-            return new EvmHwErc4337Wallet(network, ...args)
+            return await new EvmHwErc4337Wallet(network, ...args).prepare()
         }
       }
   }

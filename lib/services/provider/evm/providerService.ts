@@ -10,7 +10,7 @@ import { INetwork } from '~lib/schema'
 import { PASSWORD_SERVICE } from '~lib/services/passwordService'
 import { BaseProviderService } from '~lib/services/provider/base'
 
-import { EvmClientManager } from './client'
+import { EvmClient } from './client'
 import { EvmPermissionedProvider } from './permissionedProvider'
 
 class EvmProviderService
@@ -50,7 +50,7 @@ class EvmProviderService
     this.provider?.removeAllListeners('block')
     this.provider?.removeAllListeners('pending')
 
-    this.provider = network ? await EvmClientManager.from(network) : undefined
+    this.provider = network ? await EvmClient.from(network) : undefined
 
     // add subscriptions to new provider
     blockSub?.forEach((listener) => this.provider?.on('block', listener))

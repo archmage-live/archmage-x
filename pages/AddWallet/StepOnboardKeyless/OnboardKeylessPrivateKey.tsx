@@ -17,6 +17,7 @@ import {
 import { KeylessWalletInfo, WalletType } from '~lib/wallet'
 import { KeylessOnboardInfo } from '~pages/KeylessOnboard'
 
+import { AccountAbstractionChecker } from '../AccountAbstractionChecker'
 import { NameInput } from '../NameInput'
 import {
   SelectExistingWalletModal,
@@ -219,6 +220,8 @@ export const OnboardKeylessPrivateKey = ({
             }
           />
         )}
+
+        <AccountAbstractionChecker />
 
         <AlertBox>{alert}</AlertBox>
       </Stack>

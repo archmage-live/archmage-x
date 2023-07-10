@@ -24,6 +24,7 @@ import {
   WalletItemButton
 } from '~pages/AddWallet/SelectExistingWallet'
 
+import { AccountAbstractionChecker } from '../AccountAbstractionChecker'
 import { NameInput } from '../NameInput'
 import {
   AddWalletKind,
@@ -257,6 +258,8 @@ export const ImportPrivateKey = () => {
             }
           />
         )}
+
+        <AccountAbstractionChecker />
 
         <AlertBox>{alert}</AlertBox>
       </Stack>

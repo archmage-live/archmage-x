@@ -25,7 +25,9 @@ import {
 import { IChainAccount } from '~lib/schema/chainAccount'
 import { ISubWallet, getDefaultSubName } from '~lib/schema/subWallet'
 import { IWallet } from '~lib/schema/wallet'
+import { shallowClean } from '~lib/utils'
 import {
+  AccountAbstractionInfo,
   AccountInfo,
   AccountsInfo,
   BtcAddressType,
@@ -62,6 +64,7 @@ export type NewWalletOpts = {
   accounts?: WalletAccount[] // for imported wallets
   addressType?: BtcAddressType
   keylessInfo?: KeylessWalletInfo
+  accountAbstraction?: AccountAbstractionInfo
 }
 
 export type CreateWalletOpts = {
@@ -469,7 +472,8 @@ class WalletService extends WalletServicePartial {
     hash,
     accounts,
     addressType,
-    keylessInfo
+    keylessInfo,
+    accountAbstraction
   }: NewWalletOpts): Promise<{
     wallet: IWallet
     decryptedKeystores?: DecryptedKeystoreAccount[]
@@ -481,7 +485,8 @@ class WalletService extends WalletServicePartial {
       path,
       pathTemplate,
       derivePosition,
-      addressType
+      addressType,
+      accountAbstraction
     } as WalletInfo
 
     let decryptedKeystores: DecryptedKeystoreAccount[] = []
@@ -584,7 +589,7 @@ class WalletService extends WalletServicePartial {
       sortId: await getNextField(DB.wallets),
       type,
       name,
-      info,
+      info: shallowClean(info),
       createdAt: Date.now()
     } as IWallet
 

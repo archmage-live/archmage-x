@@ -27,6 +27,8 @@ import {
 } from '~pages/AddWallet/addWallet'
 import { KeylessOnboardInfo } from '~pages/KeylessOnboard'
 
+import { AccountAbstractionChecker } from '../AccountAbstractionChecker'
+
 export const OnboardKeylessHd = ({
   hash,
   mnemonic,
@@ -104,6 +106,8 @@ export const OnboardKeylessHd = ({
             </NumberInputStepper>
           </NumberInput>
         </FormControl>
+
+        <AccountAbstractionChecker />
 
         <AlertBox>{alert}</AlertBox>
       </Stack>

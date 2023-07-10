@@ -10,6 +10,7 @@ import { Deferrable } from '@ethersproject/properties'
 import { Provider, TransactionRequest } from '@ethersproject/providers'
 import LedgerAppEth from '@ledgerhq/hw-app-eth'
 import { UserOperationStruct } from '@zerodevapp/contracts'
+import assert from 'assert'
 import { ethers } from 'ethers'
 
 import { makeZeroDevSigner } from '~lib/erc4337/zerodev'
@@ -17,28 +18,64 @@ import { INetwork } from '~lib/schema'
 import { EvmErc4337Client } from '~lib/services/provider/evm'
 import { WalletPathSchema } from '~lib/wallet/base'
 
+import { Erc4337Wallet } from './base'
 import { signErc4337Transaction } from './evmErc4337'
 import { EvmHwWallet } from './evmHw'
 
-export class EvmHwErc4337Wallet extends EvmHwWallet {
+export class EvmHwErc4337Wallet extends EvmHwWallet implements Erc4337Wallet {
   constructor(
     private network: INetwork,
     hwHash: string,
-    address: string,
+    hwAddress: string,
     pathSchema: WalletPathSchema,
     pathOrIndex: string | number,
     publicKey?: string
   ) {
-    super(hwHash, address, pathSchema, pathOrIndex, publicKey)
+    super(hwHash, hwAddress, pathSchema, pathOrIndex, publicKey)
+  }
+
+  _provider: EvmErc4337Client | undefined
+  _address: string | undefined
+
+  async prepare() {
+    if (!this._provider) {
+      const provider = await EvmErc4337Client.fromMayUndefined(this.network)
+      if (!provider) {
+        return undefined
+      }
+      this._provider = provider
+    }
+
+    return this
+  }
+
+  get provider() {
+    assert(this._provider)
+    return this._provider
   }
 
   private async getSigner() {
     const appEth = await this.getLedgerApp()
-    const provider = await EvmErc4337Client.from(this.network)
+
     return await makeZeroDevSigner({
-      provider: provider.provider,
-      signer: new HwSigner(appEth, this.address, this.path)
+      provider: this.provider.provider,
+      signer: new HwSigner(appEth, this.hwAddress, this.path)
     })
+  }
+
+  async getAddress() {
+    const signer = await this.getSigner()
+    this._address = await signer.getAddress()
+    return this
+  }
+
+  get address() {
+    assert(this._address)
+    return this._address
+  }
+
+  get owner() {
+    return this.hwAddress
   }
 
   async signTransaction(

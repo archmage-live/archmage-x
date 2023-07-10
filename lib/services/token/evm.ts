@@ -19,7 +19,7 @@ import {
 import { ETH_BALANCE_CHECKER_API } from '~lib/services/datasource/ethBalanceChecker'
 import { TOKENLISTS_API } from '~lib/services/datasource/tokenlists'
 import { NETWORK_SERVICE } from '~lib/services/network'
-import { EvmClientManager } from '~lib/services/provider/evm/client'
+import { EvmClient } from '~lib/services/provider/evm/client'
 
 import { TokenBrief, TokenListBrief } from '.'
 import { BaseTokenService } from './base'
@@ -219,7 +219,7 @@ export class EvmTokenService extends BaseTokenService {
       chainId: account.chainId
     })
     assert(network)
-    const provider = await EvmClientManager.from(network)
+    const provider = await EvmClient.from(network)
 
     const tokenContract = ERC20__factory.connect(token, provider)
     const name = await tokenContract.name()
@@ -285,7 +285,7 @@ export class EvmTokenService extends BaseTokenService {
       chainId: account.chainId
     })
     assert(network)
-    const provider = await EvmClientManager.from(network)
+    const provider = await EvmClient.from(network)
 
     // batch query
     const balances = await ETH_BALANCE_CHECKER_API.getAddressBalances(

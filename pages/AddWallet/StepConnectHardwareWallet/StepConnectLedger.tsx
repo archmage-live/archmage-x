@@ -69,6 +69,7 @@ import {
   useWalletHash
 } from '~pages/AddWallet/addWallet'
 
+import { AccountAbstractionChecker } from '../AccountAbstractionChecker'
 import { NameInput } from '../NameInput'
 
 export const StepConnectLedger = ({}: {}) => {
@@ -475,6 +476,8 @@ export const StepConnectLedger = ({}: {}) => {
           />
         </>
       )}
+
+      <AccountAbstractionChecker />
 
       <AlertBox>{connectError}</AlertBox>
 

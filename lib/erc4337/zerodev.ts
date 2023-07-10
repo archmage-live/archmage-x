@@ -23,7 +23,7 @@ const ZERO_DEV_PROJECTS = new Map([
   [84531, process.env.PLASMO_PUBLIC_ZERODEV_BASE_GOERLI]
 ])
 
-export async function isZeroDevSupported(chainId: ChainId) {
+export function isZeroDevSupported(chainId: ChainId) {
   return Boolean(ZERO_DEV_PROJECTS.get(chainId as number))
 }
 
@@ -35,10 +35,10 @@ export async function makeZeroDevProvider({
   chainId: ChainId
   ownerAddress: string
   providerOrSigner: Signer | JsonRpcProvider
-}): Promise<ZeroDevProvider | undefined> {
+}): Promise<ZeroDevProvider> {
   const projectId = ZERO_DEV_PROJECTS.get(chainId as number)
   if (!projectId) {
-    return
+    throw new Error('erc4337 not supported for this network')
   }
 
   let signer, provider

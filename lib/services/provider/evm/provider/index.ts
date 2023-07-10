@@ -1,8 +1,10 @@
+import assert from 'assert'
+
 import { isErc4337Account } from '~lib/erc4337'
 import { IChainAccount, INetwork } from '~lib/schema'
 import { TransactionPayload } from '~lib/services/provider'
 
-import { EvmClient, EvmClientManager, EvmErc4337Client, EvmTxParams } from '..'
+import { EvmClient, EvmErc4337Client, EvmTxParams } from '..'
 import { EvmBasicProvider } from './provider'
 import { EvmErc4337Provider } from './providerErc4337'
 
@@ -14,14 +16,15 @@ export class EvmProvider extends EvmBasicProvider {
   private getErc4337Provider!: () => Promise<EvmErc4337Provider>
 
   static async from(network: INetwork): Promise<EvmProvider> {
-    const client = await EvmClientManager.from(network)
+    const client = await EvmClient.from(network)
     const provider = new EvmProvider(client)
 
     // Lazy load erc4337 provider
     provider.getErc4337Provider = async () => {
       if (!provider._erc4337Provider) {
         provider._erc4337Provider = (async () => {
-          const client = await EvmClientManager.from(network, true)
+          const client = await EvmErc4337Client.fromMayUndefined(network)
+          assert(client) // TODO
           return new EvmErc4337Provider(client)
         })()
       }
@@ -88,7 +91,9 @@ export class EvmProvider extends EvmBasicProvider {
     if (!account || !(await isErc4337Account(account))) {
       return (this.provider as EvmClient).send(method, params)
     } else {
-      return (this.provider as EvmErc4337Client).send(method, params)
+      return (
+        (await this.getErc4337Provider()).provider as EvmErc4337Client
+      ).send(method, params)
     }
   }
 }

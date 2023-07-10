@@ -1,21 +1,16 @@
 import { TransactionResponse } from '@ethersproject/abstract-provider'
-import { BigNumber } from '@ethersproject/bignumber'
 import { AddressZero } from '@ethersproject/constants'
-import { Network } from '@ethersproject/networks'
-import { Deferrable } from '@ethersproject/properties'
 import {
   BaseProvider,
   JsonRpcProvider,
-  TransactionReceipt,
-  TransactionRequest
+  TransactionReceipt
 } from '@ethersproject/providers'
 import { ZeroDevProvider } from '@zerodevapp/sdk'
 
-import { makeZeroDevProvider } from '~lib/erc4337/zerodev'
-import { EvmChainInfo } from '~lib/network/evm'
-import { INetwork } from '~lib/schema'
+import { isZeroDevSupported, makeZeroDevProvider } from '~lib/erc4337/zerodev'
+import { ChainId, INetwork } from '~lib/schema'
 
-import { EvmClient } from './client'
+import { EvmClient, getCachedProvider } from './client'
 
 // copy from @zerodevapp/sdk
 export enum ExecuteType {
@@ -24,27 +19,41 @@ export enum ExecuteType {
   EXECUTE_BATCH = 'executeBatch'
 }
 
-export class EvmErc4337Client extends BaseProvider {
+export class EvmErc4337Client extends EvmClient {
   constructor(network: INetwork, public provider: ZeroDevProvider) {
-    const info = network.info as EvmChainInfo
-    super({
-      name: info.name,
-      chainId: +network.chainId,
-      ensAddress: info.ens?.registry,
-      rpcUrls: info.rpc // extra field
-    } as Network)
+    super(network)
   }
 
-  static async from(network: INetwork) {
-    const provider = await makeZeroDevProvider({
-      chainId: network.chainId,
-      ownerAddress: AddressZero,
-      providerOrSigner: new EvmClient(network)
-    })
-    if (!provider) {
-      throw new Error('erc4337 not supported for this network')
+  private static erc4337Clients = new Map<
+    number,
+    BaseProvider | Promise<BaseProvider>
+  >()
+
+  static async fromMayUndefined(network: INetwork | ChainId) {
+    const { cached, network: net } = await getCachedProvider(
+      this.erc4337Clients,
+      network
+    )
+    if (cached) {
+      return cached as EvmErc4337Client
     }
-    return new EvmErc4337Client(network, provider)
+
+    if (!isZeroDevSupported(net.chainId)) {
+      return
+    }
+
+    const client = (async () => {
+      const provider = await makeZeroDevProvider({
+        chainId: net.chainId,
+        ownerAddress: AddressZero,
+        providerOrSigner: new EvmClient(net)
+      })
+      return new EvmErc4337Client(net, provider)
+    })()
+
+    this.erc4337Clients.set(+net.chainId, client)
+
+    return await client
   }
 
   async send(method: string, params: Array<any>): Promise<any> {

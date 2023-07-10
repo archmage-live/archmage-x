@@ -24,7 +24,7 @@ import {
   useEtherScanProvider
 } from '~lib/services/datasource/etherscan'
 import { NETWORK_SERVICE } from '~lib/services/network'
-import { EvmClientManager } from '~lib/services/provider/evm/client'
+import { EvmClient } from '~lib/services/provider/evm/client'
 import {
   parseEvmFunctionSignature,
   useEvmFunctionSignature
@@ -380,7 +380,7 @@ export class EvmTransactionService extends EvmTransactionServicePartial {
       await DB.pendingTxs.delete(pendingTx.id)
       return
     }
-    const provider = await EvmClientManager.from(network)
+    const provider = await EvmClient.from(network)
 
     const info = pendingTx.info as EvmPendingTxInfo
     if (!tx) {

@@ -9,6 +9,7 @@ import {
   WALLET_SERVICE
 } from '~lib/services/wallet'
 import {
+  AccountAbstractionInfo,
   BtcAddressType,
   HardwareWalletType,
   KeylessWalletInfo,
@@ -44,14 +45,17 @@ const mnemonicNotBackedUpAtom = atom<boolean>(false)
 const hdPathAtom = atom('')
 const hdPathTemplateAtom = atom('')
 const derivePositionAtom = atom<DerivePosition | undefined>(undefined)
-const existingWallet = atom<IWallet | undefined>(undefined)
+const existingWalletAtom = atom<IWallet | undefined>(undefined)
 const accountsAtom = atom<WalletAccount[]>([])
 const accountsNumAtom = atom(0)
 const hwTypeAtom = atom<HardwareWalletType | undefined>(undefined)
 const hwTransportAtom = atom<'hid' | 'ble' | undefined>(undefined)
-const walletHash = atom<string>('')
-const addressType = atom<BtcAddressType | undefined>(undefined)
-const keylessInfo = atom<KeylessWalletInfo | undefined>(undefined)
+const walletHashAtom = atom<string>('')
+const addressTypeAtom = atom<BtcAddressType | undefined>(undefined)
+const keylessInfoAtom = atom<KeylessWalletInfo | undefined>(undefined)
+const accountAbstractionAtom = atom<AccountAbstractionInfo | undefined>(
+  undefined
+)
 const createdAtom = atom(false)
 
 export function useAddWalletKind() {
@@ -83,7 +87,7 @@ export function useDerivePosition() {
 }
 
 export function useExistingWallet() {
-  return useAtom(existingWallet)
+  return useAtom(existingWalletAtom)
 }
 
 export function useAccounts() {
@@ -142,15 +146,19 @@ export function useHwTransport() {
 }
 
 export function useWalletHash() {
-  return useAtom(walletHash)
+  return useAtom(walletHashAtom)
 }
 
 export function useAddressType() {
-  return useAtom(addressType)
+  return useAtom(addressTypeAtom)
 }
 
 export function useKeylessInfo() {
-  return useAtom(keylessInfo)
+  return useAtom(keylessInfoAtom)
+}
+
+export function useAccountAbstraction() {
+  return useAtom(accountAbstractionAtom)
 }
 
 export function useCreated() {
@@ -172,6 +180,7 @@ export function useClear() {
   const [, setExistingWallet] = useExistingWallet()
   const [, setAddressType] = useAddressType()
   const [, setKeylessInfo] = useKeylessInfo()
+  const [, setAccountAbstraction] = useAccountAbstraction()
   const [, setCreated] = useCreated()
   return useCallback(() => {
     setMnemonic([])
@@ -188,6 +197,7 @@ export function useClear() {
     setExistingWallet(undefined)
     setAddressType(undefined)
     setKeylessInfo(undefined)
+    setAccountAbstraction(undefined)
     setCreated(false)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -207,6 +217,7 @@ export function useAddWallet() {
   const [walletHash] = useWalletHash()
   const [addressType] = useAddressType()
   const [keylessInfo] = useKeylessInfo()
+  const [accountAbstraction] = useAccountAbstraction()
   const [, setCreated] = useCreated()
 
   return useCallback(async (): Promise<{ error?: string }> => {
@@ -214,7 +225,7 @@ export function useAddWallet() {
       return { error: 'Existing name' }
     }
 
-    const opts = { name } as NewWalletOpts
+    const opts = { name, accountAbstraction } as NewWalletOpts
     switch (addWalletKind) {
       case AddWalletKind.NEW_HD:
       // pass through
@@ -326,6 +337,7 @@ export function useAddWallet() {
     hwType,
     walletHash,
     keylessInfo,
+    accountAbstraction,
     setCreated
   ])
 }
