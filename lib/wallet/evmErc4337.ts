@@ -126,5 +126,12 @@ export async function signErc4337Transaction(
     maxPriorityFeePerGas,
     nonce
   })
-  return await resolveProperties(userOp)
+  const resolved = await resolveProperties(userOp)
+
+  // serialize all values to string
+  const result: any = {}
+  for (const key in resolved) {
+    result[key] = (resolved as any)[key].toString()
+  }
+  return result
 }

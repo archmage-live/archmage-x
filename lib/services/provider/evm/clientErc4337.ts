@@ -45,7 +45,7 @@ export class EvmErc4337Client extends EvmClient {
     const client = (async () => {
       const provider = await makeZeroDevProvider({
         chainId: net.chainId,
-        ownerAddress: AddressZero,
+        ownerAddress: AddressZero, // placeholder, should not be used
         providerOrSigner: new EvmClient(net)
       })
       return new EvmErc4337Client(net, provider)

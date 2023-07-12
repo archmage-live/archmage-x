@@ -134,7 +134,8 @@ export async function getStructuralSigningWallet(
   wallet: IWallet,
   subWallet: ISubWallet | undefined,
   networkKind: NetworkKind,
-  chainId: number | string
+  chainId: number | string,
+  waitForUnlock: boolean = false
 ): Promise<KeystoreSigningWallet | undefined> {
   if (!hasWalletKeystore(wallet.type) && !isKeylessWallet(wallet.type)) {
     return undefined
@@ -145,7 +146,7 @@ export async function getStructuralSigningWallet(
     keystore = await KEYSTORE.get(
       wallet.id,
       hasSubKeystore(wallet.type) ? subWallet!.index : undefined,
-      true
+      waitForUnlock
     )
   } else {
     const wa = await Web3auth.create()
@@ -286,7 +287,8 @@ export async function getSigningWallet(
       master,
       subWallet,
       account.networkKind,
-      account.chainId
+      account.chainId,
+      true
     )
     if (!signingWallet) {
       return undefined

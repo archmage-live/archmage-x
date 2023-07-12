@@ -112,6 +112,10 @@ export function isKeylessWallet(type: WalletType) {
   }
 }
 
+export function isAccountAbstractionWallet(wallet: IWallet) {
+  return !!wallet.info.accountAbstraction
+}
+
 export function isHardwareWallet(type: WalletType) {
   switch (type) {
     case WalletType.HW:

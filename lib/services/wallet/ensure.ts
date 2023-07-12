@@ -18,6 +18,7 @@ import {
   WalletType,
   getDerivePosition,
   getStructuralSigningWallet,
+  isAccountAbstractionWallet,
   isHdWallet,
   isKeylessWallet,
   isWalletGroup
@@ -73,13 +74,6 @@ export async function ensureChainAccounts(
       networkKind,
       chainId
     )
-    if (!signingHdWallet) {
-      if (wallet.type === WalletType.HD) {
-        return
-      } else if (wallet.type === WalletType.KEYLESS_HD) {
-        // go on
-      }
-    }
 
     hdPath = await WALLET_SERVICE.getOrAddHdPath(masterId, networkKind, false)
     if (!hdPath) {
@@ -105,7 +99,6 @@ export async function ensureChainAccounts(
           let address
           switch (wallet.type) {
             case WalletType.HD:
-              assert(signingHdWallet)
             // pass through
             case WalletType.KEYLESS_HD: {
               assert(hdPath)
@@ -154,10 +147,15 @@ export async function ensureChainAccounts(
           } as IChainAccount)
         })
         .then()
-    } else if (!acc.address && isKeylessWallet(wallet.type)) {
+    } else if (
+      !acc.address &&
+      (isKeylessWallet(wallet.type) || isAccountAbstractionWallet(wallet))
+    ) {
       queue
         .add(async () => {
           switch (wallet.type) {
+            case WalletType.HD:
+            // pass through
             case WalletType.KEYLESS_HD: {
               assert(hdPath)
               const subSigningWallet = await signingHdWallet?.derive(
@@ -171,6 +169,8 @@ export async function ensureChainAccounts(
               }
               break
             }
+            case WalletType.PRIVATE_KEY_GROUP:
+            // pass through
             case WalletType.KEYLESS_GROUP: {
               const signingWallet = await getStructuralSigningWallet(
                 wallet,
@@ -180,6 +180,25 @@ export async function ensureChainAccounts(
               )
               if (signingWallet) {
                 acc.address = signingWallet.address
+                bulkPut.push(acc)
+              }
+              break
+            }
+            case WalletType.WATCH_GROUP:
+            // pass through
+            case WalletType.WALLET_CONNECT_GROUP:
+            // pass through
+            case WalletType.HW_GROUP: {
+              const network = await NETWORK_SERVICE.getNetwork({
+                kind: networkKind,
+                chainId
+              })
+              if (!network) {
+                return
+              }
+              const address = getAddressFromInfo(subWallet, network)
+              if (address) {
+                acc.address = address
                 bulkPut.push(acc)
               }
               break
@@ -239,7 +258,11 @@ export async function ensureChainAccount(
   chainId: number | string
 ): Promise<IChainAccount | undefined> {
   const existing = await getChainAccount(wallet, index, networkKind, chainId)
-  if (existing && (!isKeylessWallet(wallet.type) || existing.address)) {
+  if (
+    existing &&
+    (!(isKeylessWallet(wallet.type) || isAccountAbstractionWallet(wallet)) ||
+      existing.address)
+  ) {
     return existing
   }
 
@@ -262,13 +285,6 @@ export async function ensureChainAccount(
         networkKind,
         chainId
       )
-      if (!signingWallet) {
-        if (wallet.type === WalletType.HD) {
-          return
-        } else if (wallet.type === WalletType.KEYLESS_HD) {
-          // go on
-        }
-      }
       const hdPath = await WALLET_SERVICE.getOrAddHdPath(
         wallet.id,
         networkKind,

@@ -3,10 +3,12 @@ import { AddressZero } from '@ethersproject/constants'
 import { resolveProperties } from '@ethersproject/properties'
 import { TransactionRequest } from '@ethersproject/providers'
 import type { UserOperationStruct } from '@zerodevapp/contracts'
+import assert from 'assert'
 
 import { makeZeroDevSigner } from '~lib/erc4337/zerodev'
 import { IChainAccount } from '~lib/schema'
 import { TransactionPayload } from '~lib/services/provider'
+import { Erc4337Wallet, getSigningWallet } from '~lib/wallet'
 
 import { EvmErc4337Client } from '../clientErc4337'
 import { EvmTxParams } from '../types'
@@ -25,7 +27,13 @@ export class EvmErc4337Provider extends EvmBasicProvider {
   async estimateGas(account: IChainAccount, tx: any): Promise<string> {
     const client = this.provider as EvmErc4337Client
 
-    const voidSigner = new VoidSigner(account.address!, this.provider)
+    const signingWallet = await getSigningWallet(account)
+    assert(signingWallet)
+
+    const voidSigner = new VoidSigner(
+      (signingWallet as unknown as Erc4337Wallet).owner,
+      this.provider
+    )
 
     const signer = await makeZeroDevSigner({
       provider: client.provider,
