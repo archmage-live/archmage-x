@@ -36,3 +36,15 @@ export function shallowClean<T>(object: T): T {
   }
   return result
 }
+
+export function shallowStringify<T>(object: T): T {
+  const result: any = {}
+  for (const key in object) {
+    const value = object[key]
+    if (value !== undefined) {
+      // serialize all values to string
+      result[key] = (value as any).toString()
+    }
+  }
+  return result
+}

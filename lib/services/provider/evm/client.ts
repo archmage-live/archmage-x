@@ -1,3 +1,7 @@
+import {
+  TransactionReceipt,
+  TransactionResponse
+} from '@ethersproject/abstract-provider'
 import { BigNumber } from '@ethersproject/bignumber'
 import { hexValue } from '@ethersproject/bytes'
 import { Logger } from '@ethersproject/logger'
@@ -15,7 +19,7 @@ import { version } from 'ethers'
 
 import { NetworkKind } from '~lib/network'
 import { EvmChainInfo } from '~lib/network/evm'
-import { ChainId, INetwork } from '~lib/schema'
+import { ChainId, IChainAccount, INetwork } from '~lib/schema'
 import { IPFS_GATEWAY_API } from '~lib/services/datasource/ipfsGateway'
 import { NETWORK_SERVICE } from '~lib/services/network'
 
@@ -94,11 +98,11 @@ export class UrlJsonRpcProvider extends BaseUrlJsonRpcProvider {
 }
 
 export class EvmClient extends UrlJsonRpcProvider {
-  constructor(network: INetwork) {
-    const info = network.info as EvmChainInfo
+  protected constructor(protected iNetwork: INetwork) {
+    const info = iNetwork.info as EvmChainInfo
     super({
       name: info.name,
-      chainId: +network.chainId,
+      chainId: +iNetwork.chainId,
       ensAddress: info.ens?.registry,
       rpcUrls: info.rpc // extra field
     } as Network)
@@ -123,6 +127,42 @@ export class EvmClient extends UrlJsonRpcProvider {
     this.clients.set(+net.chainId, client)
 
     return client
+  }
+
+  async getTransaction(
+    transactionHash: string | Promise<string>,
+    account?: IChainAccount
+  ): Promise<TransactionResponse> {
+    return super.getTransaction(transactionHash)
+  }
+
+  async getTransactionReceipt(
+    transactionHash: string | Promise<string>,
+    account?: IChainAccount
+  ): Promise<TransactionReceipt> {
+    return super.getTransactionReceipt(transactionHash)
+  }
+
+  async waitForTransaction(
+    transactionHash: string,
+    confirmations?: number,
+    timeout?: number,
+    replaceable?: {
+      data: string
+      from: string
+      nonce: number
+      to: string
+      value: BigNumber
+      startBlock: number
+    },
+    account?: IChainAccount
+  ): Promise<TransactionReceipt> {
+    return this._waitForTransaction(
+      transactionHash,
+      typeof confirmations !== 'number' ? 1 : confirmations,
+      timeout || 0,
+      replaceable as any
+    )
   }
 }
 

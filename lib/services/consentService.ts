@@ -438,7 +438,11 @@ class ConsentService extends ConsentServicePartial {
         case NetworkKind.COSM:
           break
         default:
-          txResponse = await provider.sendTransaction(account, signedTx)
+          txResponse = await provider.sendTransaction(
+            account,
+            signedTx,
+            payload.txParams
+          )
           break
       }
     } else {
@@ -450,6 +454,7 @@ class ConsentService extends ConsentServicePartial {
         )
         txResponse = await poll(
           async () => {
+            // TODO
             const tx = await evmProvider.provider.getTransaction(txHash!)
             if (tx === null) {
               return undefined

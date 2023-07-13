@@ -1,3 +1,7 @@
+import type {
+  UserOperationReceipt as _UserOperationReceipt,
+  UserOperationResponse as _UserOperationResponse
+} from '@alchemy/aa-core'
 import { Signer, VoidSigner } from '@ethersproject/abstract-signer'
 import { JsonRpcProvider } from '@ethersproject/providers'
 import {
@@ -77,3 +81,42 @@ export async function makeZeroDevSigner({
     address: provider.config.walletAddress
   })
 }
+
+export class ZeroDevRpcClient {
+  private readonly userOpJsonRpcProvider: JsonRpcProvider
+
+  initializing: Promise<void>
+
+  constructor(provider: ZeroDevProvider) {
+    const rpcClient = provider.httpRpcClient
+    this.userOpJsonRpcProvider = (rpcClient as any).userOpJsonRpcProvider
+    this.initializing = rpcClient.initializing
+  }
+
+  async getUserOperationResponse(hash: string): Promise<UserOperationResponse> {
+    await this.initializing
+    return await this.userOpJsonRpcProvider.send('eth_getUserOperationByHash', [
+      hash
+    ])
+  }
+
+  async getUserOperationReceipt(hash: string): Promise<UserOperationReceipt> {
+    await this.initializing
+    return await this.userOpJsonRpcProvider.send(
+      'eth_getUserOperationReceipt',
+      [hash]
+    )
+  }
+}
+
+export type UserOperationResponse = {
+  userOperation: Omit<
+    _UserOperationResponse,
+    'entryPoint' | 'blockNumber' | 'blockHash' | 'transactionHash'
+  >
+} & Pick<
+  _UserOperationResponse,
+  'entryPoint' | 'blockNumber' | 'blockHash' | 'transactionHash'
+>
+
+export type UserOperationReceipt = _UserOperationReceipt

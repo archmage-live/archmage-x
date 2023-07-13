@@ -25,7 +25,7 @@ export class EvmProvider extends EvmBasicProvider {
         provider._erc4337Provider = (async () => {
           const client = await EvmErc4337Client.fromMayUndefined(network)
           assert(client) // TODO
-          return new EvmErc4337Provider(client)
+          return new EvmErc4337Provider(client as any)
         })()
       }
       return await provider._erc4337Provider
@@ -92,7 +92,8 @@ export class EvmProvider extends EvmBasicProvider {
       return (this.provider as EvmClient).send(method, params)
     } else {
       return (
-        (await this.getErc4337Provider()).provider as EvmErc4337Client
+        (await this.getErc4337Provider())
+          .provider as unknown as EvmErc4337Client
       ).send(method, params)
     }
   }

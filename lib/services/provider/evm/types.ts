@@ -1,3 +1,7 @@
+import type {
+  UserOperationReceipt as _UserOperationReceipt,
+  UserOperationResponse as _UserOperationResponse
+} from '@alchemy/aa-core'
 import { FunctionFragment } from '@ethersproject/abi'
 import { BigNumber, BigNumberish } from '@ethersproject/bignumber'
 import { BytesLike } from '@ethersproject/bytes'
@@ -89,4 +93,10 @@ export function formatEvmTxParams(payload: {
   }
 
   return payload as TransactionPayload
+}
+
+export type UserOperationReceipt = _UserOperationReceipt
+export type UserOperationResponse = _UserOperationResponse & {
+  hash: string
+  timestamp: number
 }

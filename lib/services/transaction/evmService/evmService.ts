@@ -1,7 +1,7 @@
 import { FunctionFragment } from '@ethersproject/abi'
 import { TransactionResponse } from '@ethersproject/abstract-provider'
 import { getAddress } from '@ethersproject/address'
-import { hexlify } from '@ethersproject/bytes'
+import { BigNumber } from '@ethersproject/bignumber'
 import { Logger } from '@ethersproject/logger'
 import { shallowCopy } from '@ethersproject/properties'
 import {
@@ -10,34 +10,35 @@ import {
   TransactionRequest
 } from '@ethersproject/providers'
 import assert from 'assert'
-import { useAsync } from 'react-use'
 
 import { DB } from '~lib/db'
-import { isBackgroundWorker } from '~lib/detect'
+import { isErc4337Account } from '~lib/erc4337'
 import { NetworkKind } from '~lib/network'
-import { SERVICE_WORKER_CLIENT, SERVICE_WORKER_SERVER } from '~lib/rpc'
-import { IChainAccount, INetwork, IPendingTx, ITransaction } from '~lib/schema'
+import { IChainAccount, IPendingTx, ITransaction } from '~lib/schema'
 import {
   ETHERSCAN_API,
   EtherscanTxResponse,
-  EvmTxType,
-  useEtherScanProvider
+  EvmTxType
 } from '~lib/services/datasource/etherscan'
 import { NETWORK_SERVICE } from '~lib/services/network'
-import { EvmClient } from '~lib/services/provider/evm/client'
 import {
-  parseEvmFunctionSignature,
-  useEvmFunctionSignature
-} from '~lib/services/provider/evm/hooks'
+  EvmErc4337Client,
+  UserOperationReceipt,
+  UserOperationResponse
+} from '~lib/services/provider/evm'
+import { EvmClient } from '~lib/services/provider/evm/client'
+import { parseEvmFunctionSignature } from '~lib/services/provider/evm/hooks'
 import { getProvider } from '~lib/services/provider/provider'
 import { BaseTransactionService } from '~lib/services/transaction/baseService'
+import { WALLET_SERVICE } from '~lib/services/wallet'
+import { shallowStringify } from '~lib/utils'
 
 import {
   ITransactionService,
   TransactionInfo,
   TransactionStatus,
   TransactionType
-} from './'
+} from '../'
 
 export function getEvmTransactionTypes() {
   return [
@@ -45,12 +46,22 @@ export function getEvmTransactionTypes() {
     [EvmTxType.INTERNAL, 'Internal'],
     [EvmTxType.ERC20, 'ERC20'],
     [EvmTxType.ERC721, 'ERC721'],
-    [EvmTxType.ERC1155, 'ERC1155']
+    [EvmTxType.ERC1155, 'ERC1155'],
+    [EvmTxType.UserOp, 'UserOp']
   ] as unknown as [[string, string]]
 }
 
+export type ReducedTransactionResponse = Omit<
+  TransactionResponse,
+  'wait' | 'raw' | 'confirmations'
+>
+export type ReducedTransactionReceipt = Omit<
+  TransactionReceipt,
+  'confirmations'
+>
+
 export interface EvmPendingTxInfo {
-  tx: Omit<TransactionResponse, 'wait' | 'raw' | 'confirmations'>
+  tx: ReducedTransactionResponse | UserOperationResponse
 
   request: TransactionRequest
   origin: string
@@ -59,9 +70,9 @@ export interface EvmPendingTxInfo {
 }
 
 export interface EvmTransactionInfo {
-  tx: Omit<TransactionResponse, 'wait' | 'raw' | 'confirmations'>
+  tx: ReducedTransactionResponse | UserOperationResponse
 
-  receipt?: Omit<TransactionReceipt, 'confirmations'> // only exists for confirmed transaction, but may absent for Etherscan API available transaction
+  receipt?: ReducedTransactionReceipt | UserOperationReceipt // only exists for confirmed transaction, but may absent for Etherscan API available transaction
 
   etherscanTx?: EtherscanTxResponse // only exists for Etherscan API available transaction
 
@@ -79,20 +90,98 @@ export function isEvmPendingTxInfo(
   return !txInfo.receipt && !txInfo.etherscanTx
 }
 
+export function isEvmTransactionInfo(
+  info: EvmPendingTxInfo | EvmTransactionInfo
+): info is EvmTransactionInfo {
+  return !isEvmPendingTxInfo(info)
+}
+
+export function isEvmTransactionResponse(
+  tx: ReducedTransactionResponse | UserOperationResponse
+): tx is ReducedTransactionResponse {
+  return !!(tx as ReducedTransactionResponse).from
+}
+
+export function isEvmUserOperationResponse(
+  tx: ReducedTransactionResponse | UserOperationResponse
+): tx is UserOperationResponse {
+  return !isEvmTransactionResponse(tx)
+}
+
+export function isEvmTransactionReceipt(
+  receipt: ReducedTransactionReceipt | UserOperationReceipt
+): receipt is ReducedTransactionReceipt {
+  return !(receipt as UserOperationReceipt).userOpHash
+}
+
+export function isEvmUserOperationReceipt(
+  receipt: ReducedTransactionReceipt | UserOperationReceipt
+): receipt is UserOperationReceipt {
+  return !isEvmTransactionReceipt(receipt)
+}
+
+function getEvmTransactionInfoFromResponse(
+  transaction: IPendingTx | ITransaction
+): {
+  hash: string
+  from: string
+  to?: string
+  value?: string
+  data?: string
+  nonce: number
+  success?: boolean
+  timestamp?: number
+} {
+  const info = transaction.info as EvmPendingTxInfo | EvmTransactionInfo
+  const tx = info.tx
+  const receipt = (info as EvmTransactionInfo).receipt
+  const req = info.request
+
+  if (isEvmTransactionResponse(tx)) {
+    return {
+      hash: tx.hash,
+      from: tx.from,
+      to: tx.to,
+      value: tx.value.toString(),
+      data: tx.data,
+      nonce: tx.nonce,
+      success: receipt
+        ? (receipt as TransactionReceipt).status === 1
+        : undefined,
+      timestamp: tx.timestamp
+    }
+  } else {
+    return {
+      hash: tx.hash,
+      from: tx.sender,
+      to: req?.to, // TODO: decode callData
+      value: req?.value?.toString(), // TODO: decode callData
+      data: tx.callData, // TODO: decode callData
+      nonce: Number(tx.nonce),
+      success: receipt
+        ? (receipt as UserOperationReceipt).success &&
+          (receipt as UserOperationReceipt).receipt.status === 1
+        : undefined,
+      timestamp: tx.timestamp
+    }
+  }
+}
+
 export function getEvmTransactionInfo(
   transaction: IPendingTx | ITransaction
 ): TransactionInfo {
   const info = transaction.info as EvmPendingTxInfo | EvmTransactionInfo
   const isPending = isEvmPendingTxInfo(info)
+  const txInfo = getEvmTransactionInfoFromResponse(transaction)
 
   let type, name
-  if ((info.tx as any).creates || !info.tx.to) {
+  if ((info.tx as any).creates || !txInfo.to) {
     type = TransactionType.DeployContract
     name = 'Deploy Contract'
-  } else if (getAddress(info.tx.from) !== transaction.address) {
+  } else if (getAddress(txInfo.from) !== transaction.address) {
     type = TransactionType.Receive
     name = 'Receive'
-  } else if (!info.tx.data || info.tx.data.toLowerCase() === '0x') {
+  } else if (!txInfo.data || txInfo.data.toLowerCase() === '0x') {
     type = TransactionType.Send
     name = 'Send'
   } else {
@@ -117,35 +206,34 @@ export function getEvmTransactionInfo(
   let status
   if (isPending) {
     status = TransactionStatus.PENDING
-  } else if (
-    info.receipt?.status === 0 ||
-    info.etherscanTx?.txreceipt_status === '0'
-  ) {
+  } else if (!txInfo.success || info.etherscanTx?.txreceipt_status === '0') {
     status = TransactionStatus.CONFIRMED_FAILURE
   } else {
     status = TransactionStatus.CONFIRMED
   }
 
   let timestamp
-  if (info.tx.timestamp !== undefined) {
-    timestamp = info.tx.timestamp * 1000
+  if (txInfo.timestamp !== undefined) {
+    timestamp = txInfo.timestamp * 1000
   }
 
   const isCancelled =
-    info.tx.from === info.tx.to &&
-    info.tx.data.toLowerCase() === '0x' &&
-    info.tx.value.isZero()
+    txInfo.from === txInfo.to &&
+    txInfo.data?.toLowerCase() === '0x' &&
+    txInfo.value
+      ? BigNumber.from(txInfo.value).isZero()
+      : false
 
   return {
     type,
     isPending,
     isCancelled,
     name,
-    to: info.tx.to,
+    to: txInfo.to,
     origin: info.origin,
-    amount: info.tx.value.toString(),
-    hash: info.tx.hash,
-    nonce: info.tx.nonce,
+    amount: txInfo.value,
+    hash: txInfo.hash,
+    nonce: txInfo.nonce,
     status,
     timestamp
   } as TransactionInfo
@@ -179,31 +267,37 @@ export function formatEvmTransactions<T extends ITransaction | IPendingTx>(
 }
 
 // @ts-ignore
-class EvmTransactionServicePartial
+export class EvmTransactionServicePartial
   extends BaseTransactionService
   implements ITransactionService {}
 
-export class EvmTransactionService extends EvmTransactionServicePartial {
+export class EvmBasicTransactionService extends EvmTransactionServicePartial {
   protected normalizeTx<T extends ITransaction | IPendingTx>(
     transaction: T,
-    tx: TransactionResponse
+    tx: TransactionResponse | UserOperationResponse
   ) {
-    delete (tx as any).wait
-    delete (tx as any).raw
-    delete (tx as any).confirmations
+    if (isEvmTransactionResponse(tx)) {
+      delete (tx as any).wait
+      delete (tx as any).raw
+      delete (tx as any).confirmations
+    } else {
+      tx = shallowStringify(tx)
+    }
     transaction.info.tx = tx
     return transaction
   }
 
   protected normalizeTxAndReceipt(
     transaction: ITransaction,
-    tx: TransactionResponse,
-    receipt?: TransactionReceipt
+    tx: TransactionResponse | UserOperationResponse,
+    receipt?: TransactionReceipt | UserOperationReceipt
   ) {
     transaction = this.normalizeTx(transaction, tx)
 
     if (receipt) {
       delete (receipt as any).confirmations
+    } else {
+      receipt = shallowStringify(receipt)
     }
     transaction.info.receipt = receipt
 
@@ -218,12 +312,18 @@ export class EvmTransactionService extends EvmTransactionServicePartial {
     functionSig
   }: {
     account: IChainAccount
-    tx: TransactionResponse
+    tx: TransactionResponse | UserOperationResponse
     request?: TransactionRequest
     origin?: string
     functionSig?: FunctionFragment
   }) {
-    assert(account.address === getAddress(tx.from))
+    assert(
+      account.address ===
+        getAddress(
+          (tx as TransactionResponse).from ||
+            (tx as UserOperationResponse).sender
+        )
+    )
 
     let transaction = {
       masterId: account.masterId,
@@ -231,7 +331,7 @@ export class EvmTransactionService extends EvmTransactionServicePartial {
       networkKind: account.networkKind,
       chainId: account.chainId,
       address: account.address,
-      nonce: tx.nonce,
+      nonce: Number(tx.nonce),
       info: {
         request,
         origin,
@@ -255,9 +355,9 @@ export class EvmTransactionService extends EvmTransactionServicePartial {
   }: {
     account: IChainAccount
     type: string
-    tx: TransactionResponse
+    tx: TransactionResponse | UserOperationResponse
     etherscanTx?: EtherscanTxResponse
-    receipt?: TransactionReceipt
+    receipt?: TransactionReceipt | UserOperationReceipt
     request?: TransactionRequest
     origin?: string
   }) {
@@ -265,8 +365,12 @@ export class EvmTransactionService extends EvmTransactionServicePartial {
 
     let blockNumber, transactionIndex
     if (receipt) {
-      blockNumber = receipt.blockNumber
-      transactionIndex = receipt.transactionIndex
+      blockNumber = isEvmTransactionReceipt(receipt)
+        ? receipt.blockNumber
+        : Number(receipt.receipt.blockNumber)
+      transactionIndex = isEvmTransactionReceipt(receipt)
+        ? receipt.transactionIndex
+        : Number(receipt.receipt.transactionIndex)
     } else {
       blockNumber = etherscanTx!.blockNumber
       transactionIndex = etherscanTx!.transactionIndex
@@ -307,7 +411,11 @@ export class EvmTransactionService extends EvmTransactionServicePartial {
     assert(network)
     const provider = await getProvider(network)
     const signedTx = await provider.signTransaction(account, request)
-    const txResponse = await provider.sendTransaction(account, signedTx)
+    const txResponse = await provider.sendTransaction(
+      account,
+      signedTx,
+      request
+    )
     return this.addPendingTx(
       account,
       request,
@@ -321,7 +429,7 @@ export class EvmTransactionService extends EvmTransactionServicePartial {
   async addPendingTx(
     account: IChainAccount,
     request: TransactionRequest,
-    tx: TransactionResponse,
+    tx: TransactionResponse | UserOperationResponse,
     origin?: string,
     functionSig?: FunctionFragment,
     replace = true
@@ -345,7 +453,7 @@ export class EvmTransactionService extends EvmTransactionServicePartial {
             networkKind: account.networkKind,
             chainId: account.chainId,
             address: account.address,
-            nonce: tx.nonce
+            nonce: Number(tx.nonce)
           })
           .first()
         if (existing) {
@@ -363,7 +471,7 @@ export class EvmTransactionService extends EvmTransactionServicePartial {
 
   async waitForTx(
     pendingTx: IPendingTx,
-    tx?: TransactionResponse,
+    tx?: TransactionResponse | UserOperationResponse,
     confirmations = 1
   ): Promise<ITransaction | undefined> {
     assert(confirmations >= 1)
@@ -380,40 +488,61 @@ export class EvmTransactionService extends EvmTransactionServicePartial {
       await DB.pendingTxs.delete(pendingTx.id)
       return
     }
-    const provider = await EvmClient.from(network)
+
+    const account = await WALLET_SERVICE.getChainAccount({
+      masterId: pendingTx.masterId,
+      index: pendingTx.index,
+      networkKind: pendingTx.networkKind,
+      chainId: pendingTx.chainId
+    })
+    if (!account) {
+      await DB.pendingTxs.delete(pendingTx.id)
+      return
+    }
+
+    const provider = !(await isErc4337Account(account))
+      ? await EvmClient.from(network)
+      : await EvmErc4337Client.fromMayUndefined(network)
+    if (!provider) {
+      await DB.pendingTxs.delete(pendingTx.id)
+      return
+    }
 
     const info = pendingTx.info as EvmPendingTxInfo
     if (!tx) {
-      tx = info.tx as TransactionResponse
+      tx = info.tx as TransactionResponse | UserOperationResponse
     }
 
     if ((tx as any).wait) {
-      // If `wait` exists, transaction is from the immediate `sendTransaction`.
-      // So we persist the start block number for later `_waitForTransaction`
+      // If `wait` exists, transaction is from the immediate `sendTransaction` call.
+      // So we persist the start block number for later `waitForTransaction`
       info.startBlockNumber = await provider._getInternalBlockNumber(
         500 + 2 * provider.pollingInterval
       )
       await DB.pendingTxs.update(pendingTx.id, { info })
     }
 
-    let receipt: TransactionReceipt | undefined = undefined
+    let receipt: TransactionReceipt | UserOperationReceipt | undefined
     try {
-      if (tx.wait) {
-        receipt = await tx.wait(confirmations)
+      if ((tx as any).wait) {
+        receipt = await (tx as any).wait(confirmations)
       } else if (typeof info.startBlockNumber === 'number') {
-        const replacement = {
-          data: tx.data,
-          from: tx.from,
-          nonce: tx.nonce,
-          to: tx.to,
-          value: tx.value,
-          startBlock: info.startBlockNumber
-        }
-        receipt = await provider._waitForTransaction(
+        const replacement = isEvmTransactionResponse(tx)
+          ? {
+              data: tx.data,
+              from: tx.from,
+              nonce: tx.nonce,
+              to: tx.to,
+              value: tx.value,
+              startBlock: info.startBlockNumber
+            }
+          : undefined
+        receipt = await provider.waitForTransaction(
           tx.hash,
           confirmations,
           1000 * 60 * 5, // timeout 5m
-          replacement as any
+          replacement as any,
+          account
         )
       } else {
         // We don't know how to wait for this transaction, so delete it.
@@ -436,7 +565,9 @@ export class EvmTransactionService extends EvmTransactionServicePartial {
         )
         await DB.pendingTxs.update(pendingTx.id, { info })
 
-        const nonce = await provider.getTransactionCount(tx.from)
+        const nonce = await provider.getTransactionCount(
+          isEvmTransactionResponse(tx) ? tx.from : tx.sender
+        )
         const isMined = nonce > tx.nonce
 
         console.log(
@@ -452,13 +583,25 @@ export class EvmTransactionService extends EvmTransactionServicePartial {
     }
 
     assert(receipt)
+    const hash = isEvmTransactionReceipt(receipt)
+      ? receipt.transactionHash
+      : receipt.userOpHash
+    const transactionHash = isEvmTransactionReceipt(receipt)
+      ? receipt.transactionHash
+      : receipt.receipt.transactionHash
+    const blockNumber = isEvmTransactionReceipt(receipt)
+      ? receipt.blockNumber
+      : Number(receipt.receipt.blockNumber)
     if (
       // tx replacement occurred
-      receipt.transactionHash !== tx.hash ||
+      hash !== tx.hash ||
+      transactionHash !==
+        (isEvmTransactionResponse(tx) ? tx.hash : tx.transactionHash) ||
       // tx mined
-      receipt.blockNumber !== tx.blockNumber
+      blockNumber !==
+        (isEvmTransactionResponse(tx) ? tx.blockNumber : Number(tx.blockNumber))
     ) {
-      tx = await provider.getTransaction(receipt.transactionHash)
+      tx = await provider.getTransaction(hash, account)
     }
 
     let transaction = await DB.transactions
@@ -469,14 +612,16 @@ export class EvmTransactionService extends EvmTransactionServicePartial {
         chainId: pendingTx.chainId,
         address: pendingTx.address,
         type: EvmTxType.NORMAL,
-        index1: receipt.blockNumber,
-        index2: receipt.transactionIndex
+        index1: blockNumber,
+        index2: isEvmTransactionReceipt(receipt)
+          ? receipt.transactionIndex
+          : Number(receipt.receipt.transactionIndex)
       })
       .first()
 
     if (!transaction) {
       transaction = this.newTransaction({
-        account: pendingTx as IChainAccount,
+        account,
         type: EvmTxType.NORMAL,
         tx,
         receipt
@@ -567,7 +712,7 @@ export class EvmTransactionService extends EvmTransactionServicePartial {
       type
     )
     const startBlock = lastCursorTx
-      ? (lastCursorTx.info as EvmTransactionInfo).tx.blockNumber! + 1
+      ? Number((lastCursorTx.info as EvmTransactionInfo).tx.blockNumber)! + 1
       : 0
 
     let transactions = await etherscanProvider.getTransactions(
@@ -706,53 +851,5 @@ export class EvmTransactionService extends EvmTransactionServicePartial {
     }
 
     return transactions.length
-  }
-}
-
-function createEvmTransactionService(): ITransactionService {
-  const serviceName = 'evmTransactionService'
-  let service
-  if (isBackgroundWorker()) {
-    service = new EvmTransactionService()
-    SERVICE_WORKER_SERVER.registerService(serviceName, service)
-  } else {
-    service = SERVICE_WORKER_CLIENT.service<ITransactionService>(
-      serviceName,
-      // @ts-ignore
-      new EvmTransactionServicePartial()
-    )
-  }
-  return service
-}
-
-export const EVM_TRANSACTION_SERVICE = createEvmTransactionService()
-
-export function useTransactionDescription(
-  network?: INetwork,
-  tx?: TransactionRequest
-) {
-  const provider = useEtherScanProvider(network)
-
-  const { value: description } = useAsync(async () => {
-    const contract = tx?.to
-    const data = tx?.data?.length ? hexlify(tx.data) : undefined
-    if (!provider || !contract || !data) {
-      return
-    }
-    let iface
-    try {
-      iface = await provider.getAbi(contract)
-    } catch {
-      return
-    }
-    return iface.parseTransaction({ data })
-  }, [provider, tx])
-
-  const _signature = useEvmFunctionSignature(tx?.data)
-  const signature = description?.functionFragment || _signature
-
-  return {
-    signature,
-    description
   }
 }

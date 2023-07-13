@@ -1,17 +1,13 @@
-import { VoidSigner } from '@ethersproject/abstract-signer'
-import { AddressZero } from '@ethersproject/constants'
 import { resolveProperties } from '@ethersproject/properties'
 import { TransactionRequest } from '@ethersproject/providers'
 import type { UserOperationStruct } from '@zerodevapp/contracts'
-import assert from 'assert'
 
-import { makeZeroDevSigner } from '~lib/erc4337/zerodev'
 import { IChainAccount } from '~lib/schema'
 import { TransactionPayload } from '~lib/services/provider'
-import { Erc4337Wallet, getSigningWallet } from '~lib/wallet'
+import { stall } from '~lib/utils'
 
 import { EvmErc4337Client } from '../clientErc4337'
-import { EvmTxParams } from '../types'
+import { EvmTxParams, UserOperationResponse } from '../types'
 import { EvmBasicProvider } from './provider'
 
 export class EvmErc4337Provider extends EvmBasicProvider {
@@ -19,28 +15,18 @@ export class EvmErc4337Provider extends EvmBasicProvider {
     account: IChainAccount,
     tag?: string | number
   ): Promise<number> {
-    const client = this.provider as EvmErc4337Client
-    const nonce = await client.provider.smartAccountAPI.getNonce()
+    const client = this.provider as unknown as EvmErc4337Client
+    const provider = await client.getProvider(account)
+
+    const nonce = await provider.smartAccountAPI.getNonce()
     return nonce.toNumber()
   }
 
   async estimateGas(account: IChainAccount, tx: any): Promise<string> {
-    const client = this.provider as EvmErc4337Client
+    const client = this.provider as unknown as EvmErc4337Client
+    const provider = await client.getProvider(account)
 
-    const signingWallet = await getSigningWallet(account)
-    assert(signingWallet)
-
-    const voidSigner = new VoidSigner(
-      (signingWallet as unknown as Erc4337Wallet).owner,
-      this.provider
-    )
-
-    const signer = await makeZeroDevSigner({
-      provider: client.provider,
-      signer: voidSigner
-    })
-
-    return (await signer.estimateGas(tx)).toString()
+    return (await provider.signer.estimateGas(tx)).toString()
   }
 
   async populateTransaction(
@@ -56,17 +42,12 @@ export class EvmErc4337Provider extends EvmBasicProvider {
     account: IChainAccount,
     signedUserOperation: UserOperationStruct,
     request: TransactionRequest
-  ): Promise<any> {
+  ): Promise<UserOperationResponse> {
     signedUserOperation = await resolveProperties(signedUserOperation)
 
-    const client = this.provider as EvmErc4337Client
-
-    const voidSigner = new VoidSigner(AddressZero, this.provider)
-
-    const signer = await makeZeroDevSigner({
-      provider: client.provider,
-      signer: voidSigner
-    })
+    const client = this.provider as unknown as EvmErc4337Client
+    const provider = await client.getProvider(account)
+    const signer = provider.signer
 
     const transactionResponse =
       await signer.zdProvider.constructUserOpTransactionResponse(
@@ -97,7 +78,27 @@ export class EvmErc4337Provider extends EvmBasicProvider {
       console.error('sendUserOpToBundler failed', error)
       throw signer.unwrapError(error)
     }
+
     // TODO: handle errors - transaction that is "rejected" by bundler is _not likely_ to ever resolve its "wait()"
-    return transactionResponse
+
+    const userOpHash = transactionResponse.hash
+
+    const txMaxRetries = 5
+    const txRetryIntervalMs = 2000
+    const txRetryMulitplier = 1.5
+    for (let i = 0; i < txMaxRetries; i++) {
+      const txRetryIntervalWithJitterMs =
+        txRetryIntervalMs * Math.pow(txRetryMulitplier, i) + Math.random() * 100
+
+      await stall(txRetryIntervalWithJitterMs)
+
+      try {
+        return await client.getTransaction(userOpHash, account)
+      } catch {
+        // ignore
+      }
+    }
+
+    throw new Error('failed to get user operation response')
   }
 }

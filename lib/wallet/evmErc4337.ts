@@ -8,6 +8,7 @@ import { ethers } from 'ethers'
 import { makeZeroDevSigner } from '~lib/erc4337/zerodev'
 import { DerivePosition, INetwork } from '~lib/schema'
 import { EvmErc4337Client } from '~lib/services/provider/evm'
+import { shallowStringify } from '~lib/utils'
 
 import { Erc4337Wallet, WalletOpts } from './base'
 import { EvmWallet } from './evm'
@@ -127,11 +128,5 @@ export async function signErc4337Transaction(
     nonce
   })
   const resolved = await resolveProperties(userOp)
-
-  // serialize all values to string
-  const result: any = {}
-  for (const key in resolved) {
-    result[key] = (resolved as any)[key].toString()
-  }
-  return result
+  return shallowStringify(resolved)
 }
