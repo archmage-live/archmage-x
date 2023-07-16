@@ -95,8 +95,23 @@ export function formatEvmTxParams(payload: {
   return payload as TransactionPayload
 }
 
-export type UserOperationReceipt = _UserOperationReceipt
-export type UserOperationResponse = _UserOperationResponse & {
-  hash: string
+export type UserOperationReceipt = _UserOperationReceipt & {
   timestamp: number
 }
+
+export type UserOperationResponse = Omit<
+  _UserOperationResponse,
+  'entryPoint' | 'blockNumber' | 'blockHash' | 'transactionHash'
+> &
+  Partial<
+    Pick<
+      _UserOperationResponse,
+      'entryPoint' | 'blockNumber' | 'blockHash' | 'transactionHash'
+    >
+  > & {
+    hash: string
+
+    timestamp?: number
+
+    wait?: (confirmations?: number) => Promise<UserOperationReceipt>
+  }

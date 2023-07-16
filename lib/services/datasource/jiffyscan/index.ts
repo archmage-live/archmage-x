@@ -121,7 +121,7 @@ class JiffyscanApi {
     return await fetchJson({
       url: u.toString(),
       headers: {
-        'X-Api-Key': apiKey
+        'x-api-key': apiKey
       }
     })
   }
@@ -131,7 +131,7 @@ class JiffyscanApi {
     address: string,
     offset: number = 0,
     limit: number = 10
-  ) {
+  ): Promise<AddressActivity | undefined> {
     return await this.fetch(network, '/getAddressActivity', {
       address,
       first: limit,

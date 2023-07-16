@@ -1,10 +1,10 @@
+import type { UserOperationRequest } from '@alchemy/aa-core'
 import { resolveProperties } from '@ethersproject/properties'
 import { TransactionRequest } from '@ethersproject/providers'
 import type { UserOperationStruct } from '@zerodevapp/contracts'
 
 import { IChainAccount } from '~lib/schema'
 import { TransactionPayload } from '~lib/services/provider'
-import { stall } from '~lib/utils'
 
 import { EvmErc4337Client } from '../clientErc4337'
 import { EvmTxParams, UserOperationResponse } from '../types'
@@ -81,24 +81,19 @@ export class EvmErc4337Provider extends EvmBasicProvider {
 
     // TODO: handle errors - transaction that is "rejected" by bundler is _not likely_ to ever resolve its "wait()"
 
-    const userOpHash = transactionResponse.hash
-
-    const txMaxRetries = 5
-    const txRetryIntervalMs = 2000
-    const txRetryMulitplier = 1.5
-    for (let i = 0; i < txMaxRetries; i++) {
-      const txRetryIntervalWithJitterMs =
-        txRetryIntervalMs * Math.pow(txRetryMulitplier, i) + Math.random() * 100
-
-      await stall(txRetryIntervalWithJitterMs)
-
-      try {
-        return await client.getTransaction(userOpHash, account)
-      } catch {
-        // ignore
-      }
+    const userOp: UserOperationResponse = {
+      hash: transactionResponse.hash,
+      ...(signedUserOperation as UserOperationRequest)
     }
 
-    throw new Error('failed to get user operation response')
+    return await client._wrapTransaction(userOp, account)
+  }
+
+  async getTransaction(
+    userOpHash: string | Promise<string>,
+    account?: IChainAccount
+  ): Promise<UserOperationResponse> {
+    const client = this.provider as unknown as EvmErc4337Client
+    return client.getTransaction(userOpHash, account)
   }
 }

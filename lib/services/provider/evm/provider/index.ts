@@ -83,6 +83,14 @@ export class EvmProvider extends EvmBasicProvider {
     }
   }
 
+  async getTransaction(hash: string, account: IChainAccount) {
+    if (!(await isErc4337Account(account))) {
+      return this.provider.getTransaction(hash)
+    } else {
+      return (await this.getErc4337Provider()).getTransaction(hash, account)
+    }
+  }
+
   async send(
     account: IChainAccount | undefined,
     method: string,

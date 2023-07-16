@@ -1,3 +1,4 @@
+import { BigNumber } from '@ethersproject/bignumber'
 import { AddressZero } from '@ethersproject/constants'
 import { Network } from '@ethersproject/networks'
 import { BaseProvider, JsonRpcProvider } from '@ethersproject/providers'
@@ -144,13 +145,15 @@ export class EvmErc4337Client extends EvmClient {
     const userOp = rep.userOperation
     delete (rep as any).userOperation
 
-    return {
+    const tx: UserOperationResponse = {
       ...rep,
       ...userOp,
       hash: await userOpHash,
       timestamp: (await provider.getBlock(Number(rep.blockNumber.toString())))
         .timestamp
     }
+
+    return await this._wrapTransaction(tx, account)
   }
 
   // @ts-ignore
@@ -160,7 +163,13 @@ export class EvmErc4337Client extends EvmClient {
   ): Promise<UserOperationReceipt> {
     const provider = await this.getProvider(account)
     const rpcClient = new ZeroDevRpcClient(provider)
-    return await rpcClient.getUserOperationReceipt(await userOpHash)
+    const receipt = await rpcClient.getUserOperationReceipt(await userOpHash)
+    return {
+      ...receipt,
+      timestamp: (
+        await provider.getBlock(Number(receipt.receipt.blockNumber.toString()))
+      ).timestamp
+    }
   }
 
   // @ts-ignore
@@ -175,6 +184,52 @@ export class EvmErc4337Client extends EvmClient {
     await provider.waitForTransaction(userOpHash, confirmations, timeout)
 
     const rpcClient = new ZeroDevRpcClient(provider)
-    return await rpcClient.getUserOperationReceipt(userOpHash)
+    const receipt = await rpcClient.getUserOperationReceipt(userOpHash)
+
+    return {
+      ...receipt,
+      timestamp: (
+        await provider.getBlock(Number(receipt.receipt.blockNumber.toString()))
+      ).timestamp
+    }
+  }
+
+  // @ts-ignore
+  async _wrapTransaction(
+    tx: UserOperationResponse,
+    account?: IChainAccount
+  ): Promise<UserOperationResponse> {
+    const provider = await this.getProvider(account)
+
+    const wait = async (
+      confirms?: number,
+      timeout?: number
+    ): Promise<UserOperationReceipt> => {
+      if (typeof confirms !== 'number') {
+        confirms = 1
+      }
+      if (typeof timeout !== 'number') {
+        timeout = 0
+      }
+
+      await provider.waitForTransaction(tx.hash, confirms, timeout)
+
+      const rpcClient = new ZeroDevRpcClient(provider)
+      const receipt = await rpcClient.getUserOperationReceipt(tx.hash)
+
+      const block = await provider.getBlock(
+        BigNumber.from(receipt.receipt.blockNumber).toNumber()
+      )
+
+      return {
+        ...receipt,
+        timestamp: block.timestamp
+      }
+    }
+
+    return {
+      ...tx,
+      wait
+    }
   }
 }

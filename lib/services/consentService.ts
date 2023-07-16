@@ -1,4 +1,3 @@
-import { poll } from '@ethersproject/web'
 import assert from 'assert'
 import { ethErrors } from 'eth-rpc-errors'
 import browser from 'webextension-polyfill'
@@ -162,6 +161,7 @@ class ConsentServicePartial implements IConsentService {
 
     let { signedTx, txHash } = payload as any
     if (signedTx || txHash) {
+      // in case of WalletConnect protocol
       assert(network!.kind === NetworkKind.EVM)
     } else {
       signedTx = await provider!.signTransaction(account!, payload.txParams)
@@ -446,27 +446,13 @@ class ConsentService extends ConsentServicePartial {
           break
       }
     } else {
+      assert(txHash)
+      // now our WalletConnect only support EVM
       assert(network.kind === NetworkKind.EVM)
+
       try {
         const evmProvider = provider as EvmProvider
-        const blockNumber = await evmProvider.provider._getInternalBlockNumber(
-          100 + 2 * evmProvider.provider.pollingInterval
-        )
-        txResponse = await poll(
-          async () => {
-            // TODO
-            const tx = await evmProvider.provider.getTransaction(txHash!)
-            if (tx === null) {
-              return undefined
-            }
-            return evmProvider.provider._wrapTransaction(
-              tx,
-              txHash,
-              blockNumber
-            )
-          },
-          { oncePoll: evmProvider.provider }
-        )
+        txResponse = await evmProvider.getTransaction(txHash, account)
       } catch (error: any) {
         console.error(error)
         // here do not throw
@@ -502,6 +488,7 @@ class ConsentService extends ConsentServicePartial {
       return txResponse
     } else {
       assert(network.kind === NetworkKind.EVM)
+      // simplified ethers TransactionResponse
       return { hash: txHash }
     }
   }

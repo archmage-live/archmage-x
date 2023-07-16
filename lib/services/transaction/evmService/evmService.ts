@@ -138,6 +138,8 @@ function getEvmTransactionInfoFromResponse(
   const req = info.request
 
   if (isEvmTransactionResponse(tx)) {
+    assert(!receipt || isEvmTransactionReceipt(receipt))
+
     return {
       hash: tx.hash,
       from: tx.from,
@@ -145,12 +147,12 @@ function getEvmTransactionInfoFromResponse(
       value: tx.value.toString(),
       data: tx.data,
       nonce: tx.nonce,
-      success: receipt
-        ? (receipt as TransactionReceipt).status === 1
-        : undefined,
+      success: receipt ? receipt.status === 1 : undefined,
       timestamp: tx.timestamp
     }
   } else {
+    assert(!receipt || isEvmUserOperationReceipt(receipt))
+
     return {
       hash: tx.hash,
       from: tx.sender,
@@ -159,10 +161,9 @@ function getEvmTransactionInfoFromResponse(
       data: tx.callData, // TODO: decode callData
       nonce: Number(tx.nonce),
       success: receipt
-        ? (receipt as UserOperationReceipt).success &&
-          (receipt as UserOperationReceipt).receipt.status === 1
+        ? receipt.success && receipt.receipt.status === 1
         : undefined,
-      timestamp: tx.timestamp
+      timestamp: tx.timestamp || receipt?.timestamp
     }
   }
 }
