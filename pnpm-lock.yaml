@@ -88,9 +88,9 @@ specifiers:
   '@openzeppelin/contracts': ^4.7.3
   '@plasmohq/storage': ^0.8.1
   '@react-icons/all-files': https://github.com/react-icons/react-icons/releases/download/v4.6.0/react-icons-all-files-4.6.0.tgz
-  '@safe-global/api-kit': ^1.1.0
-  '@safe-global/protocol-kit': ^1.0.1
-  '@safe-global/safe-core-sdk-types': ^2.0.0
+  '@safe-global/api-kit': ^1.3.0
+  '@safe-global/protocol-kit': ^1.2.0
+  '@safe-global/safe-core-sdk-types': ^2.2.0
   '@scure/btc-signer': ^1.0.0
   '@solana/web3.js': ^1.47.3
   '@tanstack/query-core': ^4.13.4
@@ -271,9 +271,9 @@ dependencies:
   '@openzeppelin/contracts': 4.7.3
   '@plasmohq/storage': 0.8.1_react@18.2.0
   '@react-icons/all-files': '@github.com/react-icons/react-icons/releases/download/v4.6.0/react-icons-all-files-4.6.0.tgz_react@18.2.0'
-  '@safe-global/api-kit': 1.1.0
-  '@safe-global/protocol-kit': 1.0.1
-  '@safe-global/safe-core-sdk-types': 2.0.0
+  '@safe-global/api-kit': 1.3.0
+  '@safe-global/protocol-kit': 1.2.0
+  '@safe-global/safe-core-sdk-types': 2.2.0
   '@scure/btc-signer': 1.0.0
   '@solana/web3.js': 1.47.3
   '@tanstack/query-core': 4.13.4
@@ -290,7 +290,7 @@ dependencies:
   '@web3auth/base': 6.1.1_@babel+runtime@7.22.5
   '@web3auth/base-provider': 6.1.1_@babel+runtime@7.22.5
   '@web3auth/modal': 6.1.1_urkw7jxu2z2zh5fgmbvlctfccu
-  '@web3auth/mpc-core-kit': 0.1.0_@babel+runtime@7.22.5
+  '@web3auth/mpc-core-kit': 0.1.0_k4aqr56sns2pqd6xahkry7g2ka
   '@web3auth/no-modal': 6.1.1_@babel+runtime@7.22.5
   '@web3auth/openlogin-adapter': 6.1.1_w4ppat5lekm6og7r62lkirdk7q
   '@web3auth/ui': 6.1.1_77ur6f7lacfuw5aqqkxpqkguwm
@@ -300,7 +300,7 @@ dependencies:
   '@zxcvbn-ts/language-common': 2.0.1
   '@zxcvbn-ts/language-en': 2.0.1
   ajv: 8.11.0
-  ajv-formats: 2.1.1
+  ajv-formats: 2.1.1_ajv@8.11.0
   alchemy-sdk: 2.2.0
   aptos: 1.6.0
   assert: 2.0.0
@@ -371,7 +371,7 @@ devDependencies:
   '@babel/core': 7.18.6
   '@chain-registry/types': 0.14.0
   '@chakra-ui/system': 2.5.8_fdnqutfacy7v3gmlcm66flps3q
-  '@lingui/cli': 3.14.0_u4pnq6aitzjyryj6xisyu635ni
+  '@lingui/cli': 3.14.0_43o5khemdyr5crtk7hq2x6wzza
   '@lingui/core': 3.14.0
   '@lingui/macro': 3.14.0_bz7tcuoqry2du7tl4zkex425e4
   '@lingui/react': 3.14.0_react@18.2.0
@@ -3742,12 +3742,13 @@ packages:
       - typescript
     dev: true
 
-  /@lingui/cli/3.14.0_u4pnq6aitzjyryj6xisyu635ni:
+  /@lingui/cli/3.14.0_43o5khemdyr5crtk7hq2x6wzza:
     resolution: {integrity: sha512-QZURsIf7A97tf28b/ffpeL0DekA6tBmcwnj4FBui1SbQqJw1d4IPg2bUM5VRn3/25vhqpi9Uhx5m9x7Vv8QfCQ==}
     engines: {node: '>=10.0.0'}
     hasBin: true
     peerDependencies:
       '@babel/core': ^7.0.0
+      babel-plugin-macros: "2 ||\_3"
       typescript: 2 || 3 || 4
     dependencies:
       '@babel/core': 7.18.6
@@ -5379,26 +5380,26 @@ packages:
     resolution: {integrity: sha512-LwzQKA4vzIct1zNZzBmRKI9QuNpLgTQMEjsQLf3BXuGYb3QPTP4Yjf6mkdX+X1mYttZ808QpOwAzZjv28kq7DA==}
     dev: false
 
-  /@safe-global/api-kit/1.1.0:
-    resolution: {integrity: sha512-3HB+Vl3dFunID4kadpAqYQQ9lfIJuCk9pYoJsfSWGeEgOOGFwexg3UtO8hh0JXoIO+bX8pm8x5GEF6pX8HeNTQ==}
+  /@safe-global/api-kit/1.3.0:
+    resolution: {integrity: sha512-3fdvoBtgufzmqmoBHir7vbS5N2t9Yc4kTeIJmAgmAGl8rHAy3z1bSv5uoEHYSMow34q1Am1aUar6vVAwwkIXhg==}
     dependencies:
       '@ethersproject/abstract-signer': 5.7.0
-      '@safe-global/safe-core-sdk-types': 2.0.0
+      '@safe-global/safe-core-sdk-types': 2.2.0
       node-fetch: 2.6.11
     transitivePeerDependencies:
       - encoding
       - supports-color
     dev: false
 
-  /@safe-global/protocol-kit/1.0.1:
-    resolution: {integrity: sha512-ZLfFxV6U9f5bJKcCQmrDJq/FzDGz7FMpXOjJ+G90VkaqBme3En73sN1KGd7++VKS7H3ukyM/xetrJs2mtvHlZg==}
+  /@safe-global/protocol-kit/1.2.0:
+    resolution: {integrity: sha512-drU2uK30AZ4tqI/9ER7PGMD/lZp/5B9T02t+noTk7WF9Xb7HxskJd8GNU01KE55oyH31Y0AfXaE68H/f9lYa4A==}
     dependencies:
       '@ethersproject/address': 5.7.0
       '@ethersproject/bignumber': 5.7.0
       '@ethersproject/solidity': 5.7.0
-      '@safe-global/safe-deployments': 1.23.0
+      '@safe-global/safe-deployments': 1.26.0
       ethereumjs-util: 7.1.5
-      semver: 7.3.8
+      semver: 7.5.4
       web3: 1.10.0
       web3-core: 1.10.0
       web3-utils: 1.10.0
@@ -5409,12 +5410,12 @@ packages:
       - utf-8-validate
     dev: false
 
-  /@safe-global/safe-core-sdk-types/2.0.0:
-    resolution: {integrity: sha512-9bcGaEuJCRG1ccGxKNjLzJuXMqdJZEFkWi+1vf6UFO8gpmanasvBozMEo6fzUMtDBGgkkStYywhO6Cp0tKyD3Q==}
+  /@safe-global/safe-core-sdk-types/2.2.0:
+    resolution: {integrity: sha512-vVG9qQnUYx+Xwsbuqraq25MPJX1I1aV1P81ZnHZa1lEMU7stqYWAmykUm/mvqsm8+AsvEB/wBKlFjbFJ/duzoA==}
     dependencies:
       '@ethersproject/bignumber': 5.7.0
       '@ethersproject/contracts': 5.7.0
-      '@safe-global/safe-deployments': 1.23.0
+      '@safe-global/safe-deployments': 1.26.0
       web3-core: 1.10.0
       web3-utils: 1.10.0
     transitivePeerDependencies:
@@ -5422,10 +5423,10 @@ packages:
       - supports-color
     dev: false
 
-  /@safe-global/safe-deployments/1.23.0:
-    resolution: {integrity: sha512-8kyARY3DHZrAnig3LaM6AKoQtSvkhnKpyZ3jsxNCdnNb38DVuMXWcKA63UdZMWSnKJfkieVXGhof2Kt5cUHTEw==}
+  /@safe-global/safe-deployments/1.26.0:
+    resolution: {integrity: sha512-Tw89O4/paT19ieMoiWQbqRApb0Bef/DxweS9rxodXAM5EQModkbyFXGZca+YxXE67sLvWjLr2jJUOxwze8mhGw==}
     dependencies:
-      semver: 7.3.8
+      semver: 7.5.4
     dev: false
 
   /@scure/base/1.1.1:
@@ -7760,10 +7761,11 @@ packages:
       - utf-8-validate
     dev: false
 
-  /@web3auth/mpc-core-kit/0.1.0_@babel+runtime@7.22.5:
+  /@web3auth/mpc-core-kit/0.1.0_k4aqr56sns2pqd6xahkry7g2ka:
     resolution: {integrity: sha512-HHgXwW02gA+5EJKqc1lLpRka1xbCxiOVSu6INpnA+3TOH1Z+X6K0uJewP0YzjPFuGifjOi9chK4uJz7gJrVNGQ==}
     peerDependencies:
       '@babel/runtime': ^7.x
+      '@toruslabs/metadata-helpers': ^4.x
     dependencies:
       '@babel/runtime': 7.22.5
       '@tkey/chrome-storage': 8.0.0-alpha.0_@babel+runtime@7.22.5
@@ -8175,8 +8177,10 @@ packages:
       minimist: 1.2.6
     dev: true
 
-  /ajv-formats/2.1.1:
+  /ajv-formats/2.1.1_ajv@8.11.0:
     resolution: {integrity: sha512-Wx0Kx52hxE7C18hkMEggYlEifqWZtYaRgouJor+WMdPnQyEK13vgEWyVNup7SoeeoLMsr4kf5h6dOW11I15MUA==}
+    peerDependencies:
+      ajv: ^8.0.0
     peerDependenciesMeta:
       ajv:
         optional: true
@@ -12682,13 +12686,13 @@ packages:
       '@types/lodash': 4.14.182
       '@types/node': 12.20.55
       '@types/ws': 7.4.7
+      JSONStream: 1.3.5
       commander: 2.20.3
       delay: 5.0.0
       es6-promisify: 5.0.0
       eyes: 0.1.8
       isomorphic-ws: 4.0.1_ws@7.5.9
       json-stringify-safe: 5.0.1
-      JSONStream: 1.3.5
       lodash: 4.17.21
       uuid: 8.3.2
       ws: 7.5.9
@@ -12705,13 +12709,13 @@ packages:
       '@types/connect': 3.4.35
       '@types/node': 12.20.55
       '@types/ws': 7.4.7
+      JSONStream: 1.3.5
       commander: 2.20.3
       delay: 5.0.0
       es6-promisify: 5.0.0
       eyes: 0.1.8
       isomorphic-ws: 4.0.1_ws@7.5.9
       json-stringify-safe: 5.0.1
-      JSONStream: 1.3.5
       uuid: 8.3.2
       ws: 7.5.9
     transitivePeerDependencies:
@@ -15943,6 +15947,14 @@ packages:
     hasBin: true
     dependencies:
       lru-cache: 6.0.0
+
+  /semver/7.5.4:
+    resolution: {integrity: sha512-1bCSESV6Pv+i21Hvpxp3Dx+pSD8lIPt8uVjRrxAUt/nbswYc+tK6Y2btiULjd4+fnq15PX+nqQDC7Oft7WkwcA==}
+    engines: {node: '>=10'}
+    hasBin: true
+    dependencies:
+      lru-cache: 6.0.0
+    dev: false
 
   /send/0.18.0:
     resolution: {integrity: sha512-qqWzuOjSFOuqPjFe4NOsMLafToQQwBSOEpS+FwEt3A2V3vKubTquT3vmLTQpFgMXp8AlFWFuP1qKaJZOtPpVXg==}
