@@ -279,6 +279,7 @@ class CachedEtherscanProvider extends EtherscanProvider {
         return [item, tx]
       }) as Array<[TransactionResponse, EtherscanTxResponse]>
     ).sort((a, b) => {
+      // sort by blockNumber desc, transactionIndex desc
       const { blockNumber: aBlock, transactionIndex: aIndex } = a[1]
       const { blockNumber: bBlock, transactionIndex: bIndex } = b[1]
       if (aBlock > bBlock) {

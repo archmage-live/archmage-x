@@ -20,6 +20,7 @@ import {
   EtherscanTxResponse,
   EvmTxType
 } from '~lib/services/datasource/etherscan'
+import { JIFFYSCAN_API, UserOp } from '~lib/services/datasource/jiffyscan'
 import { NETWORK_SERVICE } from '~lib/services/network'
 import {
   EvmErc4337Client,
@@ -75,6 +76,7 @@ export interface EvmTransactionInfo {
   receipt?: ReducedTransactionReceipt | UserOperationReceipt // only exists for confirmed transaction, but may absent for Etherscan API available transaction
 
   etherscanTx?: EtherscanTxResponse // only exists for Etherscan API available transaction
+  jiffyscanUserOp?: UserOp // only exists for Jiffyscan UserOp
 
   request?: TransactionRequest // only exists for local sent transaction
   origin?: string // only exists for local sent transaction
@@ -87,7 +89,7 @@ export function isEvmPendingTxInfo(
   info: EvmPendingTxInfo | EvmTransactionInfo
 ): info is EvmPendingTxInfo {
   const txInfo = info as EvmTransactionInfo
-  return !txInfo.receipt && !txInfo.etherscanTx
+  return !txInfo.receipt && !(txInfo.etherscanTx || txInfo.jiffyscanUserOp)
 }
 
 export function isEvmTransactionInfo(
@@ -207,7 +209,10 @@ export function getEvmTransactionInfo(
   let status
   if (isPending) {
     status = TransactionStatus.PENDING
-  } else if (!txInfo.success || info.etherscanTx?.txreceipt_status === '0') {
+  } else if (
+    txInfo.success === false ||
+    info.etherscanTx?.txreceipt_status === '0'
+  ) {
     status = TransactionStatus.CONFIRMED_FAILURE
   } else {
     status = TransactionStatus.CONFIRMED
@@ -230,6 +235,7 @@ export function getEvmTransactionInfo(
     isPending,
     isCancelled,
     name,
+    from: txInfo.from,
     to: txInfo.to,
     origin: info.origin,
     amount: txInfo.value,
@@ -246,14 +252,14 @@ export function formatEvmTransactions<T extends ITransaction | IPendingTx>(
   const formatter = new Formatter()
   return txs.map((tx) => {
     const info = tx.info as EvmTransactionInfo
-    if (info.tx) {
+    if (info.tx && isEvmTransactionResponse(info.tx)) {
       const tx = formatter.transactionResponse(info.tx)
       info.tx = {
         ...tx,
         timestamp: info.tx.timestamp
       }
     }
-    if (info.receipt) {
+    if (info.receipt && isEvmTransactionReceipt(info.receipt)) {
       info.receipt = formatter.receipt(info.receipt)
     }
     if (info.request) {
@@ -282,6 +288,7 @@ export class EvmBasicTransactionService extends EvmTransactionServicePartial {
       delete (tx as any).raw
       delete (tx as any).confirmations
     } else {
+      delete (tx as any).wait
       tx = shallowStringify(tx)
     }
     transaction.info.tx = tx
@@ -296,9 +303,11 @@ export class EvmBasicTransactionService extends EvmTransactionServicePartial {
     transaction = this.normalizeTx(transaction, tx)
 
     if (receipt) {
-      delete (receipt as any).confirmations
-    } else {
-      receipt = shallowStringify(receipt)
+      if (isEvmTransactionReceipt(receipt)) {
+        delete (receipt as any).confirmations
+      } else {
+        receipt = shallowStringify(receipt)
+      }
     }
     transaction.info.receipt = receipt
 
@@ -350,6 +359,7 @@ export class EvmBasicTransactionService extends EvmTransactionServicePartial {
     type,
     tx,
     etherscanTx,
+    jiffyscanUserOp,
     receipt,
     request,
     origin
@@ -358,23 +368,27 @@ export class EvmBasicTransactionService extends EvmTransactionServicePartial {
     type: string
     tx: TransactionResponse | UserOperationResponse
     etherscanTx?: EtherscanTxResponse
+    jiffyscanUserOp?: UserOp
     receipt?: TransactionReceipt | UserOperationReceipt
     request?: TransactionRequest
     origin?: string
   }) {
-    assert(etherscanTx || receipt)
+    assert(etherscanTx || jiffyscanUserOp || receipt)
 
-    let blockNumber, transactionIndex
+    let index1, index2
     if (receipt) {
-      blockNumber = isEvmTransactionReceipt(receipt)
+      index1 = isEvmTransactionReceipt(receipt)
         ? receipt.blockNumber
         : Number(receipt.receipt.blockNumber)
-      transactionIndex = isEvmTransactionReceipt(receipt)
+      index2 = isEvmTransactionReceipt(receipt)
         ? receipt.transactionIndex
         : Number(receipt.receipt.transactionIndex)
+    } else if (etherscanTx) {
+      index1 = etherscanTx.blockNumber
+      index2 = etherscanTx.transactionIndex
     } else {
-      blockNumber = etherscanTx!.blockNumber
-      transactionIndex = etherscanTx!.transactionIndex
+      index1 = Number(jiffyscanUserOp!.blockNumber || 0)
+      index2 = jiffyscanUserOp!.userOpHash
     }
 
     let transaction = {
@@ -384,10 +398,11 @@ export class EvmBasicTransactionService extends EvmTransactionServicePartial {
       chainId: account.chainId,
       address: account.address,
       type,
-      index1: blockNumber,
-      index2: transactionIndex,
+      index1: index1,
+      index2: index2,
       info: {
         etherscanTx,
+        jiffyscanUserOp,
         request,
         origin
       } as EvmTransactionInfo
@@ -577,33 +592,72 @@ export class EvmBasicTransactionService extends EvmTransactionServicePartial {
           }. ${isMined ? "It was mined but hasn't been found." : ''}`
         )
 
-        return
+        return // wait later
+      } else if (err.toString().includes('Missing/invalid userOpHash')) {
+        const nonce = await provider.getTransactionCount(account)
+        const isMined = nonce > Number(tx.nonce)
+
+        if (!isMined) {
+          console.log(`pending tx ${pendingTx.id} will later be waited`)
+
+          return // wait later
+        }
       } else {
         throw err
       }
     }
 
-    assert(receipt)
-    const hash = isEvmTransactionReceipt(receipt)
-      ? receipt.transactionHash
-      : receipt.userOpHash
-    const transactionHash = isEvmTransactionReceipt(receipt)
-      ? receipt.transactionHash
-      : receipt.receipt.transactionHash
-    const blockNumber = isEvmTransactionReceipt(receipt)
-      ? receipt.blockNumber
-      : Number(receipt.receipt.blockNumber)
-    if (
-      // tx replacement occurred
-      hash !== tx.hash ||
-      transactionHash !==
-        (isEvmTransactionResponse(tx) ? tx.hash : tx.transactionHash) ||
-      // tx mined
-      blockNumber !==
-        (isEvmTransactionResponse(tx) ? tx.blockNumber : Number(tx.blockNumber))
-    ) {
-      tx = await provider.getTransaction(hash, account)
+    let index1, index2
+    if (receipt) {
+      const hash = isEvmTransactionReceipt(receipt)
+        ? receipt.transactionHash
+        : receipt.userOpHash
+      const transactionHash = isEvmTransactionReceipt(receipt)
+        ? receipt.transactionHash
+        : receipt.receipt.transactionHash
+      const blockNumber = isEvmTransactionReceipt(receipt)
+        ? receipt.blockNumber
+        : BigNumber.from(receipt.receipt.blockNumber).toNumber()
+
+      index1 = blockNumber
+      index2 = isEvmTransactionReceipt(receipt)
+        ? receipt.transactionIndex
+        : receipt.userOpHash
+
+      if (
+        // tx replacement occurred
+        hash !== tx.hash ||
+        transactionHash !==
+          (isEvmTransactionResponse(tx) ? tx.hash : tx.transactionHash) ||
+        // tx mined
+        blockNumber !==
+          (isEvmTransactionResponse(tx)
+            ? tx.blockNumber
+            : BigNumber.from(tx.blockNumber || 0).toNumber())
+      ) {
+        tx = await provider.getTransaction(hash, account)
+      }
+    } else {
+      // for userOp
+      assert(isEvmUserOperationResponse(tx))
+      if (tx.blockNumber) {
+        index1 = BigNumber.from(tx.blockNumber).toNumber()
+      } else {
+        const [userOp] = (await JIFFYSCAN_API.getUserOp(network, tx.hash)) || []
+        if (!userOp) {
+          console.log('delete pending tx:', pendingTx.id)
+          await DB.pendingTxs.delete(pendingTx.id)
+          return
+        }
+        index1 = BigNumber.from(userOp.blockNumber).toNumber()
+      }
+      index2 = tx.hash
     }
+
+    // TODO
+    const type = isEvmTransactionResponse(tx)
+      ? EvmTxType.NORMAL
+      : EvmTxType.UserOp
 
     let transaction = await DB.transactions
       .where({
@@ -612,18 +666,16 @@ export class EvmBasicTransactionService extends EvmTransactionServicePartial {
         networkKind: pendingTx.networkKind,
         chainId: pendingTx.chainId,
         address: pendingTx.address,
-        type: EvmTxType.NORMAL,
-        index1: blockNumber,
-        index2: isEvmTransactionReceipt(receipt)
-          ? receipt.transactionIndex
-          : Number(receipt.receipt.transactionIndex)
+        type,
+        index1,
+        index2
       })
       .first()
 
     if (!transaction) {
       transaction = this.newTransaction({
         account,
-        type: EvmTxType.NORMAL,
+        type,
         tx,
         receipt
       })
@@ -643,8 +695,10 @@ export class EvmBasicTransactionService extends EvmTransactionServicePartial {
     await DB.transaction('rw', [DB.pendingTxs, DB.transactions], async () => {
       assert(transaction)
       if (transaction.id === undefined) {
+        // add tx
         transaction.id = await DB.transactions.add(transaction)
       } else {
+        // update tx
         await DB.transactions.update(transaction.id, { info: transaction.info })
       }
 
@@ -656,7 +710,7 @@ export class EvmBasicTransactionService extends EvmTransactionServicePartial {
     return transaction
   }
 
-  private async _findCursorForFetchTransactions(
+  protected async _findCursorForFetchTransactions(
     account: IChainAccount,
     type: string
   ): Promise<ITransaction | undefined> {
@@ -713,10 +767,10 @@ export class EvmBasicTransactionService extends EvmTransactionServicePartial {
       type
     )
     const startBlock = lastCursorTx
-      ? Number((lastCursorTx.info as EvmTransactionInfo).tx.blockNumber)! + 1
+      ? Number((lastCursorTx.info as EvmTransactionInfo).tx.blockNumber!) + 1
       : 0
 
-    let transactions = await etherscanProvider.getTransactions(
+    const transactions = await etherscanProvider.getTransactions(
       type as EvmTxType,
       account.address,
       startBlock

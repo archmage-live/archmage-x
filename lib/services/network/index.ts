@@ -1,3 +1,4 @@
+import assert from 'assert'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useMemo } from 'react'
 
@@ -14,6 +15,7 @@ import { useEvmChainLogoUrl } from '~lib/services/datasource/chainlist'
 import { useCosmChainLogoUrl } from '~lib/services/datasource/cosmos'
 import { DENOM_TO_SUBDIRECTORY } from '~lib/services/datasource/cosmostation/helpers'
 import { useCryptoComparePrice } from '~lib/services/datasource/cryptocompare'
+import { JIFFYSCAN_NETWORKS } from '~lib/services/datasource/jiffyscan'
 import { CosmTokenInfo } from '~lib/services/token/cosm'
 
 import { AptosNetworkService } from './aptosService'
@@ -130,7 +132,7 @@ export function getAccountUrl(
   account: IChainAccount
 ): string | undefined {
   const info = getNetworkInfo(network)
-  if (!info?.explorerUrl || !account?.address) {
+  if (!info?.explorerUrl || !account.address) {
     return undefined
   }
   try {
@@ -162,6 +164,25 @@ export function getAccountUrl(
   } catch {
     return undefined
   }
+}
+
+export function getErc4337AccountUrl(
+  network: INetwork,
+  account: IChainAccount
+): string | undefined {
+  assert(network.kind === NetworkKind.EVM)
+  const networkName = JIFFYSCAN_NETWORKS.get(Number(network.chainId))
+  if (!networkName) {
+    return
+  }
+  if (!account.address) {
+    return
+  }
+
+  const url = new URL('https://jiffyscan.xyz')
+  url.pathname = `/account/${account.address}`
+  url.searchParams.set('network', networkName)
+  return url.toString()
 }
 
 export function getTransactionUrl(
@@ -201,6 +222,22 @@ export function getTransactionUrl(
   } catch {
     return undefined
   }
+}
+
+export function getErc4337TransactionUrl(
+  network: INetwork,
+  txId: string | number
+): string | undefined {
+  assert(network.kind === NetworkKind.EVM)
+  const networkName = JIFFYSCAN_NETWORKS.get(Number(network.chainId))
+  if (!networkName) {
+    return
+  }
+
+  const url = new URL('https://jiffyscan.xyz')
+  url.pathname = `/userOpHash/${txId}`
+  url.searchParams.set('network', networkName)
+  return url.toString()
 }
 
 export function getTokenUrl(

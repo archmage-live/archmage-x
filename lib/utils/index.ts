@@ -27,6 +27,10 @@ export function shortenString(
 }
 
 export function shallowClean<T>(object: T): T {
+  if (!object) {
+    return object
+  }
+
   const result: any = {}
   for (const key in object) {
     const value = object[key]
@@ -38,6 +42,10 @@ export function shallowClean<T>(object: T): T {
 }
 
 export function shallowStringify<T>(object: T): T {
+  if (!object) {
+    return object
+  }
+
   const result: any = {}
   for (const key in object) {
     const value = object[key]

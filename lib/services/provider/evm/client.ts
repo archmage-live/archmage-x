@@ -129,6 +129,16 @@ export class EvmClient extends UrlJsonRpcProvider {
     return client
   }
 
+  async getTransactionCount(
+    accountOrAddressOrName: IChainAccount | string | Promise<string>,
+    ...args: any[]
+  ): Promise<number> {
+    const aan = await accountOrAddressOrName
+    const addressOrName = typeof aan === 'string' ? aan : aan.address
+    assert(addressOrName)
+    return super.getTransactionCount(addressOrName, ...args)
+  }
+
   async getTransaction(
     transactionHash: string | Promise<string>,
     account?: IChainAccount

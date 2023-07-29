@@ -34,7 +34,11 @@ import {
   TransactionStatus,
   getTransactionInfo
 } from '~lib/services/transaction'
-import { EvmTransactionInfo } from '~lib/services/transaction/evmService'
+import {
+  EvmTransactionInfo,
+  ReducedTransactionReceipt,
+  ReducedTransactionResponse
+} from '~lib/services/transaction/evmService'
 import { shortenString } from '~lib/utils'
 
 import { FromTo } from '../../Consent/Transaction/FromTo'
@@ -83,17 +87,18 @@ export const EvmActivityDetail = ({
 
   const txInfo = getTransactionInfo(tx)
 
-  const info = tx.info as EvmTransactionInfo
+  const info = tx.info as Omit<EvmTransactionInfo, 'tx'> & {
+    tx: ReducedTransactionResponse
+  }
 
-  const [receipt, setReceipt] =
-    useState<Omit<TransactionReceipt, 'confirmations'>>()
+  const [receipt, setReceipt] = useState<ReducedTransactionReceipt>()
   const [baseFeePerGas, setBaseFeePerGas] = useState<BigNumber | null>()
 
   useAsync(async () => {
     const provider = await EvmClient.from(network)
     let receipt
     if (info.receipt) {
-      receipt = info.receipt
+      receipt = info.receipt as TransactionReceipt
     } else {
       receipt = await provider.getTransactionReceipt(info.tx.hash)
     }

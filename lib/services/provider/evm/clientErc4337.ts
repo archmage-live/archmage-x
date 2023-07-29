@@ -124,11 +124,12 @@ export class EvmErc4337Client extends EvmClient {
   }
 
   async getTransactionCount(
-    addressOrName: string | Promise<string>,
+    accountOrAddressOrName: IChainAccount | string | Promise<string>,
     ...args: any[]
   ): Promise<number> {
-    const address = await this._getAddress(addressOrName)
-    const provider = await this.getProvider(address)
+    const aan = await accountOrAddressOrName
+    const account = typeof aan === 'object' ? aan : await this._getAddress(aan)
+    const provider = await this.getProvider(account)
     // treat userOp nonce as transaction count
     return (await provider.smartAccountAPI.getNonce()).toNumber()
   }

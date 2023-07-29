@@ -1,7 +1,6 @@
-import { EthersAdapter } from '@safe-global/protocol-kit'
 import SafeApiKit from '@safe-global/api-kit'
+import { EthersAdapter } from '@safe-global/protocol-kit'
 import { SafeFactory } from '@safe-global/protocol-kit'
-
 
 const SAFE_TX_SERVICE_URLS = new Map([
   [1, 'https://safe-transaction-mainnet.safe.global'],
@@ -13,5 +12,5 @@ const SAFE_TX_SERVICE_URLS = new Map([
   [56, 'https://safe-transaction-bsc.safe.global/'],
   [100, 'https://safe-transaction-gnosis-chain.safe.global/'],
   [1313161554, 'https://safe-transaction-aurora.safe.global/'],
-  [84531, 'https://safe-transaction-base-testnet.safe.global/'],
+  [84531, 'https://safe-transaction-base-testnet.safe.global/']
 ])

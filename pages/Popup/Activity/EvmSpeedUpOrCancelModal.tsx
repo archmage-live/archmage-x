@@ -36,7 +36,8 @@ import {
 } from '~lib/services/provider/evm'
 import {
   EVM_TRANSACTION_SERVICE,
-  EvmPendingTxInfo
+  EvmPendingTxInfo,
+  isEvmTransactionResponse
 } from '~lib/services/transaction/evmService'
 import { EvmAdvancedGasFeeModal } from '~pages/Popup/Consent/Transaction/EvmAdvancedGasFeeModal'
 import {
@@ -68,7 +69,12 @@ export const EvmSpeedUpOrCancelModal = ({
   const price = useCryptoComparePrice(networkInfo.currencySymbol)
 
   const [gasLimit, setGasLimit] = useState(
-    BigNumber.from(info.tx.gasLimit).toNumber()
+    isEvmTransactionResponse(info.tx)
+      ? BigNumber.from(info.tx.gasLimit).toNumber()
+      : BigNumber.from(info.tx.callGasLimit)
+          .add(info.tx.verificationGasLimit)
+          .add(info.tx.preVerificationGas)
+          .toNumber()
   )
 
   const { gasPrice: gasFeeEstimation } = useEstimateGasPrice(

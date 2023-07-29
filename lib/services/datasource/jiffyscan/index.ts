@@ -3,10 +3,30 @@ import assert from 'assert'
 import { fetchJson } from '~lib/fetch'
 import { NetworkKind } from '~lib/network'
 import { INetwork } from '~lib/schema'
+import { UserOperationResponse } from '~lib/services/provider/evm'
+
+export const JIFFYSCAN_NETWORKS: Map<number, string> = new Map([
+  [1, 'mainnet'],
+  [5, 'georli'],
+  [11155111, 'sepolia'],
+  [137, 'matic'],
+  [80001, 'mumbai'],
+  [10, 'optimism'],
+  [420, 'optimism-goerli'],
+  [42161, 'arbitrum-one'],
+  [421613, 'arbitrum-goerli'],
+  [56, 'bsc'],
+  [43114, 'avalanche'],
+  [43113, 'avalanche-testnet'],
+  [250, 'fantom'],
+  [4002, 'fantom-testnet'],
+  [84531, 'base-testnet'],
+  [100, 'gnosis']
+])
 
 // https://jiffyscan.readme.io/reference/getting-started-1
 // https://github.com/jiffy-labs/jiffyscan-frontend/blob/master/src/components/common/apiCalls/jiffyApis.tsx
-export interface UserOp {
+export interface AccountUserOp {
   id: string | null
   transactionHash: string | null
   userOpHash: string
@@ -57,7 +77,7 @@ export interface UserOp {
 }
 
 export interface AccountDetail {
-  userOps: UserOp[]
+  userOps: AccountUserOp[]
   userOpsCount: string
   id: string
   address: string
@@ -74,27 +94,66 @@ export interface AddressActivity {
   accountDetail: AccountDetail
 }
 
+export interface UserOps {
+  userOps: UserOp[]
+}
+
+export interface UserOp {
+  id: string | null
+  transactionHash: string | null
+  userOpHash: string
+  sender: string
+  accountSender: { factory: string }
+  paymaster: string
+  nonce: number | string
+  actualGasCost: number | string
+  gasPrice: number | string
+  actualGasUsed: number | string | null
+  success: Boolean
+  revertReason: string | null
+  blockTime: number | string | null
+  blockNumber: number | string | null
+  network: string
+  input: string | null
+  target: string | string[] | null
+  accountTarget: { factory: string }
+  callData: string | string[] | null
+  beneficiary: string | null
+  factory: string | null
+  value: number | string | number[] | string[] | null
+  verificationGasLimit: string | null
+  preVerificationGas: string | null
+  callGasLimit: string | null
+  gasLimit: string | null
+  maxFeePerGas: number | string | null
+  maxPriorityFeePerGas: number | string | null
+  baseFeePerGas: number | string | null
+  paymasterAndData: string | null
+  signature: string | null
+  entryPoint: string
+  preDecodedCallData: string | null
+  erc20Transfers: {
+    contractAddress: string
+    from: string
+    to: string
+    value: string
+    decimals: string
+    name: string
+    symbol: string
+  }
+  erc721Transfers: {
+    contractAddress: string
+    from: string
+    to: string
+    tokenId: string
+    decimals: string
+    name: string
+    symbol: string
+  }
+}
+
 class JiffyscanApi {
   private static baseUrl = 'https://api.jiffyscan.xyz/v0'
-
-  private static networks: Map<number, string> = new Map([
-    [1, 'mainnet'],
-    [5, 'georli'],
-    [11155111, 'sepolia'],
-    [137, 'matic'],
-    [80001, 'mumbai'],
-    [10, 'optimism'],
-    [420, 'optimism-goerli'],
-    [42161, 'arbitrum-one'],
-    [421613, 'arbitrum-goerli'],
-    [56, 'bsc'],
-    [43114, 'avalanche'],
-    [43113, 'avalanche-testnet'],
-    [250, 'fantom'],
-    [4002, 'fantom-testnet'],
-    [84531, 'base-testnet'],
-    [100, 'gnosis']
-  ])
 
   private async fetch(
     network: INetwork,
@@ -102,7 +161,7 @@ class JiffyscanApi {
     params: Record<string, any>
   ) {
     assert(network.kind === NetworkKind.EVM)
-    const networkName = JiffyscanApi.networks.get(Number(network.chainId))
+    const networkName = JIFFYSCAN_NETWORKS.get(Number(network.chainId))
     if (!networkName) {
       return
     }
@@ -142,8 +201,38 @@ class JiffyscanApi {
   async getUserOp(
     network: INetwork,
     userOpHash: string
-  ): Promise<UserOp | undefined> {
-    return await this.fetch(network, '/getUserOp', { hash: userOpHash })
+  ): Promise<[UserOperationResponse, UserOp] | undefined> {
+    const userOps: UserOps = await this.fetch(network, '/getUserOp', {
+      hash: userOpHash
+    })
+    if (!Array.isArray(userOps.userOps) || !userOps.userOps.length) {
+      return
+    }
+
+    const userOp = userOps.userOps[0]
+    const userOperationResponse: UserOperationResponse = {
+      sender: userOp.sender as any,
+      nonce: userOp.nonce as any,
+      initCode: '0x', // TODO: how to get initCode from jiffyscan?
+      callData: (Array.isArray(userOp.callData) // TODO
+        ? userOp.callData[0]
+        : userOp.callData) as any,
+      callGasLimit: userOp.callGasLimit as any,
+      verificationGasLimit: userOp.verificationGasLimit as any,
+      preVerificationGas: userOp.preVerificationGas as any,
+      maxFeePerGas: userOp.maxFeePerGas as any,
+      maxPriorityFeePerGas: userOp.maxPriorityFeePerGas as any,
+      paymasterAndData: userOp.paymasterAndData as any,
+      signature: userOp.signature as any,
+      entryPoint: userOp.entryPoint as any,
+      blockNumber: userOp.blockNumber as any,
+      blockHash: undefined, // TODO: how to get blockHash from jiffyscan?
+      transactionHash: userOp.transactionHash as any,
+      timestamp: userOp.blockTime ? Number(userOp.blockTime) : undefined,
+      hash: userOp.userOpHash
+    }
+
+    return [userOperationResponse, userOp]
   }
 }
 

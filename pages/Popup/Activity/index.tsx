@@ -12,12 +12,12 @@ import { ActivityItem } from './ActivityItem'
 import { EvmSpeedUpOrCancelModal } from './EvmSpeedUpOrCancelModal'
 
 export default function Activity() {
-  const { network, account } = useActive()
+  const { network, wallet, account } = useActive()
 
   const [count, setCount] = useState(0)
 
   const { txTotal: totalCount, txs: transactions } = useTransactionsMixed(
-    EvmTxType.NORMAL,
+    !wallet?.info.accountAbstraction ? EvmTxType.NORMAL : EvmTxType.UserOp,
     network,
     account,
     count
