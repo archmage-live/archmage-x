@@ -6,6 +6,7 @@ import walletConnectLogo from 'data-base64:~assets/thirdparty/walletconnect.svg'
 import web3authLogo from 'data-base64:~assets/thirdparty/web3auth-favicon.svg'
 import { ethers } from 'ethers'
 
+import { Erc4337AccountType } from '~lib/erc4337'
 import { NetworkKind } from '~lib/network'
 import { DerivePosition, IHdPath, INetwork, IWallet, Index } from '~lib/schema'
 
@@ -253,6 +254,10 @@ export interface AccountAbstractionInfo {
   type: AccountAbstractionType
 }
 
+export interface Erc4337Info {
+  type: Erc4337AccountType
+}
+
 export enum KeylessWalletType {
   WEB3AUTH = 'Web3Auth'
 }
@@ -273,6 +278,8 @@ export interface WalletAccount {
   mnemonic?: string
   path?: string
   privateKey?: string
+
+  erc4337?: Erc4337Info
 
   keyless?: KeylessWalletInfo
 }

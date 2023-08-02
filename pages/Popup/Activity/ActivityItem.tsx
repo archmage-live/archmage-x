@@ -7,10 +7,10 @@ import {
   Text,
   Tooltip
 } from '@chakra-ui/react'
-import { GrDeploy } from '@react-icons/all-files/gr/GrDeploy'
 import { IoIosSend } from '@react-icons/all-files/io/IoIosSend'
 import { MdAutoFixHigh } from '@react-icons/all-files/md/MdAutoFixHigh'
 import { MdCallReceived } from '@react-icons/all-files/md/MdCallReceived'
+import { MdOutlineRocketLaunch } from '@react-icons/all-files/md/MdOutlineRocketLaunch'
 import Decimal from 'decimal.js'
 
 import { dayjs } from '~lib/dayjs'
@@ -49,7 +49,7 @@ export const ActivityItem = ({
       icon = MdAutoFixHigh
       break
     case TransactionType.DeployContract:
-      icon = GrDeploy
+      icon = MdOutlineRocketLaunch
       break
   }
 

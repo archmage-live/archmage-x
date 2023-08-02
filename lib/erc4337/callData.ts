@@ -5,10 +5,57 @@ import { BytesLike, arrayify, hexlify } from '@ethersproject/bytes'
 import { Contract } from '@ethersproject/contracts'
 import assert from 'assert'
 
+import { Erc4337AccountType } from '.'
+
 const MULTISEND_ADDR = '0x8ae01fcf7c655655ff2c6ef907b8b4718ab4e17c'
 
 export class Erc4337CallDataDecoder {
-  constructor(private provider: Provider, private address: string) {}
+  constructor(
+    private type: Erc4337AccountType,
+    private address: string,
+    private provider?: Provider
+  ) {}
+
+  decodeExecute(data: BytesLike):
+    | {
+        to?: string
+        value?: string
+        data?: string
+      }
+    | undefined {
+    try {
+      switch (this.type) {
+        case Erc4337AccountType.SIMPLE_ACCOUNT_V1: {
+          const result = this.decodeSimpleAccountExecute(data)
+          return {
+            to: result.dest,
+            value: result.value.toString(),
+            data: result.func
+          }
+        }
+        case Erc4337AccountType.ZERO_DEV_KERNEL_V1: {
+          const result = this.decodeKernelAccountExecute(data)
+          return {
+            to: result.to,
+            value: result.value.toString(),
+            data: result.data
+          }
+        }
+        case Erc4337AccountType.ZERO_DEV_KERNEL_V2: {
+          const result = this.decodeKernelAccountV2Execute(data)
+          return {
+            to: result.to,
+            value: result.value.toString(),
+            data: result.data
+          }
+        }
+      }
+    } catch (e) {
+      console.error(e)
+    }
+
+    return undefined
+  }
 
   decodeSimpleAccountExecute(data: BytesLike): {
     dest: string

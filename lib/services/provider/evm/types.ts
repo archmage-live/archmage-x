@@ -110,8 +110,15 @@ export type UserOperationResponse = Omit<
     >
   > & {
     hash: string
-
     timestamp?: number
+
+    factory?: string // account factory contract address
+
+    decodedCallData?: {
+      to?: string
+      value?: string
+      data?: string
+    }[]
 
     wait?: (confirmations?: number) => Promise<UserOperationReceipt>
   }

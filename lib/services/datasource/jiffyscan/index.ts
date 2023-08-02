@@ -210,13 +210,31 @@ class JiffyscanApi {
     }
 
     const userOp = userOps.userOps[0]
+
+    let decoded
+    if (Array.isArray(userOp.target)) {
+      assert(Array.isArray(userOp.value) && Array.isArray(userOp.callData))
+      decoded = userOp.target.map((target, i) => ({
+        to: target,
+        value: (userOp.value as (number | string)[])[i].toString(),
+        data: (userOp.callData as string[])[i]
+      }))
+    } else {
+      assert(!Array.isArray(userOp.value) && !Array.isArray(userOp.callData))
+      decoded = [
+        {
+          to: userOp.target || undefined,
+          value: userOp.value?.toString(),
+          data: userOp.callData || undefined
+        }
+      ]
+    }
+
     const userOperationResponse: UserOperationResponse = {
       sender: userOp.sender as any,
       nonce: userOp.nonce as any,
       initCode: '0x', // TODO: how to get initCode from jiffyscan?
-      callData: (Array.isArray(userOp.callData) // TODO
-        ? userOp.callData[0]
-        : userOp.callData) as any,
+      callData: (userOp.preDecodedCallData || '0x') as any,
       callGasLimit: userOp.callGasLimit as any,
       verificationGasLimit: userOp.verificationGasLimit as any,
       preVerificationGas: userOp.preVerificationGas as any,
@@ -229,7 +247,9 @@ class JiffyscanApi {
       blockHash: undefined, // TODO: how to get blockHash from jiffyscan?
       transactionHash: userOp.transactionHash as any,
       timestamp: userOp.blockTime ? Number(userOp.blockTime) : undefined,
-      hash: userOp.userOpHash
+      hash: userOp.userOpHash,
+      factory: userOp.factory || undefined,
+      decodedCallData: decoded
     }
 
     return [userOperationResponse, userOp]

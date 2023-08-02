@@ -1,12 +1,14 @@
 import { Checkbox, Radio, RadioGroup, Stack, chakra } from '@chakra-ui/react'
 import { useEffect, useState } from 'react'
 
+import { Erc4337AccountType } from '~lib/erc4337'
 import { AccountAbstractionType } from '~lib/wallet'
 
-import { useAccountAbstraction } from './addWallet'
+import { useAccountAbstraction, useErc4337 } from './addWallet'
 
 export const AccountAbstractionChecker = ({}: {}) => {
   const [, setAccountAbstraction] = useAccountAbstraction()
+  const [, setErc4337] = useErc4337()
 
   const [isAa, setIsAa] = useState(false)
   const [aaType, setAaType] = useState(AccountAbstractionType.ERC4337)
@@ -18,9 +20,13 @@ export const AccountAbstractionChecker = ({}: {}) => {
   useEffect(() => {
     if (!isAa) {
       setAccountAbstraction(undefined)
+      setErc4337(undefined)
     } else {
       setAccountAbstraction({
         type: aaType
+      })
+      setErc4337({
+        type: Erc4337AccountType.ZERO_DEV_KERNEL_V1
       })
     }
   }, [isAa, aaType, setAccountAbstraction])

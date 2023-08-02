@@ -11,6 +11,7 @@ import {
 import {
   AccountAbstractionInfo,
   BtcAddressType,
+  Erc4337Info,
   HardwareWalletType,
   KeylessWalletInfo,
   WalletAccount,
@@ -56,6 +57,7 @@ const keylessInfoAtom = atom<KeylessWalletInfo | undefined>(undefined)
 const accountAbstractionAtom = atom<AccountAbstractionInfo | undefined>(
   undefined
 )
+const erc4337Atom = atom<Erc4337Info | undefined>(undefined)
 const createdAtom = atom(false)
 
 export function useAddWalletKind() {
@@ -161,6 +163,10 @@ export function useAccountAbstraction() {
   return useAtom(accountAbstractionAtom)
 }
 
+export function useErc4337() {
+  return useAtom(erc4337Atom)
+}
+
 export function useCreated() {
   return useAtom(createdAtom)
 }
@@ -181,6 +187,7 @@ export function useClear() {
   const [, setAddressType] = useAddressType()
   const [, setKeylessInfo] = useKeylessInfo()
   const [, setAccountAbstraction] = useAccountAbstraction()
+  const [, setErc4337] = useErc4337()
   const [, setCreated] = useCreated()
   return useCallback(() => {
     setMnemonic([])
@@ -198,6 +205,7 @@ export function useClear() {
     setAddressType(undefined)
     setKeylessInfo(undefined)
     setAccountAbstraction(undefined)
+    setErc4337(undefined)
     setCreated(false)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -216,8 +224,9 @@ export function useAddWallet() {
   const [hwType] = useHwType()
   const [walletHash] = useWalletHash()
   const [addressType] = useAddressType()
-  const [keylessInfo] = useKeylessInfo()
   const [accountAbstraction] = useAccountAbstraction()
+  const [erc4337] = useErc4337()
+  const [keylessInfo] = useKeylessInfo()
   const [, setCreated] = useCreated()
 
   return useCallback(async (): Promise<{ error?: string }> => {
@@ -225,7 +234,7 @@ export function useAddWallet() {
       return { error: 'Existing name' }
     }
 
-    const opts = { name, accountAbstraction } as NewWalletOpts
+    const opts = { name, accountAbstraction, erc4337 } as NewWalletOpts
     switch (addWalletKind) {
       case AddWalletKind.NEW_HD:
       // pass through
@@ -304,6 +313,13 @@ export function useAddWallet() {
         throw new Error('unknown wallet type')
     }
 
+    if (erc4337 && opts.accounts) {
+      opts.accounts = opts.accounts.map((account) => ({
+        ...account,
+        erc4337
+      }))
+    }
+
     const { wallet, decryptedKeystores } = await WALLET_SERVICE.newWallet(opts)
 
     if (await WALLET_SERVICE.existsSecret(wallet)) {
@@ -338,6 +354,7 @@ export function useAddWallet() {
     walletHash,
     keylessInfo,
     accountAbstraction,
+    erc4337,
     setCreated
   ])
 }
@@ -346,7 +363,7 @@ export function useAddSubWallets() {
   const [addWalletKind] = useAddWalletKind()
   const [accounts] = useAccounts()
   const [wallet] = useExistingWallet()
-  const [keylessInfo] = useKeylessInfo()
+  const [erc4337] = useErc4337()
   const [, setCreated] = useCreated()
 
   return useCallback(async (): Promise<{ error?: string }> => {
@@ -366,10 +383,16 @@ export function useAddSubWallets() {
         break
       case AddWalletKind.KEYLESS_GROUP:
         opts.accounts = accounts
-        opts.keylessInfo = keylessInfo
         break
       default:
         throw new Error('unknown wallet type')
+    }
+
+    if (erc4337 && opts.accounts) {
+      opts.accounts = opts.accounts.map((account) => ({
+        ...account,
+        erc4337
+      }))
     }
 
     WALLET_SERVICE.addSubWallets(opts).finally(() => {
@@ -377,5 +400,5 @@ export function useAddSubWallets() {
     })
 
     return {}
-  }, [wallet, addWalletKind, accounts, keylessInfo, setCreated])
+  }, [wallet, addWalletKind, accounts, erc4337, setCreated])
 }

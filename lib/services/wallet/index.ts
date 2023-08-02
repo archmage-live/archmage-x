@@ -18,6 +18,7 @@ import {
   Index,
   PSEUDO_INDEX,
   SubIndex,
+  SubWalletInfo,
   WalletInfo,
   formatAddressForNetwork,
   generateDefaultWalletName
@@ -32,6 +33,7 @@ import {
   AccountsInfo,
   BtcAddressType,
   DecryptedKeystoreAccount,
+  Erc4337Info,
   HardwareWalletType,
   KeylessWalletInfo,
   WalletAccount,
@@ -63,8 +65,9 @@ export type NewWalletOpts = {
   hash?: string // for WalletType.HW_GROUP
   accounts?: WalletAccount[] // for imported wallets
   addressType?: BtcAddressType
-  keylessInfo?: KeylessWalletInfo
   accountAbstraction?: AccountAbstractionInfo
+  erc4337?: Erc4337Info
+  keylessInfo?: KeylessWalletInfo
 }
 
 export type CreateWalletOpts = {
@@ -78,7 +81,6 @@ export type CreateWalletOpts = {
 export type AddSubWalletsOpts = {
   wallet: IWallet
   accounts?: WalletAccount[] // for WalletType.HW_GROUP
-  keylessInfo?: KeylessWalletInfo
 }
 
 function checkAccounts(accounts: WalletAccount[]) {
@@ -389,16 +391,19 @@ class WalletServicePartial implements IWalletService {
       // there should be no conflict when using default sub name for specific index
       const name = getDefaultSubName(index)
 
+      const info: SubWalletInfo = {
+        accounts: acc?.addresses,
+        erc4337: acc?.erc4337,
+        keyless: acc?.keyless
+      }
+
       return {
         masterId: id,
         sortId: nextSortId + n,
         index,
         name,
         hash: acc?.hash,
-        info: {
-          accounts: acc?.addresses,
-          keyless: acc?.keyless
-        }
+        info: shallowClean(info)
       } as ISubWallet
     })
     const ids = await DB.subWallets.bulkAdd(subWallets, { allKeys: true })
@@ -473,7 +478,8 @@ class WalletService extends WalletServicePartial {
     accounts,
     addressType,
     keylessInfo,
-    accountAbstraction
+    accountAbstraction,
+    erc4337
   }: NewWalletOpts): Promise<{
     wallet: IWallet
     decryptedKeystores?: DecryptedKeystoreAccount[]
@@ -494,6 +500,7 @@ class WalletService extends WalletServicePartial {
       case WalletType.HD: {
         assert(mnemonic && !path)
         assert(addressType)
+        info.erc4337 = erc4337
         const acc = ethers.utils.HDNode.fromMnemonic(mnemonic)
         decryptedKeystores.push({
           index: PSEUDO_INDEX,
@@ -515,6 +522,9 @@ class WalletService extends WalletServicePartial {
             accounts.length >= 1 &&
             (type !== WalletType.PRIVATE_KEY || accounts.length === 1)
         )
+        if (type === WalletType.PRIVATE_KEY) {
+          info.erc4337 = erc4337
+        }
         accounts = checkAccounts(accounts)
         for (const { index, mnemonic, path, privateKey } of accounts) {
           let acc
@@ -553,6 +563,7 @@ class WalletService extends WalletServicePartial {
       case WalletType.HW: {
         assert(hwType && path && pathTemplate && derivePosition)
         assert(accounts && accounts.length === 1)
+        info.erc4337 = erc4337
         accounts = checkAccounts(accounts)
         break
       }
@@ -566,6 +577,7 @@ class WalletService extends WalletServicePartial {
         break
       }
       case WalletType.KEYLESS_HD: {
+        info.erc4337 = erc4337
         info.keyless = keylessInfo
         break
       }
@@ -577,6 +589,7 @@ class WalletService extends WalletServicePartial {
         accounts = checkAccounts(accounts)
 
         if (type === WalletType.KEYLESS) {
+          info.erc4337 = erc4337
           info.keyless = keylessInfo
         }
         break
@@ -766,11 +779,7 @@ class WalletService extends WalletServicePartial {
     }
   }
 
-  async addSubWallets({
-    wallet,
-    accounts,
-    keylessInfo
-  }: AddSubWalletsOpts): Promise<void> {
+  async addSubWallets({ wallet, accounts }: AddSubWalletsOpts): Promise<void> {
     await DB.transaction(
       'rw',
       [DB.wallets, DB.subWallets, DB.hdPaths],

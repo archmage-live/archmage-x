@@ -2,6 +2,7 @@ import { FunctionFragment } from '@ethersproject/abi'
 import { TransactionResponse } from '@ethersproject/abstract-provider'
 import { getAddress } from '@ethersproject/address'
 import { BigNumber } from '@ethersproject/bignumber'
+import { hexlify } from '@ethersproject/bytes'
 import { Logger } from '@ethersproject/logger'
 import { shallowCopy } from '@ethersproject/properties'
 import {
@@ -158,9 +159,9 @@ function getEvmTransactionInfoFromResponse(
     return {
       hash: tx.hash,
       from: tx.sender,
-      to: req?.to, // TODO: decode callData
-      value: req?.value?.toString(), // TODO: decode callData
-      data: tx.callData, // TODO: decode callData
+      to: req?.to || tx.decodedCallData?.at(0)?.to,
+      value: req?.value?.toString() || tx.decodedCallData?.at(0)?.value,
+      data: hexlify(req?.data || []) || tx.decodedCallData?.at(0)?.data,
       nonce: Number(tx.nonce),
       success: receipt
         ? receipt.success && receipt.receipt.status === 1
@@ -289,7 +290,9 @@ export class EvmBasicTransactionService extends EvmTransactionServicePartial {
       delete (tx as any).confirmations
     } else {
       delete (tx as any).wait
+      const decoded = tx.decodedCallData
       tx = shallowStringify(tx)
+      tx.decodedCallData = decoded
     }
     transaction.info.tx = tx
     return transaction

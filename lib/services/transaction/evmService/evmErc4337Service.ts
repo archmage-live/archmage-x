@@ -5,18 +5,23 @@ import { BigNumber } from '@ethersproject/bignumber'
 import { TransactionRequest } from '@ethersproject/providers'
 import assert from 'assert'
 import PQueue from 'p-queue'
+// @ts-ignore
+import stableHash from 'stable-hash'
 
 import { DB } from '~lib/db'
+import { Erc4337CallDataDecoder } from '~lib/erc4337/callData'
 import { IChainAccount, IPendingTx, ITransaction } from '~lib/schema'
 import { EvmTxType } from '~lib/services/datasource/etherscan'
 import { JIFFYSCAN_API, UserOp } from '~lib/services/datasource/jiffyscan'
 import { NETWORK_SERVICE } from '~lib/services/network'
 import { UserOperationResponse } from '~lib/services/provider/evm'
+import { WALLET_SERVICE } from '~lib/services/wallet'
 
 import {
   EvmBasicTransactionService,
   EvmPendingTxInfo,
-  EvmTransactionInfo
+  EvmTransactionInfo,
+  isEvmUserOperationResponse
 } from './evmService'
 
 export class EvmErc4337TransactionService extends EvmBasicTransactionService {
@@ -39,6 +44,29 @@ export class EvmErc4337TransactionService extends EvmBasicTransactionService {
     functionSig?: FunctionFragment,
     replace = true
   ): Promise<IPendingTx> {
+    assert(account.address)
+    assert(isEvmUserOperationResponse(tx))
+
+    const wallet = await WALLET_SERVICE.getWallet(account.masterId)
+    const subWallet = await WALLET_SERVICE.getSubWallet({
+      masterId: account.masterId,
+      index: account.index
+    })
+    assert(wallet && subWallet)
+
+    const accountType =
+      wallet.info.erc4337?.type || subWallet.info.erc4337?.type
+    assert(accountType)
+
+    if (tx.callData) {
+      const decoder = new Erc4337CallDataDecoder(accountType, account.address)
+      const decoded = decoder.decodeExecute(tx.callData)
+
+      if (decoded) {
+        tx.decodedCallData = [decoded]
+      }
+    }
+
     return super.addPendingTx(
       account,
       request,
@@ -189,10 +217,13 @@ export class EvmErc4337TransactionService extends EvmBasicTransactionService {
           )
         } else {
           const info = existing.info as EvmTransactionInfo
+          assert(isEvmUserOperationResponse(info.tx))
           if (
             info.tx.blockNumber == null ||
             !info.jiffyscanUserOp ||
-            info.jiffyscanUserOp.success !== jiffyscanUserOp.success
+            info.jiffyscanUserOp.success !== jiffyscanUserOp.success ||
+            stableHash(info.tx.decodedCallData) !==
+              stableHash(tx.decodedCallData)
           ) {
             info.tx = tx
             info.jiffyscanUserOp = jiffyscanUserOp

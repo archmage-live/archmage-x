@@ -5,6 +5,7 @@ import { DerivePosition } from '~lib/schema/hdPath'
 import {
   AccountAbstractionInfo,
   BtcAddressType,
+  Erc4337Info,
   HardwareWalletType,
   KeylessWalletInfo,
   WalletType
@@ -31,6 +32,7 @@ export interface WalletInfo {
   notBackedUp?: boolean
   addressType?: BtcAddressType // for Bitcoin
   accountAbstraction?: AccountAbstractionInfo
+  erc4337?: Erc4337Info
   keyless?: KeylessWalletInfo
 }
 
