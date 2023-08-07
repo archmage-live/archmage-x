@@ -1,3 +1,5 @@
+import { BigNumberish } from '@alchemy/aa-core/src/types'
+
 export function stall(duration: number): Promise<void> {
   return new Promise((resolve) => {
     setTimeout(resolve, duration)
@@ -41,8 +43,8 @@ export function shallowClean<T>(object: T): T {
   return result
 }
 
-export function shallowStringify<T>(object: T): T {
-  if (!object) {
+export function stringifyBigNumberish<T>(object: T): T {
+  if (!object || typeof object !== 'object') {
     return object
   }
 
@@ -50,9 +52,18 @@ export function shallowStringify<T>(object: T): T {
   for (const key in object) {
     const value = object[key]
     if (value !== undefined) {
-      // serialize all values to string
-      result[key] = (value as any).toString()
+      if (typeof value === 'number' || typeof value === 'bigint') {
+        // serialize number/bigint to string
+        result[key] = value.toString()
+      } else if (Array.isArray(value)) {
+        result[key] = value.map(stringifyBigNumberish)
+      } else if (typeof value === 'object') {
+        result[key] = stringifyBigNumberish(value)
+      } else {
+        result[key] = value
+      }
     }
   }
+
   return result
 }

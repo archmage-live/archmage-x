@@ -1,3 +1,5 @@
+import { FunctionFragment } from '@ethersproject/abi'
+import { hexlify } from '@ethersproject/bytes'
 import { useQuery } from '@tanstack/react-query'
 import { useMemo } from 'react'
 
@@ -31,7 +33,7 @@ export const FOURBYTE_API = new FourByteApi()
 
 export function useEvmSignatureFrom4Bytes(
   fourBytes?: string
-): string | undefined {
+): FunctionFragment | undefined {
   const { data: result } = useQuery(
     [QueryService.FOUR_BYTE, fourBytes],
     async () =>
@@ -43,6 +45,30 @@ export function useEvmSignatureFrom4Bytes(
       return undefined
     }
 
-    return result[0].signature
+    try {
+      return FunctionFragment.from(result[0].signature)
+    } catch (err) {
+      console.error(err)
+    }
   }, [result])
+}
+
+export async function getEvmSignatureFrom4Bytes(data: string) {
+  if (!data) {
+    return
+  }
+  const hex = hexlify(data)
+  if (hex.length < 10) {
+    return
+  }
+
+  try {
+    const signatures = await FOURBYTE_API.getSignatures(hex.slice(0, 10))
+    if (!signatures || !signatures.length) {
+      return
+    }
+    return FunctionFragment.from(signatures[0].signature)
+  } catch (err) {
+    console.error(err)
+  }
 }

@@ -12,6 +12,7 @@ import {
 import { BigNumber } from '@ethersproject/bignumber'
 import { FiCheckCircle } from '@react-icons/all-files/fi/FiCheckCircle'
 import { FiCopy } from '@react-icons/all-files/fi/FiCopy'
+import Decimal from 'decimal.js'
 import { ethers } from 'ethers'
 import { useMemo, useState } from 'react'
 import { useAsync } from 'react-use'
@@ -235,7 +236,9 @@ export const EvmErc4337ActivityDetail = ({
             <Text>Gas Fee</Text>
             <Text>
               {formatNumber(
-                BigNumber.from(receipt.actualGasCost).toNumber(),
+                new Decimal(
+                  BigNumber.from(receipt.actualGasCost).toNumber()
+                ).div(new Decimal(10).pow(netInfo.decimals)),
                 undefined,
                 9
               )}

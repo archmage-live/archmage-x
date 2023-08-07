@@ -103,7 +103,7 @@ export class Erc4337CallDataDecoder {
     const kernelAccount = new Contract(
       this.address,
       [
-        'function executeAndRevert(address to, uint256 value, bytes calldata data, Operation operation)'
+        'function executeAndRevert(address to, uint256 value, bytes calldata data, uint8 operation)'
       ],
       this.provider
     )
@@ -186,7 +186,7 @@ export class Erc4337CallDataDecoder {
     const kernel2Account = new Contract(
       this.address,
       [
-        'function execute(address to, uint256 value, bytes calldata data, Operation operation)'
+        'function execute(address to, uint256 value, bytes calldata data, uint8 operation)'
       ],
       this.provider
     )

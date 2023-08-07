@@ -11,6 +11,7 @@ import stableHash from 'stable-hash'
 import { DB } from '~lib/db'
 import { Erc4337CallDataDecoder } from '~lib/erc4337/callData'
 import { IChainAccount, IPendingTx, ITransaction } from '~lib/schema'
+import { getEvmSignatureFrom4Bytes } from '~lib/services/datasource/4byte'
 import { EvmTxType } from '~lib/services/datasource/etherscan'
 import { JIFFYSCAN_API, UserOp } from '~lib/services/datasource/jiffyscan'
 import { NETWORK_SERVICE } from '~lib/services/network'
@@ -64,6 +65,10 @@ export class EvmErc4337TransactionService extends EvmBasicTransactionService {
 
       if (decoded) {
         tx.decodedCallData = [decoded]
+
+        if (decoded.data && !functionSig) {
+          functionSig = await getEvmSignatureFrom4Bytes(decoded.data)
+        }
       }
     }
 
@@ -172,7 +177,7 @@ export class EvmErc4337TransactionService extends EvmBasicTransactionService {
           account.networkKind,
           account.chainId,
           account.address!,
-          '',
+          type,
           BigNumber.from(tx.blockNumber).toNumber(), // use blockNumber as index1
           tx.hash // use userOpHash as index2
         ])
@@ -205,6 +210,12 @@ export class EvmErc4337TransactionService extends EvmBasicTransactionService {
 
         const existing = existingTxsSet.get(tx.hash)
         if (!existing) {
+          const decoded = tx.decodedCallData?.at(0)
+          let functionSig
+          if (decoded?.data) {
+            functionSig = await getEvmSignatureFrom4Bytes(decoded.data)
+          }
+
           bulkAdd.push(
             this.newTransaction({
               account,
@@ -212,7 +223,8 @@ export class EvmErc4337TransactionService extends EvmBasicTransactionService {
               tx,
               jiffyscanUserOp,
               request: pendingTxInfo?.request,
-              origin: pendingTxInfo?.origin
+              origin: pendingTxInfo?.origin,
+              functionSig
             })
           )
         } else {
@@ -227,6 +239,12 @@ export class EvmErc4337TransactionService extends EvmBasicTransactionService {
           ) {
             info.tx = tx
             info.jiffyscanUserOp = jiffyscanUserOp
+
+            const decoded = tx.decodedCallData?.at(0)
+            if (!info.functionSig && decoded?.data) {
+              info.functionSig = await getEvmSignatureFrom4Bytes(decoded.data)
+            }
+
             bulkUpdate.push(existing)
           }
         }

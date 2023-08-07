@@ -1,3 +1,4 @@
+import { BigNumber } from '@ethersproject/bignumber'
 import { resolveProperties } from '@ethersproject/properties'
 import { TransactionRequest } from '@ethersproject/providers'
 import type { UserOperationStruct } from '@zerodevapp/contracts'
@@ -8,7 +9,7 @@ import { ethers } from 'ethers'
 import { makeZeroDevSigner } from '~lib/erc4337/zerodev'
 import { DerivePosition, INetwork } from '~lib/schema'
 import { EvmErc4337Client } from '~lib/services/provider/evm'
-import { shallowStringify } from '~lib/utils'
+import { stringifyBigNumberish } from '~lib/utils'
 
 import { Erc4337Wallet, WalletOpts } from './base'
 import { EvmWallet } from './evm'
@@ -128,5 +129,17 @@ export async function signErc4337Transaction(
     nonce
   })
   const resolved = await resolveProperties(userOp)
-  return shallowStringify(resolved)
+  return {
+    ...resolved,
+    nonce: BigNumber.from(resolved.nonce).toString(),
+    callGasLimit: BigNumber.from(resolved.callGasLimit).toString(),
+    verificationGasLimit: BigNumber.from(
+      resolved.verificationGasLimit
+    ).toString(),
+    preVerificationGas: BigNumber.from(resolved.preVerificationGas).toString(),
+    maxFeePerGas: BigNumber.from(resolved.maxFeePerGas).toString(),
+    maxPriorityFeePerGas: BigNumber.from(
+      resolved.maxPriorityFeePerGas
+    ).toString()
+  }
 }

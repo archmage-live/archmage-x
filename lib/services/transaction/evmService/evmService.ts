@@ -33,7 +33,7 @@ import { parseEvmFunctionSignature } from '~lib/services/provider/evm/hooks'
 import { getProvider } from '~lib/services/provider/provider'
 import { BaseTransactionService } from '~lib/services/transaction/baseService'
 import { WALLET_SERVICE } from '~lib/services/wallet'
-import { shallowStringify } from '~lib/utils'
+import { stringifyBigNumberish } from '~lib/utils'
 
 import {
   ITransactionService,
@@ -161,10 +161,10 @@ function getEvmTransactionInfoFromResponse(
       from: tx.sender,
       to: req?.to || tx.decodedCallData?.at(0)?.to,
       value: req?.value?.toString() || tx.decodedCallData?.at(0)?.value,
-      data: hexlify(req?.data || []) || tx.decodedCallData?.at(0)?.data,
+      data: req?.data ? hexlify(req.data) : tx.decodedCallData?.at(0)?.data,
       nonce: Number(tx.nonce),
       success: receipt
-        ? receipt.success && receipt.receipt.status === 1
+        ? receipt.success && receipt.receipt.status !== 0
         : undefined,
       timestamp: tx.timestamp || receipt?.timestamp
     }
@@ -290,9 +290,7 @@ export class EvmBasicTransactionService extends EvmTransactionServicePartial {
       delete (tx as any).confirmations
     } else {
       delete (tx as any).wait
-      const decoded = tx.decodedCallData
-      tx = shallowStringify(tx)
-      tx.decodedCallData = decoded
+      tx = stringifyBigNumberish(tx)
     }
     transaction.info.tx = tx
     return transaction
@@ -309,7 +307,7 @@ export class EvmBasicTransactionService extends EvmTransactionServicePartial {
       if (isEvmTransactionReceipt(receipt)) {
         delete (receipt as any).confirmations
       } else {
-        receipt = shallowStringify(receipt)
+        receipt = stringifyBigNumberish(receipt)
       }
     }
     transaction.info.receipt = receipt
@@ -365,7 +363,8 @@ export class EvmBasicTransactionService extends EvmTransactionServicePartial {
     jiffyscanUserOp,
     receipt,
     request,
-    origin
+    origin,
+    functionSig
   }: {
     account: IChainAccount
     type: string
@@ -375,6 +374,7 @@ export class EvmBasicTransactionService extends EvmTransactionServicePartial {
     receipt?: TransactionReceipt | UserOperationReceipt
     request?: TransactionRequest
     origin?: string
+    functionSig?: FunctionFragment
   }) {
     assert(etherscanTx || jiffyscanUserOp || receipt)
 
@@ -385,7 +385,7 @@ export class EvmBasicTransactionService extends EvmTransactionServicePartial {
         : Number(receipt.receipt.blockNumber)
       index2 = isEvmTransactionReceipt(receipt)
         ? receipt.transactionIndex
-        : Number(receipt.receipt.transactionIndex)
+        : receipt.userOpHash
     } else if (etherscanTx) {
       index1 = etherscanTx.blockNumber
       index2 = etherscanTx.transactionIndex
@@ -401,13 +401,14 @@ export class EvmBasicTransactionService extends EvmTransactionServicePartial {
       chainId: account.chainId,
       address: account.address,
       type,
-      index1: index1,
-      index2: index2,
+      index1,
+      index2,
       info: {
         etherscanTx,
         jiffyscanUserOp,
         request,
-        origin
+        origin,
+        functionSig
       } as EvmTransactionInfo
     } as ITransaction
 

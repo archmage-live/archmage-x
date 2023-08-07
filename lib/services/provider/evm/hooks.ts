@@ -1,6 +1,6 @@
 import { FunctionFragment } from '@ethersproject/abi'
 import { BytesLike, hexlify } from '@ethersproject/bytes'
-import { useCallback, useMemo } from 'react'
+import { useCallback } from 'react'
 
 import { useEvmSignatureFrom4Bytes } from '~lib/services/datasource/4byte'
 import { GasOption, MaxFeePerGas } from '~lib/services/provider/evm/gasFee'
@@ -11,15 +11,7 @@ export function useEvmFunctionSignature(
 ): FunctionFragment | undefined {
   const hex = data?.length ? hexlify(data) : undefined
 
-  const sig = useEvmSignatureFrom4Bytes(hex?.slice(0, 10))
-
-  return useMemo(() => {
-    if (!sig) return
-
-    try {
-      return parseEvmFunctionSignature(sig)
-    } catch {}
-  }, [sig])
+  return useEvmSignatureFrom4Bytes(hex?.slice(0, 10))
 }
 
 export function parseEvmFunctionSignature(sig: string) {
