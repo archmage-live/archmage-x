@@ -1,8 +1,14 @@
-import { AddIcon, CheckIcon, DeleteIcon } from '@chakra-ui/icons'
+import {
+  AddIcon,
+  CheckIcon,
+  DeleteIcon,
+  ExternalLinkIcon
+} from '@chakra-ui/icons'
 import {
   Box,
   Button,
   HStack,
+  Icon,
   Menu,
   MenuButton,
   MenuGroup,
@@ -15,13 +21,17 @@ import { MdOutlineArrowDownward } from '@react-icons/all-files/md/MdOutlineArrow
 import { MdOutlineArrowUpward } from '@react-icons/all-files/md/MdOutlineArrowUpward'
 import { MdOutlineVerticalAlignBottom } from '@react-icons/all-files/md/MdOutlineVerticalAlignBottom'
 import { MdOutlineVerticalAlignTop } from '@react-icons/all-files/md/MdOutlineVerticalAlignTop'
+import { MdQrCode } from '@react-icons/all-files/md/MdQrCode'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import browser from 'webextension-polyfill'
 
 import { AccountAvatar } from '~components/AccountAvatar'
+import { useAccountDetailModal } from '~components/AccountDetailModal'
 import { TypeBadge } from '~components/TypeBadge'
 import { WalletId } from '~lib/active'
 import { formatNumber } from '~lib/formatNumber'
 import { INetwork } from '~lib/schema/network'
+import { getAccountUrl } from '~lib/services/network'
 import { Amount } from '~lib/services/token'
 import { WALLET_SERVICE } from '~lib/services/wallet'
 import {
@@ -72,8 +82,13 @@ export const WalletItem = ({
     measure()
   }, [isOpen, measure])
 
+  // only for single wallet
   const subWallet = !isWalletGroup(wallet.type) ? subWallets[0] : undefined
   const account = subWallet?.account
+
+  const { onOpen: onDetailOpen } = useAccountDetailModal()
+
+  const accountUrl = network && account && getAccountUrl(network, account)
 
   const typeIdentifier = getWalletTypeIdentifier(wallet)
 
@@ -233,19 +248,37 @@ export const WalletItem = ({
                   <MenuList minW={32} zIndex={1500}>
                     <MenuGroup title={wallet.name}>
                       {account && (
-                        <MenuItem
-                          icon={<CheckIcon />}
-                          iconSpacing={2}
-                          isDisabled={subWallet?.isSelected}
-                          onClick={() => {
-                            onSelected({
-                              id: wallet.id,
-                              subId: subWallet?.subWallet.id
-                            })
-                            onClose()
-                          }}>
-                          Select
-                        </MenuItem>
+                        <>
+                          <MenuItem
+                            icon={<CheckIcon />}
+                            iconSpacing={2}
+                            isDisabled={subWallet?.isSelected}
+                            onClick={() => {
+                              onSelected({
+                                id: wallet.id,
+                                subId: subWallet?.subWallet.id
+                              })
+                              onClose()
+                            }}>
+                            Select
+                          </MenuItem>
+                          <MenuItem
+                            icon={<Icon as={MdQrCode} />}
+                            iconSpacing={2}
+                            isDisabled={!account.address}
+                            onClick={() => onDetailOpen(account)}>
+                            Account detail
+                          </MenuItem>
+                          <MenuItem
+                            icon={<ExternalLinkIcon />}
+                            iconSpacing={2}
+                            isDisabled={!accountUrl}
+                            onClick={() => {
+                              browser.tabs.create({ url: accountUrl }).then()
+                            }}>
+                            View account on block explorer
+                          </MenuItem>
+                        </>
                       )}
                       {wallet.type === WalletType.HD && (
                         <MenuItem

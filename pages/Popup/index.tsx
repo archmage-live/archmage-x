@@ -2,6 +2,7 @@ import { Box, useColorModeValue } from '@chakra-ui/react'
 import { useState } from 'react'
 import { Route, Routes, useNavigate } from 'react-router-dom'
 
+import { AccountDetailModal } from '~components/AccountDetailModal'
 import { LazyTabs } from '~components/LazyTabs'
 import { NavTarget, Navbar } from '~components/Navbar'
 import { useIsPopupWindow } from '~lib/hooks/useIsPopupWindow'
@@ -91,6 +92,8 @@ export const HomePage = () => {
 
             <Navbar value={navTarget} onChange={setNavTarget} />
           </Box>
+
+          <AccountDetailModal />
         </>
       )}
 

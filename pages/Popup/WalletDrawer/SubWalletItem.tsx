@@ -1,4 +1,4 @@
-import { CheckIcon, DeleteIcon } from '@chakra-ui/icons'
+import { CheckIcon, DeleteIcon, ExternalLinkIcon } from '@chakra-ui/icons'
 import {
   Box,
   BoxProps,
@@ -21,11 +21,15 @@ import { GrLinkDown } from '@react-icons/all-files/gr/GrLinkDown'
 import { GrLinkTop } from '@react-icons/all-files/gr/GrLinkTop'
 import { GrLinkUp } from '@react-icons/all-files/gr/GrLinkUp'
 import { MdOutlineMoreHoriz } from '@react-icons/all-files/md/MdOutlineMoreHoriz'
+import { MdQrCode } from '@react-icons/all-files/md/MdQrCode'
+import browser from 'webextension-polyfill'
 
 import { AccountAvatar } from '~components/AccountAvatar'
+import { useAccountDetailModal } from '~components/AccountDetailModal'
 import { BtnBox } from '~components/BtnBox'
 import { formatNumber } from '~lib/formatNumber'
 import { INetwork } from '~lib/schema'
+import { getAccountUrl } from '~lib/services/network'
 import { Amount } from '~lib/services/token'
 import { SubWalletEntry } from '~lib/services/wallet/tree'
 import { shortenString } from '~lib/utils'
@@ -50,6 +54,10 @@ export const SubWalletItem = ({
   ) => void
 }) => {
   const { subWallet: wallet, account, isSelected } = subWallet
+
+  const { onOpen: onDetailOpen } = useAccountDetailModal()
+
+  const accountUrl = getAccountUrl(network, account)
 
   return (
     <Button
@@ -114,6 +122,22 @@ export const SubWalletItem = ({
                       isDisabled={isSelected}
                       onClick={onSelected}>
                       Select
+                    </MenuItem>
+                    <MenuItem
+                      icon={<Icon as={MdQrCode} />}
+                      iconSpacing={2}
+                      isDisabled={!account.address}
+                      onClick={() => onDetailOpen(account)}>
+                      Account detail
+                    </MenuItem>
+                    <MenuItem
+                      icon={<ExternalLinkIcon />}
+                      iconSpacing={2}
+                      isDisabled={!accountUrl}
+                      onClick={() => {
+                        browser.tabs.create({ url: accountUrl }).then()
+                      }}>
+                      View account on block explorer
                     </MenuItem>
                     <MenuItem
                       icon={<DeleteIcon />}
