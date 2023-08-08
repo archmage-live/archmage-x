@@ -45,7 +45,8 @@ export const NetworkList = ({
             return (
               <Box
                 key={net.id}
-                ref={item.measureElement}
+                ref={networksVirtualizer.measureElement}
+                data-index={item.index}
                 position="absolute"
                 top={0}
                 left={0}

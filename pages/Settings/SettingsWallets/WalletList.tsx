@@ -162,10 +162,11 @@ export const WalletList = ({
                                   : undefined
                               }
                               dragHandleProps={provided.dragHandleProps}
-                              measureElement={(el: unknown) => {
-                                item.measureElement(el)
-                                ;(walletsVirtualizer as any).calculateRange()
+                              measureElement={(el: HTMLElement | null) => {
+                                walletsVirtualizer.measureElement(el)
+                                walletsVirtualizer.calculateRange()
                               }}
+                              index={item.index}
                             />
                           </Box>
                         </Box>

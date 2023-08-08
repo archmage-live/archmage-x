@@ -123,7 +123,8 @@ export const NetworkList = ({
                       index={item.index}>
                       {(provided) => (
                         <Box
-                          ref={item.measureElement}
+                          ref={networksVirtualizer.measureElement}
+                          data-index={item.index}
                           position="absolute"
                           top={0}
                           left={0}

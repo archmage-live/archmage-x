@@ -129,7 +129,8 @@ export const SubWalletList = ({
                           index={item.index}>
                           {(provided) => (
                             <Box
-                              ref={item.measureElement}
+                              ref={walletsVirtualizer.measureElement}
+                              data-index={item.index}
                               position="absolute"
                               top={0}
                               left={0}

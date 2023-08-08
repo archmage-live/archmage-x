@@ -9,12 +9,14 @@ export const WalletItem = ({
   wallet,
   isSelected,
   onSelected,
-  measureElement
+  measureElement,
+  index
 }: {
   wallet: ExistingGroupWallet
   isSelected: boolean
   onSelected: () => void
-  measureElement?: (element?: HTMLElement | null) => any
+  measureElement?: (element: HTMLElement | null) => any
+  index: number
 }) => {
   const elRef = useRef(null)
 
@@ -25,7 +27,7 @@ export const WalletItem = ({
   const bg = useTransparentize('purple.300', 'purple.300', 0.1)
 
   return (
-    <Box ref={elRef} py={1}>
+    <Box ref={elRef} data-index={index} py={1}>
       <Box
         borderWidth="1px"
         borderRadius="md"

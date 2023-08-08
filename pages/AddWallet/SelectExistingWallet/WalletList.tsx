@@ -52,10 +52,11 @@ export const WalletList = ({
                 wallet={wallet}
                 isSelected={selected?.wallet.id === wallet.wallet.id}
                 onSelected={() => onSelected(wallet)}
-                measureElement={(el: unknown) => {
-                  item.measureElement(el)
-                  ;(walletsVirtualizer as any).calculateRange()
+                measureElement={(el: HTMLElement | null) => {
+                  walletsVirtualizer.measureElement(el)
+                  walletsVirtualizer.calculateRange()
                 }}
+                index={item.index}
               />
             </Box>
           )

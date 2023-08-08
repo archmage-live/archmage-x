@@ -545,7 +545,12 @@ const SelectAddresses = ({
       <Box h={addressesVirtualizer.getTotalSize() + 'px'} position="relative">
         {addressesVirtualizer.getVirtualItems().map((item) => {
           if (!addresses) {
-            return <Box key="empty" ref={item.measureElement}></Box>
+            return (
+              <Box
+                key="empty"
+                ref={addressesVirtualizer.measureElement}
+                data-index={item.index}></Box>
+            )
           }
 
           if (item.index > addresses.length - 1) {
@@ -558,7 +563,8 @@ const SelectAddresses = ({
                 transform={`translateY(${item.start}px)`}
                 w="full"
                 h="56px"
-                ref={item.measureElement}>
+                ref={addressesVirtualizer.measureElement}
+                data-index={item.index}>
                 <HStack h="full" justify="center" align="center">
                   <Spinner color="purple.500" />
                   <Text
@@ -589,7 +595,8 @@ const SelectAddresses = ({
               transform={`translateY(${item.start}px)`}
               w="full"
               h="56px"
-              ref={item.measureElement}>
+              ref={addressesVirtualizer.measureElement}
+              data-index={item.index}>
               <AddressItem
                 network={network}
                 index={item.index}

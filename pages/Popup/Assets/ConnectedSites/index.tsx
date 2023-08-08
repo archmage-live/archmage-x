@@ -80,7 +80,8 @@ const ConnectedSites = () => {
             return (
               <Stack
                 key={site.id}
-                ref={item.measureElement}
+                ref={sitesVirtualizer.measureElement}
+                data-index={item.index}
                 position="absolute"
                 top={0}
                 left={0}

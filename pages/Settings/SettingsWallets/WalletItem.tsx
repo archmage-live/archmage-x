@@ -23,7 +23,8 @@ interface WalletItemProps {
   infoVisible?: boolean
 
   dragHandleProps?: DraggableProvidedDragHandleProps
-  measureElement?: (element?: HTMLElement | null) => any
+  measureElement?: (element: HTMLElement | null) => any
+  index?: number
 }
 
 export const WalletItem = ({
@@ -35,7 +36,8 @@ export const WalletItem = ({
   borderColor,
   infoVisible,
   dragHandleProps = {} as DraggableProvidedDragHandleProps,
-  measureElement
+  measureElement,
+  index
 }: WalletItemProps) => {
   const { wallet, isOpen, subWallets } = walletEntry
 
@@ -70,7 +72,7 @@ export const WalletItem = ({
   const typeIdentifier = getWalletTypeIdentifier(wallet)
 
   return (
-    <Box ref={elRef}>
+    <Box ref={elRef} data-index={index}>
       <Box h="64px" py={1}>
         <HStack
           px={4}

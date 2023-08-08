@@ -53,7 +53,8 @@ interface WalletItemProps {
   onToggleOpen: (id: number) => void
   onSelected: (selected: WalletId) => void
   onClose: () => void
-  measureElement?: (element?: HTMLElement | null) => any
+  measureElement?: (element: HTMLElement | null) => any
+  index: number
   reorderWallets: (
     network: WalletEntry,
     placement: 'top' | 'up' | 'down' | 'bottom'
@@ -68,6 +69,7 @@ export const WalletItem = ({
   onSelected,
   onClose,
   measureElement,
+  index,
   reorderWallets
 }: WalletItemProps) => {
   const { wallet, isOpen, subWallets } = walletEntry
@@ -157,7 +159,7 @@ export const WalletItem = ({
   )
 
   return (
-    <Box ref={elRef}>
+    <Box ref={elRef} data-index={index}>
       <Button
         key={wallet.id}
         variant="ghost"

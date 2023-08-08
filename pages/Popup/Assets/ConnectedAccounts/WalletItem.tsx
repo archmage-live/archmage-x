@@ -15,14 +15,16 @@ interface WalletItemProps {
   network?: INetwork
   walletEntry: Entry
   onToggleOpen: (id: number) => void
-  measureElement?: (element?: HTMLElement | null) => any
+  measureElement?: (element: HTMLElement | null) => any
+  index: number
 }
 
 export const WalletItem = ({
   network,
   walletEntry,
   onToggleOpen,
-  measureElement
+  measureElement,
+  index
 }: WalletItemProps) => {
   const { wallet, isOpen, subWallets } = walletEntry
 
@@ -42,7 +44,7 @@ export const WalletItem = ({
   const bg = useTransparentize('purple.300', 'purple.300', 0.1)
 
   return (
-    <Box ref={elRef} py={1}>
+    <Box ref={elRef} data-index={index} py={1}>
       <Box
         borderWidth="1px"
         borderRadius="md"

@@ -18,7 +18,8 @@ interface WalletItemProps {
   walletEntry: WalletEntry
   onToggleOpen: (id: number) => void
   onChecked: (selected: WalletId | number, isChecked: boolean) => void
-  measureElement?: (element?: HTMLElement | null) => any
+  measureElement?: (element: HTMLElement | null) => any
+  index: number
 }
 
 export const WalletItem = ({
@@ -26,7 +27,8 @@ export const WalletItem = ({
   walletEntry,
   onToggleOpen,
   onChecked,
-  measureElement
+  measureElement,
+  index
 }: WalletItemProps) => {
   const { wallet, isOpen, subWallets } = walletEntry
 
@@ -64,7 +66,7 @@ export const WalletItem = ({
   const typeIdentifier = getWalletTypeIdentifier(wallet)
 
   return (
-    <Box ref={elRef}>
+    <Box ref={elRef} data-index={index}>
       <Button
         key={wallet.id}
         variant="ghost"

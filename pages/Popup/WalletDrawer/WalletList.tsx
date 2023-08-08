@@ -98,10 +98,11 @@ export const WalletList = ({
                   onToggleOpen={onToggleOpen}
                   onSelected={onSelected}
                   onClose={onClose}
-                  measureElement={(el: unknown) => {
-                    item.measureElement(el)
-                    ;(walletsVirtualizer as any).calculateRange()
+                  measureElement={(el: HTMLElement | null) => {
+                    walletsVirtualizer.measureElement(el)
+                    walletsVirtualizer.calculateRange()
                   }}
+                  index={item.index}
                   reorderWallets={reorderWallets}
                 />
               </Box>

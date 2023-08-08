@@ -50,7 +50,10 @@ export async function ensureChainAccounts(
     .where('[masterId+networkKind+chainId]')
     .equals([masterId, networkKind, chainId])
     .count()
-  if (chainAccountsNum === subWalletsNum && !isKeylessWallet(wallet.type)) {
+  if (
+    chainAccountsNum === subWalletsNum &&
+    !(isKeylessWallet(wallet.type) || isAccountAbstractionWallet(wallet))
+  ) {
     return
   }
   assert(chainAccountsNum <= subWalletsNum)

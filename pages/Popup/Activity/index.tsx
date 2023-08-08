@@ -104,14 +104,20 @@ export default function Activity() {
                   fontSize="3xl"
                   fontWeight="medium"
                   py={2}
-                  ref={item.measureElement}>
+                  ref={txVirtualizer.measureElement}
+                  data-index={item.index}>
                   Recent Activity
                 </Text>
               )
             }
 
             if (!transactions) {
-              return <Box key="empty" ref={item.measureElement}></Box>
+              return (
+                <Box
+                  key="empty"
+                  ref={txVirtualizer.measureElement}
+                  data-index={item.index}></Box>
+              )
             }
 
             if (item.index > transactions.length) {
@@ -125,7 +131,8 @@ export default function Activity() {
                   w="full"
                   minH={77 + 'px'}
                   py={2}
-                  ref={item.measureElement}>
+                  ref={txVirtualizer.measureElement}
+                  data-index={item.index}>
                   <Text textAlign="center" fontSize="sm">
                     Load More...
                   </Text>
@@ -146,7 +153,8 @@ export default function Activity() {
                 w="full"
                 minH={77 + 'px'}
                 py={2}
-                ref={item.measureElement}>
+                ref={txVirtualizer.measureElement}
+                data-index={item.index}>
                 <ActivityItem
                   network={network!}
                   tx={tx}
