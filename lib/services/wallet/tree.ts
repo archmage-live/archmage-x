@@ -55,10 +55,13 @@ function useWalletSelected(
 async function fetchWalletTree(network: INetwork): Promise<WalletEntry[]> {
   const wallets = await WALLET_SERVICE.getWallets()
   const subWallets = await WALLET_SERVICE.getSubWallets()
-  const accounts = await WALLET_SERVICE.getChainAccounts({
-    networkKind: network.kind,
-    chainId: network.chainId
-  })
+  const accounts = await WALLET_SERVICE.getChainAccounts(
+    {
+      networkKind: network.kind,
+      chainId: network.chainId
+    },
+    true // no ensuring accounts, to avoid long waiting
+  )
 
   const subWalletMap = new Map<number, ISubWallet[]>()
   for (const subWallet of subWallets) {

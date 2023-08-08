@@ -158,7 +158,8 @@ export interface IWalletService {
           chainId: ChainId
           masterId?: number
           subIndices?: SubIndex[]
-        }
+        },
+    noEnsure?: boolean
   ): Promise<IChainAccount[]>
 
   getSubWallets(query?: number | SubIndex[]): Promise<ISubWallet[]>
@@ -271,7 +272,8 @@ class WalletServicePartial implements IWalletService {
           chainId: ChainId
           masterId?: number
           subIndices?: SubIndex[]
-        }
+        },
+    noEnsure?: boolean
   ): Promise<IChainAccount[]> {
     if (Array.isArray(query)) {
       if (!query.length) {
@@ -292,12 +294,17 @@ class WalletServicePartial implements IWalletService {
           return []
         }
 
+        const ensures = []
         for (const { masterId } of subIndices) {
-          await WALLET_SERVICE.ensureChainAccounts(
+          const ensure = WALLET_SERVICE.ensureChainAccounts(
             masterId,
             networkKind,
             chainId
           )
+          ensures.push(ensure)
+        }
+        if (!noEnsure) {
+          await Promise.all(ensures)
         }
 
         const anyOf = subIndices.map(({ masterId, index }) => [
@@ -313,7 +320,14 @@ class WalletServicePartial implements IWalletService {
         assert(accounts.length === subIndices.length)
         return accounts
       } else if (typeof masterId === 'number') {
-        await WALLET_SERVICE.ensureChainAccounts(masterId, networkKind, chainId)
+        const ensure = WALLET_SERVICE.ensureChainAccounts(
+          masterId,
+          networkKind,
+          chainId
+        )
+        if (!noEnsure) {
+          await ensure
+        }
 
         return DB.chainAccounts
           .where('[masterId+networkKind+chainId+index]')
@@ -323,7 +337,13 @@ class WalletServicePartial implements IWalletService {
           )
           .toArray()
       } else {
-        await WALLET_SERVICE.ensureAllChainAccounts(networkKind, chainId)
+        const ensure = WALLET_SERVICE.ensureAllChainAccounts(
+          networkKind,
+          chainId
+        )
+        if (!noEnsure) {
+          await ensure
+        }
 
         return DB.chainAccounts
           .where('[networkKind+chainId+masterId+index]')
