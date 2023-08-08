@@ -25,7 +25,8 @@ import {
   EventEmitter,
   EventType,
   Listener,
-  RpcClientInjected
+  RpcClientInjected,
+  context
 } from './client'
 
 export const STARKNET_PROVIDER_NAME = 'starknetProvider'
@@ -74,10 +75,13 @@ if (
         case 'wallet_switchStarknetChain':
         // pass through
         case 'wallet_watchAsset':
-          await service.request({
-            method: message.type,
-            params: [message.params]
-          })
+          await service.request(
+            {
+              method: message.type,
+              params: [message.params]
+            },
+            context()
+          )
           return true
         default:
           throw Error('Not implemented')
@@ -94,7 +98,7 @@ if (
           baseUrl: string
         }
         addresses: string[]
-      } = await service.request({ method: 'enable' })
+      } = await service.request({ method: 'enable' }, context())
 
       const provider = new SequencerProvider({ baseUrl: network.baseUrl })
 
@@ -152,7 +156,10 @@ if (
   )
 
   service.on('accountsChanged', async () => {
-    const addresses: string[] = await service.request({ method: 'accounts' })
+    const addresses: string[] = await service.request(
+      { method: 'accounts' },
+      context()
+    )
 
     if (addresses.length) {
       starknet.account = new StarknetAccount(
@@ -191,20 +198,26 @@ class StarknetAccount extends Account {
     abis?: Abi[],
     transactionsDetail: InvocationsDetails = {}
   ): Promise<InvokeFunctionResponse> {
-    const txHash = await this.service.request({
-      method: 'execute',
-      params: [calls, abis, transactionsDetail]
-    })
+    const txHash = await this.service.request(
+      {
+        method: 'execute',
+        params: [calls, abis, transactionsDetail]
+      },
+      context()
+    )
     return {
       transaction_hash: txHash
     }
   }
 
   public override async signMessage(typedData: any): Promise<Signature> {
-    return await this.service.request({
-      method: 'signMessage',
-      params: [typedData]
-    })
+    return await this.service.request(
+      {
+        method: 'signMessage',
+        params: [typedData]
+      },
+      context()
+    )
   }
 }
 

@@ -5,6 +5,7 @@ import {
   EventEmitter,
   Listener,
   RpcClientInjected,
+  context,
   isMsgEventMethod
 } from './client'
 
@@ -38,7 +39,7 @@ if (
   const onAccountChange = (listener: Listener) => {
     service.on('accountsChanged', async () => {
       try {
-        const account = await service.request({ method: 'account' })
+        const account = await service.request({ method: 'account' }, context())
         listener(account)
       } catch {
         listener(undefined)
@@ -49,7 +50,7 @@ if (
   const onDisconnect = (listener: Listener) => {
     service.on('accountsChanged', async () => {
       try {
-        await service.request({ method: 'account' })
+        await service.request({ method: 'account' }, context())
       } catch {
         listener()
       }
@@ -72,7 +73,7 @@ if (
       }
 
       return (...params: any[]) => {
-        return service.request({ method, params })
+        return service.request({ method, params }, context())
       }
     }
   })

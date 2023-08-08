@@ -1,13 +1,26 @@
+const CTX_ID = 'context-!@#$%^&*'
+
 export interface Context {
+  _id: typeof CTX_ID
+
   fromTab?: number
   fromUrl?: string
   fromInternal?: boolean
+
   window?: {
     x: number
     y: number
     width: number
     height: number
   }
+}
+
+export function context() {
+  return { _id: CTX_ID } as Context
+}
+
+export function isContext(ctx: any): ctx is Context {
+  return ctx && ctx._id === CTX_ID
 }
 
 export interface Request {

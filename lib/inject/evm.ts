@@ -1,6 +1,6 @@
 import { isBackgroundWorker } from '~lib/detect'
 
-import { Context, EventEmitter, RpcClientInjected } from './client'
+import { Context, EventEmitter, RpcClientInjected, context } from './client'
 
 export const EVM_PROVIDER_NAME = 'evmProvider'
 
@@ -33,7 +33,7 @@ if (
 
   globalThis.archmage.evm = {
     request(args: { method: string; params?: Array<any> }): Promise<any> {
-      return service.request(args)
+      return service.request(args, context())
     }
   }
 
@@ -52,7 +52,9 @@ if (
     })
 
     service.on('accountsChanged', async () => {
-      const { chainId, networkVersion, ...state } = await service.state()
+      const { chainId, networkVersion, ...state } = await service.state(
+        context()
+      )
       globalThis.ethereum._state = state
       globalThis.ethereum.selectedAddress = state.accounts.length
         ? state.accounts[0]
@@ -67,7 +69,7 @@ if (
       listeners.get('message')?.forEach((handler) => handler(...args))
     })
 
-    service.state().then(({ chainId, networkVersion, ...state }) => {
+    service.state(context()).then(({ chainId, networkVersion, ...state }) => {
       const ethereum = globalThis.ethereum
       ethereum._state = state
       ethereum.chainId = chainId
@@ -133,7 +135,7 @@ if (
         callback: (error: any, response: any) => void
       ) {
         service
-          .request(request)
+          .request(request, context())
           .then((rep) => callback(undefined, rep))
           .catch((err) => callback(err, undefined))
       },
@@ -149,17 +151,20 @@ if (
           typeof methodOrRequest === 'string' &&
           (paramsOrCallback === undefined || Array.isArray(paramsOrCallback))
         ) {
-          return service.request({
-            method: methodOrRequest,
-            params: paramsOrCallback
-          })
+          return service.request(
+            {
+              method: methodOrRequest,
+              params: paramsOrCallback
+            },
+            context()
+          )
         } else if (
           typeof methodOrRequest === 'object' &&
           paramsOrCallback &&
           !Array.isArray(paramsOrCallback)
         ) {
           service
-            .request(methodOrRequest)
+            .request(methodOrRequest, context())
             .then((rep) => paramsOrCallback(undefined, rep))
             .catch((err) => paramsOrCallback(err, undefined))
         }

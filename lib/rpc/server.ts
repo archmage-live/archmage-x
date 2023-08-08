@@ -18,6 +18,7 @@ import {
   EventType,
   Listener,
   Request,
+  isContext,
   isMsgEventMethod
 } from '../inject/client'
 // import { Platform, getPlatform } from '~lib/platform'
@@ -142,15 +143,21 @@ class RpcConn {
 
   onCall = (service: any, msg: Request, port: browser.Runtime.Port) => {
     const id = msg.id
-    const args = [
-      ...msg.args,
-      {
-        ...msg.ctx,
-        fromTab: port.sender?.tab?.id,
-        fromUrl: this.fromInternal ? undefined : port.sender?.url,
-        fromInternal: this.fromInternal
-      } as Context
-    ]
+
+    const args = msg.args.map((arg) => {
+      if (isContext(arg)) {
+        // construct the context arg
+        return {
+          ...arg,
+          ...msg.ctx,
+          fromTab: port.sender?.tab?.id,
+          fromUrl: this.fromInternal ? undefined : port.sender?.url,
+          fromInternal: this.fromInternal
+        } as Context
+      } else {
+        return arg
+      }
+    })
 
     let promise: Promise<any>
     try {

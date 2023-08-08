@@ -19,6 +19,7 @@ import {
   Context,
   EventEmitter,
   RpcClientInjected,
+  context,
   isMsgEventMethod
 } from './client'
 
@@ -76,9 +77,12 @@ if (
         case 'getOfflineSignerAuto':
           return async (...params: any[]) => {
             if (
-              await service.request({
-                method: 'isProtobufSignerSupported'
-              })
+              await service.request(
+                {
+                  method: 'isProtobufSignerSupported'
+                },
+                context()
+              )
             ) {
               return new CosmOfflineSigner(service, params[0])
             } else {
@@ -116,7 +120,7 @@ if (
             : param
         })
 
-        const response = await service.request({ method, params })
+        const response = await service.request({ method, params }, context())
 
         switch (method) {
           case 'getKey':
@@ -146,10 +150,13 @@ class CosmOfflineAminoSigner implements OfflineAminoSigner {
   ) {}
 
   async getAccounts(): Promise<readonly AccountData[]> {
-    const { bech32Address, pubKey, algo } = await this.service.request({
-      method: 'getKey',
-      params: [this.chainId]
-    })
+    const { bech32Address, pubKey, algo } = await this.service.request(
+      {
+        method: 'getKey',
+        params: [this.chainId]
+      },
+      context()
+    )
     return [
       {
         address: bech32Address,
@@ -163,10 +170,13 @@ class CosmOfflineAminoSigner implements OfflineAminoSigner {
     signerAddress: string,
     signDoc: StdSignDoc
   ): Promise<AminoSignResponse> {
-    return await this.service.request({
-      method: 'signTx',
-      params: [this.chainId, signerAddress, signDoc]
-    })
+    return await this.service.request(
+      {
+        method: 'signTx',
+        params: [this.chainId, signerAddress, signDoc]
+      },
+      context()
+    )
   }
 }
 
@@ -180,10 +190,13 @@ class CosmOfflineSigner
   ): Promise<DirectSignResponse> {
     const doc = toCosmSignDoc(signDoc)
 
-    const response: CosmDirectSignResponse = await this.service.request({
-      method: 'signTx',
-      params: [this.chainId, signerAddress, doc]
-    })
+    const response: CosmDirectSignResponse = await this.service.request(
+      {
+        method: 'signTx',
+        params: [this.chainId, signerAddress, doc]
+      },
+      context()
+    )
     const { signed, signature } = response
 
     return {
