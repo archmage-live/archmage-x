@@ -16,7 +16,7 @@ interface WalletItemProps {
   walletEntry: Entry
   onToggleOpen: (id: number) => void
   measureElement?: (element: HTMLElement | null) => any
-  index: number
+  index?: number
 }
 
 export const WalletItem = ({

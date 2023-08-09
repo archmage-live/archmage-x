@@ -125,6 +125,7 @@
     "decimal.js": "^10.4.0",
     "dexie": "^3.2.2",
     "dexie-react-hooks": "^1.1.1",
+    "driver.js": "^1.2.1",
     "ecpair": "^2.1.0",
     "ed25519-hd-key": "^1.2.0",
     "elliptic": "^6.5.4",

@@ -1,10 +1,9 @@
 import { Box } from '@chakra-ui/react'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useDebounce } from 'react-use'
 
 import { WalletId } from '~lib/active'
-import { INetwork } from '~lib/schema'
+import { INetwork, IWallet } from '~lib/schema'
 import { useBalances } from '~lib/services/provider'
 import { Amount } from '~lib/services/token'
 import { SubWalletEntry, WalletEntry } from '~lib/services/wallet/tree'
@@ -12,12 +11,12 @@ import { isWalletGroup } from '~lib/wallet'
 import { DeleteWalletOpts } from '~pages/Settings/SettingsWallets/DeleteWalletModal'
 
 import { SubWalletItem } from './SubWalletItem'
+import { useScrollOffset } from './useScrollOffset'
 
 interface SubWalletListProps {
   network: INetwork
+  wallet: IWallet
   subWallets: SubWalletEntry[]
-  scrollIndex?: number
-  setScrollIndex?: (scrollIndex?: number) => void
   onSelectedId: (selected: WalletId) => void
   onDelete: (opts: DeleteWalletOpts) => void
   measure: () => void
@@ -25,27 +24,35 @@ interface SubWalletListProps {
     network: SubWalletEntry,
     placement: 'top' | 'up' | 'down' | 'bottom'
   ) => void
+  setSubScrollOffset: (walletId: number, offset: number) => void
 }
 
 export const SubWalletList = ({
   network,
+  wallet,
   subWallets,
-  scrollIndex,
-  setScrollIndex,
   onSelectedId,
   onDelete,
   measure,
-  reorderSubWallets
+  reorderSubWallets,
+  setSubScrollOffset
 }: SubWalletListProps) => {
   useEffect(measure, [measure, subWallets])
+
+  const initialOffset = useScrollOffset()
 
   const parentRef = useRef(null)
   const walletsVirtualizer = useVirtualizer({
     count: subWallets.length || 0,
+    initialOffset: initialOffset.subOffsets[wallet.id] || 0,
     getScrollElement: () => parentRef.current,
     estimateSize: () => 56,
     getItemKey: (index) => subWallets[index].subWallet.id
   })
+
+  useEffect(() => {
+    setSubScrollOffset(wallet.id, walletsVirtualizer.scrollOffset)
+  }, [walletsVirtualizer.scrollOffset, setSubScrollOffset, wallet.id])
 
   const virtualItems = walletsVirtualizer.getVirtualItems()
 
@@ -54,17 +61,6 @@ export const SubWalletList = ({
     subWallets,
     virtualItems[0]?.index,
     virtualItems[0]?.index + virtualItems.length
-  )
-
-  useDebounce(
-    () => {
-      if (scrollIndex !== undefined) {
-        walletsVirtualizer.scrollToIndex(scrollIndex)
-        setScrollIndex?.(undefined)
-      }
-    },
-    500,
-    [scrollIndex, setScrollIndex]
   )
 
   if (!subWallets.length) {

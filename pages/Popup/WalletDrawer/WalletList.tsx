@@ -1,6 +1,6 @@
 import { Box } from '@chakra-ui/react'
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { useRef } from 'react'
+import { useEffect, useRef } from 'react'
 
 import { WalletId } from '~lib/active'
 import { INetwork } from '~lib/schema'
@@ -9,6 +9,7 @@ import { isWalletGroup } from '~lib/wallet'
 import { usePaginatedBalances } from '~pages/Popup/WalletDrawer/SubWalletList'
 
 import { WalletItem } from './WalletItem'
+import { useScrollOffset } from './useScrollOffset'
 
 interface WalletListProps {
   network?: INetwork
@@ -23,6 +24,8 @@ interface WalletListProps {
     network: WalletEntry,
     placement: 'top' | 'up' | 'down' | 'bottom'
   ) => void
+  setScrollOffset: (offset: number) => void
+  setSubScrollOffset: (walletId: number, offset: number) => void
 }
 
 export const WalletList = ({
@@ -34,13 +37,18 @@ export const WalletList = ({
   renderItems = 6,
   px,
   py = '14px',
-  reorderWallets
+  reorderWallets,
+  setScrollOffset,
+  setSubScrollOffset
 }: WalletListProps) => {
   const itemSize = 56
+
+  const initialOffset = useScrollOffset()
 
   const parentRef = useRef(null)
   const walletsVirtualizer = useVirtualizer({
     count: wallets.length || 0,
+    initialOffset: initialOffset.offset,
     getScrollElement: () => parentRef.current,
     estimateSize: (index) => {
       const wallet = wallets[index]
@@ -54,6 +62,10 @@ export const WalletList = ({
     },
     getItemKey: (index) => wallets[index].wallet.id
   })
+
+  useEffect(() => {
+    setScrollOffset(walletsVirtualizer.scrollOffset)
+  }, [walletsVirtualizer.scrollOffset, setScrollOffset])
 
   const virtualItems = walletsVirtualizer.getVirtualItems()
 
@@ -104,6 +116,7 @@ export const WalletList = ({
                   }}
                   index={item.index}
                   reorderWallets={reorderWallets}
+                  setSubScrollOffset={setSubScrollOffset}
                 />
               </Box>
             )

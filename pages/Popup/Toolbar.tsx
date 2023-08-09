@@ -27,6 +27,7 @@ import { WrappedDeleteWalletModal } from '~pages/Settings/SettingsWallets/Delete
 
 import { NetworkDrawer } from './NetworkDrawer'
 import { WalletDrawer } from './WalletDrawer'
+import { useSetScrollOffset } from './WalletDrawer/useScrollOffset'
 
 export const Toolbar = () => {
   const { network, account } = useActive()
@@ -67,6 +68,8 @@ export const Toolbar = () => {
     filter,
     true
   )
+
+  const { setScrollOffset, setSubScrollOffset } = useSetScrollOffset()
 
   return (
     <Box width="full" p="4" bg={bg} boxShadow={useColorModeValue('sm', 'sm')}>
@@ -128,6 +131,8 @@ export const Toolbar = () => {
                 setSelected={setSelected}
                 setSearch={setSearch}
                 onClose={onClose}
+                setScrollOffset={setScrollOffset}
+                setSubScrollOffset={setSubScrollOffset}
               />
             )}
           </DrawerContent>

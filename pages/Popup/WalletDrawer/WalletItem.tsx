@@ -22,7 +22,7 @@ import { MdOutlineArrowUpward } from '@react-icons/all-files/md/MdOutlineArrowUp
 import { MdOutlineVerticalAlignBottom } from '@react-icons/all-files/md/MdOutlineVerticalAlignBottom'
 import { MdOutlineVerticalAlignTop } from '@react-icons/all-files/md/MdOutlineVerticalAlignTop'
 import { MdQrCode } from '@react-icons/all-files/md/MdQrCode'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import browser from 'webextension-polyfill'
 
 import { AccountAvatar } from '~components/AccountAvatar'
@@ -59,6 +59,7 @@ interface WalletItemProps {
     network: WalletEntry,
     placement: 'top' | 'up' | 'down' | 'bottom'
   ) => void
+  setSubScrollOffset: (walletId: number, offset: number) => void
 }
 
 export const WalletItem = ({
@@ -70,7 +71,8 @@ export const WalletItem = ({
   onClose,
   measureElement,
   index,
-  reorderWallets
+  reorderWallets,
+  setSubScrollOffset
 }: WalletItemProps) => {
   const { wallet, isOpen, subWallets } = walletEntry
 
@@ -93,8 +95,6 @@ export const WalletItem = ({
   const accountUrl = network && account && getAccountUrl(network, account)
 
   const typeIdentifier = getWalletTypeIdentifier(wallet)
-
-  const [scrollIndex, setScrollIndex] = useState<number>()
 
   const onAddAccount = useCallback(async () => {
     switch (wallet.type) {
@@ -337,9 +337,8 @@ export const WalletItem = ({
       {isOpen && network && isWalletGroup(wallet.type) && (
         <SubWalletList
           network={network}
+          wallet={wallet}
           subWallets={subWallets}
-          scrollIndex={scrollIndex}
-          setScrollIndex={setScrollIndex}
           onSelectedId={(id) => {
             onSelected(id)
             onClose()
@@ -347,6 +346,7 @@ export const WalletItem = ({
           onDelete={onDeleteWallet}
           measure={measure}
           reorderSubWallets={reorderSubWallets}
+          setSubScrollOffset={setSubScrollOffset}
         />
       )}
     </Box>

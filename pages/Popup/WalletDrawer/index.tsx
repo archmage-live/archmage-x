@@ -37,7 +37,9 @@ export const WalletDrawer = ({
   toggleOpen,
   setSelected,
   setSearch,
-  onClose
+  onClose,
+  setScrollOffset,
+  setSubScrollOffset
 }: {
   network: INetwork | undefined
   wallets?: WalletEntry[]
@@ -45,6 +47,8 @@ export const WalletDrawer = ({
   setSelected: (newSelected: WalletId) => void
   setSearch: (search: string) => void
   onClose(): void
+  setScrollOffset: (offset: number) => void
+  setSubScrollOffset: (walletId: number, offset: number) => void
 }) => {
   const navigate = useNavigate()
 
@@ -140,6 +144,8 @@ export const WalletDrawer = ({
               onSelected={setSelected}
               onClose={onClose}
               reorderWallets={reorderWallets}
+              setScrollOffset={setScrollOffset}
+              setSubScrollOffset={setSubScrollOffset}
             />
           </Stack>
 
