@@ -1,6 +1,8 @@
 import {
   AddIcon,
   CheckIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
   DeleteIcon,
   ExternalLinkIcon
 } from '@chakra-ui/icons'
@@ -221,117 +223,126 @@ export const WalletItem = ({
           </HStack>
 
           <HStack
-            w="calc(100% - 29.75px)"
+            w="full"
             ps={'32px'}
             pt="10px"
             h="14px"
             justify="space-between">
-            <HStack>
-              {balance && (
-                <Text fontSize="xs" color="gray.500" textAlign="start">
-                  {formatNumber(balance.amount)} {balance.symbol}
-                </Text>
-              )}
-              {typeIdentifier && (
-                <HStack>
-                  <TypeBadge
-                    identifier={typeIdentifier.identifier}
-                    logo={typeIdentifier.logo}
-                    logoLight={typeIdentifier.logoLight}
-                    logoDark={typeIdentifier.logoDark}
-                    logoHeight={typeIdentifier.logoHeight}
-                  />
-                </HStack>
-              )}
+            <HStack w="calc(100% - 29.75px)" justify="space-between">
+              <HStack>
+                {balance && (
+                  <Text fontSize="xs" color="gray.500" textAlign="start">
+                    {formatNumber(balance.amount)} {balance.symbol}
+                  </Text>
+                )}
+                {typeIdentifier && (
+                  <HStack>
+                    <TypeBadge
+                      identifier={typeIdentifier.identifier}
+                      logo={typeIdentifier.logo}
+                      logoLight={typeIdentifier.logoLight}
+                      logoDark={typeIdentifier.logoDark}
+                      logoHeight={typeIdentifier.logoHeight}
+                    />
+                  </HStack>
+                )}
+              </HStack>
+
+              <Box onClick={(event) => event.stopPropagation()}>
+                <Menu isLazy autoSelect={false} placement="left">
+                  <MenuButton as={MenuBtn} />
+                  <Portal>
+                    <MenuList minW={32} zIndex={1500}>
+                      <MenuGroup title={wallet.name}>
+                        {account && (
+                          <>
+                            <MenuItem
+                              icon={<CheckIcon />}
+                              iconSpacing={2}
+                              isDisabled={subWallet?.isSelected}
+                              onClick={() => {
+                                onSelected({
+                                  id: wallet.id,
+                                  subId: subWallet?.subWallet.id
+                                })
+                                onClose()
+                              }}>
+                              Select
+                            </MenuItem>
+                            <MenuItem
+                              icon={<Icon as={MdQrCode} />}
+                              iconSpacing={2}
+                              isDisabled={!account.address}
+                              onClick={() => onDetailOpen(account)}>
+                              Account detail
+                            </MenuItem>
+                            <MenuItem
+                              icon={<ExternalLinkIcon />}
+                              iconSpacing={2}
+                              isDisabled={!accountUrl}
+                              onClick={() => {
+                                browser.tabs.create({ url: accountUrl }).then()
+                              }}>
+                              View account on block explorer
+                            </MenuItem>
+                          </>
+                        )}
+                        {wallet.type === WalletType.HD && (
+                          <MenuItem
+                            icon={<AddIcon w={3} h={3} />}
+                            iconSpacing={2}
+                            onClick={onAddAccount}>
+                            Add account
+                          </MenuItem>
+                        )}
+                        <MenuItem
+                          icon={<DeleteIcon />}
+                          iconSpacing={2}
+                          onClick={() =>
+                            onDeleteWallet({
+                              all: true,
+                              wallet
+                            })
+                          }>
+                          Remove {subWallet ? 'account' : 'wallet'}
+                        </MenuItem>
+                        <MenuItem
+                          icon={<MdOutlineVerticalAlignTop />}
+                          iconSpacing={2}
+                          onClick={() => reorderWallets(walletEntry, 'top')}>
+                          Top
+                        </MenuItem>
+                        <MenuItem
+                          icon={<MdOutlineArrowUpward />}
+                          iconSpacing={2}
+                          onClick={() => reorderWallets(walletEntry, 'up')}>
+                          Up
+                        </MenuItem>
+                        <MenuItem
+                          icon={<MdOutlineArrowDownward />}
+                          iconSpacing={2}
+                          onClick={() => reorderWallets(walletEntry, 'down')}>
+                          Down
+                        </MenuItem>
+                        <MenuItem
+                          icon={<MdOutlineVerticalAlignBottom />}
+                          iconSpacing={2}
+                          onClick={() => reorderWallets(walletEntry, 'bottom')}>
+                          Bottom
+                        </MenuItem>
+                      </MenuGroup>
+                    </MenuList>
+                  </Portal>
+                </Menu>
+              </Box>
             </HStack>
 
-            <Box onClick={(event) => event.stopPropagation()}>
-              <Menu isLazy autoSelect={false} placement="left">
-                <MenuButton as={MenuBtn} />
-                <Portal>
-                  <MenuList minW={32} zIndex={1500}>
-                    <MenuGroup title={wallet.name}>
-                      {account && (
-                        <>
-                          <MenuItem
-                            icon={<CheckIcon />}
-                            iconSpacing={2}
-                            isDisabled={subWallet?.isSelected}
-                            onClick={() => {
-                              onSelected({
-                                id: wallet.id,
-                                subId: subWallet?.subWallet.id
-                              })
-                              onClose()
-                            }}>
-                            Select
-                          </MenuItem>
-                          <MenuItem
-                            icon={<Icon as={MdQrCode} />}
-                            iconSpacing={2}
-                            isDisabled={!account.address}
-                            onClick={() => onDetailOpen(account)}>
-                            Account detail
-                          </MenuItem>
-                          <MenuItem
-                            icon={<ExternalLinkIcon />}
-                            iconSpacing={2}
-                            isDisabled={!accountUrl}
-                            onClick={() => {
-                              browser.tabs.create({ url: accountUrl }).then()
-                            }}>
-                            View account on block explorer
-                          </MenuItem>
-                        </>
-                      )}
-                      {wallet.type === WalletType.HD && (
-                        <MenuItem
-                          icon={<AddIcon w={3} h={3} />}
-                          iconSpacing={2}
-                          onClick={onAddAccount}>
-                          Add account
-                        </MenuItem>
-                      )}
-                      <MenuItem
-                        icon={<DeleteIcon />}
-                        iconSpacing={2}
-                        onClick={() =>
-                          onDeleteWallet({
-                            all: true,
-                            wallet
-                          })
-                        }>
-                        Remove {subWallet ? 'account' : 'wallet'}
-                      </MenuItem>
-                      <MenuItem
-                        icon={<MdOutlineVerticalAlignTop />}
-                        iconSpacing={2}
-                        onClick={() => reorderWallets(walletEntry, 'top')}>
-                        Top
-                      </MenuItem>
-                      <MenuItem
-                        icon={<MdOutlineArrowUpward />}
-                        iconSpacing={2}
-                        onClick={() => reorderWallets(walletEntry, 'up')}>
-                        Up
-                      </MenuItem>
-                      <MenuItem
-                        icon={<MdOutlineArrowDownward />}
-                        iconSpacing={2}
-                        onClick={() => reorderWallets(walletEntry, 'down')}>
-                        Down
-                      </MenuItem>
-                      <MenuItem
-                        icon={<MdOutlineVerticalAlignBottom />}
-                        iconSpacing={2}
-                        onClick={() => reorderWallets(walletEntry, 'bottom')}>
-                        Bottom
-                      </MenuItem>
-                    </MenuGroup>
-                  </MenuList>
-                </Portal>
-              </Menu>
-            </Box>
+            {isWalletGroup(wallet.type) &&
+              (isOpen ? (
+                <ChevronDownIcon color="gray.500" />
+              ) : (
+                <ChevronUpIcon color="gray.500" />
+              ))}
           </HStack>
         </Box>
       </Button>

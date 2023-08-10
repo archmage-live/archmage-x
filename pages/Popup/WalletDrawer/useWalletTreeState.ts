@@ -1,8 +1,10 @@
+import { useLiveQuery } from 'dexie-react-hooks'
 import { useCallback, useMemo, useState } from 'react'
 import { useDebounce } from 'react-use'
 // @ts-ignore
 import stableHash from 'stable-hash'
 
+import { WALLET_SERVICE } from '~lib/services/wallet'
 import { StoreKey, useLocalStorage } from '~lib/store'
 
 interface WalletTreeState {
@@ -47,6 +49,38 @@ export function useWalletTreeState() {
     300,
     [storedState, state]
   )
+
+  useLiveQuery(async () => {
+    const wallets = await WALLET_SERVICE.getWallets()
+
+    // update state when wallets changed
+    _setState((sc) => {
+      const subOffsets: Record<number, number> = {}
+      const isOpen: Record<number, boolean> = {}
+      for (const wallet of wallets) {
+        const offset = sc.subOffsets[wallet.id] as number | undefined
+        const open = sc.isOpen[wallet.id] as boolean | undefined
+        if (typeof offset === 'number') {
+          subOffsets[wallet.id] = offset
+        }
+        if (typeof open === 'boolean') {
+          isOpen[wallet.id] = open
+        }
+      }
+      if (
+        stableHash(subOffsets) === stableHash(sc.subOffsets) &&
+        stableHash(isOpen) === stableHash(sc.isOpen)
+      ) {
+        // not changed
+        return sc
+      }
+      return {
+        ...sc,
+        subOffsets,
+        isOpen
+      }
+    })
+  }, [])
 
   const setScrollOffset = useCallback((offset: number) => {
     _setState((sc) => {
