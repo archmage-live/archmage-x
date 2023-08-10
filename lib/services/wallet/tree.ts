@@ -315,12 +315,10 @@ export function useWalletTree<
       const isChanged = isSelected !== entry.isSelected
 
       let isSubChanged = false
-      let isOpen = undefined
       const subWallets = entry.subWallets.map((subEntry) => {
         if (subEntry.subWallet.id === selected?.subId) {
           assert(entry.wallet.id === selected.id)
           isSubChanged = true
-          isOpen = true
           return {
             ...subEntry,
             isSelected: true
@@ -343,7 +341,6 @@ export function useWalletTree<
       return {
         ...entry,
         isSelected,
-        isOpen: isOpen !== undefined ? isOpen : entry.isOpen,
         subWallets
       } as WalletEntry
     })

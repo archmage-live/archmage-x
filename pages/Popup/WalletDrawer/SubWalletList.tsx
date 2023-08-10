@@ -11,7 +11,7 @@ import { isWalletGroup } from '~lib/wallet'
 import { DeleteWalletOpts } from '~pages/Settings/SettingsWallets/DeleteWalletModal'
 
 import { SubWalletItem } from './SubWalletItem'
-import { useScrollOffset } from './useScrollOffset'
+import { useInitialWalletTreeState } from './useWalletTreeState'
 
 interface SubWalletListProps {
   network: INetwork
@@ -39,12 +39,12 @@ export const SubWalletList = ({
 }: SubWalletListProps) => {
   useEffect(measure, [measure, subWallets])
 
-  const initialOffset = useScrollOffset()
+  const initialState = useInitialWalletTreeState()
 
   const parentRef = useRef(null)
   const walletsVirtualizer = useVirtualizer({
     count: subWallets.length || 0,
-    initialOffset: initialOffset.subOffsets[wallet.id] || 0,
+    initialOffset: initialState.subOffsets[wallet.id] || 0,
     getScrollElement: () => parentRef.current,
     estimateSize: () => 56,
     getItemKey: (index) => subWallets[index].subWallet.id

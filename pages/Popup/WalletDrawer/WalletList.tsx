@@ -9,11 +9,12 @@ import { isWalletGroup } from '~lib/wallet'
 import { usePaginatedBalances } from '~pages/Popup/WalletDrawer/SubWalletList'
 
 import { WalletItem } from './WalletItem'
-import { useScrollOffset } from './useScrollOffset'
+import { useInitialWalletTreeState } from './useWalletTreeState'
 
 interface WalletListProps {
   network?: INetwork
   wallets: WalletEntry[]
+  openState: Record<number, boolean>
   onToggleOpen: (id: number) => void
   onSelected: (selected: WalletId) => void
   onClose: () => void
@@ -31,6 +32,7 @@ interface WalletListProps {
 export const WalletList = ({
   network,
   wallets,
+  openState,
   onToggleOpen,
   onSelected,
   onClose,
@@ -43,16 +45,16 @@ export const WalletList = ({
 }: WalletListProps) => {
   const itemSize = 56
 
-  const initialOffset = useScrollOffset()
+  const initialState = useInitialWalletTreeState()
 
   const parentRef = useRef(null)
   const walletsVirtualizer = useVirtualizer({
     count: wallets.length || 0,
-    initialOffset: initialOffset.offset,
+    initialOffset: initialState.offset,
     getScrollElement: () => parentRef.current,
     estimateSize: (index) => {
       const wallet = wallets[index]
-      if (!wallet.isOpen || !isWalletGroup(wallet.wallet.type)) {
+      if (!openState[wallet.wallet.id] || !isWalletGroup(wallet.wallet.type)) {
         return itemSize
       } else {
         return (
@@ -107,6 +109,7 @@ export const WalletList = ({
                   network={network}
                   walletEntry={walletEntry}
                   balance={subWallet && balanceMap.get(subWallet.account.id)}
+                  isOpen={openState[wallet.id]}
                   onToggleOpen={onToggleOpen}
                   onSelected={onSelected}
                   onClose={onClose}

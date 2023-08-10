@@ -50,6 +50,7 @@ interface WalletItemProps {
   network?: INetwork
   walletEntry: WalletEntry
   balance?: Amount
+  isOpen: boolean
   onToggleOpen: (id: number) => void
   onSelected: (selected: WalletId) => void
   onClose: () => void
@@ -66,6 +67,7 @@ export const WalletItem = ({
   network,
   walletEntry,
   balance,
+  isOpen,
   onToggleOpen,
   onSelected,
   onClose,
@@ -74,7 +76,7 @@ export const WalletItem = ({
   reorderWallets,
   setSubScrollOffset
 }: WalletItemProps) => {
-  const { wallet, isOpen, subWallets } = walletEntry
+  const { wallet, subWallets } = walletEntry
 
   const elRef = useRef(null)
 

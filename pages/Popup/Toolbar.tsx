@@ -27,7 +27,7 @@ import { WrappedDeleteWalletModal } from '~pages/Settings/SettingsWallets/Delete
 
 import { NetworkDrawer } from './NetworkDrawer'
 import { WalletDrawer } from './WalletDrawer'
-import { useSetScrollOffset } from './WalletDrawer/useScrollOffset'
+import { useWalletTreeState } from './WalletDrawer/useWalletTreeState'
 
 export const Toolbar = () => {
   const { network, account } = useActive()
@@ -63,13 +63,14 @@ export const Toolbar = () => {
     [search]
   )
 
-  const { wallets, toggleOpen, setSelected } = useWalletTree<WalletId>(
+  const { wallets, setSelected } = useWalletTree<WalletId>(
     network,
     filter,
     true
   )
 
-  const { setScrollOffset, setSubScrollOffset } = useSetScrollOffset()
+  const { state, setScrollOffset, setSubScrollOffset, toggleOpen } =
+    useWalletTreeState()
 
   return (
     <Box width="full" p="4" bg={bg} boxShadow={useColorModeValue('sm', 'sm')}>
@@ -127,6 +128,7 @@ export const Toolbar = () => {
               <WalletDrawer
                 network={network}
                 wallets={wallets}
+                openState={state.isOpen}
                 toggleOpen={toggleOpen}
                 setSelected={setSelected}
                 setSearch={setSearch}

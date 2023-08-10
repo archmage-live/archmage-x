@@ -34,6 +34,7 @@ import { WalletList } from '~pages/Popup/WalletDrawer/WalletList'
 export const WalletDrawer = ({
   network,
   wallets,
+  openState,
   toggleOpen,
   setSelected,
   setSearch,
@@ -43,6 +44,7 @@ export const WalletDrawer = ({
 }: {
   network: INetwork | undefined
   wallets?: WalletEntry[]
+  openState: Record<number, boolean>
   toggleOpen: (id: number) => void
   setSelected: (newSelected: WalletId) => void
   setSearch: (search: string) => void
@@ -140,6 +142,7 @@ export const WalletDrawer = ({
             <WalletList
               network={network}
               wallets={wallets}
+              openState={openState}
               onToggleOpen={toggleOpen}
               onSelected={setSelected}
               onClose={onClose}

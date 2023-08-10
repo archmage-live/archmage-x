@@ -21,7 +21,7 @@ export enum StoreKey {
   TOKEN_LISTS = 'tokenLists',
   CONSENT_REQUESTS = 'consentRequests',
   GAS_FEE_PREFIX = 'gasFee',
-  WALLET_LIST_SCROLL_OFFSET = 'walletListScrollOffset'
+  WALLET_TREE_STATE = 'walletTreeState'
 }
 
 function isKeySecret(key: StoreKey | string) {

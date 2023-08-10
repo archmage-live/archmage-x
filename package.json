@@ -94,6 +94,7 @@
     "@uniswap/token-lists": "1.0.0-beta.31",
     "@vespaiach/axios-fetch-adapter": "^0.3.1",
     "@walletconnect/client": "^1.8.0",
+    "@walletconnect/sign-client": "^2.9.2",
     "@walletconnect/web3-provider": "^1.8.0",
     "@web3auth/base": "^6.1.1",
     "@web3auth/base-provider": "^6.1.1",
