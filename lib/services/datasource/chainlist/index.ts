@@ -8,6 +8,8 @@ import { QueryService } from '~lib/query'
 import { ChainId } from '~lib/schema'
 
 class ChainListApi {
+  static unknownLogoUrl = `https://github.com/DefiLlama/chainlist/raw/main/public/unknown-logo.png`
+
   async getDefillamaEvmChainNames(): Promise<Map<number, string>> {
     let data
     try {
@@ -30,19 +32,32 @@ class ChainListApi {
     }
   }
 
+  getLocalDefillamaEvmChainNames(): Map<number, string> {
+    const data = fs.readFileSync(__dirname + '/chainIds.json')
+    const chainIds = JSON.parse(toUtf8String(data))
+    return new Map(
+      Object.entries(chainIds).map((item) => [+item[0], item[1] as string])
+    )
+  }
+
   _getEvmChainLogoUrl(
     chainId: number,
     chainNames: Map<number, string>
   ): string {
-    const unknownLogoUrl = `https://github.com/DefiLlama/chainlist/raw/main/public/unknown-logo.png`
-    const chainName = chainNames.get(chainId)
+    let chainName = chainNames.get(chainId)
     if (!chainName) {
-      return unknownLogoUrl
+      return ChainListApi.unknownLogoUrl
     }
+
+    // special case for zksync
+    if (chainName === 'era') {
+      chainName = 'zksync era'
+    }
+
     return `https://icons.llamao.fi/icons/chains/rsz_${chainName}`
   }
 
-  async getEvmChainLogoUrl(chainId: number): Promise<string | undefined> {
+  async getEvmChainLogoUrl(chainId: number): Promise<string> {
     const chainNames = await this.getDefillamaEvmChainNames()
     return this._getEvmChainLogoUrl(chainId, chainNames)
   }
@@ -57,9 +72,15 @@ export function useEvmChainLogoUrl(chainId?: ChainId): string | undefined {
   )
 
   return useMemo(() => {
-    if (typeof chainId !== 'number' || !chainNames) {
-      return 'https://github.com/DefiLlama/chainlist/raw/main/public/unknown-logo.png'
+    if (typeof chainId !== 'number') {
+      return ChainListApi.unknownLogoUrl
     }
-    return CHAINLIST_API._getEvmChainLogoUrl(chainId, chainNames)
+
+    const localChainNames = CHAINLIST_API.getLocalDefillamaEvmChainNames()
+
+    return CHAINLIST_API._getEvmChainLogoUrl(
+      chainId,
+      chainNames || localChainNames
+    )
   }, [chainId, chainNames])
 }

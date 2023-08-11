@@ -9,10 +9,12 @@ import { NetworkItem } from '~pages/Popup/NetworkDrawer/NetworkItem'
 
 export const NetworkList = ({
   networks,
+  networkLogos,
   onSelected,
   reorder
 }: {
   networks: INetwork[]
+  networkLogos: Record<number, string>
   onSelected(): void
   reorder: (
     network: INetwork,
@@ -56,6 +58,7 @@ export const NetworkList = ({
                 <NetworkItem
                   network={net}
                   info={info}
+                  logo={networkLogos[net.id]}
                   selected={networkId === net.id}
                   onSelected={() => {
                     setNetworkId(net.id!).finally(onSelected)

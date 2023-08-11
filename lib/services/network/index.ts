@@ -1,6 +1,7 @@
 import assert from 'assert'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
+import { useAsyncRetry, useInterval } from 'react-use'
 
 import { DB, getNextField } from '~lib/db'
 import { isBackgroundWorker } from '~lib/detect'
@@ -11,10 +12,19 @@ import { CosmAppChainInfo } from '~lib/network/cosm'
 import { EvmChainInfo } from '~lib/network/evm'
 import { StarknetChainInfo } from '~lib/network/starknet'
 import { ChainId, IChainAccount, INetwork, IToken } from '~lib/schema'
-import { useEvmChainLogoUrl } from '~lib/services/datasource/chainlist'
-import { useCosmChainLogoUrl } from '~lib/services/datasource/cosmos'
+import {
+  CHAINLIST_API,
+  useEvmChainLogoUrl
+} from '~lib/services/datasource/chainlist'
+import {
+  COSMOS_CHAIN_REGISTRY_API,
+  useCosmChainLogoUrl
+} from '~lib/services/datasource/cosmos'
 import { DENOM_TO_SUBDIRECTORY } from '~lib/services/datasource/cosmostation/helpers'
-import { useCryptoComparePrice } from '~lib/services/datasource/cryptocompare'
+import {
+  CRYPTO_COMPARE_SERVICE,
+  useCryptoComparePrice
+} from '~lib/services/datasource/cryptocompare'
 import { JIFFYSCAN_NETWORKS } from '~lib/services/datasource/jiffyscan'
 import { CosmTokenInfo } from '~lib/services/token/cosm'
 
@@ -396,6 +406,57 @@ export function useNetwork(id?: number) {
     }
     return DB.networks.get(id)
   }, [id])
+}
+
+export function useNetworkLogos(): Record<number, string> {
+  const networks = useNetworks()
+  const [logos, setLogos] = useState<Record<number, string>>({})
+
+  const { loading, error, retry } = useAsyncRetry(async () => {
+    if (!networks) {
+      return
+    }
+
+    for (const network of networks) {
+      let logo: string | undefined
+      switch (network.kind) {
+        case NetworkKind.EVM: {
+          logo = await CHAINLIST_API.getEvmChainLogoUrl(
+            network.chainId as number
+          )
+          break
+        }
+        case NetworkKind.COSM: {
+          logo = await COSMOS_CHAIN_REGISTRY_API.getLogoUrl(
+            network.chainId as string
+          )
+          break
+        }
+        default: {
+          const info = getNetworkInfo(network)
+          logo = await CRYPTO_COMPARE_SERVICE.getChainLogoUrl(
+            info.currencySymbol
+          )
+          break
+        }
+      }
+
+      if (!logo) {
+        continue
+      }
+
+      setLogos((logos) => {
+        return {
+          ...logos,
+          [network.id]: logo as string
+        }
+      })
+    }
+  }, [networks])
+
+  useInterval(retry, !loading && error ? 5000 : null)
+
+  return logos
 }
 
 export function useNetworkLogoUrl(network?: INetwork) {

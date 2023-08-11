@@ -4,7 +4,7 @@ import { useMemo } from 'react'
 
 import { fetchJsonWithCache } from '~lib/fetch'
 import { QueryService } from '~lib/query'
-import { useQuoteCurrency } from '~lib/quoteCurrency'
+import { DEFAULT_QUOTE_CURRENCY, useQuoteCurrency } from '~lib/quoteCurrency'
 import { CacheCategory, useCache2 } from '~lib/services/cacheService'
 
 type PriceMultiFullRawItem = {
@@ -158,6 +158,21 @@ class CryptoCompare {
           response.DISPLAY[symbol.toUpperCase()]?.[quoteSymbol.toUpperCase()]
       }
     })
+  }
+
+  async getChainLogoUrl(currency: string) {
+    const data = await this.multiFullPrices([currency], DEFAULT_QUOTE_CURRENCY)
+
+    let imageUrl = data.at(0)?.DISPLAY?.IMAGEURL
+    if (imageUrl) {
+      imageUrl = 'https://www.cryptocompare.com' + imageUrl
+    }
+
+    if (currency === 'tBTC') {
+      imageUrl = tBtcLogo
+    }
+
+    return imageUrl
   }
 }
 

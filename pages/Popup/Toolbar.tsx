@@ -17,7 +17,11 @@ import { useCallback, useState } from 'react'
 
 import { AccountAvatar } from '~components/AccountAvatar'
 import { WalletId, useActive } from '~lib/active'
-import { getNetworkInfo, useNetworkLogoUrl } from '~lib/services/network'
+import {
+  getNetworkInfo,
+  useNetworkLogoUrl,
+  useNetworkLogos
+} from '~lib/services/network'
 import {
   WalletEntry,
   filterWalletTreeBySearch,
@@ -34,6 +38,8 @@ export const Toolbar = () => {
 
   const networkInfo = network && getNetworkInfo(network)
   const networkLogoUrl = useNetworkLogoUrl(network)
+
+  const networkLogos = useNetworkLogos()
 
   const bg = useColorModeValue('gray.50', 'blackAlpha.400')
   const blockieBg = useColorModeValue('purple.50', 'gray.800')
@@ -123,7 +129,9 @@ export const Toolbar = () => {
           <DrawerOverlay />
           <DrawerContent>
             <DrawerCloseButton />
-            {isNetworkOpen && <NetworkDrawer onClose={onClose} />}
+            {isNetworkOpen && (
+              <NetworkDrawer networkLogos={networkLogos} onClose={onClose} />
+            )}
             {isWalletOpen && (
               <WalletDrawer
                 network={network}

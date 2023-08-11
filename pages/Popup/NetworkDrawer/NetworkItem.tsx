@@ -20,12 +20,13 @@ import Avvvatars from 'avvvatars-react'
 
 import { Badge } from '~components/Badge'
 import { INetwork } from '~lib/schema/network'
-import { NetworkInfo, useNetworkLogoUrl } from '~lib/services/network'
+import { NetworkInfo } from '~lib/services/network'
 import { MenuBtn } from '~pages/Popup/WalletDrawer/SubWalletItem'
 
 interface NetworkItemProps {
   network: INetwork
   info: NetworkInfo
+  logo?: string
   selected?: boolean
   onSelected?: () => void
   reorder: (
@@ -37,12 +38,11 @@ interface NetworkItemProps {
 export const NetworkItem = ({
   network,
   info,
+  logo,
   selected,
   onSelected,
   reorder
 }: NetworkItemProps) => {
-  const networkLogoUrl = useNetworkLogoUrl(network)
-
   return (
     <Button
       key={network.id}
@@ -58,7 +58,7 @@ export const NetworkItem = ({
           borderRadius="full"
           boxSize="24px"
           fit="cover"
-          src={networkLogoUrl}
+          src={logo}
           fallback={
             <Avvvatars
               value={info.name}

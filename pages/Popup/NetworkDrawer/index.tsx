@@ -29,7 +29,13 @@ import { createTab } from '~lib/tab'
 
 import { NetworkList } from './NetworkList'
 
-export const NetworkDrawer = ({ onClose }: { onClose(): void }) => {
+export const NetworkDrawer = ({
+  networkLogos,
+  onClose
+}: {
+  networkLogos: Record<number, string>
+  onClose(): void
+}) => {
   const navigate = useNavigate()
   const lock = async () => {
     await PASSWORD_SERVICE.lock()
@@ -121,6 +127,7 @@ export const NetworkDrawer = ({ onClose }: { onClose(): void }) => {
           <Stack spacing="4">
             <NetworkList
               networks={networks}
+              networkLogos={networkLogos}
               onSelected={onClose}
               reorder={reorder}
             />

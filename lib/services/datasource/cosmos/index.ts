@@ -46,18 +46,23 @@ class CosmosChainRegistryApi {
     )
     return assetList
   }
+
+  async getLogoUrl(chainId: string): Promise<string> {
+    const assetList = await COSMOS_CHAIN_REGISTRY_API.getAssetList(chainId)
+    return assetList?.assets[0].logo_URIs?.png || cosmosIcon
+  }
 }
 
 export const COSMOS_CHAIN_REGISTRY_API = new CosmosChainRegistryApi()
 
 export function useCosmChainLogoUrl(chainId?: ChainId): string | undefined {
-  const { data: assetList } = useQuery(
+  const { data: logoUrl } = useQuery(
     [QueryService.COSMOS_CHAIN_REGISTRY, 'getAssetList', chainId],
     async () =>
       typeof chainId === 'string'
-        ? COSMOS_CHAIN_REGISTRY_API.getAssetList(chainId)
+        ? COSMOS_CHAIN_REGISTRY_API.getLogoUrl(chainId)
         : null
   )
 
-  return assetList?.assets[0].logo_URIs?.png || cosmosIcon
+  return logoUrl || cosmosIcon
 }
