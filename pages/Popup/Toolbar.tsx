@@ -20,7 +20,8 @@ import { WalletId, useActive } from '~lib/active'
 import {
   getNetworkInfo,
   useNetworkLogoUrl,
-  useNetworkLogos
+  useNetworkLogos,
+  useNetworks
 } from '~lib/services/network'
 import {
   WalletEntry,
@@ -30,6 +31,7 @@ import {
 import { WrappedDeleteWalletModal } from '~pages/Settings/SettingsWallets/DeleteWalletModal'
 
 import { NetworkDrawer } from './NetworkDrawer'
+import { useNetworkTreeState } from './NetworkDrawer/useNetworkTreeState'
 import { WalletDrawer } from './WalletDrawer'
 import { useWalletTreeState } from './WalletDrawer/useWalletTreeState'
 
@@ -60,6 +62,8 @@ export const Toolbar = () => {
     onWalletClose()
   }, [onNetworkClose, onWalletClose])
 
+  const networks = useNetworks()
+
   const [search, setSearch] = useState('')
 
   const filter = useCallback(
@@ -75,8 +79,14 @@ export const Toolbar = () => {
     true
   )
 
-  const { state, setScrollOffset, setSubScrollOffset, toggleOpen } =
-    useWalletTreeState()
+  const {
+    state: walletTreeState,
+    setScrollOffset: setWalletScrollOffset,
+    setSubScrollOffset: setSubWalletScrollOffset,
+    toggleOpen: toggleWalletOpen
+  } = useWalletTreeState()
+
+  const { setScrollOffset: setNetworkScrollOffset } = useNetworkTreeState()
 
   return (
     <Box width="full" p="4" bg={bg} boxShadow={useColorModeValue('sm', 'sm')}>
@@ -92,7 +102,7 @@ export const Toolbar = () => {
               boxSize="20px"
               fit="cover"
               src={networkLogoUrl}
-              fallback={<></>}
+              fallback={<Box w="20px" />}
               alt="Network Logo"
             />
             <Text noOfLines={1} display="block">
@@ -130,19 +140,24 @@ export const Toolbar = () => {
           <DrawerContent>
             <DrawerCloseButton />
             {isNetworkOpen && (
-              <NetworkDrawer networkLogos={networkLogos} onClose={onClose} />
+              <NetworkDrawer
+                networks={networks}
+                networkLogos={networkLogos}
+                onClose={onClose}
+                setScrollOffset={setNetworkScrollOffset}
+              />
             )}
             {isWalletOpen && (
               <WalletDrawer
                 network={network}
                 wallets={wallets}
-                openState={state.isOpen}
-                toggleOpen={toggleOpen}
+                openState={walletTreeState.isOpen}
+                toggleOpen={toggleWalletOpen}
                 setSelected={setSelected}
                 setSearch={setSearch}
                 onClose={onClose}
-                setScrollOffset={setScrollOffset}
-                setSubScrollOffset={setSubScrollOffset}
+                setScrollOffset={setWalletScrollOffset}
+                setSubScrollOffset={setSubWalletScrollOffset}
               />
             )}
           </DrawerContent>

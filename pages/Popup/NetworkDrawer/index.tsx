@@ -19,30 +19,28 @@ import { useNavigate } from 'react-router-dom'
 import { useDebounce } from 'react-use'
 
 import { INetwork } from '~lib/schema'
-import {
-  persistReorderNetworks,
-  reorderNetworks,
-  useNetworks
-} from '~lib/services/network'
+import { persistReorderNetworks, reorderNetworks } from '~lib/services/network'
 import { PASSWORD_SERVICE } from '~lib/services/passwordService'
 import { createTab } from '~lib/tab'
 
 import { NetworkList } from './NetworkList'
 
 export const NetworkDrawer = ({
+  networks: allNetworks,
   networkLogos,
-  onClose
+  onClose,
+  setScrollOffset
 }: {
+  networks?: INetwork[]
   networkLogos: Record<number, string>
   onClose(): void
+  setScrollOffset: (offset: number) => void
 }) => {
   const navigate = useNavigate()
   const lock = async () => {
     await PASSWORD_SERVICE.lock()
     navigate('/', { replace: true })
   }
-
-  const allNetworks = useNetworks()
 
   const btnColor = useColorModeValue('gray.600', undefined)
 
@@ -130,6 +128,7 @@ export const NetworkDrawer = ({
               networkLogos={networkLogos}
               onSelected={onClose}
               reorder={reorder}
+              setScrollOffset={setScrollOffset}
             />
           </Stack>
 

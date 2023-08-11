@@ -1,17 +1,20 @@
 import { Box } from '@chakra-ui/react'
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { useRef } from 'react'
+import { useEffect, useRef } from 'react'
 
 import { useActiveNetworkId } from '~lib/active'
 import { INetwork } from '~lib/schema'
 import { getNetworkInfo } from '~lib/services/network'
-import { NetworkItem } from '~pages/Popup/NetworkDrawer/NetworkItem'
+
+import { NetworkItem } from './NetworkItem'
+import { useInitialNetworkTreeState } from './useNetworkTreeState'
 
 export const NetworkList = ({
   networks,
   networkLogos,
   onSelected,
-  reorder
+  reorder,
+  setScrollOffset
 }: {
   networks: INetwork[]
   networkLogos: Record<number, string>
@@ -20,16 +23,24 @@ export const NetworkList = ({
     network: INetwork,
     placement: 'top' | 'up' | 'down' | 'bottom'
   ) => void
+  setScrollOffset: (offset: number) => void
 }) => {
   const { networkId, setNetworkId } = useActiveNetworkId()
+
+  const initialState = useInitialNetworkTreeState()
 
   const parentRef = useRef(null)
   const networksVirtualizer = useVirtualizer({
     count: networks.length,
+    initialOffset: initialState.offset,
     getScrollElement: () => parentRef.current,
     estimateSize: () => 56,
     getItemKey: (index) => networks[index].id
   })
+
+  useEffect(() => {
+    setScrollOffset(networksVirtualizer.scrollOffset)
+  }, [networksVirtualizer.scrollOffset, setScrollOffset])
 
   return (
     <Box py="14px">

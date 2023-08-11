@@ -21,6 +21,7 @@ export enum StoreKey {
   TOKEN_LISTS = 'tokenLists',
   CONSENT_REQUESTS = 'consentRequests',
   GAS_FEE_PREFIX = 'gasFee',
+  NETWORK_TREE_STATE = 'networkTreeState',
   WALLET_TREE_STATE = 'walletTreeState'
 }
 
