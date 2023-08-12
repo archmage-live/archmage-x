@@ -26,7 +26,7 @@ export const ActionWizard = ({
   ...props
 }: ActionWizardProps) => {
   return (
-    <Card w="36rem" {...props}>
+    <Card w="40rem" {...props}>
       <Wizard
         startIndex={0}
         header={

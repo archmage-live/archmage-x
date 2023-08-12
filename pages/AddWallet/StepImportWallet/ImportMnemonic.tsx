@@ -1,4 +1,4 @@
-import { SearchIcon } from '@chakra-ui/icons'
+import { SearchIcon, ViewIcon, ViewOffIcon } from '@chakra-ui/icons'
 import {
   Button,
   Checkbox,
@@ -10,6 +10,7 @@ import {
   Input,
   InputGroup,
   InputLeftElement,
+  InputRightElement,
   Modal,
   ModalBody,
   ModalCloseButton,
@@ -66,6 +67,7 @@ export const ImportMnemonic = () => {
   const { nextStep } = useWizard()
 
   const [wordsNum, setWordsNum] = useState(wordsNums[0])
+  const [viewOnWordIndex, setViewOnWordIndex] = useState<number>()
   const [mnemonic, setMnemonic] = useMnemonic()
   useEffect(() => {
     setMnemonic([])
@@ -80,6 +82,7 @@ export const ImportMnemonic = () => {
       }
       return words
     })
+    setViewOnWordIndex(undefined)
   }, [wordsNum, setMnemonic])
 
   const resetWords = () => {
@@ -261,6 +264,10 @@ export const ImportMnemonic = () => {
                   index={index}
                   value={word}
                   onChange={onWordInput}
+                  isViewOn={viewOnWordIndex === index}
+                  toggleIsViewOn={() =>
+                    setViewOnWordIndex((i) => (i === index ? undefined : index))
+                  }
                 />
               )
             })}
@@ -386,11 +393,17 @@ export const ImportMnemonic = () => {
 const WordInput = ({
   index,
   value,
-  onChange
+  onChange,
+  isViewOn,
+  toggleIsViewOn
 }: {
   index: number
   value: string
   onChange: (value: string, index: number) => void
+  // https://www.halborn.com/disclosures/demonic-vulnerability
+  // Split the Mnemonic Phrase input field into several fields (one per word) and ensure that only one is revealed at a time
+  isViewOn: boolean
+  toggleIsViewOn: () => void
 }) => {
   return (
     <InputGroup bg={useColorModeValue('gray.50', 'blackAlpha.400')}>
@@ -399,7 +412,16 @@ const WordInput = ({
           {index + 1}
         </chakra.span>
       </InputLeftElement>
-      <Input value={value} onChange={(e) => onChange(e.target.value, index)} />
+
+      <Input
+        type={isViewOn ? 'text' : 'password'}
+        value={value}
+        onChange={(e) => onChange(e.target.value, index)}
+      />
+
+      <InputRightElement cursor="pointer" onClick={toggleIsViewOn}>
+        {isViewOn ? <ViewIcon /> : <ViewOffIcon />}
+      </InputRightElement>
     </InputGroup>
   )
 }
