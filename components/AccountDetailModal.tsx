@@ -65,7 +65,7 @@ export function useAccountDetailModal() {
   )
 
   const onOpen = useCallback(
-    async (account?: IChainAccount) => {
+    async (account?: IChainAccount, noAccountChange?: boolean) => {
       let args
       if (account) {
         const network = await NETWORK_SERVICE.getNetwork({
@@ -88,14 +88,16 @@ export function useAccountDetailModal() {
       }
 
       setIsOpenAccountDetailModal(true)
-      setAccountDetailModalArgs(args)
+
+      if (!noAccountChange) {
+        setAccountDetailModalArgs(args)
+      }
     },
     [setIsOpenAccountDetailModal, setAccountDetailModalArgs]
   )
   const onClose = useCallback(() => {
     setIsOpenAccountDetailModal(false)
-    setAccountDetailModalArgs(undefined)
-  }, [setIsOpenAccountDetailModal, setAccountDetailModalArgs])
+  }, [setIsOpenAccountDetailModal])
 
   return {
     isOpen: isOpenAccountDetailModal,
@@ -269,7 +271,7 @@ export const AccountDetailModal = () => {
         isOpen={isExportPrivateKeyOpen}
         onClose={() => {
           onExportPrivateKeyClose()
-          onOpen().then()
+          onOpen(undefined, true).then()
         }}
       />
 
@@ -279,7 +281,7 @@ export const AccountDetailModal = () => {
         isOpen={isExportMnemonicOpen}
         onClose={() => {
           onExportMnemonicClose()
-          onOpen().then()
+          onOpen(undefined, true).then()
         }}
         size="full"
       />
