@@ -87,10 +87,9 @@ export const SubWalletEdit = ({
         </>
       )}
 
-      <Stack>
-        <Text fontWeight="medium">Address</Text>
-
-        {account?.address ? (
+      {account?.address ? (
+        <Stack>
+          <Text fontWeight="medium">Address:</Text>
           <CopyArea
             name="Address"
             copy={account.address}
@@ -99,10 +98,10 @@ export const SubWalletEdit = ({
               width: 'fit-content'
             }}
           />
-        ) : (
-          'Not Available'
-        )}
-      </Stack>
+        </Stack>
+      ) : (
+        <Text fontWeight="medium">Address: Not Available</Text>
+      )}
 
       <Text fontWeight="medium">
         Balance:&nbsp;

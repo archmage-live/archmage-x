@@ -261,6 +261,7 @@ export const EvmSpeedUpOrCancelModal = ({
     }
 
     console.log(isSpeedUp ? 'Speed up tx:' : 'Cancel tx:', tx)
+    // TODO: handle exception
     await EVM_TRANSACTION_SERVICE.signAndSendTx(
       account,
       tx,

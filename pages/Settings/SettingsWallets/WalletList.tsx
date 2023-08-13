@@ -42,16 +42,7 @@ export const WalletList = ({
   const walletsVirtualizer = useVirtualizer({
     count: wallets.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: (index) => {
-      const wallet = wallets[index]
-      if (!wallet.isOpen || !isWalletGroup(wallet.wallet.type)) {
-        return itemSize
-      } else {
-        return (
-          itemSize + (itemSize * Math.min(wallet.subWallets.length, 8) + 35)
-        )
-      }
-    },
+    estimateSize: (index) => itemSize,
     getItemKey: (index) => wallets[index].wallet.id
   })
 
