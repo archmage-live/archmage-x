@@ -8,7 +8,14 @@ import { ethers } from 'ethers'
 
 import { Erc4337AccountType } from '~lib/erc4337'
 import { NetworkKind } from '~lib/network'
-import { DerivePosition, IHdPath, INetwork, IWallet, Index } from '~lib/schema'
+import {
+  DerivePosition,
+  IHdPath,
+  INetwork,
+  IWallet,
+  Index,
+  SubIndex
+} from '~lib/schema'
 
 export enum WalletType {
   HD = 'hd', // Hierarchical Deterministic, derived from mnemonic
@@ -244,18 +251,37 @@ export enum HardwareWalletType {
   LEDGER = 'Ledger'
 }
 
+export enum MultisigWalletType {
+  SAFE = 'safe'
+}
+
 export enum AccountAbstractionType {
   // NATIVE = 'native', // starknet
-  ERC4337 = 'erc4337'
-  // SAFE = 'safe'
+  ERC4337 = 'erc4337',
+  SAFE = 'safe'
 }
 
 export interface AccountAbstractionInfo {
   type: AccountAbstractionType
 }
 
+// info of ERC4337 based account abstraction
 export interface Erc4337Info {
   type: Erc4337AccountType
+}
+
+// info of Safe{Core} Protocol based account abstraction
+export interface SafeInfo {
+  threshold: number
+  owners: SafeOwner[]
+  saltNonce: number
+  safeVersion: string
+}
+
+export interface SafeOwner {
+  name: string
+  address: string // ethereum address
+  associated?: SubIndex
 }
 
 export enum KeylessWalletType {

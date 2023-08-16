@@ -20,9 +20,8 @@ import { KeylessWalletInfo, KeylessWalletType } from '~lib/wallet'
 import { OnboardKeylessHd } from './OnboardKeylessHd'
 import { OnboardKeylessPrivateKey } from './OnboardKeylessPrivateKey'
 
-const importKinds = ['Private Key', 'HD'] as const
-
 export const StepOnboardKeyless = () => {
+  const importKinds = ['Private Key', 'HD'] as const
   const [kind, setKind] = useState<typeof importKinds[number]>(importKinds[0])
 
   const theme = useColorModeValue('light', 'dark')

@@ -17,6 +17,7 @@ import {
 import { StepCreatePassword } from './StepCreatePassword'
 import { StepGenerateMnemonic } from './StepGenerateMnemonic'
 import { StepImportWallet } from './StepImportWallet'
+import { StepMultisig, StepMultisigPerform } from './StepMultisig'
 import { StepRememberMnemonic } from './StepRememberMnemonic'
 import { AddWalletKind, useAddWalletKind } from './addWallet'
 
@@ -77,6 +78,9 @@ const StepAddWalletBegin = ({
     case AddWalletKind.WALLET_CONNECT:
     case AddWalletKind.WALLET_CONNECT_GROUP:
       return <StepWalletConnect />
+    case AddWalletKind.MULTI_SIG:
+    case AddWalletKind.MULTI_SIG_GROUP:
+      return <StepMultisig />
     case AddWalletKind.KEYLESS:
     case AddWalletKind.KEYLESS_HD:
     case AddWalletKind.KEYLESS_GROUP:
@@ -95,6 +99,9 @@ const StepAddWalletEnd = ({
     case AddWalletKind.CONNECT_HARDWARE:
     case AddWalletKind.CONNECT_HARDWARE_GROUP:
       return <StepConnectHardwareWalletAccounts />
+    case AddWalletKind.MULTI_SIG:
+    case AddWalletKind.MULTI_SIG_GROUP:
+      return <StepMultisigPerform />
     default:
       return null
   }
@@ -105,6 +112,8 @@ function hasAddWalletEnd(addWalletKind: AddWalletKind) {
     case AddWalletKind.NEW_HD:
     case AddWalletKind.CONNECT_HARDWARE:
     case AddWalletKind.CONNECT_HARDWARE_GROUP:
+    case AddWalletKind.MULTI_SIG:
+    case AddWalletKind.MULTI_SIG_GROUP:
       return true
     default:
       return false

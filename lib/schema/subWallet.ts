@@ -1,4 +1,9 @@
-import { AccountsInfo, Erc4337Info, KeylessWalletInfo } from '~lib/wallet'
+import {
+  AccountsInfo,
+  Erc4337Info,
+  KeylessWalletInfo,
+  SafeInfo
+} from '~lib/wallet'
 
 export interface ISubWallet {
   id: number
@@ -19,6 +24,7 @@ export const subWalletSchemaV1 =
 export interface SubWalletInfo {
   accounts?: AccountsInfo
   erc4337?: Erc4337Info
+  safe?: SafeInfo
   keyless?: KeylessWalletInfo
 }
 

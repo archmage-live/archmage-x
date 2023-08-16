@@ -1,4 +1,5 @@
 import { NetworkKind } from '~lib/network'
+import { SafeInfo } from '~lib/wallet'
 
 import { ChainId } from './network'
 import { Index } from './subWallet'
@@ -17,6 +18,8 @@ export interface ChainAccountInfo {
   publicKey?: string
   utxos?: Utxo[] // cached UTXOs if no `subAccounts`
   subAccounts?: SubChainAccount[][] // for Bitcoin sub addresses
+
+  safe?: SafeInfo
 }
 
 // Bitcoin sub address

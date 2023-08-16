@@ -120,6 +120,18 @@ export const StepAddWalletSelect = () => {
                   />
                 </HStack>
               </Button>
+              <Button
+                w="full"
+                h="14"
+                size="lg"
+                variant="outline"
+                borderRadius="8px"
+                onClick={() => {
+                  setAddWalletKind(AddWalletKind.MULTI_SIG)
+                  nextStep().then()
+                }}>
+                Create or import multisig wallet
+              </Button>
             </Stack>
 
             <Stack pt="8" spacing="0" align="center">

@@ -8,6 +8,8 @@ import {
   Erc4337Info,
   HardwareWalletType,
   KeylessWalletInfo,
+  MultisigWalletType,
+  SafeInfo,
   WalletType
 } from '~lib/wallet'
 
@@ -31,8 +33,10 @@ export interface WalletInfo {
   derivePosition?: DerivePosition
   notBackedUp?: boolean
   addressType?: BtcAddressType // for Bitcoin
+  multisigType?: MultisigWalletType
   accountAbstraction?: AccountAbstractionInfo
   erc4337?: Erc4337Info
+  safe?: SafeInfo
   keyless?: KeylessWalletInfo
 }
 

@@ -14,6 +14,8 @@ import {
   Erc4337Info,
   HardwareWalletType,
   KeylessWalletInfo,
+  MultisigWalletType,
+  SafeOwner,
   WalletAccount,
   WalletType
 } from '~lib/wallet'
@@ -29,6 +31,8 @@ export enum AddWalletKind {
   CONNECT_HARDWARE_GROUP,
   WALLET_CONNECT,
   WALLET_CONNECT_GROUP,
+  MULTI_SIG,
+  MULTI_SIG_GROUP,
   KEYLESS,
   KEYLESS_HD,
   KEYLESS_GROUP
@@ -57,6 +61,10 @@ const keylessInfoAtom = atom<KeylessWalletInfo | undefined>(undefined)
 const accountAbstractionAtom = atom<AccountAbstractionInfo | undefined>(
   undefined
 )
+const multisigTypeAtom = atom<MultisigWalletType | undefined>(undefined)
+const owners = atom<SafeOwner[] | undefined>(undefined)
+const threshold = atom<number | undefined>(undefined)
+const saltNonce = atom<number | undefined>(undefined)
 const erc4337Atom = atom<Erc4337Info | undefined>(undefined)
 const createdAtom = atom(false)
 
@@ -155,6 +163,22 @@ export function useAddressType() {
   return useAtom(addressTypeAtom)
 }
 
+export function useMultisigType() {
+  return useAtom(multisigTypeAtom)
+}
+
+export function useOwners() {
+  return useAtom(owners)
+}
+
+export function useThreshold() {
+  return useAtom(threshold)
+}
+
+export function useSaltNonce() {
+  return useAtom(saltNonce)
+}
+
 export function useKeylessInfo() {
   return useAtom(keylessInfoAtom)
 }
@@ -185,6 +209,10 @@ export function useClear() {
   const [, setAccountsNum] = useAccountsNum()
   const [, setExistingWallet] = useExistingWallet()
   const [, setAddressType] = useAddressType()
+  const [, setMultisigType] = useMultisigType()
+  const [, setOwners] = useOwners()
+  const [, setThreshold] = useThreshold()
+  const [, setSaltNonce] = useSaltNonce()
   const [, setKeylessInfo] = useKeylessInfo()
   const [, setAccountAbstraction] = useAccountAbstraction()
   const [, setErc4337] = useErc4337()
@@ -203,6 +231,10 @@ export function useClear() {
     setAccountsNum(0)
     setExistingWallet(undefined)
     setAddressType(undefined)
+    setMultisigType(undefined)
+    setOwners(undefined)
+    setThreshold(undefined)
+    setSaltNonce(undefined)
     setKeylessInfo(undefined)
     setAccountAbstraction(undefined)
     setErc4337(undefined)
@@ -224,6 +256,10 @@ export function useAddWallet() {
   const [hwType] = useHwType()
   const [walletHash] = useWalletHash()
   const [addressType] = useAddressType()
+  const [multisigType] = useMultisigType()
+  const [owners] = useOwners()
+  const [threshold] = useThreshold()
+  const [saltNonce] = useSaltNonce()
   const [accountAbstraction] = useAccountAbstraction()
   const [erc4337] = useErc4337()
   const [keylessInfo] = useKeylessInfo()
