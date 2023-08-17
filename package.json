@@ -155,6 +155,7 @@
     "react-blockies": "^1.4.1",
     "react-dom": "18.2.0",
     "react-json-view": "^1.21.3",
+    "react-qr-reader": "3.0.0-beta-1",
     "react-router-dom": "^6.3.0",
     "react-select": "^5.4.0",
     "react-spinners": "^0.13.4",

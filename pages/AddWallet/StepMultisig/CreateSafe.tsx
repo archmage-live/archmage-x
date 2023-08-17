@@ -29,6 +29,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useWizard } from 'react-use-wizard'
 
 import { AlertBox } from '~components/AlertBox'
+import { ScanQRModal } from '~components/ScanQrModal'
 import { SelectAccountModal } from '~components/SelectAccountModal'
 import { NetworkKind, getNetworkScope } from '~lib/network'
 import {
@@ -147,18 +148,19 @@ export const CreateSafe = () => {
   } = useDisclosure()
 
   const {
-    isOpen: isScanAddressOpen,
-    onOpen: onScanAddressOpen,
-    onClose: onScanAddressClose
-  } = useDisclosure()
-
-  const {
     isOpen: isSelectAccountOpen,
     onOpen: _onSelectAccountOpen,
     onClose: onSelectAccountClose
   } = useDisclosure()
 
+  const {
+    isOpen: isScanAddressOpen,
+    onOpen: _onScanAddressOpen,
+    onClose: onScanAddressClose
+  } = useDisclosure()
+
   const [selectedIndex, setSelectedIndex] = useState<number>()
+
   const [selectedAccount, _setSelectedAccount] = useState<CompositeAccount>()
 
   const accounts = useChainAccounts({
@@ -166,7 +168,7 @@ export const CreateSafe = () => {
     chainId: network?.chainId
   })
 
-  const setSelectedAccount = useCallback(
+  const onSelectAccount = useCallback(
     async (account: CompositeAccount) => {
       if (!owners || selectedIndex === undefined) {
         return
@@ -186,6 +188,22 @@ export const CreateSafe = () => {
       setOwners(newOwners)
     },
     [owners, setOwners, selectedIndex]
+  )
+
+  const onScanAddress = useCallback(
+    async (text: string) => {
+      const address = checkAddress(networkKind, text)
+      if (!address || !owners || selectedIndex === undefined) {
+        return
+      }
+      const newOwners = [...owners]
+      newOwners[selectedIndex] = {
+        ...newOwners[selectedIndex],
+        address
+      }
+      setOwners(newOwners)
+    },
+    [networkKind, owners, setOwners, selectedIndex]
   )
 
   const onSelectAccountOpen = useCallback(
@@ -235,6 +253,14 @@ export const CreateSafe = () => {
       _onSelectAccountOpen()
     },
     [network, owners, accounts, _onSelectAccountOpen]
+  )
+
+  const onScanAddressOpen = useCallback(
+    (index: number) => {
+      setSelectedIndex(index)
+      _onScanAddressOpen()
+    },
+    [_onScanAddressOpen]
   )
 
   return (
@@ -311,7 +337,7 @@ export const CreateSafe = () => {
                     newOwners.splice(index, 1)
                     setOwners(newOwners)
                   }}
-                  onScanAddressOpen={onScanAddressOpen}
+                  onScanAddressOpen={() => onScanAddressOpen(index)}
                   onSelectAccountOpen={() => onSelectAccountOpen(index)}
                   networkKind={networkKind}
                 />
@@ -428,10 +454,16 @@ export const CreateSafe = () => {
         Continue
       </Button>
 
+      <ScanQRModal
+        isOpen={isScanAddressOpen}
+        onClose={onScanAddressClose}
+        onScan={onScanAddress}
+      />
+
       <SelectAccountModal
         network={network}
         account={selectedAccount}
-        setAccount={setSelectedAccount}
+        setAccount={onSelectAccount}
         isOpen={isSelectAccountOpen}
         onClose={onSelectAccountClose}
       />
