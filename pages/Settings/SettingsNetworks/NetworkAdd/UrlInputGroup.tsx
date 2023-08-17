@@ -34,7 +34,6 @@ import {
 } from 'react'
 import * as React from 'react'
 import { useAsyncRetry, useDebounce, useInterval } from 'react-use'
-// @ts-ignore
 import stableHash from 'stable-hash'
 
 import { AlertBox } from '~components/AlertBox'

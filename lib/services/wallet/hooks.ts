@@ -1,7 +1,9 @@
 import assert from 'assert'
 import Dexie from 'dexie'
 import { useLiveQuery } from 'dexie-react-hooks'
+import { useEffect, useState } from 'react'
 import { useAsync } from 'react-use'
+import stableHash from 'stable-hash'
 
 import { DB, getNextField } from '~lib/db'
 import { NetworkKind } from '~lib/network'
@@ -63,18 +65,31 @@ export function useChainAccounts(
   query?:
     | number[]
     | {
-        networkKind: NetworkKind
-        chainId: ChainId
+        networkKind?: NetworkKind
+        chainId?: ChainId
         masterId?: number
         subIndices?: SubIndex[]
       }
 ) {
+  const [_query, _setQuery] = useState<typeof query>()
+  useEffect(() => {
+    if (stableHash(_query) !== stableHash(query)) {
+      _setQuery(query)
+    }
+  }, [query, _query])
+
   return useLiveQuery(async () => {
-    if (query === undefined) {
+    if (
+      !_query ||
+      (!Array.isArray(_query) &&
+        (_query.networkKind === undefined || _query.chainId === undefined))
+    ) {
       return
     }
-    return WALLET_SERVICE.getChainAccounts(query)
-  }, [query])
+    return WALLET_SERVICE.getChainAccounts(
+      _query as Parameters<typeof WALLET_SERVICE.getChainAccounts>[0]
+    )
+  }, [_query])
 }
 
 export function useChainAccount(id?: number) {

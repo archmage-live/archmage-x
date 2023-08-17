@@ -3,11 +3,11 @@ import { useVirtualizer } from '@tanstack/react-virtual'
 import { useEffect, useRef } from 'react'
 
 import { useActiveNetworkId } from '~lib/active'
+import { useInitialNetworkTreeState } from '~lib/hooks/useNetworkTreeState'
 import { INetwork } from '~lib/schema'
 import { getNetworkInfo } from '~lib/services/network'
 
 import { NetworkItem } from './NetworkItem'
-import { useInitialNetworkTreeState } from './useNetworkTreeState'
 
 export const NetworkList = ({
   networks,

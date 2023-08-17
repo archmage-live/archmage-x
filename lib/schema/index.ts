@@ -1,10 +1,12 @@
 import { fromBech32, toBech32 } from '@cosmjs/encoding'
-import assert from 'assert'
 
 import { NetworkKind } from '~lib/network'
 import { CosmAppChainInfo } from '~lib/network/cosm'
-import { INetwork } from '~lib/schema/network'
-import { ISubWallet, SubIndex } from '~lib/schema/subWallet'
+
+import { IChainAccount } from './chainAccount'
+import { INetwork } from './network'
+import { ISubWallet, SubIndex } from './subWallet'
+import { IWallet } from './wallet'
 
 export * from './network'
 export * from './wallet'
@@ -21,6 +23,18 @@ export * from './addressBook'
 export * from './cache'
 export * from './aptosEvent'
 export * from './activeBinding'
+
+export interface CompositeAccount {
+  wallet: IWallet
+  subWallet: ISubWallet
+  account: IChainAccount
+}
+
+export function accountName(account: Omit<CompositeAccount, 'account'>) {
+  return account.subWallet.name
+    ? `${account.wallet.name} / ${account.subWallet.name}`
+    : account.wallet.name
+}
 
 // https://dexie.org/docs/Indexable-Type
 // non-indexable types:

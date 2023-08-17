@@ -1,6 +1,5 @@
 import assert from 'assert'
 import Dexie from 'dexie'
-// @ts-ignore
 import stableHash from 'stable-hash'
 
 import { NetworkKind } from '~lib/network'

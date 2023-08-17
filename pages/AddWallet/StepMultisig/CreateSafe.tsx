@@ -29,14 +29,21 @@ import { useCallback, useEffect, useState } from 'react'
 import { useWizard } from 'react-use-wizard'
 
 import { AlertBox } from '~components/AlertBox'
+import { SelectAccountModal } from '~components/SelectAccountModal'
+import { NetworkKind, getNetworkScope } from '~lib/network'
 import {
-  NETWORK_SCOPES,
-  NetworkKind,
-  getNetworkKind,
-  getNetworkScope
-} from '~lib/network'
-import { IChainAccount, ISubWallet, IWallet } from '~lib/schema'
-import { ExistingGroupWallet } from '~lib/services/wallet'
+  CompositeAccount,
+  IChainAccount,
+  ISubWallet,
+  IWallet,
+  accountName
+} from '~lib/schema'
+import { getNetworkInfo, useNetwork, useNetworks } from '~lib/services/network'
+import {
+  ExistingGroupWallet,
+  WALLET_SERVICE,
+  useChainAccounts
+} from '~lib/services/wallet'
 import { WalletType, checkAddress } from '~lib/wallet'
 
 import { NameInput } from '../NameInput'
@@ -59,11 +66,27 @@ export const CreateSafe = () => {
 
   // Safe only supports Ethereum network
   const networkKind = NetworkKind.EVM
+  const networkScope = getNetworkScope(networkKind)
+  const networksOfKind = useNetworks(networkKind)
+  const [networkId, setNetworkId] = useState<number>()
+  const network = useNetwork(networkId)
+
+  useEffect(() => {
+    if (networksOfKind?.length) {
+      setNetworkId(networksOfKind[0].id)
+    } else {
+      setNetworkId(undefined)
+    }
+  }, [networksOfKind])
 
   const [name, setName] = useName()
   const [owners, setOwners] = useOwners()
   const [threshold, setThreshold] = useThreshold()
   const [saltNonce, setSaltNonce] = useSaltNonce()
+
+  useEffect(() => {
+    console.log(owners)
+  }, [owners])
 
   useEffect(() => {
     if (!owners) {
@@ -131,20 +154,122 @@ export const CreateSafe = () => {
 
   const {
     isOpen: isSelectAccountOpen,
-    onOpen: onSelectAccountOpen,
+    onOpen: _onSelectAccountOpen,
     onClose: onSelectAccountClose
   } = useDisclosure()
+
+  const [selectedIndex, setSelectedIndex] = useState<number>()
+  const [selectedAccount, _setSelectedAccount] = useState<CompositeAccount>()
+
+  const accounts = useChainAccounts({
+    networkKind,
+    chainId: network?.chainId
+  })
+
+  const setSelectedAccount = useCallback(
+    async (account: CompositeAccount) => {
+      if (!owners || selectedIndex === undefined) {
+        return
+      }
+
+      const newOwners = [...owners]
+      const name = newOwners[selectedIndex].name
+      newOwners[selectedIndex] = {
+        name: name.trim() ? name : accountName(account),
+        address: account.account.address!,
+        associated: {
+          masterId: account.wallet.id,
+          index: account.subWallet.index
+        }
+      }
+
+      setOwners(newOwners)
+    },
+    [owners, setOwners, selectedIndex]
+  )
+
+  const onSelectAccountOpen = useCallback(
+    async (index: number) => {
+      if (!network) {
+        return
+      }
+
+      const owner = owners?.at(index)
+      if (!owner) {
+        return
+      }
+
+      let wallet, subWallet, account
+      if (owner.associated) {
+        wallet = await WALLET_SERVICE.getWallet(owner.associated.masterId)
+        subWallet = await WALLET_SERVICE.getSubWallet(owner.associated)
+        account = await WALLET_SERVICE.getChainAccount({
+          masterId: owner.associated.masterId,
+          index: owner.associated.index,
+          networkKind: network.kind,
+          chainId: network.chainId
+        })
+      } else {
+        const address = checkAddress(network.kind, owner.address)
+        account = accounts?.find((a) => a.address === address)
+        if (account) {
+          wallet = await WALLET_SERVICE.getWallet(account.masterId)
+          subWallet = await WALLET_SERVICE.getSubWallet({
+            masterId: account.masterId,
+            index: account.index
+          })
+        }
+      }
+
+      setSelectedIndex(index)
+      _setSelectedAccount(
+        wallet && subWallet && account
+          ? {
+              wallet,
+              subWallet,
+              account
+            }
+          : undefined
+      )
+
+      _onSelectAccountOpen()
+    },
+    [network, owners, accounts, _onSelectAccountOpen]
+  )
 
   return (
     <Stack spacing={12}>
       <Stack spacing={8}>
         <FormControl>
           <FormLabel>Network kind</FormLabel>
-          <Select w={48} value={networkKind}>
-            <option key={getNetworkScope(networkKind)} value={networkKind}>
-              {getNetworkScope(networkKind)}
-            </option>
-          </Select>
+          <HStack justify="space-around" spacing={8}>
+            <Select w={48} value={networkKind} onChange={() => {}}>
+              <option key={networkScope} value={networkKind}>
+                {networkScope}
+              </option>
+            </Select>
+
+            <Select
+              placeholder={
+                networksOfKind && !networksOfKind.length
+                  ? `No ${networkScope ? `${networkScope} ` : ''}Network`
+                  : undefined
+              }
+              value={networkId}
+              onChange={(e) => {
+                setNetworkId(+e.target.value)
+              }}>
+              {networksOfKind?.map((net) => {
+                const info = getNetworkInfo(net)
+                return (
+                  <option key={net.id} value={net.id}>
+                    {info.name}
+                  </option>
+                )
+              })}
+            </Select>
+          </HStack>
+
           <FormHelperText>
             Safe only supports Ethereum networks at the moment.
           </FormHelperText>
@@ -187,7 +312,7 @@ export const CreateSafe = () => {
                     setOwners(newOwners)
                   }}
                   onScanAddressOpen={onScanAddressOpen}
-                  onSelectAccountOpen={onSelectAccountOpen}
+                  onSelectAccountOpen={() => onSelectAccountOpen(index)}
                   networkKind={networkKind}
                 />
               )
@@ -303,6 +428,14 @@ export const CreateSafe = () => {
         Continue
       </Button>
 
+      <SelectAccountModal
+        network={network}
+        account={selectedAccount}
+        setAccount={setSelectedAccount}
+        isOpen={isSelectAccountOpen}
+        onClose={onSelectAccountClose}
+      />
+
       <SelectExistingWalletModal
         walletType={WalletType.MULTI_SIG_GROUP}
         selected={existingGroupWallet}
@@ -354,7 +487,7 @@ const Owner = ({
     <HStack>
       <Input
         size="lg"
-        w={36}
+        w={40}
         placeholder={`Owner ${index + 1}`}
         maxLength={64}
         value={name}

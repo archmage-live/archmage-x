@@ -42,7 +42,7 @@ export const WalletDrawer = ({
   setScrollOffset,
   setSubScrollOffset
 }: {
-  network: INetwork | undefined
+  network?: INetwork
   wallets?: WalletEntry[]
   openState: Record<number, boolean>
   toggleOpen: (id: number) => void

@@ -1,5 +1,4 @@
 import { useAsync } from 'react-use'
-// @ts-ignore
 import stableHash from 'stable-hash'
 
 import { fetchJsonWithCache } from '~lib/fetch'

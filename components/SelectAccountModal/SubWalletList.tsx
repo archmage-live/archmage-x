@@ -7,7 +7,6 @@ import { usePaginatedBalances } from '~lib/hooks/usePaginatedBalances'
 import { useInitialWalletTreeState } from '~lib/hooks/useWalletTreeState'
 import { INetwork, IWallet } from '~lib/schema'
 import { SubWalletEntry } from '~lib/services/wallet/tree'
-import { DeleteWalletOpts } from '~pages/Settings/SettingsWallets/DeleteWalletModal'
 
 import { SubWalletItem } from './SubWalletItem'
 
@@ -16,12 +15,7 @@ interface SubWalletListProps {
   wallet: IWallet
   subWallets: SubWalletEntry[]
   onSelectedId: (selected: WalletId) => void
-  onDelete: (opts: DeleteWalletOpts) => void
   measure: () => void
-  reorderSubWallets: (
-    network: SubWalletEntry,
-    placement: 'top' | 'up' | 'down' | 'bottom'
-  ) => void
   setSubScrollOffset: (walletId: number, offset: number) => void
 }
 
@@ -30,14 +24,12 @@ export const SubWalletList = ({
   wallet,
   subWallets,
   onSelectedId,
-  onDelete,
   measure,
-  reorderSubWallets,
   setSubScrollOffset
 }: SubWalletListProps) => {
   useEffect(measure, [measure, subWallets])
 
-  const initialState = useInitialWalletTreeState(true)
+  const initialState = useInitialWalletTreeState()
 
   const parentRef = useRef(null)
   const walletsVirtualizer = useVirtualizer({
@@ -103,8 +95,6 @@ export const SubWalletList = ({
                         subId: id
                       })
                     }
-                    onDelete={onDelete}
-                    reorderSubWallets={reorderSubWallets}
                   />
                 )}
               </Box>

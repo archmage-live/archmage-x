@@ -13,6 +13,7 @@ import { ReactNode, useEffect, useState } from 'react'
 import { useAsync } from 'react-use'
 
 import { useActive } from '~lib/active'
+import { accountName } from '~lib/schema'
 import { CONSENT_SERVICE, ConsentRequest } from '~lib/services/consentService'
 import { WALLET_SERVICE } from '~lib/services/wallet'
 import { useWalletTree } from '~lib/services/wallet/tree'
@@ -75,9 +76,7 @@ export const RequestPermission = ({
     })
 
     setInfo({
-      name:
-        wallet &&
-        (subWallet?.name ? `${wallet.name} / ${subWallet.name}` : wallet.name),
+      name: wallet && subWallet && accountName({ wallet, subWallet }),
       address: account?.address
     })
   }, [checked])

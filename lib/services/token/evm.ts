@@ -3,7 +3,6 @@ import { TokenInfo, TokenList } from '@uniswap/token-lists'
 import assert from 'assert'
 import Decimal from 'decimal.js'
 import { ethers } from 'ethers'
-// @ts-ignore
 import stableHash from 'stable-hash'
 
 import { DB } from '~lib/db'

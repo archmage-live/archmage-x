@@ -5,7 +5,6 @@ import { BigNumber } from '@ethersproject/bignumber'
 import { TransactionRequest } from '@ethersproject/providers'
 import assert from 'assert'
 import PQueue from 'p-queue'
-// @ts-ignore
 import stableHash from 'stable-hash'
 
 import { DB } from '~lib/db'

@@ -1,7 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks'
+import { atom, useAtom } from 'jotai'
 import { useCallback, useMemo, useState } from 'react'
 import { useDebounce } from 'react-use'
-// @ts-ignore
 import stableHash from 'stable-hash'
 
 import { WALLET_SERVICE } from '~lib/services/wallet'
@@ -13,29 +13,46 @@ interface WalletTreeState {
   isOpen: Record<number, boolean> // wallet id -> isOpen
 }
 
-export function useInitialWalletTreeState() {
+const stateAtom = atom<WalletTreeState | undefined>(undefined)
+
+export function useInitialWalletTreeState(usePersist: boolean = false) {
+  const [memoryState] = useAtom(stateAtom)
+  const [initialMemoryState] = useState<WalletTreeState | undefined>(
+    memoryState
+  )
+
   // load only once from localStorage
-  return useMemo(() => {
+  const initialPersistedState = useMemo(() => {
     const stateStr = localStorage.getItem(StoreKey.WALLET_TREE_STATE)
     if (stateStr) {
       try {
         return JSON.parse(stateStr) as WalletTreeState
       } catch {}
     }
-    return {
+  }, [])
+
+  return useMemo(() => {
+    const zeroState = {
       offset: 0,
       subOffsets: {},
       isOpen: {}
-    }
-  }, [])
+    } as WalletTreeState
+
+    return (
+      (usePersist ? initialPersistedState : initialMemoryState) || zeroState
+    )
+  }, [usePersist, initialMemoryState, initialPersistedState])
 }
 
-export function useWalletTreeState() {
-  const initialState = useInitialWalletTreeState()
+export function useWalletTreeState(usePersist: boolean = false) {
+  const initialState = useInitialWalletTreeState(usePersist)
 
-  const [storedState, setStoredState] = useLocalStorage<WalletTreeState>(
+  const [persistedState, setPersistedState] = useLocalStorage<WalletTreeState>(
     StoreKey.WALLET_TREE_STATE
   )
+  const [memoryState, setMemoryState] = useAtom(stateAtom)
+  const storedState = usePersist ? persistedState : memoryState
+  const setStoredState = usePersist ? setPersistedState : setMemoryState
 
   const [state, _setState] = useState<WalletTreeState>(initialState)
 

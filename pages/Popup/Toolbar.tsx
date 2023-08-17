@@ -15,8 +15,10 @@ import {
 import icon from 'data-base64:~assets/archmage.svg'
 import { useCallback, useState } from 'react'
 
+import { useNetworkTreeState } from '~/lib/hooks/useNetworkTreeState'
 import { AccountAvatar } from '~components/AccountAvatar'
 import { WalletId, useActive } from '~lib/active'
+import { useWalletTreeState } from '~lib/hooks/useWalletTreeState'
 import {
   getNetworkInfo,
   useNetworkLogoUrl,
@@ -31,9 +33,7 @@ import {
 import { WrappedDeleteWalletModal } from '~pages/Settings/SettingsWallets/DeleteWalletModal'
 
 import { NetworkDrawer } from './NetworkDrawer'
-import { useNetworkTreeState } from './NetworkDrawer/useNetworkTreeState'
 import { WalletDrawer } from './WalletDrawer'
-import { useWalletTreeState } from './WalletDrawer/useWalletTreeState'
 
 export const Toolbar = () => {
   const { network, account } = useActive()
@@ -84,7 +84,7 @@ export const Toolbar = () => {
     setScrollOffset: setWalletScrollOffset,
     setSubScrollOffset: setSubWalletScrollOffset,
     toggleOpen: toggleWalletOpen
-  } = useWalletTreeState()
+  } = useWalletTreeState(true)
 
   const { setScrollOffset: setNetworkScrollOffset } = useNetworkTreeState()
 

@@ -2,7 +2,6 @@ import assert from 'assert'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { atom, useAtom } from 'jotai'
 import { useCallback, useEffect, useState } from 'react'
-// @ts-ignore
 import stableHash from 'stable-hash'
 
 import { WalletId, useActiveWalletId } from '~lib/active'

@@ -1,6 +1,5 @@
 import assert from 'assert'
 import { useAsync } from 'react-use'
-// @ts-ignore
 import stableHash from 'stable-hash'
 
 import { DB } from '~lib/db'

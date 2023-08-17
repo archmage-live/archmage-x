@@ -21,10 +21,6 @@ interface WalletListProps {
   renderItems?: number
   px?: number | string
   py?: number | string
-  reorderWallets: (
-    network: WalletEntry,
-    placement: 'top' | 'up' | 'down' | 'bottom'
-  ) => void
   setScrollOffset: (offset: number) => void
   setSubScrollOffset: (walletId: number, offset: number) => void
 }
@@ -39,13 +35,12 @@ export const WalletList = ({
   renderItems = 6,
   px,
   py = '14px',
-  reorderWallets,
   setScrollOffset,
   setSubScrollOffset
 }: WalletListProps) => {
   const itemSize = 56
 
-  const initialState = useInitialWalletTreeState(true)
+  const initialState = useInitialWalletTreeState()
 
   const parentRef = useRef(null)
   const walletsVirtualizer = useVirtualizer({
@@ -118,7 +113,6 @@ export const WalletList = ({
                     walletsVirtualizer.calculateRange()
                   }}
                   index={item.index}
-                  reorderWallets={reorderWallets}
                   setSubScrollOffset={setSubScrollOffset}
                 />
               </Box>
