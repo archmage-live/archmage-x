@@ -19,7 +19,7 @@ import { useAccountDetailModal } from '~components/AccountDetailModal'
 import { useActive } from '~lib/active'
 import { getAccountUrl } from '~lib/services/network'
 import { createTab } from '~lib/tab'
-import { ConnectedSitesModal } from '~pages/Popup/Assets/ConnectedSites'
+import { ConnectedSitesModal } from '~pages/Popup/Portal/ConnectedSites'
 import { DeleteWalletModal } from '~pages/Settings/SettingsWallets/DeleteWalletModal'
 
 export const AccountMenu = () => {

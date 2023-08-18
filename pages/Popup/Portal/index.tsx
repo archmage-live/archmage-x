@@ -34,15 +34,15 @@ import { useCurrentSiteUrl } from '~lib/tab'
 import { shortenString } from '~lib/utils'
 import { KeylessOnboardPopover } from '~pages/KeylessOnboard/KeylessOnboardPopover'
 import { useKeylessOnboardToast } from '~pages/KeylessOnboard/useKeylessOnboardToast'
-import { ConnectedAccountsModal } from '~pages/Popup/Assets/ConnectedAccounts'
-import { useDepositModal } from '~pages/Popup/Assets/Deposit'
-import { useSendModal } from '~pages/Popup/Assets/Send'
+import { ConnectedAccountsModal } from '~pages/Popup/Portal/ConnectedAccounts'
+import { useDepositModal } from '~pages/Popup/Portal/Deposit'
+import { useSendModal } from '~pages/Popup/Portal/Send'
 import { ExportMnemonicModal } from '~pages/Settings/SettingsWallets/ExportMnemonicModal'
 
 import { AccountMenu } from './AccountMenu'
 import { TokenListSection } from './TokenList'
 
-export default function Assets({ onLoaded }: { onLoaded?: () => void }) {
+export default function Portal({ onLoaded }: { onLoaded?: () => void }) {
   const { network, account, wallet, subWallet } = useActive()
 
   const notBackedUp = (wallet?.info as WalletInfo)?.notBackedUp

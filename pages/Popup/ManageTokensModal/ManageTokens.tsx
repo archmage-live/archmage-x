@@ -25,8 +25,8 @@ import {
   TOKEN_SERVICE,
   useTokenLists
 } from '~lib/services/token'
-import { TokenItem, TokenItemStyle } from '~pages/Popup/Assets/TokenItem'
-import { TokenList, TokenVisible } from '~pages/Popup/Assets/TokenList'
+import { TokenItem, TokenItemStyle } from '~pages/Popup/Portal/TokenItem'
+import { TokenList, TokenVisible } from '~pages/Popup/Portal/TokenList'
 
 import { useManageTokensTitleAtom } from '.'
 import { TokenListItem } from './TokenListItem'

@@ -1,5 +1,4 @@
 import { Provider } from '@ethersproject/abstract-provider'
-import { Signer } from '@ethersproject/abstract-signer'
 import { EthersAdapter, SafeFactory } from '@safe-global/protocol-kit'
 import { getFallbackHandlerDeployment } from '@safe-global/safe-deployments'
 import assert from 'assert'
@@ -17,7 +16,6 @@ export const LATEST_SAFE_VERSION =
  */
 export async function computeSafeAddress(
   provider: Provider,
-  signer: Signer,
   chainId: string,
   threshold: number,
   owners: string[],
@@ -42,12 +40,9 @@ export async function computeSafeAddress(
 
   saltNonce = typeof saltNonce === 'number' ? saltNonce : Date.now()
 
-  const ethAdapter = new EthersAdapter({
-    ethers,
-    signerOrProvider: signer
+  const safeFactory = await SafeFactory.create({
+    ethAdapter: readOnlyEthAdapter
   })
-
-  const safeFactory = await SafeFactory.create({ ethAdapter })
 
   return safeFactory.predictSafeAddress(props, saltNonce.toString())
 }

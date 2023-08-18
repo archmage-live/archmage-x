@@ -23,16 +23,20 @@ import {
   chakra,
   useDisclosure
 } from '@chakra-ui/react'
+import { hexlify } from '@ethersproject/bytes'
 import { MdQrCode } from '@react-icons/all-files/md/MdQrCode'
 import * as React from 'react'
 import { useCallback, useEffect, useState } from 'react'
+import { useAsyncRetry, useDebounce } from 'react-use'
 import { useWizard } from 'react-use-wizard'
 
 import { AlertBox } from '~components/AlertBox'
 import { ScanQRModal } from '~components/ScanQrModal'
 import { SelectAccountModal } from '~components/SelectAccountModal'
 import { NetworkKind, getNetworkScope } from '~lib/network'
+import { computeSafeAddress, isSafeSupported } from '~lib/safe'
 import {
+  ChainId,
   CompositeAccount,
   IChainAccount,
   ISubWallet,
@@ -40,6 +44,7 @@ import {
   accountName
 } from '~lib/schema'
 import { getNetworkInfo, useNetwork, useNetworks } from '~lib/services/network'
+import { EvmClient } from '~lib/services/provider/evm'
 import {
   ExistingGroupWallet,
   WALLET_SERVICE,
@@ -86,10 +91,6 @@ export const CreateSafe = () => {
   const [saltNonce, setSaltNonce] = useSaltNonce()
 
   useEffect(() => {
-    console.log(owners)
-  }, [owners])
-
-  useEffect(() => {
     if (!owners) {
       setOwners([
         {
@@ -104,7 +105,9 @@ export const CreateSafe = () => {
   }, [owners, setOwners, saltNonce, setSaltNonce])
 
   useEffect(() => {
-    if (owners && threshold !== undefined && threshold > owners.length) {
+    if (threshold === undefined) {
+      setThreshold(1)
+    } else if (owners && threshold > owners.length) {
       setThreshold(owners.length)
     }
   }, [owners, threshold, setThreshold])
@@ -136,10 +139,6 @@ export const CreateSafe = () => {
   useEffect(() => {
     setAlert('')
   }, [name, owners, threshold, saltNonce])
-
-  const onNext = useCallback(async () => {
-    await nextStep()
-  }, [nextStep])
 
   const {
     isOpen: isSelectWalletOpen,
@@ -262,6 +261,73 @@ export const CreateSafe = () => {
     },
     [_onScanAddressOpen]
   )
+
+  const [args, setArgs] = useState<{
+    chainId: ChainId
+    threshold: number
+    owners: string[]
+    saltNonce: number
+  }>()
+
+  useDebounce(
+    () => {
+      if (
+        !network ||
+        threshold === undefined ||
+        !owners ||
+        saltNonce === undefined
+      ) {
+        console.log(network, threshold, owners, saltNonce)
+        return
+      }
+
+      if (!owners.every(({ address }) => checkAddress(network.kind, address))) {
+        console.log('invalid address')
+        return
+      }
+
+      if (!isSafeSupported(network.chainId)) {
+        console.log('not supported')
+        return
+      }
+
+      setArgs({
+        chainId: network.chainId,
+        threshold: threshold,
+        owners: owners.map(({ address }) => address),
+        saltNonce: saltNonce
+      })
+    },
+    1000,
+    [network, threshold, owners, saltNonce]
+  )
+
+  useAsyncRetry(async () => {
+    if (!args) {
+      console.log('no args')
+      return
+    }
+    if (!isSafeSupported(args.chainId)) {
+      console.log('not supported')
+      return
+    }
+
+    const provider = await EvmClient.from(args.chainId)
+
+    const accountAddress = await computeSafeAddress(
+      provider,
+      hexlify(args.chainId),
+      args.threshold,
+      args.owners,
+      args.saltNonce
+    )
+
+    console.log(accountAddress)
+  }, [args])
+
+  const onNext = useCallback(async () => {
+    await nextStep()
+  }, [nextStep])
 
   return (
     <Stack spacing={12}>

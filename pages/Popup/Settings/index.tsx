@@ -3,7 +3,7 @@ import { MdReadMore } from '@react-icons/all-files/md/MdReadMore'
 import { useEffect } from 'react'
 
 import { createTab } from '~lib/tab'
-import { useForPopupSettings } from '~pages/Settings/SettingItem'
+import { useForPopupSettings } from '~components/SettingItem'
 import {
   SettingsGeneralLockTime,
   SettingsGeneralQuoteCurrency,

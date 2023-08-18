@@ -8,11 +8,11 @@ import { NavTarget, Navbar } from '~components/Navbar'
 import { useIsPopupWindow } from '~lib/hooks/useIsPopupWindow'
 import { CONSENT_SERVICE } from '~lib/services/consentService'
 import ActivityPage from '~pages/Popup/Activity'
-import AssetsPage from '~pages/Popup/Assets'
 import ConsentPage from '~pages/Popup/Consent'
 import { ModalBox } from '~pages/Popup/ModalBox'
 import NFTsPage from '~pages/Popup/NFTs'
 import { OverlayCheckUnlocked } from '~pages/Popup/Overlay'
+import PortalPage from '~pages/Popup/Portal'
 import SettingsPage from '~pages/Popup/Settings'
 import UnlockPage from '~pages/Unlock'
 
@@ -83,7 +83,7 @@ export const HomePage = () => {
 
             <Box h="calc(100% - 63px)">
               <LazyTabs index={tabIndex(navTarget)}>
-                <AssetsPage onLoaded={() => setLoaded(true)} />
+                <PortalPage onLoaded={() => setLoaded(true)} />
                 {/*<NFTsPage />*/}
                 <ActivityPage />
                 <SettingsPage />

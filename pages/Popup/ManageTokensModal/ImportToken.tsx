@@ -5,7 +5,7 @@ import { useWizard } from 'react-use-wizard'
 import { AlertBox } from '~components/AlertBox'
 import { IToken, TokenVisibility } from '~lib/schema'
 import { TOKEN_SERVICE } from '~lib/services/token'
-import { TokenItem, TokenItemStyle } from '~pages/Popup/Assets/TokenItem'
+import { TokenItem, TokenItemStyle } from '~pages/Popup/Portal/TokenItem'
 
 import { useManageTokensTitleAtom } from '.'
 

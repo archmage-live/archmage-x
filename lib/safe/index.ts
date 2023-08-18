@@ -1,6 +1,18 @@
+import { Provider } from '@ethersproject/abstract-provider'
+import { Signer } from '@ethersproject/abstract-signer'
 import SafeApiKit from '@safe-global/api-kit'
-import { EthersAdapter } from '@safe-global/protocol-kit'
+import Safe, {
+  EthersAdapter,
+  PredictedSafeProps,
+  SafeAccountConfig
+} from '@safe-global/protocol-kit'
 import { SafeFactory } from '@safe-global/protocol-kit'
+import assert from 'assert'
+import { ethers } from 'ethers'
+
+import { ChainId } from '~lib/schema'
+
+export * from './computeSafeAddress'
 
 // https://docs.safe.global/safe-core-api/available-services
 const SAFE_TX_SERVICE_URLS = new Map([
@@ -17,3 +29,67 @@ const SAFE_TX_SERVICE_URLS = new Map([
   [84531, 'https://safe-transaction-base-testnet.safe.global'],
   [42220, 'https://safe-transaction-celo.safe.global']
 ])
+
+export function isSafeSupported(chainId: ChainId) {
+  return Boolean(SAFE_TX_SERVICE_URLS.get(chainId as number))
+}
+
+export function getSafeService(provider: Provider, chainId: ChainId) {
+  const txServiceUrl = SAFE_TX_SERVICE_URLS.get(chainId as number)
+  assert(txServiceUrl)
+  const ethAdapter = new EthersAdapter({
+    ethers,
+    signerOrProvider: provider
+  })
+  return new SafeApiKit({ txServiceUrl, ethAdapter })
+}
+
+export async function getSafeAccount(
+  provider: Provider,
+  safeAddressOrPredictedSafe: string | PredictedSafeProps
+) {
+  const ethAdapter = new EthersAdapter({
+    ethers,
+    signerOrProvider: provider
+  })
+  if (typeof safeAddressOrPredictedSafe === 'string') {
+    return await Safe.create({
+      ethAdapter,
+      safeAddress: safeAddressOrPredictedSafe
+    })
+  } else {
+    return await Safe.create({
+      ethAdapter,
+      predictedSafe: safeAddressOrPredictedSafe
+    })
+  }
+}
+
+export async function deploySafeAccount(
+  signer: Signer,
+  threshold: number,
+  owners: string[],
+  saltNonce: number,
+  safeAddress?: string
+) {
+  const ethAdapter = new EthersAdapter({
+    ethers,
+    signerOrProvider: signer
+  })
+  const safeFactory = await SafeFactory.create({ ethAdapter })
+
+  const safeAccountConfig: SafeAccountConfig = {
+    owners,
+    threshold
+  }
+
+  const safe = await safeFactory.deploySafe({
+    safeAccountConfig,
+    saltNonce: saltNonce.toString()
+  })
+
+  // check that the safe account address matches the expected address
+  assert(!safeAddress || (await safe.getAddress()) === safeAddress)
+
+  return safe
+}

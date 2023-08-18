@@ -109,6 +109,16 @@ export function isWatchWallet(type: WalletType) {
   }
 }
 
+export function isMultisigWallet(type: WalletType) {
+  switch (type) {
+    case WalletType.MULTI_SIG:
+    case WalletType.MULTI_SIG_GROUP:
+      return true
+    default:
+      return false
+  }
+}
+
 export function isKeylessWallet(type: WalletType) {
   switch (type) {
     case WalletType.KEYLESS_HD:
@@ -275,7 +285,7 @@ export interface SafeInfo {
   threshold: number
   owners: SafeOwner[]
   saltNonce: number
-  safeVersion: string
+  // safeVersion: string
 }
 
 export interface SafeOwner {

@@ -25,7 +25,7 @@ import { getNetworkInfo, useNetwork } from '~lib/services/network'
 import { useToken } from '~lib/services/token'
 import { useChainAccount } from '~lib/services/wallet'
 import { useSiteIconUrl } from '~lib/tab'
-import { TokenItem, TokenItemStyle } from '~pages/Popup/Assets/TokenItem'
+import { TokenItem, TokenItemStyle } from '~pages/Popup/Portal/TokenItem'
 
 export const WatchAsset = ({
   request,

@@ -139,10 +139,11 @@ function subDirPathPrefix(network: INetwork, url: URL, pathPrefix: string) {
 
 export function getAccountUrl(
   network: INetwork,
-  account: IChainAccount
+  account: IChainAccount | string
 ): string | undefined {
   const info = getNetworkInfo(network)
-  if (!info?.explorerUrl || !account.address) {
+  const address = typeof account === 'string' ? account : account.address
+  if (!info?.explorerUrl || !address) {
     return undefined
   }
   try {
@@ -169,7 +170,7 @@ export function getAccountUrl(
         return undefined
     }
 
-    url.pathname = `/${pathPrefix}/${account.address}`
+    url.pathname = `/${pathPrefix}/${address}`
     return url.toString()
   } catch {
     return undefined

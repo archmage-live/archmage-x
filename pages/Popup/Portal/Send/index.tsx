@@ -46,7 +46,7 @@ import { EvmProvider } from '~lib/services/provider/evm/provider'
 import { EvmTxParams } from '~lib/services/provider/evm/types'
 import { NativeToken, getTokenBrief, useTokenById } from '~lib/services/token'
 import { canWalletSign, checkAddress } from '~lib/wallet'
-import { TokenItem, TokenItemStyle } from '~pages/Popup/Assets/TokenItem'
+import { TokenItem, TokenItemStyle } from '~pages/Popup/Portal/TokenItem'
 import { useConsentModal } from '~pages/Popup/Consent'
 import { useModalBox } from '~pages/Popup/ModalBox'
 

@@ -31,7 +31,7 @@ import {
   ConsentType,
   useConsentRequests
 } from '~lib/services/consentService'
-import { useSendModal } from '~pages/Popup/Assets/Send'
+import { useSendModal } from '~pages/Popup/Portal/Send'
 
 import { useModalBox } from '../ModalBox'
 import { AddNetwork } from './AddNetwork'

@@ -4,11 +4,11 @@ import { atom, useAtom } from 'jotai'
 import { PrimitiveAtom } from 'jotai/core/atom'
 import { ElementType, useCallback, useEffect } from 'react'
 
-import { Deposit, useDepositModal } from '~pages/Popup/Assets/Deposit'
-import { Send, useSendModal } from '~pages/Popup/Assets/Send'
+import { Deposit, useDepositModal } from '~pages/Popup/Portal/Deposit'
+import { Send, useSendModal } from '~pages/Popup/Portal/Send'
 import TokenDetail, {
   useTokenDetailModal
-} from '~pages/Popup/Assets/TokenDetail'
+} from '~pages/Popup/Portal/TokenDetail'
 import Consent, { useConsentModal } from '~pages/Popup/Consent'
 
 const numModalBoxAtom = atom<number>(0)

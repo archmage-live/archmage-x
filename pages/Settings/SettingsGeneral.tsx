@@ -2,12 +2,11 @@ import { Select, Stack, useColorMode } from '@chakra-ui/react'
 import { useEffect } from 'react'
 
 import { SaveInput } from '~components/SaveInput'
+import { SettingItem, useForPopupSettings } from '~components/SettingItem'
 import { LOCALE_LABEL } from '~lib/constants/locales'
 import { useUserLocale } from '~lib/hooks/useActiveLocale'
 import { useLockTime } from '~lib/hooks/useLockTime'
 import { QUOTE_CURRENCY_LABEL, useQuoteCurrency } from '~lib/quoteCurrency'
-
-import { SettingItem, useForPopupSettings } from './SettingItem'
 
 export const SettingsGeneral = () => {
   const [, setForPopupSettings] = useForPopupSettings()
@@ -54,7 +53,7 @@ export const SettingsGeneralLocale = () => {
   return (
     <SettingItem
       title="Language"
-      description="Choose the language used to display the Archmage UI"
+      description="Choose the language used to display the Archmage UI."
       setting={
         <Select
           w={32}
@@ -81,7 +80,7 @@ export const SettingsGeneralQuoteCurrency = () => {
   return (
     <SettingItem
       title="Quote Currency"
-      description="Choose the quote currency used to display exchange rate"
+      description="Choose the quote currency used to display exchange rate."
       setting={
         <Select
           w={64}
