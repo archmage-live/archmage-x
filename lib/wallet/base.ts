@@ -317,6 +317,8 @@ export interface WalletAccount {
 
   erc4337?: Erc4337Info
 
+  safe?: SafeInfo
+
   keyless?: KeylessWalletInfo
 }
 

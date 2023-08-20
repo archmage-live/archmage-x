@@ -38,11 +38,18 @@ export interface SubIndex {
 
 const namePrefix = 'Account '
 
-export function getDefaultSubName(index: number) {
-  return namePrefix + (index + 1)
+export function getDefaultSubName(index: number, pseudo?: boolean) {
+  return !pseudo ? namePrefix + (index + 1) : ''
 }
 
-export function isSubNameInvalid(name: string, index: number) {
+export function isSubNameInvalid(
+  name: string,
+  index: number,
+  pseudo?: boolean
+) {
+  if (pseudo) {
+    return name === ''
+  }
   const re = /^Account\s+\d+$/
   return re.test(name) && name !== getDefaultSubName(index)
 }

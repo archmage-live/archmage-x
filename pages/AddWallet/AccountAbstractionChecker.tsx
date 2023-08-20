@@ -29,7 +29,7 @@ export const AccountAbstractionChecker = ({}: {}) => {
         type: Erc4337AccountType.ZERO_DEV_KERNEL_V1
       })
     }
-  }, [isAa, aaType, setAccountAbstraction])
+  }, [isAa, aaType, setAccountAbstraction, setErc4337])
 
   return (
     <Stack spacing={4}>

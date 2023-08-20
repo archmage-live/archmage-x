@@ -183,7 +183,7 @@ export const ImportMnemonic = () => {
       return
     }
 
-    let hashes = accounts.map(({ hash }) => hash)
+    const hashes = accounts.map(({ hash }) => hash)
     if (!hashes.every(Boolean)) {
       setAlert('Invalid secret recovery phrase')
       return
@@ -211,7 +211,7 @@ export const ImportMnemonic = () => {
       }
     }
 
-    nextStep().then()
+    await nextStep()
   }, [
     mnemonic,
     accounts,

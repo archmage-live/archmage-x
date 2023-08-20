@@ -120,7 +120,7 @@ export const ImportWatchAddress = () => {
   }, [networkKind, addresses, isWatchGroupChecked, setAccounts, nextIndex])
 
   const onImport = useCallback(async () => {
-    let hashes = accounts.map(({ hash }) => hash)
+    const hashes = accounts.map(({ hash }) => hash)
     if (!hashes.every(Boolean)) {
       setAlert('Invalid address')
       return

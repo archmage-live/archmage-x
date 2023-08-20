@@ -23,24 +23,26 @@ import {
   chakra,
   useDisclosure
 } from '@chakra-ui/react'
-import { hexlify } from '@ethersproject/bytes'
 import { MdQrCode } from '@react-icons/all-files/md/MdQrCode'
+import { PredictedSafeProps } from '@safe-global/protocol-kit'
 import * as React from 'react'
 import { useCallback, useEffect, useState } from 'react'
-import { useAsyncRetry, useDebounce } from 'react-use'
+import { useAsyncRetry, useDebounce, useInterval } from 'react-use'
 import { useWizard } from 'react-use-wizard'
 
 import { AlertBox } from '~components/AlertBox'
 import { ScanQRModal } from '~components/ScanQrModal'
 import { SelectAccountModal } from '~components/SelectAccountModal'
 import { NetworkKind, getNetworkScope } from '~lib/network'
-import { computeSafeAddress, isSafeSupported } from '~lib/safe'
+import { EVM_MAINNET_CHAINID } from '~lib/network/evm'
+import { getSafeAccount, isSafeSupported } from '~lib/safe'
 import {
   ChainId,
   CompositeAccount,
   IChainAccount,
   ISubWallet,
   IWallet,
+  PSEUDO_INDEX,
   accountName
 } from '~lib/schema'
 import { getNetworkInfo, useNetwork, useNetworks } from '~lib/services/network'
@@ -48,9 +50,16 @@ import { EvmClient } from '~lib/services/provider/evm'
 import {
   ExistingGroupWallet,
   WALLET_SERVICE,
-  useChainAccounts
+  useChainAccounts,
+  useNextSubWalletIndex
 } from '~lib/services/wallet'
-import { WalletType, checkAddress } from '~lib/wallet'
+import {
+  AccountAbstractionType,
+  MultisigWalletType,
+  SafeOwner,
+  WalletType,
+  checkAddress
+} from '~lib/wallet'
 
 import { NameInput } from '../NameInput'
 import {
@@ -59,12 +68,14 @@ import {
 } from '../SelectExistingWallet'
 import {
   AddWalletKind,
+  useAccountAbstraction,
+  useAccounts,
+  useAddSubWallets,
+  useAddWallet,
   useAddWalletKind,
   useExistingWallet,
-  useName,
-  useOwners,
-  useSaltNonce,
-  useThreshold
+  useMultisigType,
+  useName
 } from '../addWallet'
 
 export const CreateSafe = () => {
@@ -85,13 +96,23 @@ export const CreateSafe = () => {
     }
   }, [networksOfKind])
 
+  const [, setMultisigType] = useMultisigType()
+  const [, setAccountAbstraction] = useAccountAbstraction()
+  useEffect(() => {
+    setMultisigType(MultisigWalletType.SAFE)
+    setAccountAbstraction({
+      type: AccountAbstractionType.SAFE
+    })
+  }, [setMultisigType, setAccountAbstraction])
+
   const [name, setName] = useName()
-  const [owners, setOwners] = useOwners()
-  const [threshold, setThreshold] = useThreshold()
-  const [saltNonce, setSaltNonce] = useSaltNonce()
+  const [accounts, setAccounts] = useAccounts()
+  const [owners, setOwners] = useState<SafeOwner[]>([])
+  const [threshold, setThreshold] = useState<number>(1)
+  const [saltNonce, setSaltNonce] = useState<number>(Date.now())
 
   useEffect(() => {
-    if (!owners) {
+    if (!owners.length) {
       setOwners([
         {
           name: '',
@@ -99,15 +120,10 @@ export const CreateSafe = () => {
         }
       ])
     }
-    if (saltNonce === undefined) {
-      setSaltNonce(Date.now())
-    }
-  }, [owners, setOwners, saltNonce, setSaltNonce])
+  }, [owners, setOwners])
 
   useEffect(() => {
-    if (threshold === undefined) {
-      setThreshold(1)
-    } else if (owners && threshold > owners.length) {
+    if (owners.length > 0 && threshold > owners.length) {
       setThreshold(owners.length)
     }
   }, [owners, threshold, setThreshold])
@@ -134,6 +150,8 @@ export const CreateSafe = () => {
         : AddWalletKind.MULTI_SIG_GROUP
     )
   }, [isUseGroupChecked, setAddWalletKind])
+
+  const nextIndex = useNextSubWalletIndex(existingGroupWallet?.wallet.id)
 
   const [alert, setAlert] = useState('')
   useEffect(() => {
@@ -162,14 +180,14 @@ export const CreateSafe = () => {
 
   const [selectedAccount, _setSelectedAccount] = useState<CompositeAccount>()
 
-  const accounts = useChainAccounts({
+  const allAccounts = useChainAccounts({
     networkKind,
     chainId: network?.chainId
   })
 
   const onSelectAccount = useCallback(
     async (account: CompositeAccount) => {
-      if (!owners || selectedIndex === undefined) {
+      if (selectedIndex === undefined) {
         return
       }
 
@@ -192,7 +210,7 @@ export const CreateSafe = () => {
   const onScanAddress = useCallback(
     async (text: string) => {
       const address = checkAddress(networkKind, text)
-      if (!address || !owners || selectedIndex === undefined) {
+      if (!address || selectedIndex === undefined) {
         return
       }
       const newOwners = [...owners]
@@ -211,7 +229,7 @@ export const CreateSafe = () => {
         return
       }
 
-      const owner = owners?.at(index)
+      const owner = owners.at(index)
       if (!owner) {
         return
       }
@@ -228,7 +246,7 @@ export const CreateSafe = () => {
         })
       } else {
         const address = checkAddress(network.kind, owner.address)
-        account = accounts?.find((a) => a.address === address)
+        account = allAccounts?.find((a) => a.address === address)
         if (account) {
           wallet = await WALLET_SERVICE.getWallet(account.masterId)
           subWallet = await WALLET_SERVICE.getSubWallet({
@@ -251,7 +269,7 @@ export const CreateSafe = () => {
 
       _onSelectAccountOpen()
     },
-    [network, owners, accounts, _onSelectAccountOpen]
+    [network, owners, allAccounts, _onSelectAccountOpen]
   )
 
   const onScanAddressOpen = useCallback(
@@ -265,7 +283,7 @@ export const CreateSafe = () => {
   const [args, setArgs] = useState<{
     chainId: ChainId
     threshold: number
-    owners: string[]
+    owners: SafeOwner[]
     saltNonce: number
   }>()
 
@@ -273,61 +291,140 @@ export const CreateSafe = () => {
     () => {
       if (
         !network ||
-        threshold === undefined ||
-        !owners ||
-        saltNonce === undefined
+        !owners.every(({ address }) => checkAddress(network.kind, address))
       ) {
-        console.log(network, threshold, owners, saltNonce)
-        return
-      }
-
-      if (!owners.every(({ address }) => checkAddress(network.kind, address))) {
-        console.log('invalid address')
-        return
-      }
-
-      if (!isSafeSupported(network.chainId)) {
-        console.log('not supported')
+        setArgs(undefined)
         return
       }
 
       setArgs({
         chainId: network.chainId,
-        threshold: threshold,
-        owners: owners.map(({ address }) => address),
-        saltNonce: saltNonce
+        threshold,
+        owners,
+        saltNonce
       })
     },
     1000,
     [network, threshold, owners, saltNonce]
   )
 
-  useAsyncRetry(async () => {
+  const [hash, setHash] = useState<string>()
+  const [accountAddress, setAccountAddress] = useState<string>()
+
+  const { loading, error, retry } = useAsyncRetry(async () => {
+    setHash(undefined)
+    setAccountAddress(undefined)
+
     if (!args) {
-      console.log('no args')
-      return
-    }
-    if (!isSafeSupported(args.chainId)) {
-      console.log('not supported')
       return
     }
 
-    const provider = await EvmClient.from(args.chainId)
+    const cfg: PredictedSafeProps = {
+      safeAccountConfig: {
+        owners: args.owners.map((owner) => owner.address),
+        threshold: args.threshold
+      },
+      safeDeploymentConfig: {
+        saltNonce: args.saltNonce.toString()
+      }
+    }
 
-    const accountAddress = await computeSafeAddress(
-      provider,
-      hexlify(args.chainId),
-      args.threshold,
-      args.owners,
-      args.saltNonce
-    )
+    try {
+      // always use mainnet safe address as hash
+      const provider = await EvmClient.from(EVM_MAINNET_CHAINID)
+      const safeAccount = await getSafeAccount(provider, cfg)
+      setHash(await safeAccount.getAddress())
 
-    console.log(accountAddress)
+      if (isSafeSupported(args.chainId)) {
+        const provider = await EvmClient.from(args.chainId)
+        const safeAccount = await getSafeAccount(provider, cfg)
+        setAccountAddress(await safeAccount.getAddress())
+      }
+    } catch (err) {
+      console.error(err)
+      setHash(undefined)
+      setAccountAddress(undefined)
+      throw err
+    }
   }, [args])
 
+  useInterval(retry, !loading && error ? 5000 : null)
+
+  useEffect(() => {
+    if (nextIndex === undefined || !args || !hash) {
+      setAccounts([])
+      return
+    }
+    setAccounts(
+      [
+        {
+          index: isUseGroupChecked ? nextIndex : PSEUDO_INDEX,
+          hash,
+          safe: {
+            threshold: args.threshold,
+            owners: args.owners.map((owner) => ({
+              ...owner,
+              address: checkAddress(networkKind, owner.address) as string
+            })),
+            saltNonce: args.saltNonce
+          }
+        }
+      ],
+      isUseGroupChecked
+    )
+  }, [networkKind, isUseGroupChecked, nextIndex, args, setAccounts, hash])
+
+  const addWallet = useAddWallet()
+  const addSubWallets = useAddSubWallets()
+
   const onNext = useCallback(async () => {
+    const addresses = owners.map(({ address }) => address)
+    if (!addresses.every((addr) => checkAddress(networkKind, addr))) {
+      setAlert('Invalid address')
+      return
+    }
+
+    if (new Set(owners.map(({ address }) => address)).size !== owners.length) {
+      setAlert('Duplicate owner address')
+      return
+    }
+
+    const hashes = accounts.map(({ hash }) => hash)
+    if (
+      new Set(hashes.concat(existingGroupWallet?.hashes || [])).size !==
+      hashes.length + (existingGroupWallet?.hashes.length || 0)
+    ) {
+      setAlert(
+        'Duplicate Safe account (predicted from owners, threshold and salt nonce)'
+      )
+      return
+    }
+
+    if (!willAddToExistingGroupChecked) {
+      const { error } = await addWallet()
+      if (error) {
+        setAlert(error)
+        return
+      }
+    } else {
+      const { error } = await addSubWallets()
+      if (error) {
+        setAlert(error)
+        return
+      }
+    }
+
     await nextStep()
-  }, [nextStep])
+  }, [
+    networkKind,
+    accounts,
+    addSubWallets,
+    addWallet,
+    existingGroupWallet,
+    nextStep,
+    owners,
+    willAddToExistingGroupChecked
+  ])
 
   return (
     <Stack spacing={12}>
@@ -370,7 +467,7 @@ export const CreateSafe = () => {
         <FormControl>
           <FormLabel>Owners</FormLabel>
           <Stack>
-            {owners?.map((owner, index) => {
+            {owners.map((owner, index) => {
               return (
                 <Owner
                   key={index}
@@ -425,7 +522,7 @@ export const CreateSafe = () => {
               w={48}
               value={threshold}
               onChange={(e) => setThreshold(Number(e.target.value))}>
-              {[...Array(owners?.length).keys()].map((index) => {
+              {[...Array(owners.length).keys()].map((index) => {
                 return (
                   <option key={index} value={index + 1}>
                     {index + 1}
@@ -433,7 +530,7 @@ export const CreateSafe = () => {
                 )
               })}
             </Select>
-            <Text>out of {owners?.length} owners</Text>
+            <Text>out of {owners.length} owners</Text>
           </HStack>
           <FormHelperText>
             Recommend using a threshold higher than one to prevent losing access
@@ -508,6 +605,18 @@ export const CreateSafe = () => {
           placeholder={isUseGroupChecked ? 'Group Name (Optional)' : undefined}
         />
 
+        <AlertBox>
+          {network && !isSafeSupported(network.chainId)
+            ? `Safe is not supported on ${getNetworkInfo(network).name} network`
+            : undefined}
+        </AlertBox>
+
+        <AlertBox level="info">
+          {!alert && accountAddress
+            ? `Predicted Safe account address: ${accountAddress}`
+            : undefined}
+        </AlertBox>
+
         <AlertBox>{alert}</AlertBox>
       </Stack>
 
@@ -516,6 +625,7 @@ export const CreateSafe = () => {
         size="lg"
         colorScheme="purple"
         borderRadius="8px"
+        isDisabled={!owners.length || owners.some((owner) => !owner.address)}
         onClick={onNext}>
         Continue
       </Button>

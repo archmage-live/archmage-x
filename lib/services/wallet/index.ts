@@ -29,6 +29,7 @@ import { IWallet } from '~lib/schema/wallet'
 import { shallowClean } from '~lib/utils'
 import {
   AccountAbstractionInfo,
+  AccountAbstractionType,
   AccountInfo,
   AccountsInfo,
   BtcAddressType,
@@ -36,6 +37,7 @@ import {
   Erc4337Info,
   HardwareWalletType,
   KeylessWalletInfo,
+  MultisigWalletType,
   WalletAccount,
   WalletType,
   buildWalletUniqueHash,
@@ -67,6 +69,7 @@ export type NewWalletOpts = {
   addressType?: BtcAddressType
   accountAbstraction?: AccountAbstractionInfo
   erc4337?: Erc4337Info
+  multisigType?: MultisigWalletType
   keylessInfo?: KeylessWalletInfo
 }
 
@@ -90,6 +93,7 @@ function checkAccounts(accounts: WalletAccount[]) {
         account.addresses,
         account.mnemonic && account.path,
         account.privateKey,
+        account.safe,
         account.keyless
       ].filter(Boolean).length === 1
     )
@@ -169,7 +173,8 @@ export interface IWalletService {
   deriveSubWallets(
     id: number,
     num: number,
-    accounts?: WalletAccount[]
+    accounts?: WalletAccount[],
+    pseudo?: boolean
   ): Promise<ISubWallet[]>
 
   ensureAllChainAccounts(
@@ -381,11 +386,17 @@ class WalletServicePartial implements IWalletService {
     }
   }
 
-  async deriveSubWallets(id: number, num: number, accounts?: WalletAccount[]) {
+  async deriveSubWallets(
+    id: number,
+    num: number,
+    accounts?: WalletAccount[],
+    pseudo?: boolean
+  ) {
     assert(!accounts || accounts.length === num)
+    assert(!pseudo || num === 1)
 
     const wallet = await this.getWallet(id)
-    assert(wallet && isWalletGroup(wallet.type))
+    assert(wallet)
 
     const nextSortId = await getNextField(DB.subWallets, 'sortId', {
       key: 'masterId',
@@ -395,9 +406,14 @@ class WalletServicePartial implements IWalletService {
       key: 'masterId',
       value: id
     })
+
+    if (pseudo) {
+      assert(nextSortId === 0 && nextIndex === 0)
+    }
+
     const subWallets = [...Array(num).keys()].map((n) => {
       const acc = accounts?.[n]
-      const index = !acc ? nextIndex + n : acc.index
+      const index = !pseudo ? (!acc ? nextIndex + n : acc.index) : PSEUDO_INDEX
 
       Object.entries(acc?.addresses || {}).forEach(
         ([networkKind, { address }]) => {
@@ -409,11 +425,12 @@ class WalletServicePartial implements IWalletService {
       )
 
       // there should be no conflict when using default sub name for specific index
-      const name = getDefaultSubName(index)
+      const name = getDefaultSubName(index, pseudo)
 
       const info: SubWalletInfo = {
         accounts: acc?.addresses,
         erc4337: acc?.erc4337,
+        safe: acc?.safe,
         keyless: acc?.keyless
       }
 
@@ -499,7 +516,8 @@ class WalletService extends WalletServicePartial {
     addressType,
     keylessInfo,
     accountAbstraction,
-    erc4337
+    erc4337,
+    multisigType
   }: NewWalletOpts): Promise<{
     wallet: IWallet
     decryptedKeystores?: DecryptedKeystoreAccount[]
@@ -512,7 +530,8 @@ class WalletService extends WalletServicePartial {
       pathTemplate,
       derivePosition,
       addressType,
-      accountAbstraction
+      accountAbstraction,
+      multisigType
     } as WalletInfo
 
     let decryptedKeystores: DecryptedKeystoreAccount[] = []
@@ -594,6 +613,22 @@ class WalletService extends WalletServicePartial {
         assert(
           new Set(accounts.map(({ index }) => index)).size === accounts.length
         )
+        break
+      }
+      case WalletType.MULTI_SIG:
+      // pass through
+      case WalletType.MULTI_SIG_GROUP: {
+        assert(accounts && accounts.length === 1)
+        accounts = checkAccounts(accounts)
+        assert(info.multisigType)
+        switch (info.multisigType) {
+          case MultisigWalletType.SAFE:
+            assert(
+              info.accountAbstraction?.type === AccountAbstractionType.SAFE
+            )
+            assert(accounts.every(({ safe }) => !!safe))
+            break
+        }
         break
       }
       case WalletType.KEYLESS_HD: {
@@ -748,6 +783,30 @@ class WalletService extends WalletServicePartial {
             accounts = checkAccounts(accounts)
             const indices = accounts.map(({ index }) => index)
             assert(new Set(indices).size === accounts.length)
+
+            await this.deriveSubWallets(wallet.id, accounts.length, accounts)
+            break
+          }
+          case WalletType.MULTI_SIG: {
+            assert(
+              accounts &&
+                accounts.length === 1 &&
+                accounts[0].index === PSEUDO_INDEX
+            )
+            accounts = checkAccounts(accounts)
+
+            await this.deriveSubWallets(
+              wallet.id,
+              accounts.length,
+              accounts,
+              true
+            )
+            break
+          }
+          case WalletType.MULTI_SIG_GROUP: {
+            assert(accounts && accounts.length === 1)
+            accounts = checkAccounts(accounts)
+            assert(accounts.every(({ index }, i) => index === i))
 
             await this.deriveSubWallets(wallet.id, accounts.length, accounts)
             break

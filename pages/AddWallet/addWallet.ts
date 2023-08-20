@@ -328,6 +328,16 @@ export function useAddWallet() {
         opts.accounts = accounts
         opts.addressType = addressType
         break
+      case AddWalletKind.MULTI_SIG:
+        opts.type = WalletType.MULTI_SIG
+        opts.accounts = accounts
+        opts.multisigType = multisigType
+        break
+      case AddWalletKind.MULTI_SIG_GROUP:
+        opts.type = WalletType.MULTI_SIG_GROUP
+        opts.accounts = accounts
+        opts.multisigType = multisigType
+        break
       case AddWalletKind.KEYLESS_HD:
         opts.type = WalletType.KEYLESS_HD
         opts.hash = walletHash
@@ -391,6 +401,7 @@ export function useAddWallet() {
     keylessInfo,
     accountAbstraction,
     erc4337,
+    multisigType,
     setCreated
   ])
 }
@@ -415,6 +426,9 @@ export function useAddSubWallets() {
       case AddWalletKind.CONNECT_HARDWARE_GROUP:
       // pass through
       case AddWalletKind.WALLET_CONNECT_GROUP:
+        opts.accounts = accounts
+        break
+      case AddWalletKind.MULTI_SIG_GROUP:
         opts.accounts = accounts
         break
       case AddWalletKind.KEYLESS_GROUP:

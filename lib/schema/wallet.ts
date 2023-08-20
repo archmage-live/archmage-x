@@ -9,7 +9,6 @@ import {
   HardwareWalletType,
   KeylessWalletInfo,
   MultisigWalletType,
-  SafeInfo,
   WalletType
 } from '~lib/wallet'
 
@@ -36,7 +35,6 @@ export interface WalletInfo {
   multisigType?: MultisigWalletType
   accountAbstraction?: AccountAbstractionInfo
   erc4337?: Erc4337Info
-  safe?: SafeInfo
   keyless?: KeylessWalletInfo
 }
 
