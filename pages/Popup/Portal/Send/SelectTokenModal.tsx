@@ -18,12 +18,12 @@ import { ReactNode, useEffect, useState } from 'react'
 import { useWizard } from 'react-use-wizard'
 
 import { IToken } from '~lib/schema'
-import { TokenItemStyle } from '~pages/Popup/Portal/TokenItem'
-import { TokenList } from '~pages/Popup/Portal/TokenList'
 import {
   ManageTokensModal,
   useManageTokensTitleAtom
 } from '~pages/Popup/ManageTokensModal'
+import { TokenItemStyle } from '~pages/Popup/Portal/TokenItem'
+import { TokenList } from '~pages/Popup/Portal/TokenList'
 
 export const SelectTokenModal = ({
   isOpen,

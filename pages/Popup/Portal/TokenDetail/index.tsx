@@ -22,10 +22,10 @@ import { formatNumber } from '~lib/formatNumber'
 import { IToken } from '~lib/schema'
 import { useCoinGeckoTokenPrice } from '~lib/services/datasource/coingecko'
 import { getTokenBrief } from '~lib/services/token'
+import { useModalBox } from '~pages/Popup/ModalBox'
 import { useDepositModal } from '~pages/Popup/Portal/Deposit'
 import { useSendModal, useSendTokenId } from '~pages/Popup/Portal/Send'
 import { TokenMenu } from '~pages/Popup/Portal/TokenItem'
-import { useModalBox } from '~pages/Popup/ModalBox'
 
 const isOpenAtom = atom<boolean>(false)
 const tokenAtom = atom<IToken | undefined>(undefined)

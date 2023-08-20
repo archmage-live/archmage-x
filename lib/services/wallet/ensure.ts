@@ -3,6 +3,7 @@ import PQueue from 'p-queue'
 
 import { DB } from '~lib/db'
 import { NetworkKind } from '~lib/network'
+import { getSafeAccountAddress } from '~lib/safe'
 import {
   ChainId,
   IChainAccount,
@@ -15,6 +16,7 @@ import {
 import { NETWORK_SERVICE } from '~lib/services/network'
 import {
   KeystoreSigningWallet,
+  MultisigWalletType,
   WalletType,
   getDerivePosition,
   getStructuralSigningWallet,
@@ -187,6 +189,27 @@ export async function ensureChainAccounts(
               }
               break
             }
+            case WalletType.MULTI_SIG_GROUP: {
+              const network = await NETWORK_SERVICE.getNetwork({
+                kind: networkKind,
+                chainId
+              })
+              if (!network) {
+                return
+              }
+              switch (wallet.info.multisigType) {
+                case MultisigWalletType.SAFE: {
+                  acc.address = await getSafeAccountAddress(
+                    network,
+                    wallet,
+                    subWallet
+                  )
+                  bulkPut.push(acc)
+                  break
+                }
+              }
+              break
+            }
             case WalletType.WATCH_GROUP:
             // pass through
             case WalletType.WALLET_CONNECT_GROUP:
@@ -326,6 +349,24 @@ export async function ensureChainAccount(
         chainId
       )
       address = signingWallet?.address
+      break
+    }
+    case WalletType.MULTI_SIG:
+    // pass through
+    case WalletType.MULTI_SIG_GROUP: {
+      const network = await NETWORK_SERVICE.getNetwork({
+        kind: networkKind,
+        chainId
+      })
+      if (!network) {
+        return
+      }
+      switch (wallet.info.multisigType) {
+        case MultisigWalletType.SAFE: {
+          address = await getSafeAccountAddress(network, wallet, subWallet)
+          break
+        }
+      }
       break
     }
     case WalletType.WATCH:

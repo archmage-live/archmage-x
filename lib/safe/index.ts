@@ -4,13 +4,15 @@ import SafeApiKit from '@safe-global/api-kit'
 import Safe, {
   EthersAdapter,
   PredictedSafeProps,
-  SafeAccountConfig
+  SafeAccountConfig,
+  SafeFactory
 } from '@safe-global/protocol-kit'
-import { SafeFactory } from '@safe-global/protocol-kit'
 import assert from 'assert'
 import { ethers } from 'ethers'
 
-import { ChainId } from '~lib/schema'
+import { ChainId, INetwork, ISubWallet, IWallet } from '~lib/schema'
+import { EvmClient } from '~lib/services/provider/evm'
+import { isMultisigWallet } from '~lib/wallet'
 
 export * from './computeSafeAddress'
 
@@ -92,4 +94,27 @@ export async function deploySafeAccount(
   assert(!safeAddress || (await safe.getAddress()) === safeAddress)
 
   return safe
+}
+
+export async function getSafeAccountAddress(
+  network: INetwork,
+  wallet: IWallet,
+  subWallet: ISubWallet
+) {
+  assert(isMultisigWallet(wallet.type))
+
+  const safe = subWallet.info.safe!
+  const cfg: PredictedSafeProps = {
+    safeAccountConfig: {
+      owners: safe.owners.map((owner) => owner.address),
+      threshold: safe.threshold
+    },
+    safeDeploymentConfig: {
+      saltNonce: safe.saltNonce.toString()
+    }
+  }
+
+  const provider = await EvmClient.from(network)
+  const safeAccount = await getSafeAccount(provider, cfg)
+  return await safeAccount.getAddress()
 }

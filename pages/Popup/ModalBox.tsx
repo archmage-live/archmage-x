@@ -4,12 +4,12 @@ import { atom, useAtom } from 'jotai'
 import { PrimitiveAtom } from 'jotai/core/atom'
 import { ElementType, useCallback, useEffect } from 'react'
 
+import Consent, { useConsentModal } from '~pages/Popup/Consent'
 import { Deposit, useDepositModal } from '~pages/Popup/Portal/Deposit'
 import { Send, useSendModal } from '~pages/Popup/Portal/Send'
 import TokenDetail, {
   useTokenDetailModal
 } from '~pages/Popup/Portal/TokenDetail'
-import Consent, { useConsentModal } from '~pages/Popup/Consent'
 
 const numModalBoxAtom = atom<number>(0)
 const isOpenModalBoxAtom = atom<boolean>(false)
