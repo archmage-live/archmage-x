@@ -207,7 +207,7 @@ export function useEstimateGasPrice(
     const gasPrice = await provider.estimateGasPrice(account)
     const gasPriceBrief = getGasFeeBrief(network, gasPrice)
     return [gasPrice, gasPriceBrief]
-  }, [network, provider])
+  }, [network, account, provider])
 
   useInterval(retry, retryInterval && !loading ? retryInterval : null)
 
