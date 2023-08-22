@@ -16,7 +16,7 @@ export class StarknetProvider implements Provider {
 
   async isOk(): Promise<boolean> {
     try {
-      await defaultProvider.getBlock()
+      await defaultProvider.getBlock('latest')
       return true
     } catch (err) {
       console.error(err)

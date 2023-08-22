@@ -9,8 +9,7 @@ import {
   InvokeFunctionResponse,
   ProviderInterface,
   SequencerProvider,
-  Signature,
-  ec
+  Signature
 } from 'starknet'
 
 import { isBackgroundWorker } from '~lib/detect'
@@ -189,8 +188,8 @@ class StarknetAccount extends Account {
     provider: ProviderInterface | undefined,
     private service: IStarknetProviderService
   ) {
-    const keyPair = ec.getKeyPair(0) // dummy one, never used
-    super(provider || {}, address, keyPair)
+    const key = '' // dummy one, never used
+    super(provider || {}, address, key)
   }
 
   public override async execute(

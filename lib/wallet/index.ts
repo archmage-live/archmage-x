@@ -200,6 +200,10 @@ export async function getStructuralSigningWallet(
       }
       return
     }
+    case NetworkKind.STARKNET:
+      return StarknetWallet.from({
+        ...opts
+      })
     case NetworkKind.COSM: {
       const info = network.info as CosmAppChainInfo
       return CosmWallet.from({

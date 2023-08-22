@@ -1,16 +1,9 @@
 // https://github.com/argentlabs/argent-x/blob/develop/packages/extension/src/background/keys/keyDerivation.ts
-import { ethers, utils } from 'ethers'
-import { KeyPair, ec, number } from 'starknet'
-
-export function getStarkPair(
-  wallet: ethers.utils.HDNode | ethers.Wallet
-): KeyPair {
-  const groundKey = grindKey(wallet.privateKey)
-  return ec.getKeyPair(groundKey)
-}
+import { utils } from 'ethers'
+import { ec, number } from 'starknet4'
 
 // inspired/copied from https://github.com/authereum/starkware-monorepo/blob/51c5df19e7f98399a2f7e63d564210d761d138d1/packages/starkware-crypto/src/keyDerivation.ts#L85
-export function grindKey(keySeed: string): string {
+export function argentGrindKey(keySeed: string): string {
   const keyValueLimit = ec.ec.n
   if (!keyValueLimit) {
     return keySeed

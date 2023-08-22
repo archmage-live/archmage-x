@@ -3,7 +3,7 @@ import {
   STARKNET_PROVIDER_NAME
 } from '~lib/inject/starknet'
 import { NetworkKind } from '~lib/network'
-import { SERVICE_WORKER_SERVER } from '~lib/rpc'
+import { Context, SERVICE_WORKER_SERVER } from '~lib/rpc'
 import { BaseProviderService } from '~lib/services/provider/base'
 
 class StarknetProviderService
@@ -12,6 +12,13 @@ class StarknetProviderService
 {
   constructor() {
     super(NetworkKind.STARKNET)
+  }
+
+  request(
+    args: { method: string; params?: Array<any> },
+    ctx?: Context
+  ): Promise<any> {
+    return Promise.resolve(undefined)
   }
 }
 
