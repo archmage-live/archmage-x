@@ -7,8 +7,9 @@ export interface StarknetChainInfo {
   shortName: string
   isTestnet?: boolean
   chainId: string
-  currency: NativeCurrency
-  rpcs: string[]
+  currency: NativeCurrency & { address?: string }
+  baseUrl: string // sequencer url
+  rpcs?: string[]
   explorers: string[]
   faucets?: string[]
   accountClassHash: StarknetAccountClassHash[]
@@ -31,7 +32,7 @@ export const STARKNET_NETWORKS_PRESET: StarknetChainInfo[] = [
       symbol: 'ETH',
       decimals: 18
     },
-    rpcs: ['https://alpha-mainnet.starknet.io'],
+    baseUrl: 'https://alpha-mainnet.starknet.io',
     explorers: ['https://starkscan.co', 'https://voyager.online'],
     accountClassHash: [
       {
@@ -53,7 +54,7 @@ export const STARKNET_NETWORKS_PRESET: StarknetChainInfo[] = [
       symbol: 'ETH',
       decimals: 18
     },
-    rpcs: ['https://alpha4.starknet.io'],
+    baseUrl: 'https://alpha4.starknet.io',
     explorers: [
       'https://testnet.starkscan.co',
       'https://goerli.voyager.online'
@@ -86,7 +87,7 @@ export const STARKNET_NETWORKS_PRESET: StarknetChainInfo[] = [
       symbol: 'ETH',
       decimals: 18
     },
-    rpcs: ['https://alpha4-2.starknet.io'],
+    baseUrl: 'https://alpha4-2.starknet.io',
     explorers: [
       'https://testnet-2.starkscan.co',
       'https://goerli-2.voyager.online'

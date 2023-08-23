@@ -1,23 +1,28 @@
 import icon from 'data-base64:~assets/archmage.svg'
+import type { RpcMessage, StarknetWindowObject } from 'get-starknet-core'
 import {
   Abi,
   Account,
   AccountInterface,
-  AllowArray,
   Call,
-  InvocationsDetails,
+  DeclareContractResponse,
+  DeclareContractTransaction,
+  DeclareSignerDetails,
+  DeployAccountContractPayload,
+  DeployAccountSignerDetails,
+  DeployContractResponse,
+  Invocation,
+  InvocationsDetailsWithNonce,
+  InvocationsSignerDetails,
   InvokeFunctionResponse,
   ProviderInterface,
   SequencerProvider,
-  Signature
+  Signature,
+  SignerInterface,
+  TypedData
 } from 'starknet'
 
 import { isBackgroundWorker } from '~lib/detect'
-import type {
-  AddStarknetChainParameters,
-  SwitchStarknetChainParameter,
-  WatchStarknetAssetParameters
-} from '~lib/services/provider/starknet/permissionedProvider'
 
 import {
   Context,
@@ -38,8 +43,8 @@ export interface IStarknetProviderService extends EventEmitter {
 }
 
 declare global {
-  var starknet: any
-  var starknet_archmage: any
+  var starknet: StarknetWindowObject | undefined
+  var starknet_archmage: StarknetWindowObject | undefined
 }
 
 if (
@@ -54,15 +59,16 @@ if (
 
   const listeners = new Map<string, Function[]>()
 
-  const starknet = {
+  const starknet: StarknetWindowObject = {
     id: 'archmage',
     name: 'Archmage',
-    version: process.env.PLASMO_PUBLIC_VERSION,
+    version: process.env.PLASMO_PUBLIC_VERSION || '',
     icon,
 
-    provider: undefined as ProviderInterface | undefined,
-    account: undefined as AccountInterface | undefined,
-    selectedAddress: undefined as string | undefined,
+    provider: undefined,
+    account: undefined,
+    selectedAddress: undefined,
+    chainId: undefined,
     isConnected: false,
 
     request: async (
@@ -87,7 +93,14 @@ if (
       }
     },
 
-    enable: async (): Promise<string[]> => {
+    enable: async (options?: {
+      starknetVersion?: 'v4' | 'v5'
+    }): Promise<string[]> => {
+      if (options?.starknetVersion === 'v4') {
+        // we don't support starknet.js v4
+        return []
+      }
+
       const {
         network,
         addresses
@@ -99,6 +112,7 @@ if (
         addresses: string[]
       } = await service.request({ method: 'enable' }, context())
 
+      // TODO: delegate to archmage's network provider
       const provider = new SequencerProvider({ baseUrl: network.baseUrl })
 
       const account = new StarknetAccount(addresses[0], provider, service)
@@ -106,6 +120,7 @@ if (
       starknet.provider = provider
       starknet.account = account
       starknet.selectedAddress = addresses[0]
+      starknet.chainId = network.chainId
       starknet.isConnected = true
 
       return addresses
@@ -132,22 +147,30 @@ if (
     },
 
     isPreauthorized: async () => {
-      // TODO
+      // TODO: what's this?
       return !!starknet.selectedAddress
     }
   }
 
   service.on(
     'networkChanged',
-    ({ chainId, baseUrl }: { chainId: string; baseUrl: string }) => {
-      starknet.provider = new SequencerProvider({ baseUrl })
-      if (starknet.selectedAddress) {
+    ({ chainId, baseUrl }: { chainId?: string; baseUrl?: string }) => {
+      starknet.chainId = chainId
+      if (baseUrl) {
+        starknet.provider = new SequencerProvider({ baseUrl })
+      } else {
+        starknet.provider = undefined
+      }
+      if (starknet.provider && starknet.selectedAddress) {
         starknet.account = new StarknetAccount(
           starknet.selectedAddress,
           starknet.provider,
           service
         )
-        starknet.isConnected = true
+        starknet.isConnected = true as any
+      } else {
+        starknet.account = undefined
+        starknet.isConnected = false
       }
 
       listeners.get('networkChanged')?.forEach((handler) => handler(chainId))
@@ -160,14 +183,14 @@ if (
       context()
     )
 
-    if (addresses.length) {
+    if (addresses.length && starknet.provider) {
       starknet.account = new StarknetAccount(
         addresses[0],
-        starknet.provider,
+        starknet.provider as ProviderInterface,
         service
       )
       starknet.selectedAddress = addresses[0]
-      starknet.isConnected = true
+      starknet.isConnected = true as any
     } else {
       starknet.account = undefined
       starknet.selectedAddress = undefined
@@ -182,62 +205,94 @@ if (
   globalThis.archmage.starknet = starknet
 }
 
-class StarknetAccount extends Account {
+class StarknetAccount extends Account implements AccountInterface {
   constructor(
     address: string,
-    provider: ProviderInterface | undefined,
+    provider: ProviderInterface,
     private service: IStarknetProviderService
   ) {
-    const key = '' // dummy one, never used
-    super(provider || {}, address, key)
+    const signer = new StarknetSigner(service)
+
+    super(provider || {}, address, signer)
   }
 
-  public override async execute(
-    calls: AllowArray<Call>,
-    abis?: Abi[],
-    transactionsDetail: InvocationsDetails = {}
+  async invokeFunction(
+    invocation: Invocation,
+    details: InvocationsDetailsWithNonce
   ): Promise<InvokeFunctionResponse> {
-    const txHash = await this.service.request(
-      {
-        method: 'execute',
-        params: [calls, abis, transactionsDetail]
-      },
+    return this.service.request(
+      { method: 'invokeFunction', params: [invocation, details] },
       context()
     )
-    return {
-      transaction_hash: txHash
-    }
   }
 
-  public override async signMessage(typedData: any): Promise<Signature> {
-    return await this.service.request(
-      {
-        method: 'signMessage',
-        params: [typedData]
-      },
+  async deployAccountContract(
+    payload: DeployAccountContractPayload,
+    details: InvocationsDetailsWithNonce
+  ): Promise<DeployContractResponse> {
+    return this.service.request(
+      { method: 'deployAccountContract', params: [payload, details] },
+      context()
+    )
+  }
+
+  async declareContract(
+    transaction: DeclareContractTransaction,
+    details: InvocationsDetailsWithNonce
+  ): Promise<DeclareContractResponse> {
+    return this.service.request(
+      { method: 'declareContract', params: [transaction, details] },
       context()
     )
   }
 }
 
-type RpcMessage =
-  | {
-      type: 'wallet_watchAsset'
-      params: WatchStarknetAssetParameters
-      result: boolean
-    }
-  | {
-      type: 'wallet_addStarknetChain'
-      params: AddStarknetChainParameters
-      result: boolean
-    }
-  | {
-      type: 'wallet_switchStarknetChain'
-      params: SwitchStarknetChainParameter
-      result: boolean
-    }
-  | {
-      type: string
-      params: any
-      result: never
-    }
+class StarknetSigner implements SignerInterface {
+  constructor(private service: IStarknetProviderService) {}
+
+  getPubKey(): Promise<string> {
+    return this.service.request({ method: 'getPubKey' }, context())
+  }
+
+  signMessage(
+    typedData: TypedData,
+    accountAddress: string
+  ): Promise<Signature> {
+    return this.service.request(
+      { method: 'signMessage', params: [typedData, accountAddress] },
+      context()
+    )
+  }
+
+  signTransaction(
+    transactions: Call[],
+    transactionsDetail: InvocationsSignerDetails,
+    abis?: Abi[]
+  ): Promise<Signature> {
+    return this.service.request(
+      {
+        method: 'signTransaction',
+        params: [transactions, transactionsDetail, abis]
+      },
+      context()
+    )
+  }
+
+  signDeployAccountTransaction(
+    transaction: DeployAccountSignerDetails
+  ): Promise<Signature> {
+    return this.service.request(
+      { method: 'signDeployAccountTransaction', params: [transaction] },
+      context()
+    )
+  }
+
+  signDeclareTransaction(
+    transaction: DeclareSignerDetails
+  ): Promise<Signature> {
+    return this.service.request(
+      { method: 'signDeclareTransaction', params: [transaction] },
+      context()
+    )
+  }
+}

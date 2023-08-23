@@ -29,7 +29,7 @@ import { EvmProvider, getEvmChainId } from '.'
 export class EvmPermissionedProvider extends BasePermissionedProvider {
   private constructor(
     network: INetwork,
-    public provider: EvmProvider,
+    private provider: EvmProvider,
     origin: string
   ) {
     super(network, origin)

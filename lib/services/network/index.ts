@@ -100,7 +100,7 @@ export function getNetworkInfo(network: INetwork): NetworkInfo {
         currencyName: info.currency.name,
         currencySymbol: info.currency.symbol,
         decimals: info.currency.decimals,
-        rpcUrl: info.rpcs.at(0),
+        rpcUrl: info.baseUrl,
         explorerUrl: info.explorers.at(0)
       }
     }

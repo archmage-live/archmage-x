@@ -6,6 +6,8 @@ import { CosmProvider } from '~lib/services/provider/cosm/provider'
 import { formatCosmTxParams } from '~lib/services/provider/cosm/types'
 import { EvmProvider } from '~lib/services/provider/evm/provider'
 import { formatEvmTxParams } from '~lib/services/provider/evm/types'
+import { StarknetProvider } from '~lib/services/provider/starknet/provider'
+import { formatStarknetTxParams } from '~lib/services/provider/starknet/types'
 
 export interface Provider {
   isOk(): Promise<boolean>
@@ -52,6 +54,8 @@ export async function getProvider(network: INetwork): Promise<Provider> {
   switch (network.kind) {
     case NetworkKind.EVM:
       return await EvmProvider.from(network)
+    case NetworkKind.STARKNET:
+      return await StarknetProvider.from(network)
     case NetworkKind.COSM:
       return await CosmProvider.from(network)
     case NetworkKind.APTOS:
@@ -74,6 +78,8 @@ export function formatTxPayload(
   switch (network.kind) {
     case NetworkKind.EVM:
       return formatEvmTxParams(payload)
+    case NetworkKind.STARKNET:
+      return formatStarknetTxParams(payload)
     case NetworkKind.COSM:
       return formatCosmTxParams(payload)
     case NetworkKind.APTOS:

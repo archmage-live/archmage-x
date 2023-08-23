@@ -164,6 +164,7 @@ specifiers:
   eth-rpc-errors: ^4.0.3
   ethers: ^5.6.9
   framer-motion: ^7.2.1
+  get-starknet-core: ^3.2.0
   https-browserify: ^1.0.0
   jest: ^28.1.2
   jest-webextension-mock: ^3.7.22
@@ -335,6 +336,7 @@ dependencies:
   eth-rpc-errors: 4.0.3
   ethers: 5.6.9
   framer-motion: 7.2.1_biqbaboplfbrettd7655fr4n2y
+  get-starknet-core: 3.2.0_starknet@5.14.1
   https-browserify: 1.0.0
   jotai: 1.7.4_2sb3a56iojvze2npkgcccbebf4
   js-sha3: 0.8.0
@@ -11747,6 +11749,14 @@ packages:
     engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
     dev: false
 
+  /get-starknet-core/3.2.0_starknet@5.14.1:
+    resolution: {integrity: sha512-SZhxtLlKoPKLZ2H3l9WIU7CiNmkL3qLWGksALmvZdAXa/9PykYfLtvIB5B8A2UZMpf2ojTZlWLfuo1KhgmVobA==}
+    peerDependencies:
+      starknet: ^5.18.0
+    dependencies:
+      starknet: 5.14.1
+    dev: false
+
   /get-stream/5.2.0:
     resolution: {integrity: sha512-nBF+F1rAZVCu/p7rjzgA+Yb4lfYXrpl7a6VmJrU8wF9I1CKvP/QwPNZHnOlwbTkY6dvtFIzFMSyQXbLoTQPRpA==}
     engines: {node: '>=8'}
@@ -18307,7 +18317,7 @@ packages:
     dev: false
 
   github.com/ethereumjs/ethereumjs-abi/ee3994657fa7a427238e6ba92a84d0b529bbcde0:
-    resolution: {tarball: https://codeload.github.com/ethereumjs/ethereumjs-abi/tar.gz/ee3994657fa7a427238e6ba92a84d0b529bbcde0}
+    resolution: {commit: ee3994657fa7a427238e6ba92a84d0b529bbcde0, repo: git+ssh://git@github.com/ethereumjs/ethereumjs-abi.git, type: git}
     name: ethereumjs-abi
     version: 0.6.8
     dependencies:

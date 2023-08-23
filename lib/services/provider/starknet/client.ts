@@ -2,7 +2,7 @@ import { ProviderInterface, SequencerProvider } from 'starknet'
 import { constants } from 'starknet'
 
 import { StarknetChainInfo } from '~lib/network/starknet'
-import { ChainId, INetwork } from '~lib/schema'
+import { INetwork } from '~lib/schema'
 
 export type StarknetClient = ProviderInterface
 
@@ -13,7 +13,7 @@ export async function getStarknetClient(network: INetwork) {
   if (!client) {
     const info = network.info as StarknetChainInfo
     client = new SequencerProvider({
-      baseUrl: info.rpcs[0],
+      baseUrl: info.baseUrl,
       chainId: info.chainId as constants.StarknetChainId
     })
     STARKNET_CLIENTS.set(network.id, client)

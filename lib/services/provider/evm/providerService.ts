@@ -72,10 +72,7 @@ class EvmProviderService
   }
 
   async request(
-    args: {
-      method: string
-      params?: Array<any>
-    },
+    args: { method: string; params?: Array<any> },
     ctx: Context
   ): Promise<any> {
     switch (args.method) {

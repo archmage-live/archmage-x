@@ -57,11 +57,13 @@ export class StarknetProvider implements Provider {
     return Promise.resolve(undefined)
   }
 
-  populateTransaction(
+  async populateTransaction(
     account: IChainAccount,
     transaction: any
   ): Promise<TransactionPayload> {
-    return Promise.resolve({} as any)
+    return {
+      txParams: transaction
+    } as TransactionPayload
   }
 
   sendTransaction(
