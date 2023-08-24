@@ -110,6 +110,8 @@ export function checkAddress(
   switch (networkKind) {
     case NetworkKind.EVM:
       return EvmWallet.checkAddress(address)
+    case NetworkKind.STARKNET:
+      return StarknetWallet.checkAddress(address)
     case NetworkKind.COSM:
       return CosmWallet.checkAddress(address)
     case NetworkKind.APTOS:
