@@ -100,11 +100,11 @@ export class StarknetWallet implements KeystoreSigningWallet {
     switch (STARKNET_ACCOUNT_TYPE) {
       case StarknetAccountType.ARGENT: {
         // Argent uses this ugly hack to get the hd master node.
-        // First, we create a wallet from the mnemonic and the default path.
+        // First, we create a wallet from the mnemonic and the default Ethereum path.
         const walletForDefaultPath = ethers.Wallet.fromMnemonic(
           this.wallet.mnemonic.phrase
         )
-        // Second, we create a hd master node from the private key of the wallet.
+        // Second, we create a hd master node from the seed which is the private key of the wallet.
         const hdNode = ethers.utils.HDNode.fromSeed(
           walletForDefaultPath.privateKey
         )
@@ -172,6 +172,8 @@ export class StarknetWallet implements KeystoreSigningWallet {
     const signer = new Signer(this.privateKey)
     if (Array.isArray(transaction)) {
       assert(transactionsDetail)
+      // NOTE: since the abis argument are not used in the signer,
+      // we do not pass it to the signer.
       return signer.signTransaction(transaction, transactionsDetail)
     } else if (isDeployAccountSignerDetails(transaction)) {
       assert(!transactionsDetail)

@@ -140,6 +140,10 @@ export class EvmBasicProvider implements Provider {
     }
   }
 
+  estimateGasFee(account: IChainAccount, tx: any): Promise<string> {
+    throw new Error('not implemented')
+  }
+
   async populateTransaction(
     account: IChainAccount,
     transaction: EvmTxParams

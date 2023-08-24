@@ -4,15 +4,15 @@ import {
   Abi,
   Account,
   AccountInterface,
+  AllowArray,
   Call,
+  DeclareContractPayload,
   DeclareContractResponse,
-  DeclareContractTransaction,
   DeclareSignerDetails,
   DeployAccountContractPayload,
   DeployAccountSignerDetails,
   DeployContractResponse,
-  Invocation,
-  InvocationsDetailsWithNonce,
+  InvocationsDetails,
   InvocationsSignerDetails,
   InvokeFunctionResponse,
   ProviderInterface,
@@ -216,32 +216,39 @@ class StarknetAccount extends Account implements AccountInterface {
     super(provider || {}, address, signer)
   }
 
-  async invokeFunction(
-    invocation: Invocation,
-    details: InvocationsDetailsWithNonce
+  async execute(
+    calls: AllowArray<Call>,
+    abis?: Abi[],
+    transactionsDetail?: InvocationsDetails
   ): Promise<InvokeFunctionResponse> {
     return this.service.request(
-      { method: 'invokeFunction', params: [invocation, details] },
+      {
+        method: 'execute',
+        params: [calls, abis, transactionsDetail]
+      },
       context()
     )
   }
 
-  async deployAccountContract(
-    payload: DeployAccountContractPayload,
-    details: InvocationsDetailsWithNonce
+  async deployAccount(
+    contractPayload: DeployAccountContractPayload,
+    transactionsDetail?: InvocationsDetails
   ): Promise<DeployContractResponse> {
     return this.service.request(
-      { method: 'deployAccountContract', params: [payload, details] },
+      {
+        method: 'deployAccount',
+        params: [contractPayload, transactionsDetail]
+      },
       context()
     )
   }
 
-  async declareContract(
-    transaction: DeclareContractTransaction,
-    details: InvocationsDetailsWithNonce
+  async declare(
+    payload: DeclareContractPayload,
+    transactionsDetail?: InvocationsDetails
   ): Promise<DeclareContractResponse> {
     return this.service.request(
-      { method: 'declareContract', params: [transaction, details] },
+      { method: 'declare', params: [payload, transactionsDetail] },
       context()
     )
   }

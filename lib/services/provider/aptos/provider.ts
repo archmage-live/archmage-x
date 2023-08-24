@@ -108,6 +108,10 @@ export class AptosProvider implements Provider {
     return (userTx as Types.UserTransaction).max_gas_amount
   }
 
+  estimateGasFee(account: IChainAccount, tx: any): Promise<string> {
+    throw new Error('not implemented')
+  }
+
   async simulateTransaction(
     account: IChainAccount,
     rawTransaction: TxnBuilderTypes.RawTransaction,

@@ -8,21 +8,36 @@ import {
 } from 'get-starknet-core'
 import {
   Abi,
+  AllowArray,
+  CairoVersion,
   Call,
+  CallData,
+  DeclareAndDeployContractPayload,
+  DeclareContractPayload,
   DeclareContractResponse,
-  DeclareContractTransaction,
+  DeclareDeployUDCResponse,
   DeclareSignerDetails,
   DeployAccountContractPayload,
   DeployAccountSignerDetails,
   DeployContractResponse,
-  Invocation,
-  InvocationsDetailsWithNonce,
+  DeployContractUDCResponse,
+  Details,
+  EstimateFeeAction,
+  EstimateFeeDetails,
+  InvocationsDetails,
   InvocationsSignerDetails,
   InvokeFunctionResponse,
+  MultiDeployContractResponse,
   SequencerProvider,
   Signature,
+  TransactionType,
   TypedData,
-  constants
+  UniversalDeployerContractPayload,
+  constants,
+  extractContractHashes,
+  hash,
+  isSierra,
+  provider
 } from 'starknet'
 
 import { getActiveNetwork, getActiveNetworkByKind } from '~lib/active'
@@ -37,6 +52,7 @@ import {
   SignTypedDataPayload
 } from '~lib/services/consentService'
 import { NETWORK_SERVICE } from '~lib/services/network'
+import { getNonce } from '~lib/services/provider'
 import {
   StarknetClient,
   getStarknetClient
@@ -45,9 +61,14 @@ import { checkAddress, getSigningWallet } from '~lib/wallet'
 
 import { BasePermissionedProvider } from '../base'
 import { StarknetProvider } from './provider'
-import { StarknetTxParams } from './types'
+import { SignType, StarknetTransactionPayload } from './types'
+
+const transactionVersion = 1
+const transactionVersion_2 = 2
 
 export class StarknetPermissionedProvider extends BasePermissionedProvider {
+  cairoVersion: CairoVersion = '0' // TODO
+
   private constructor(
     network: INetwork,
     public client: StarknetClient,
@@ -100,20 +121,34 @@ export class StarknetPermissionedProvider extends BasePermissionedProvider {
           return this.getAccounts()
         case 'getPubKey':
           return await this.getPubKey()
-        case 'invokeFunction':
-          return await this.invokeFunction(ctx, params as any)
-        case 'deployAccountContract':
-          return await this.deployAccountContract(ctx, params as any)
-        case 'declareContract':
-          return await this.declareContract(ctx, params as any)
-        case 'signMessage':
-          return await this.signMessage(ctx, params as any)
+
+        case 'execute':
+          return await this.execute(
+            ctx,
+            params.at(0),
+            params.at(1),
+            params.at(2)
+          )
+        case 'deployAccount':
+          return await this.deployAccount(ctx, params.at(0), params.at(1))
+        case 'declare':
+          return await this.declare(ctx, params.at(0), params.at(1))
+
         case 'signTransaction':
-          return await this.signTransaction(ctx, params as any)
+          return await this.signTransaction(
+            ctx,
+            params.at(0),
+            params.at(1),
+            params.at(2)
+          )
         case 'signDeployAccountTransaction':
-          return await this.signDeployAccountTransaction(ctx, params as any)
+          return await this.signDeployAccountTransaction(ctx, params.at(0))
         case 'signDeclareTransaction':
-          return await this.signDeclareTransaction(ctx, params as any)
+          return await this.signDeclareTransaction(ctx, params.at(0))
+
+        case 'signMessage':
+          return await this.signMessage(ctx, params.at(0), params.at(1))
+
         case 'wallet_addStarknetChain':
           return await this.addChain(ctx, params[0])
         case 'wallet_switchStarknetChain':
@@ -157,7 +192,8 @@ export class StarknetPermissionedProvider extends BasePermissionedProvider {
 
   async signMessage(
     ctx: Context,
-    [typedData, accountAddress]: [TypedData, string]
+    typedData: TypedData,
+    accountAddress: string
   ): Promise<string> {
     if (
       !this.account?.address ||
@@ -183,15 +219,11 @@ export class StarknetPermissionedProvider extends BasePermissionedProvider {
 
   private async _signTransaction(
     ctx: Context,
-    txParams: StarknetTxParams
-  ): Promise<Signature> {
+    payload: StarknetTransactionPayload
+  ): Promise<any> {
     if (!this.account?.address) {
       throw ethErrors.provider.unauthorized()
     }
-
-    const provider = new StarknetProvider(this.client)
-
-    const txPayload = await provider.populateTransaction(this.account, txParams)
 
     return await CONSENT_SERVICE.requestConsent(
       {
@@ -199,7 +231,7 @@ export class StarknetPermissionedProvider extends BasePermissionedProvider {
         accountId: this.account.id,
         type: ConsentType.TRANSACTION,
         origin: this.origin,
-        payload: txPayload
+        payload
       },
       ctx
     )
@@ -207,63 +239,248 @@ export class StarknetPermissionedProvider extends BasePermissionedProvider {
 
   async signTransaction(
     ctx: Context,
-    [transactions, transactionsDetail, abis]: [
-      Call[],
-      InvocationsSignerDetails,
-      Abi[]
-    ]
+    transactions: Call[],
+    transactionsDetail: InvocationsSignerDetails,
+    abis: Abi[]
   ): Promise<Signature> {
+    // ignore abis
     return this._signTransaction(ctx, {
-      regularTx: [transactions, transactionsDetail, abis]
+      txParams: {
+        type: SignType.INVOKE,
+        details: [transactions, transactionsDetail]
+      },
+      populatedParams: {
+        type: SignType.INVOKE
+      }
     })
   }
 
   async signDeployAccountTransaction(
     ctx: Context,
-    [transaction]: [DeployAccountSignerDetails]
+    transaction: DeployAccountSignerDetails
   ): Promise<Signature> {
     return this._signTransaction(ctx, {
-      deployAccountTx: transaction
+      txParams: {
+        type: SignType.DEPLOY_ACCOUNT,
+        details: transaction
+      },
+      populatedParams: {
+        type: SignType.DEPLOY_ACCOUNT
+      }
     })
   }
 
   async signDeclareTransaction(
     ctx: Context,
-    [transaction]: [DeclareSignerDetails]
+    transaction: DeclareSignerDetails
   ): Promise<Signature> {
     return this._signTransaction(ctx, {
-      declareAccountTx: transaction
+      txParams: {
+        type: SignType.DECLARE,
+        details: transaction
+      },
+      populatedParams: {
+        type: SignType.DECLARE
+      }
     })
   }
 
-  async invokeFunction(
+  public async getSuggestedMaxFee(
+    { type, payload }: EstimateFeeAction,
+    details: EstimateFeeDetails
+  ) {
+    // TODO
+    return ''
+  }
+
+  async execute(
     ctx: Context,
-    [invocation, details]: [Invocation, InvocationsDetailsWithNonce]
+    calls: AllowArray<Call>,
+    abis?: Abi[],
+    transactionsDetail?: InvocationsDetails
   ): Promise<InvokeFunctionResponse> {
-    // TODO: db
-    return this.client.invokeFunction(invocation, details)
+    if (!this.account?.address) {
+      throw ethErrors.provider.unauthorized()
+    }
+
+    const provider = new StarknetProvider(this.client)
+
+    const transactions = Array.isArray(calls) ? calls : [calls]
+    const nonce =
+      transactionsDetail?.nonce ?? (await getNonce(provider, this.account))
+    const maxFee =
+      transactionsDetail?.maxFee ??
+      (await this.getSuggestedMaxFee(
+        { type: TransactionType.INVOKE, payload: calls },
+        transactionsDetail || {}
+      ))
+    const version = transactionVersion
+    const chainId = this.network.chainId as constants.StarknetChainId
+
+    const signerDetails: InvocationsSignerDetails = {
+      walletAddress: this.account.address,
+      nonce,
+      maxFee,
+      version,
+      chainId,
+      cairoVersion: this.cairoVersion
+    }
+
+    return this._signTransaction(ctx, {
+      txParams: {
+        type: TransactionType.INVOKE,
+        payload: transactions,
+        details: transactionsDetail
+      },
+      populatedParams: {
+        type: TransactionType.INVOKE,
+        details: signerDetails
+      }
+    })
   }
 
-  async deployAccountContract(
+  async declare(
     ctx: Context,
-    [payload, details]: [
-      DeployAccountContractPayload,
-      InvocationsDetailsWithNonce
-    ]
-  ): Promise<DeployContractResponse> {
-    // TODO: db
-    return this.client.deployAccountContract(payload, details)
-  }
-
-  async declareContract(
-    ctx: Context,
-    [transaction, details]: [
-      DeclareContractTransaction,
-      InvocationsDetailsWithNonce
-    ]
+    payload: DeclareContractPayload,
+    transactionsDetail?: InvocationsDetails
   ): Promise<DeclareContractResponse> {
-    // TODO: db
-    return this.client.declareContract(transaction, details)
+    if (!this.account?.address) {
+      throw ethErrors.provider.unauthorized()
+    }
+
+    const declareContractPayload = extractContractHashes(payload)
+    const details = {} as Details
+
+    details.nonce =
+      transactionsDetail?.nonce ??
+      (await getNonce(new StarknetProvider(this.client), this.account))
+    details.maxFee =
+      transactionsDetail?.maxFee ??
+      (await this.getSuggestedMaxFee(
+        {
+          type: TransactionType.DECLARE,
+          payload: declareContractPayload
+        },
+        transactionsDetail || {}
+      ))
+    details.version = !isSierra(payload.contract)
+      ? transactionVersion
+      : transactionVersion_2
+    const chainId = this.network.chainId as constants.StarknetChainId
+
+    const { classHash, contract, compiledClassHash } = declareContractPayload
+    const compressedCompiledContract = provider.parseContract(contract)
+
+    return this._signTransaction(ctx, {
+      txParams: {
+        type: TransactionType.DECLARE,
+        payload,
+        details: transactionsDetail
+      },
+      populatedParams: {
+        type: TransactionType.DECLARE,
+        details: {
+          classHash,
+          compiledClassHash,
+          senderAddress: this.account.address,
+          chainId,
+          maxFee: details.maxFee,
+          version: details.version,
+          nonce: details.nonce
+        }
+      }
+    })
+  }
+
+  async deploy(
+    ctx: Context,
+    payload:
+      | UniversalDeployerContractPayload
+      | UniversalDeployerContractPayload[],
+    details?: InvocationsDetails | undefined
+  ): Promise<MultiDeployContractResponse> {
+    // NOTE: no need to implement
+    throw new Error('not implemented')
+  }
+
+  async deployContract(
+    ctx: Context,
+    payload:
+      | UniversalDeployerContractPayload
+      | UniversalDeployerContractPayload[],
+    details?: InvocationsDetails | undefined
+  ): Promise<DeployContractUDCResponse> {
+    // NOTE: no need to implement
+    throw new Error('not implemented')
+  }
+
+  async declareAndDeploy(
+    ctx: Context,
+    payload: DeclareAndDeployContractPayload,
+    details?: InvocationsDetails | undefined
+  ): Promise<DeclareDeployUDCResponse> {
+    // NOTE: no need to implement
+    throw new Error('not implemented')
+  }
+
+  async deployAccount(
+    ctx: Context,
+    contractPayload: DeployAccountContractPayload,
+    transactionsDetail?: InvocationsDetails
+  ): Promise<DeployContractResponse> {
+    const version = transactionVersion
+    const nonce = 0 // DEPLOY_ACCOUNT transaction will have a nonce zero as it is the first transaction in the account
+    const chainId = this.network.chainId as constants.StarknetChainId
+
+    const addressSalt = contractPayload.addressSalt || 0
+
+    const compiledCalldata = CallData.compile(
+      contractPayload.constructorCalldata || []
+    )
+    const contractAddress =
+      contractPayload.contractAddress ??
+      hash.calculateContractAddressFromHash(
+        addressSalt,
+        contractPayload.classHash,
+        compiledCalldata,
+        0
+      )
+
+    const maxFee =
+      transactionsDetail?.maxFee ??
+      (await this.getSuggestedMaxFee(
+        {
+          type: TransactionType.DEPLOY_ACCOUNT,
+          payload: {
+            classHash: contractPayload.classHash,
+            constructorCalldata: compiledCalldata,
+            addressSalt,
+            contractAddress
+          }
+        },
+        transactionsDetail || {}
+      ))
+
+    return this._signTransaction(ctx, {
+      txParams: {
+        type: TransactionType.DEPLOY_ACCOUNT,
+        payload: contractPayload,
+        details: transactionsDetail
+      },
+      populatedParams: {
+        type: TransactionType.DEPLOY_ACCOUNT,
+        details: {
+          classHash: contractPayload.classHash,
+          constructorCalldata: compiledCalldata,
+          contractAddress,
+          addressSalt,
+          chainId,
+          maxFee,
+          version,
+          nonce
+        }
+      }
+    })
   }
 
   async addChain(ctx: Context, params: AddStarknetChainParameters) {

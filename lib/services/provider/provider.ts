@@ -28,12 +28,18 @@ export interface Provider {
 
   estimateGas(account: IChainAccount, tx: any): Promise<string>
 
+  estimateGasFee(account: IChainAccount, tx: any): Promise<string>
+
   populateTransaction(
     account: IChainAccount,
     transaction: any
   ): Promise<TransactionPayload>
 
-  signTransaction(account: IChainAccount, transaction: any): Promise<any>
+  signTransaction(
+    account: IChainAccount,
+    transaction: any,
+    ...args: any[]
+  ): Promise<any>
 
   sendTransaction(
     account: IChainAccount,
@@ -66,7 +72,7 @@ export async function getProvider(network: INetwork): Promise<Provider> {
   throw new Error(`provider for network ${network.kind} is not implemented`)
 }
 
-export type TransactionPayload = {
+export interface TransactionPayload {
   txParams: any
   populatedParams: any
 }
