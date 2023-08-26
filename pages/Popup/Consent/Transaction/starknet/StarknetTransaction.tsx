@@ -82,9 +82,6 @@ export const StarknetTransaction = ({
           populatedParams.details.maxFee
         ]
       case SignType.INVOKE:
-        if (txParams.details[0].length !== 1) {
-          return []
-        }
         return [
           txParams.details[0],
           txParams.details[0].length === 1
@@ -92,6 +89,21 @@ export const StarknetTransaction = ({
             : undefined,
           txParams.details[1].nonce,
           txParams.details[1].maxFee
+        ]
+      case TransactionType.DEPLOY_ACCOUNT:
+        assert(populatedParams.type === TransactionType.DEPLOY_ACCOUNT)
+        return [
+          txParams.payload,
+          undefined,
+          populatedParams.details.nonce,
+          populatedParams.details.maxFee
+        ]
+      case SignType.DEPLOY_ACCOUNT:
+        return [
+          txParams.details,
+          undefined,
+          txParams.details.nonce,
+          txParams.details.maxFee
         ]
       default:
         return []
@@ -253,44 +265,48 @@ export const StarknetTransaction = ({
             <TabPanels>
               <TabPanel p={0}>
                 <Stack spacing={8}>
-                  <Stack
-                    spacing={1}
-                    px={2}
-                    py={1}
-                    borderRadius="4px"
-                    borderWidth="1px"
-                    maxW="full">
-                    <Text color="gray.500">Transfer:</Text>
-                    {transfers?.map((transfer, i) => {
-                      const addr =
-                        transfer.to === account.address
-                          ? transfer.from
-                          : transfer.to
-                      return (
-                        <HStack key={i} justify="space-between">
-                          <Text>
-                            {new Decimal(transfer.amount)
-                              .toDecimalPlaces(transfer.decimals)
-                              .toString()}
-                            &nbsp;
-                            {transfer.symbol}
-                          </Text>
-
-                          <HStack>
+                  {transfers?.length && (
+                    <Stack
+                      spacing={1}
+                      px={2}
+                      py={1}
+                      borderRadius="4px"
+                      borderWidth="1px"
+                      maxW="full">
+                      <Text color="gray.500">Transfer:</Text>
+                      {transfers.map((transfer, i) => {
+                        const addr =
+                          transfer.to === account.address
+                            ? transfer.from
+                            : transfer.to
+                        return (
+                          <HStack key={i} justify="space-between">
                             <Text>
-                              {transfer.to === account.address ? 'From' : 'To'}
+                              {new Decimal(transfer.amount)
+                                .toDecimalPlaces(transfer.decimals)
+                                .toString()}
+                              &nbsp;
+                              {transfer.symbol}
                             </Text>
-                            <TextLink
-                              text={addr}
-                              name="Address"
-                              url={getAccountUrl(network, addr)}
-                              urlLabel="View on explorer"
-                            />
+
+                            <HStack>
+                              <Text>
+                                {transfer.to === account.address
+                                  ? 'From'
+                                  : 'To'}
+                              </Text>
+                              <TextLink
+                                text={addr}
+                                name="Address"
+                                url={getAccountUrl(network, addr)}
+                                urlLabel="View on explorer"
+                              />
+                            </HStack>
                           </HStack>
-                        </HStack>
-                      )
-                    })}
-                  </Stack>
+                        )
+                      })}
+                    </Stack>
+                  )}
 
                   {trace === false && (
                     <AlertBox level="error" nowrap>

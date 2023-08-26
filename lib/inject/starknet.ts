@@ -46,6 +46,7 @@ export interface IStarknetProviderService extends EventEmitter {
 declare global {
   var starknet: StarknetWindowObject | undefined
   var starknet_archmage: StarknetWindowObject | undefined
+  var starknet_argentX: StarknetWindowObject | undefined
 }
 
 if (
@@ -204,6 +205,20 @@ if (
 
   globalThis.starknet = starknet
   globalThis.starknet_archmage = starknet
+  // TODO
+  globalThis.starknet_argentX = new Proxy(starknet, {
+    get: (target: StarknetWindowObject, method: string | symbol) => {
+      if (method === 'id') {
+        return 'argentX'
+      } else if (method === 'name') {
+        return 'Argent X'
+      } else if (typeof (target as any)[method] === 'function') {
+        return (target as any)[method].bind(target)
+      } else {
+        return (target as any)[method]
+      }
+    }
+  })
   globalThis.archmage.starknet = starknet
 }
 

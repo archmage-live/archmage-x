@@ -23,6 +23,7 @@ import Decimal from 'decimal.js'
 import { useEffect } from 'react'
 import { useNetworkState } from 'react-use'
 
+import { AccountAbstractionPopover } from '~components/AccountAbstractionPopover'
 import { useActive } from '~lib/active'
 import { formatNumber } from '~lib/formatNumber'
 import { WalletInfo } from '~lib/schema'
@@ -228,6 +229,12 @@ export default function Portal({ onLoaded }: { onLoaded?: () => void }) {
 
               <HStack w={20} spacing={2} justify="end">
                 <KeylessOnboardPopover wallet={wallet} subWallet={subWallet} />
+                <AccountAbstractionPopover
+                  network={network}
+                  wallet={wallet}
+                  subWallet={subWallet}
+                  account={account}
+                />
 
                 <AccountMenu />
               </HStack>

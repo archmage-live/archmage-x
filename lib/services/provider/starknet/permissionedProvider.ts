@@ -69,7 +69,7 @@ const transactionVersion_2 = 2
 export class StarknetPermissionedProvider extends BasePermissionedProvider {
   cairoVersion: CairoVersion = '0' // TODO
 
-  private constructor(
+  public constructor(
     network: INetwork,
     public client: StarknetClient,
     origin: string
@@ -236,9 +236,10 @@ export class StarknetPermissionedProvider extends BasePermissionedProvider {
   }
 
   private async _signTransaction(
-    ctx: Context,
+    ctx: Context | undefined,
     type: ConsentType.TRANSACTION | ConsentType.SIGN_TRANSACTION,
-    payload: StarknetTransactionPayload
+    payload: StarknetTransactionPayload,
+    waitCompleted?: boolean
   ): Promise<any> {
     if (!this.account?.address) {
       throw ethErrors.provider.unauthorized()
@@ -252,7 +253,8 @@ export class StarknetPermissionedProvider extends BasePermissionedProvider {
         origin: this.origin,
         payload: formatTxPayload(this.network, payload)
       },
-      ctx
+      ctx,
+      waitCompleted
     )
   }
 
@@ -456,9 +458,10 @@ export class StarknetPermissionedProvider extends BasePermissionedProvider {
   }
 
   async deployAccount(
-    ctx: Context,
+    ctx: Context | undefined,
     contractPayload: DeployAccountContractPayload,
-    transactionsDetail?: InvocationsDetails
+    transactionsDetail?: InvocationsDetails,
+    waitCompleted?: boolean
   ): Promise<DeployContractResponse> {
     if (!this.account?.address) {
       throw ethErrors.provider.unauthorized()
@@ -501,26 +504,31 @@ export class StarknetPermissionedProvider extends BasePermissionedProvider {
         transactionsDetail
       ))
 
-    return this._signTransaction(ctx, ConsentType.TRANSACTION, {
-      txParams: {
-        type: TransactionType.DEPLOY_ACCOUNT,
-        payload: contractPayload,
-        details: transactionsDetail
-      },
-      populatedParams: {
-        type: TransactionType.DEPLOY_ACCOUNT,
-        details: {
-          classHash: contractPayload.classHash,
-          constructorCalldata: compiledCalldata,
-          contractAddress,
-          addressSalt: contractPayload.addressSalt,
-          chainId,
-          maxFee,
-          version,
-          nonce
+    return this._signTransaction(
+      ctx,
+      ConsentType.TRANSACTION,
+      {
+        txParams: {
+          type: TransactionType.DEPLOY_ACCOUNT,
+          payload: contractPayload,
+          details: transactionsDetail
+        },
+        populatedParams: {
+          type: TransactionType.DEPLOY_ACCOUNT,
+          details: {
+            classHash: contractPayload.classHash,
+            constructorCalldata: compiledCalldata,
+            contractAddress,
+            addressSalt: contractPayload.addressSalt,
+            chainId,
+            maxFee,
+            version,
+            nonce
+          }
         }
-      }
-    })
+      },
+      waitCompleted
+    )
   }
 
   async addChain(ctx: Context, params: AddStarknetChainParameters) {
