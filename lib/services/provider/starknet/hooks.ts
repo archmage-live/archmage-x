@@ -1,9 +1,10 @@
 import assert from 'assert'
+import { useEffect, useState } from 'react'
 import { useAsyncRetry, useInterval } from 'react-use'
-import { Account, Sequencer, Signer, TransactionType } from 'starknet'
+import stableHash from 'stable-hash'
+import { Account, Sequencer, TransactionType } from 'starknet'
 
 import { IChainAccount, INetwork } from '~lib/schema'
-import { getSigningWallet } from '~lib/wallet'
 
 import { getStarknetClient } from './client'
 import { StarknetVoidSigner } from './provider'
@@ -13,18 +14,12 @@ export function useStarknetTransaction(
   network?: INetwork,
   account?: IChainAccount,
   payload?: StarknetTransactionPayload
-): Sequencer.TransactionTraceResponse | undefined {
-  const { value, loading, retry } = useAsyncRetry(async () => {
+): Sequencer.TransactionTraceResponse | false | undefined {
+  const { value, loading, error, retry } = useAsyncRetry(async () => {
     if (!network || !account?.address || !payload) {
       return
     }
     const provider = await getStarknetClient(network)
-
-    /* const signer = await getSigningWallet(account)
-    if (!signer) {
-      return
-    }
-    const starkSigner = new Signer(signer.privateKey) */
 
     const acc = new Account(provider, account.address, new StarknetVoidSigner())
 
@@ -44,7 +39,24 @@ export function useStarknetTransaction(
     }
   }, [network, account, payload])
 
-  useInterval(retry, !loading ? 10000 : null)
+  useInterval(retry, !loading ? 30000 : null)
 
-  return value
+  const [trace, setTrace] = useState<
+    Sequencer.TransactionTraceResponse | false | undefined
+  >()
+  useEffect(() => {
+    if (error) {
+      setTrace(false)
+    } else {
+      setTrace((trace) => {
+        if (stableHash(value) === stableHash(trace)) {
+          return trace
+        } else {
+          return value
+        }
+      })
+    }
+  }, [value, error])
+
+  return trace
 }

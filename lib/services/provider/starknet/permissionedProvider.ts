@@ -198,7 +198,7 @@ export class StarknetPermissionedProvider extends BasePermissionedProvider {
     ctx: Context,
     typedData: TypedData,
     accountAddress: string
-  ): Promise<string> {
+  ): Promise<Signature> {
     if (
       !this.account?.address ||
       this.account.address !==
@@ -207,13 +207,27 @@ export class StarknetPermissionedProvider extends BasePermissionedProvider {
       throw ethErrors.provider.unauthorized()
     }
 
+    const { chainId, name, version, verifyingContract } = typedData.domain
+
+    if (
+      !chainId ||
+      chainId !== (this.network.info as StarknetChainInfo).shortName
+    ) {
+      throw ethErrors.rpc.invalidParams('Mismatched chainId')
+    }
+
     return await CONSENT_SERVICE.requestConsent(
       {
         networkId: this.network.id,
         accountId: this.account.id,
-        type: ConsentType.SIGN_MSG,
+        type: ConsentType.SIGN_TYPED_DATA,
         origin: this.origin,
         payload: {
+          metadata: [
+            ['Name', name],
+            ['Version', version],
+            ['Contract', verifyingContract]
+          ],
           typedData
         } as SignTypedDataPayload
       } as any as ConsentRequest,

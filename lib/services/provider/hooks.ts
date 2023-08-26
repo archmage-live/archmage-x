@@ -38,6 +38,8 @@ export function getGasFeeBrief(network: INetwork, gasFee: any): string {
       return getBtcFeeBrief(gasFee).toString()
     case NetworkKind.EVM:
       return getEvmGasFeeBrief(gasFee)
+    case NetworkKind.STARKNET:
+      return gasFee
     case NetworkKind.APTOS:
       return gasFee
   }
@@ -225,11 +227,12 @@ export function useEstimateGasPrice(
 export function useEstimateGas(
   network?: INetwork,
   account?: IChainAccount,
-  tx?: any
+  tx?: any,
+  retryInterval?: number
 ) {
   const provider = useProvider(network)
 
-  const { value } = useAsync(async () => {
+  const { value, loading, error, retry } = useAsyncRetry(async () => {
     if (!network || !account?.address || !tx || !provider) {
       return
     }
@@ -241,6 +244,8 @@ export function useEstimateGas(
     }
   }, [network, account, tx, provider])
 
+  useInterval(retry, retryInterval && !loading && error ? retryInterval : null)
+
   return value
 }
 
@@ -251,9 +256,28 @@ export function useEstimateGasFee(
   retryInterval?: number
 ) {
   const { gasPriceBrief } = useEstimateGasPrice(network, account, retryInterval)
-  const gas = useEstimateGas(network, account, tx)
+  const gas = useEstimateGas(network, account, tx, retryInterval)
+
+  const provider = useProvider(network)
+  const {
+    value: _gasFee,
+    loading,
+    error,
+    retry
+  } = useAsyncRetry(async () => {
+    if (!account?.address || !tx || !provider) {
+      return
+    }
+    return provider.estimateGasFee(account!, tx)
+  }, [account, tx, provider])
+
+  useInterval(retry, retryInterval && !loading && error ? retryInterval : null)
 
   return useMemo(() => {
+    if (_gasFee) {
+      return _gasFee
+    }
+
     if (!gasPriceBrief || !gas) {
       return
     }
@@ -261,7 +285,7 @@ export function useEstimateGasFee(
     const gasFee = new Decimal(gasPriceBrief).mul(gas).toString()
     console.log('gasPrice:', gasPriceBrief, 'gas:', gas, 'gasFee:', gasFee)
     return gasFee
-  }, [gasPriceBrief, gas])
+  }, [gasPriceBrief, gas, _gasFee])
 }
 
 export async function getNonce(

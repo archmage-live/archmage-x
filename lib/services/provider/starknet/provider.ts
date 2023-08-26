@@ -30,6 +30,7 @@ import { STARKNET_ETH_TOKEN_ADDRESS } from '~lib/network/starknet'
 import erc20Abi from '~lib/network/starknet/abi/ERC20.json'
 import { IChainAccount, INetwork } from '~lib/schema'
 import { Provider, TransactionPayload } from '~lib/services/provider'
+import { stringifyBigNumberish } from '~lib/utils'
 import { getSigningWallet } from '~lib/wallet'
 
 import { StarknetClient, getStarknetClient } from './client'
@@ -61,15 +62,12 @@ export class StarknetProvider implements Provider {
     }
   }
 
-  estimateGasPrice(account: IChainAccount): Promise<any> {
-    throw new Error('not implemented')
+  async estimateGasPrice(account: IChainAccount): Promise<string> {
+    return '0'
   }
 
-  estimateGas(
-    account: IChainAccount,
-    txParams: StarknetTxParams
-  ): Promise<string> {
-    throw new Error('not implemented')
+  async estimateGas(account: IChainAccount): Promise<string> {
+    return '0'
   }
 
   async estimateGasFee(
@@ -143,7 +141,7 @@ export class StarknetProvider implements Provider {
     account: IChainAccount,
     tag?: string | number
   ): Promise<number> {
-    return Number(this.client.getNonceForAddress(account.address!))
+    return Number(await this.client.getNonceForAddress(account.address!))
   }
 
   getTypedData(typedData: any): Promise<any> {
@@ -180,22 +178,22 @@ export class StarknetProvider implements Provider {
           txParams.payload
         )
         const compressedCompiledContract = provider.parseContract(contract)
-        return {
-          senderAddress: account.address!,
+        return stringifyBigNumberish({
+          senderAddress: account.address!.toLowerCase(),
           signature,
           contract: compressedCompiledContract,
           compiledClassHash
-        } as DeclareContractTransaction
+        } as DeclareContractTransaction)
       }
       case TransactionType.DEPLOY_ACCOUNT: {
         assert(populatedParams.type === TransactionType.DEPLOY_ACCOUNT)
         const signature = await signer.signTransaction(populatedParams.details)
-        return {
+        return stringifyBigNumberish({
           classHash: txParams.payload.classHash,
           constructorCalldata: txParams.payload.constructorCalldata,
           addressSalt: txParams.payload.addressSalt,
           signature
-        } as DeployAccountContractTransaction
+        } as DeployAccountContractTransaction)
       }
       case TransactionType.INVOKE: {
         assert(populatedParams.type === TransactionType.INVOKE)
@@ -207,23 +205,26 @@ export class StarknetProvider implements Provider {
           txParams.payload,
           populatedParams.details.cairoVersion
         )
-        return {
-          contractAddress: account.address!,
+        return stringifyBigNumberish({
+          contractAddress: account.address!.toLowerCase(),
           calldata,
           signature
-        } as Invocation
+        } as Invocation)
       }
       case SignType.DECLARE: {
         assert(populatedParams.type === SignType.DECLARE)
-        return signer.signTransaction(txParams.details)
+        return await signer.signTransaction(txParams.details)
       }
       case SignType.DEPLOY_ACCOUNT: {
         assert(populatedParams.type === SignType.DEPLOY_ACCOUNT)
-        return signer.signTransaction(txParams.details)
+        return await signer.signTransaction(txParams.details)
       }
       case SignType.INVOKE: {
         assert(populatedParams.type === SignType.INVOKE)
-        return signer.signTransaction(txParams.details[0], txParams.details[1])
+        return await signer.signTransaction(
+          txParams.details[0],
+          txParams.details[1]
+        )
       }
     }
   }
@@ -279,7 +280,7 @@ export class StarknetProvider implements Provider {
     if (!signer) {
       throw ethErrors.rpc.internal()
     }
-    return signer.signTypedData(typedData)
+    return stringifyBigNumberish(await signer.signTypedData(typedData))
   }
 
   async isSignable(account: IChainAccount): Promise<boolean> {

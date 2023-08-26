@@ -63,6 +63,9 @@ export const SignTypedData = ({
     case NetworkKind.EVM:
       msg = message
       break
+    case NetworkKind.STARKNET:
+      msg = message
+      break
     case NetworkKind.APTOS:
       msg = typedData
       break
@@ -161,7 +164,7 @@ export const SignTypedData = ({
 
             <Stack>
               {metadata
-                .filter(([, value]) => !!value)
+                ?.filter(([, value]) => !!value)
                 .map(([name, value]) => {
                   return (
                     <HStack key={name} spacing={8} justify="space-between">

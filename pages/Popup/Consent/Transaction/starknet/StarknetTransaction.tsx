@@ -7,22 +7,27 @@ import {
   Stack,
   Tab,
   TabList,
+  TabPanel,
   TabPanels,
   Tabs,
   Text,
+  chakra,
   useColorModeValue
 } from '@chakra-ui/react'
+import assert from 'assert'
 import Decimal from 'decimal.js'
 import * as React from 'react'
 import { ReactNode, useCallback, useMemo, useState } from 'react'
 import { TransactionType } from 'starknet'
 
+import { AlertBox } from '~components/AlertBox'
 import { SpinningOverlay } from '~components/SpinningOverlay'
 import { TextLink } from '~components/TextLink'
 import { IChainAccount, INetwork, ISubWallet, IWallet } from '~lib/schema'
 import { CONSENT_SERVICE, ConsentRequest } from '~lib/services/consentService'
 import { useCryptoComparePrice } from '~lib/services/datasource/cryptocompare'
 import { NetworkInfo, getAccountUrl } from '~lib/services/network'
+import { useEstimateGasFee } from '~lib/services/provider'
 import { useStarknetTransaction } from '~lib/services/provider/starknet/hooks'
 import {
   SignType,
@@ -30,11 +35,13 @@ import {
 } from '~lib/services/provider/starknet/types'
 import { Amount } from '~lib/services/token'
 import {
-  useStarknetTokenChanges,
+  useStarknetTokenTransfers,
   useStarknetTxEvents
 } from '~lib/services/transaction/starknet/events'
 import { FromToWithCheck } from '~pages/Popup/Consent/Transaction/FromTo'
 import { useTabsHeaderScroll } from '~pages/Popup/Consent/Transaction/helpers'
+
+import { StarknetTxPayload } from './StarknetTransactionData'
 
 export const StarknetTransaction = ({
   origin,
@@ -62,31 +69,44 @@ export const StarknetTransaction = ({
   const { txParams, populatedParams } =
     request.payload as StarknetTransactionPayload
 
-  const to = useMemo(() => {
+  const [payload, to, nonce, maxFee] = useMemo(() => {
     switch (txParams.type) {
       case TransactionType.INVOKE:
-        if (txParams.payload.length !== 1) {
-          return
-        }
-        return txParams.payload[0].contractAddress
+        assert(populatedParams.type === TransactionType.INVOKE)
+        return [
+          txParams.payload,
+          txParams.payload.length === 1
+            ? txParams.payload[0].contractAddress
+            : undefined,
+          populatedParams.details.nonce,
+          populatedParams.details.maxFee
+        ]
       case SignType.INVOKE:
         if (txParams.details[0].length !== 1) {
-          return
+          return []
         }
-        return txParams.details[0][0].contractAddress
+        return [
+          txParams.details[0],
+          txParams.details[0].length === 1
+            ? txParams.details[0][0].contractAddress
+            : undefined,
+          txParams.details[1].nonce,
+          txParams.details[1].maxFee
+        ]
       default:
+        return []
     }
-  }, [txParams])
+  }, [txParams, populatedParams])
 
   const trace = useStarknetTransaction(network, account, request.payload)
-  const events = useStarknetTxEvents(trace?.function_invocation)
-  const allTokenChanges = useStarknetTokenChanges(network, events.transfers)
+  const events = useStarknetTxEvents(
+    trace ? trace.function_invocation : undefined
+  )
+  const [allTokenChanges, transfers] =
+    useStarknetTokenTransfers(network, events.transfers) || []
   const tokenChanges = allTokenChanges?.get(account.address!)
 
-  // console.log(request.payload)
-  // console.log(trace)
-  console.log(events)
-  console.log(tokenChanges)
+  const gasFee = useEstimateGasFee(network, account, txParams)
 
   const [ignoreEstimateError, setIgnoreEstimateError] = useState(false)
 
@@ -101,7 +121,20 @@ export const StarknetTransaction = ({
 
   const [spinning, setSpinning] = useState(false)
 
-  const onConfirm = useCallback(async () => {}, [])
+  const onConfirm = useCallback(async () => {
+    setSpinning(true)
+
+    await CONSENT_SERVICE.processRequest(
+      {
+        ...request,
+        payload: request.payload
+      },
+      true
+    )
+
+    onComplete()
+    setSpinning(false)
+  }, [onComplete, request])
 
   return (
     <>
@@ -168,7 +201,7 @@ export const StarknetTransaction = ({
                 borderRadius="4px"
                 borderWidth="1px"
                 maxW="full">
-                <Text color="gray.500">Coin Changes:</Text>
+                <Text color="gray.500">Token Changes:</Text>
                 <Box pl={4}>
                   {Array.from(tokenChanges.entries()).map(
                     ([tokenAddr, balance]) => {
@@ -217,7 +250,114 @@ export const StarknetTransaction = ({
 
         <Stack w="full" px={6} pt={6} spacing={8}>
           <Tabs index={tabIndex}>
-            <TabPanels></TabPanels>
+            <TabPanels>
+              <TabPanel p={0}>
+                <Stack spacing={8}>
+                  <Stack
+                    spacing={1}
+                    px={2}
+                    py={1}
+                    borderRadius="4px"
+                    borderWidth="1px"
+                    maxW="full">
+                    <Text color="gray.500">Transfer:</Text>
+                    {transfers?.map((transfer, i) => {
+                      const addr =
+                        transfer.to === account.address
+                          ? transfer.from
+                          : transfer.to
+                      return (
+                        <HStack key={i} justify="space-between">
+                          <Text>
+                            {new Decimal(transfer.amount)
+                              .toDecimalPlaces(transfer.decimals)
+                              .toString()}
+                            &nbsp;
+                            {transfer.symbol}
+                          </Text>
+
+                          <HStack>
+                            <Text>
+                              {transfer.to === account.address ? 'From' : 'To'}
+                            </Text>
+                            <TextLink
+                              text={addr}
+                              name="Address"
+                              url={getAccountUrl(network, addr)}
+                              urlLabel="View on explorer"
+                            />
+                          </HStack>
+                        </HStack>
+                      )
+                    })}
+                  </Stack>
+
+                  {trace === false && (
+                    <AlertBox level="error" nowrap>
+                      <Text>
+                        We were not able to simulate transaction. There might be
+                        an error and this transaction may fail.
+                      </Text>
+                      {!ignoreEstimateError && (
+                        <Text
+                          color="purple.500"
+                          fontWeight="medium"
+                          cursor="pointer"
+                          onClick={() => {
+                            setIgnoreEstimateError(true)
+                          }}>
+                          I want to proceed anyway
+                        </Text>
+                      )}
+                    </AlertBox>
+                  )}
+
+                  <Stack spacing={6}>
+                    <HStack justify="space-between">
+                      <Text>
+                        Gas Fee&nbsp;
+                        <chakra.span fontSize="md" fontStyle="italic">
+                          estimated
+                        </chakra.span>
+                      </Text>
+
+                      <Text>
+                        {gasFee &&
+                          new Decimal(gasFee)
+                            .div(new Decimal(10).pow(networkInfo.decimals))
+                            .toDecimalPlaces(8)
+                            .toString()}
+                        &nbsp;
+                        {networkInfo.currencySymbol}
+                      </Text>
+                    </HStack>
+
+                    <HStack justify="space-between">
+                      <Text>Max Gas Fee</Text>
+
+                      <Text>
+                        {maxFee !== undefined &&
+                          new Decimal(maxFee.toString())
+                            .div(new Decimal(10).pow(networkInfo.decimals))
+                            .toDecimalPlaces(8)
+                            .toString()}
+                        &nbsp;
+                        {networkInfo.currencySymbol}
+                      </Text>
+                    </HStack>
+
+                    <HStack justify="space-between">
+                      <Text>Nonce</Text>
+
+                      <Text>{nonce !== undefined && nonce.toString()}</Text>
+                    </HStack>
+                  </Stack>
+                </Stack>
+              </TabPanel>
+              <TabPanel>
+                <StarknetTxPayload payload={payload} />
+              </TabPanel>
+            </TabPanels>
           </Tabs>
 
           <Divider />
@@ -240,7 +380,7 @@ export const StarknetTransaction = ({
               size="lg"
               w={36}
               colorScheme="purple"
-              isDisabled={!ignoreEstimateError}
+              isDisabled={trace === false && !ignoreEstimateError}
               onClick={onConfirm}>
               Confirm
             </Button>

@@ -96,13 +96,19 @@ export const getStarknetEvents = (
   return { approvals, transfers }
 }
 
-export async function getStarknetTokenChanges(
+export async function getStarknetTokenTransfers(
   network: INetwork,
   transfers: TransferEvent[]
 ) {
   const client = await getStarknetClient(network)
 
+  // account -> tokenAddress -> Amount
   const tokenEvents = new Map<string, Map<string, Amount>>()
+  const transferEvents = [] as ({
+    tokenAddress: string
+    from: string
+    to: string
+  } & Amount)[]
 
   for (const transfer of transfers) {
     const tokenAddress = checkAddress(network.kind, transfer.tokenAddress)
@@ -175,9 +181,24 @@ export async function getStarknetTokenChanges(
     toAmt.amount = new Decimal(toAmt.amountParticle)
       .div(new Decimal(10).pow(decimals))
       .toString()
+
+    transferEvents.push({
+      tokenAddress,
+      from,
+      to,
+      symbol,
+      decimals,
+      amount: new Decimal(transfer.value || '0')
+        .div(new Decimal(10).pow(decimals))
+        .toString(),
+      amountParticle: transfer.value || '0'
+    })
   }
 
-  return tokenEvents
+  return [tokenEvents, transferEvents] as [
+    typeof tokenEvents,
+    typeof transferEvents
+  ]
 }
 
 export function useStarknetTxEvents(
@@ -192,7 +213,7 @@ export function useStarknetTxEvents(
   )
 }
 
-export function useStarknetTokenChanges(
+export function useStarknetTokenTransfers(
   network?: INetwork,
   transfers?: TransferEvent[]
 ) {
@@ -201,7 +222,7 @@ export function useStarknetTokenChanges(
       return
     }
 
-    return await getStarknetTokenChanges(network, transfers)
+    return await getStarknetTokenTransfers(network, transfers)
   }, [network, transfers])
 
   useInterval(retry, !loading && error ? 5000 : null)
