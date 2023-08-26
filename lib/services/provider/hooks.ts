@@ -272,13 +272,18 @@ export async function getNonce(
   assert(account.address)
   let nextNonce = await Promise.resolve(provider.getNextNonce(account, tag))
 
-  const pendingTxs = await getTransactionService(
-    account.networkKind
-  ).getPendingTxs(account, undefined, false)
-  for (const { nonce } of pendingTxs) {
-    if (nonce === nextNonce) {
-      ++nextNonce
+  // TODO
+  try {
+    const pendingTxs = await getTransactionService(
+      account.networkKind
+    ).getPendingTxs(account, undefined, false)
+    for (const { nonce } of pendingTxs) {
+      if (nonce === nextNonce) {
+        ++nextNonce
+      }
     }
+  } catch (err) {
+    console.warn(err)
   }
 
   return nextNonce

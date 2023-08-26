@@ -168,7 +168,7 @@ export class StarknetWallet implements KeystoreSigningWallet {
   async signTransaction(
     transaction: Call[] | DeployAccountSignerDetails | DeclareSignerDetails,
     transactionsDetail?: InvocationsSignerDetails
-  ): Promise<any> {
+  ): Promise<Signature> {
     const signer = new Signer(this.privateKey)
     if (Array.isArray(transaction)) {
       assert(transactionsDetail)
@@ -194,6 +194,9 @@ export class StarknetWallet implements KeystoreSigningWallet {
   }
 
   static checkAddress(address: string): string | false {
+    if (!address) {
+      return false
+    }
     try {
       return getChecksumAddress(address)
     } catch {

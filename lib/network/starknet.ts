@@ -4,6 +4,8 @@ import { NativeCurrency } from '~lib/network/evm'
 
 export const STARKNET_ETH_TOKEN_ADDRESS =
   '0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7'
+export const STARKNET_STARKWARE_SEQUENCER =
+  '0x01176a1bd84444c89232ec27754698e5d2e7e1a7f1539f12027f28b23ec9f3d8'
 
 export interface StarknetChainInfo {
   name: string

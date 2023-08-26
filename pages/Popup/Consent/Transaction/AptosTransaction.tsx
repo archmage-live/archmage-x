@@ -466,6 +466,7 @@ export const AptosTransaction = ({
               </Stack>
             )}
           </Stack>
+
           <Divider />
         </Box>
 

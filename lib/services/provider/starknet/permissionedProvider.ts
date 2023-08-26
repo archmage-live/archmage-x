@@ -8,6 +8,7 @@ import {
 } from 'get-starknet-core'
 import {
   Abi,
+  Account,
   AllowArray,
   CairoVersion,
   Call,
@@ -36,15 +37,14 @@ import {
   constants,
   extractContractHashes,
   hash,
-  isSierra,
-  provider
+  isSierra
 } from 'starknet'
 
 import { getActiveNetwork, getActiveNetworkByKind } from '~lib/active'
 import { Context } from '~lib/inject/client'
 import { NetworkKind } from '~lib/network'
 import { StarknetChainInfo } from '~lib/network/starknet'
-import { INetwork } from '~lib/schema'
+import { IChainAccount, INetwork } from '~lib/schema'
 import {
   CONSENT_SERVICE,
   ConsentRequest,
@@ -52,7 +52,7 @@ import {
   SignTypedDataPayload
 } from '~lib/services/consentService'
 import { NETWORK_SERVICE } from '~lib/services/network'
-import { getNonce } from '~lib/services/provider'
+import { formatTxPayload, getNonce } from '~lib/services/provider'
 import {
   StarknetClient,
   getStarknetClient
@@ -60,7 +60,7 @@ import {
 import { checkAddress, getSigningWallet } from '~lib/wallet'
 
 import { BasePermissionedProvider } from '../base'
-import { StarknetProvider } from './provider'
+import { StarknetProvider, StarknetVoidSigner } from './provider'
 import { SignType, StarknetTransactionPayload } from './types'
 
 const transactionVersion = 1
@@ -116,7 +116,7 @@ export class StarknetPermissionedProvider extends BasePermissionedProvider {
     try {
       switch (method) {
         case 'enable':
-          return this.enable()
+          return await this.enable(ctx)
         case 'accounts':
           return this.getAccounts()
         case 'getPubKey':
@@ -155,6 +155,8 @@ export class StarknetPermissionedProvider extends BasePermissionedProvider {
           return await this.switchChain(ctx, params[0])
         case 'wallet_watchAsset':
           return await this.watchAsset(ctx, params[0])
+        default:
+          throw Error('Not implemented')
       }
     } catch (err) {
       console.error(err)
@@ -162,7 +164,9 @@ export class StarknetPermissionedProvider extends BasePermissionedProvider {
     }
   }
 
-  enable() {
+  async enable(ctx: Context) {
+    await this.requestAccounts(ctx)
+
     const info = this.network.info as StarknetChainInfo
     return {
       network: {
@@ -219,6 +223,7 @@ export class StarknetPermissionedProvider extends BasePermissionedProvider {
 
   private async _signTransaction(
     ctx: Context,
+    type: ConsentType.TRANSACTION | ConsentType.SIGN_TRANSACTION,
     payload: StarknetTransactionPayload
   ): Promise<any> {
     if (!this.account?.address) {
@@ -229,9 +234,9 @@ export class StarknetPermissionedProvider extends BasePermissionedProvider {
       {
         networkId: this.network.id,
         accountId: this.account.id,
-        type: ConsentType.TRANSACTION,
+        type,
         origin: this.origin,
-        payload
+        payload: formatTxPayload(this.network, payload)
       },
       ctx
     )
@@ -244,7 +249,7 @@ export class StarknetPermissionedProvider extends BasePermissionedProvider {
     abis: Abi[]
   ): Promise<Signature> {
     // ignore abis
-    return this._signTransaction(ctx, {
+    return this._signTransaction(ctx, ConsentType.SIGN_TRANSACTION, {
       txParams: {
         type: SignType.INVOKE,
         details: [transactions, transactionsDetail]
@@ -259,7 +264,7 @@ export class StarknetPermissionedProvider extends BasePermissionedProvider {
     ctx: Context,
     transaction: DeployAccountSignerDetails
   ): Promise<Signature> {
-    return this._signTransaction(ctx, {
+    return this._signTransaction(ctx, ConsentType.SIGN_TRANSACTION, {
       txParams: {
         type: SignType.DEPLOY_ACCOUNT,
         details: transaction
@@ -274,7 +279,7 @@ export class StarknetPermissionedProvider extends BasePermissionedProvider {
     ctx: Context,
     transaction: DeclareSignerDetails
   ): Promise<Signature> {
-    return this._signTransaction(ctx, {
+    return this._signTransaction(ctx, ConsentType.SIGN_TRANSACTION, {
       txParams: {
         type: SignType.DECLARE,
         details: transaction
@@ -285,12 +290,20 @@ export class StarknetPermissionedProvider extends BasePermissionedProvider {
     })
   }
 
-  public async getSuggestedMaxFee(
-    { type, payload }: EstimateFeeAction,
+  private async _getSuggestedMaxFee(
+    account: IChainAccount,
+    action: EstimateFeeAction,
     details: EstimateFeeDetails
   ) {
-    // TODO
-    return ''
+    const acc = new Account(
+      this.client,
+      account.address!,
+      new StarknetVoidSigner()
+    )
+    return acc.getSuggestedMaxFee(action, {
+      ...details,
+      skipValidate: true
+    })
   }
 
   async execute(
@@ -303,16 +316,19 @@ export class StarknetPermissionedProvider extends BasePermissionedProvider {
       throw ethErrors.provider.unauthorized()
     }
 
+    transactionsDetail = transactionsDetail ?? {}
+
     const provider = new StarknetProvider(this.client)
 
     const transactions = Array.isArray(calls) ? calls : [calls]
     const nonce =
-      transactionsDetail?.nonce ?? (await getNonce(provider, this.account))
+      transactionsDetail.nonce ?? (await getNonce(provider, this.account))
     const maxFee =
-      transactionsDetail?.maxFee ??
-      (await this.getSuggestedMaxFee(
+      transactionsDetail.maxFee ??
+      (await this._getSuggestedMaxFee(
+        this.account,
         { type: TransactionType.INVOKE, payload: calls },
-        transactionsDetail || {}
+        transactionsDetail
       ))
     const version = transactionVersion
     const chainId = this.network.chainId as constants.StarknetChainId
@@ -326,7 +342,7 @@ export class StarknetPermissionedProvider extends BasePermissionedProvider {
       cairoVersion: this.cairoVersion
     }
 
-    return this._signTransaction(ctx, {
+    return this._signTransaction(ctx, ConsentType.TRANSACTION, {
       txParams: {
         type: TransactionType.INVOKE,
         payload: transactions,
@@ -348,30 +364,32 @@ export class StarknetPermissionedProvider extends BasePermissionedProvider {
       throw ethErrors.provider.unauthorized()
     }
 
+    transactionsDetail = transactionsDetail ?? {}
+
     const declareContractPayload = extractContractHashes(payload)
     const details = {} as Details
 
     details.nonce =
-      transactionsDetail?.nonce ??
+      transactionsDetail.nonce ??
       (await getNonce(new StarknetProvider(this.client), this.account))
     details.maxFee =
-      transactionsDetail?.maxFee ??
-      (await this.getSuggestedMaxFee(
+      transactionsDetail.maxFee ??
+      (await this._getSuggestedMaxFee(
+        this.account,
         {
           type: TransactionType.DECLARE,
           payload: declareContractPayload
         },
-        transactionsDetail || {}
+        transactionsDetail
       ))
     details.version = !isSierra(payload.contract)
       ? transactionVersion
       : transactionVersion_2
     const chainId = this.network.chainId as constants.StarknetChainId
 
-    const { classHash, contract, compiledClassHash } = declareContractPayload
-    const compressedCompiledContract = provider.parseContract(contract)
+    const { classHash, compiledClassHash } = declareContractPayload
 
-    return this._signTransaction(ctx, {
+    return this._signTransaction(ctx, ConsentType.TRANSACTION, {
       txParams: {
         type: TransactionType.DECLARE,
         payload,
@@ -428,19 +446,26 @@ export class StarknetPermissionedProvider extends BasePermissionedProvider {
     contractPayload: DeployAccountContractPayload,
     transactionsDetail?: InvocationsDetails
   ): Promise<DeployContractResponse> {
+    if (!this.account?.address) {
+      throw ethErrors.provider.unauthorized()
+    }
+
+    contractPayload.addressSalt = contractPayload.addressSalt ?? 0
+    contractPayload.constructorCalldata =
+      contractPayload.constructorCalldata ?? []
+    transactionsDetail = transactionsDetail ?? {}
+
     const version = transactionVersion
     const nonce = 0 // DEPLOY_ACCOUNT transaction will have a nonce zero as it is the first transaction in the account
     const chainId = this.network.chainId as constants.StarknetChainId
 
-    const addressSalt = contractPayload.addressSalt || 0
-
     const compiledCalldata = CallData.compile(
-      contractPayload.constructorCalldata || []
+      contractPayload.constructorCalldata
     )
     const contractAddress =
       contractPayload.contractAddress ??
       hash.calculateContractAddressFromHash(
-        addressSalt,
+        contractPayload.addressSalt,
         contractPayload.classHash,
         compiledCalldata,
         0
@@ -448,20 +473,21 @@ export class StarknetPermissionedProvider extends BasePermissionedProvider {
 
     const maxFee =
       transactionsDetail?.maxFee ??
-      (await this.getSuggestedMaxFee(
+      (await this._getSuggestedMaxFee(
+        this.account,
         {
           type: TransactionType.DEPLOY_ACCOUNT,
           payload: {
             classHash: contractPayload.classHash,
             constructorCalldata: compiledCalldata,
-            addressSalt,
+            addressSalt: contractPayload.addressSalt,
             contractAddress
           }
         },
-        transactionsDetail || {}
+        transactionsDetail
       ))
 
-    return this._signTransaction(ctx, {
+    return this._signTransaction(ctx, ConsentType.TRANSACTION, {
       txParams: {
         type: TransactionType.DEPLOY_ACCOUNT,
         payload: contractPayload,
@@ -473,7 +499,7 @@ export class StarknetPermissionedProvider extends BasePermissionedProvider {
           classHash: contractPayload.classHash,
           constructorCalldata: compiledCalldata,
           contractAddress,
-          addressSalt,
+          addressSalt: contractPayload.addressSalt,
           chainId,
           maxFee,
           version,

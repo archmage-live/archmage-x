@@ -1,6 +1,4 @@
 import {
-  Abi,
-  AllowArray,
   Call,
   DeclareContractPayload,
   DeclareSignerDetails,
@@ -8,11 +6,11 @@ import {
   DeployAccountSignerDetails,
   InvocationsDetails,
   InvocationsSignerDetails,
-  TransactionType,
-  UniversalDeployerContractPayload
+  TransactionType
 } from 'starknet'
 
 import { TransactionPayload } from '~lib/services/provider'
+import { stringifyBigNumberish } from '~lib/utils'
 
 type Payload<T> = { payload: T }
 type Details<T> = { details: T }
@@ -30,7 +28,7 @@ export type StarknetTxParams =
       | ({
           type: TransactionType.DEPLOY_ACCOUNT
         } & Payload<DeployAccountContractPayload>)
-      | ({ type: TransactionType.INVOKE } & Payload<AllowArray<Call>>)
+      | ({ type: TransactionType.INVOKE } & Payload<Call[]>)
     ) & {
       details?: InvocationsDetails
     })
@@ -55,12 +53,12 @@ export interface StarknetTransactionPayload extends TransactionPayload {
 
 export function formatStarknetTxParams(payload: {
   txParams: StarknetTxParams
-  populatedParams: any
+  populatedParams: StarknetTxPopulatedParams
 }): TransactionPayload {
   const { txParams, populatedParams } = payload
 
   return {
-    txParams,
-    populatedParams
+    txParams: stringifyBigNumberish(txParams),
+    populatedParams: stringifyBigNumberish(populatedParams)
   }
 }

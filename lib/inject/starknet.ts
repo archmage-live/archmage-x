@@ -23,6 +23,7 @@ import {
 } from 'starknet'
 
 import { isBackgroundWorker } from '~lib/detect'
+import { stringifyBigNumberish } from '~lib/utils'
 
 import {
   Context,
@@ -96,10 +97,10 @@ if (
     enable: async (options?: {
       starknetVersion?: 'v4' | 'v5'
     }): Promise<string[]> => {
-      if (options?.starknetVersion === 'v4') {
+      /* if (options?.starknetVersion === 'v4') {
         // we don't support starknet.js v4
         return []
-      }
+      } */
 
       const {
         network,
@@ -148,7 +149,8 @@ if (
 
     isPreauthorized: async () => {
       // TODO: what's this?
-      return !!starknet.selectedAddress
+      // return !!starknet.selectedAddress
+      return true
     }
   }
 
@@ -216,7 +218,11 @@ class StarknetAccount extends Account implements AccountInterface {
     super(provider || {}, address, signer)
   }
 
-  async execute(
+  /**
+   * Override the implementation of `execute`/`deployAccount`/`declare` to display a beautiful consent UI.
+   */
+
+  override async execute(
     calls: AllowArray<Call>,
     abis?: Abi[],
     transactionsDetail?: InvocationsDetails
@@ -224,31 +230,34 @@ class StarknetAccount extends Account implements AccountInterface {
     return this.service.request(
       {
         method: 'execute',
-        params: [calls, abis, transactionsDetail]
+        params: stringifyBigNumberish([calls, abis, transactionsDetail])
       },
       context()
     )
   }
 
-  async deployAccount(
+  override async deployAccount(
     contractPayload: DeployAccountContractPayload,
     transactionsDetail?: InvocationsDetails
   ): Promise<DeployContractResponse> {
     return this.service.request(
       {
         method: 'deployAccount',
-        params: [contractPayload, transactionsDetail]
+        params: stringifyBigNumberish([contractPayload, transactionsDetail])
       },
       context()
     )
   }
 
-  async declare(
+  override async declare(
     payload: DeclareContractPayload,
     transactionsDetail?: InvocationsDetails
   ): Promise<DeclareContractResponse> {
     return this.service.request(
-      { method: 'declare', params: [payload, transactionsDetail] },
+      {
+        method: 'declare',
+        params: stringifyBigNumberish([payload, transactionsDetail])
+      },
       context()
     )
   }
@@ -279,7 +288,7 @@ class StarknetSigner implements SignerInterface {
     return this.service.request(
       {
         method: 'signTransaction',
-        params: [transactions, transactionsDetail, abis]
+        params: stringifyBigNumberish([transactions, transactionsDetail, abis])
       },
       context()
     )
@@ -289,7 +298,10 @@ class StarknetSigner implements SignerInterface {
     transaction: DeployAccountSignerDetails
   ): Promise<Signature> {
     return this.service.request(
-      { method: 'signDeployAccountTransaction', params: [transaction] },
+      {
+        method: 'signDeployAccountTransaction',
+        params: [stringifyBigNumberish(transaction)]
+      },
       context()
     )
   }
@@ -298,7 +310,10 @@ class StarknetSigner implements SignerInterface {
     transaction: DeclareSignerDetails
   ): Promise<Signature> {
     return this.service.request(
-      { method: 'signDeclareTransaction', params: [transaction] },
+      {
+        method: 'signDeclareTransaction',
+        params: [stringifyBigNumberish(transaction)]
+      },
       context()
     )
   }

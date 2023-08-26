@@ -2,6 +2,7 @@ import type { UserOperationRequest } from '@alchemy/aa-core'
 import { resolveProperties } from '@ethersproject/properties'
 import { TransactionRequest } from '@ethersproject/providers'
 import type { UserOperationStruct } from '@zerodevapp/contracts'
+import assert from 'assert'
 
 import { IChainAccount } from '~lib/schema'
 import { TransactionPayload } from '~lib/services/provider'
@@ -41,8 +42,9 @@ export class EvmErc4337Provider extends EvmBasicProvider {
   async sendTransaction(
     account: IChainAccount,
     signedUserOperation: UserOperationStruct,
-    request: TransactionRequest
+    request?: TransactionRequest
   ): Promise<UserOperationResponse> {
+    assert(request)
     signedUserOperation = await resolveProperties(signedUserOperation)
 
     const client = this.provider as unknown as EvmErc4337Client

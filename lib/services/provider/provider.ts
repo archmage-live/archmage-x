@@ -44,7 +44,7 @@ export interface Provider {
   sendTransaction(
     account: IChainAccount,
     signedTransaction: any,
-    extra?: any
+    ...args: any[]
   ): Promise<any>
 
   signMessage(account: IChainAccount, message: any): Promise<any>

@@ -1,5 +1,3 @@
-import { BigNumberish } from '@alchemy/aa-core/src/types'
-
 export function stall(duration: number): Promise<void> {
   return new Promise((resolve) => {
     setTimeout(resolve, duration)
@@ -48,12 +46,16 @@ export function stringifyBigNumberish<T>(object: T): T {
     return object
   }
 
+  if (Array.isArray(object)) {
+    return object.map(stringifyBigNumberish) as any
+  }
+
   const result: any = {}
   for (const key in object) {
     const value = object[key]
     if (value !== undefined) {
-      if (typeof value === 'number' || typeof value === 'bigint') {
-        // serialize number/bigint to string
+      if (typeof value === 'bigint') {
+        // serialize bigint to string
         result[key] = value.toString()
       } else if (Array.isArray(value)) {
         result[key] = value.map(stringifyBigNumberish)

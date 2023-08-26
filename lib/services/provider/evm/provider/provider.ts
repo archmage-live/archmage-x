@@ -363,8 +363,7 @@ export class EvmBasicProvider implements Provider {
 
   async sendTransaction(
     account: IChainAccount,
-    signedTransaction: any,
-    extra?: any
+    signedTransaction: any
   ): Promise<any> {
     return this.provider.sendTransaction(signedTransaction)
   }

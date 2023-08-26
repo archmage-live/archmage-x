@@ -1,3 +1,4 @@
+import assert from 'assert'
 import { ethErrors } from 'eth-rpc-errors'
 import PQueue from 'p-queue'
 import {
@@ -5,22 +6,34 @@ import {
   Account,
   Call,
   Contract,
+  DeclareContractResponse,
+  DeclareContractTransaction,
   DeclareSignerDetails,
+  DeployAccountContractPayload,
+  DeployAccountContractTransaction,
   DeployAccountSignerDetails,
+  DeployContractResponse,
+  Invocation,
   InvocationsSignerDetails,
+  InvokeFunctionResponse,
   Signature,
   SignerInterface,
   TransactionType,
-  TypedData
+  TypedData,
+  extractContractHashes,
+  provider,
+  transaction,
+  uint256
 } from 'starknet'
 
 import { STARKNET_ETH_TOKEN_ADDRESS } from '~lib/network/starknet'
+import erc20Abi from '~lib/network/starknet/abi/ERC20.json'
 import { IChainAccount, INetwork } from '~lib/schema'
 import { Provider, TransactionPayload } from '~lib/services/provider'
 import { getSigningWallet } from '~lib/wallet'
 
 import { StarknetClient, getStarknetClient } from './client'
-import { StarknetTxParams } from './types'
+import { SignType, StarknetTxParams, StarknetTxPopulatedParams } from './types'
 
 export class StarknetProvider implements Provider {
   constructor(public client: StarknetClient) {}
@@ -34,15 +47,18 @@ export class StarknetProvider implements Provider {
     try {
       await this.client.getBlock('latest')
       return true
-    } catch (err) {
-      console.error(err)
+    } catch {
       return false
     }
   }
 
   async isContract(address: string): Promise<boolean> {
-    const classHash = await this.client.getClassHashAt(address)
-    return classHash.length > 0
+    try {
+      const classHash = await this.client.getClassHashAt(address)
+      return classHash.length > 0
+    } catch {
+      return false
+    }
   }
 
   estimateGasPrice(account: IChainAccount): Promise<any> {
@@ -60,7 +76,11 @@ export class StarknetProvider implements Provider {
     account: IChainAccount,
     txParams: StarknetTxParams
   ): Promise<string> {
-    const acc = new Account(this.client, account.address!, new VoidSigner())
+    const acc = new Account(
+      this.client,
+      account.address!,
+      new StarknetVoidSigner()
+    )
     let result
     switch (txParams.type) {
       case TransactionType.INVOKE: {
@@ -100,14 +120,14 @@ export class StarknetProvider implements Provider {
       return
     }
 
-    const { abi } = await this.client.getClassAt(STARKNET_ETH_TOKEN_ADDRESS)
-    if (abi === undefined) {
-      throw new Error('no abi')
-    }
-    const erc20 = new Contract(abi, STARKNET_ETH_TOKEN_ADDRESS, this.client)
+    const erc20 = new Contract(
+      erc20Abi,
+      STARKNET_ETH_TOKEN_ADDRESS,
+      this.client
+    )
 
     const balance = await erc20.balanceOf(address)
-    return erc20.isCairo1() ? balance.toString() : balance.res.toString()
+    return uint256.uint256ToBN(balance.balance).toString()
   }
 
   async getBalances(
@@ -137,11 +157,113 @@ export class StarknetProvider implements Provider {
     throw new Error('not implemented')
   }
 
-  sendTransaction(
+  async signTransaction(
     account: IChainAccount,
-    signedTransaction: any
-  ): Promise<any> {
-    throw new Error('not implemented')
+    txParams: StarknetTxParams,
+    populatedParams: StarknetTxPopulatedParams
+  ): Promise<
+    | DeclareContractTransaction
+    | DeployAccountContractTransaction
+    | Invocation
+    | Signature
+  > {
+    const signer = await getSigningWallet(account)
+    if (!signer) {
+      throw ethErrors.rpc.internal()
+    }
+
+    switch (txParams.type) {
+      case TransactionType.DECLARE: {
+        assert(populatedParams.type === TransactionType.DECLARE)
+        const signature = await signer.signTransaction(populatedParams.details)
+        const { contract, compiledClassHash } = extractContractHashes(
+          txParams.payload
+        )
+        const compressedCompiledContract = provider.parseContract(contract)
+        return {
+          senderAddress: account.address!,
+          signature,
+          contract: compressedCompiledContract,
+          compiledClassHash
+        } as DeclareContractTransaction
+      }
+      case TransactionType.DEPLOY_ACCOUNT: {
+        assert(populatedParams.type === TransactionType.DEPLOY_ACCOUNT)
+        const signature = await signer.signTransaction(populatedParams.details)
+        return {
+          classHash: txParams.payload.classHash,
+          constructorCalldata: txParams.payload.constructorCalldata,
+          addressSalt: txParams.payload.addressSalt,
+          signature
+        } as DeployAccountContractTransaction
+      }
+      case TransactionType.INVOKE: {
+        assert(populatedParams.type === TransactionType.INVOKE)
+        const signature = await signer.signTransaction(
+          txParams.payload,
+          populatedParams.details
+        )
+        const calldata = transaction.getExecuteCalldata(
+          txParams.payload,
+          populatedParams.details.cairoVersion
+        )
+        return {
+          contractAddress: account.address!,
+          calldata,
+          signature
+        } as Invocation
+      }
+      case SignType.DECLARE: {
+        assert(populatedParams.type === SignType.DECLARE)
+        return signer.signTransaction(txParams.details)
+      }
+      case SignType.DEPLOY_ACCOUNT: {
+        assert(populatedParams.type === SignType.DEPLOY_ACCOUNT)
+        return signer.signTransaction(txParams.details)
+      }
+      case SignType.INVOKE: {
+        assert(populatedParams.type === SignType.INVOKE)
+        return signer.signTransaction(txParams.details[0], txParams.details[1])
+      }
+    }
+  }
+
+  async sendTransaction(
+    account: IChainAccount,
+    signedTransaction:
+      | DeclareContractTransaction
+      | DeployAccountContractTransaction
+      | Invocation,
+    txParams: StarknetTxParams,
+    populatedParams: StarknetTxPopulatedParams
+  ): Promise<
+    DeclareContractResponse | DeployContractResponse | InvokeFunctionResponse
+  > {
+    switch (txParams.type) {
+      case TransactionType.DECLARE: {
+        assert(populatedParams.type === TransactionType.DECLARE)
+        return await this.client.declareContract(
+          signedTransaction as DeclareContractTransaction,
+          populatedParams.details
+        )
+      }
+      case TransactionType.DEPLOY_ACCOUNT: {
+        assert(populatedParams.type === TransactionType.DEPLOY_ACCOUNT)
+        return await this.client.deployAccountContract(
+          signedTransaction as DeployAccountContractTransaction,
+          populatedParams.details
+        )
+      }
+      case TransactionType.INVOKE: {
+        assert(populatedParams.type === TransactionType.INVOKE)
+        return await this.client.invokeFunction(
+          signedTransaction as Invocation,
+          populatedParams.details
+        )
+      }
+      default:
+        throw new Error('invalid starknet tx type')
+    }
   }
 
   async signMessage(account: IChainAccount, message: any): Promise<any> {
@@ -150,18 +272,6 @@ export class StarknetProvider implements Provider {
       throw ethErrors.rpc.internal()
     }
     return signer.signMessage(message)
-  }
-
-  async signTransaction(
-    account: IChainAccount,
-    transaction: any,
-    transactionsDetail: any
-  ): Promise<any> {
-    const signer = await getSigningWallet(account)
-    if (!signer) {
-      throw ethErrors.rpc.internal()
-    }
-    return signer.signTransaction(transaction, transactionsDetail)
   }
 
   async signTypedData(account: IChainAccount, typedData: any): Promise<any> {
@@ -177,7 +287,7 @@ export class StarknetProvider implements Provider {
   }
 }
 
-class VoidSigner implements SignerInterface {
+export class StarknetVoidSigner implements SignerInterface {
   getPubKey(): Promise<string> {
     return Promise.resolve('')
   }

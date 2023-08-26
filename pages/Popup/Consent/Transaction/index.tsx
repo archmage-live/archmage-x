@@ -13,6 +13,7 @@ import {
 import { AptosTransaction } from './AptosTransaction'
 import { CosmTransaction } from './CosmTransactioin'
 import { EvmTransaction } from './EvmTransaction'
+import { StarknetTransaction } from './starknet/StarknetTransaction'
 
 export const Transaction = ({
   request,
@@ -45,6 +46,21 @@ export const Transaction = ({
     case NetworkKind.EVM:
       return (
         <EvmTransaction
+          origin={request.origin}
+          request={request}
+          network={network}
+          networkInfo={networkInfo}
+          wallet={wallet}
+          subWallet={subWallet}
+          account={account}
+          balance={balance}
+          onComplete={onComplete}
+          suffix={rejectAllButton}
+        />
+      )
+    case NetworkKind.STARKNET:
+      return (
+        <StarknetTransaction
           origin={request.origin}
           request={request}
           network={network}

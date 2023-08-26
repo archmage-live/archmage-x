@@ -62,6 +62,7 @@ export enum ConsentType {
   UNLOCK = 'unlock',
   REQUEST_PERMISSION = 'requestPermission',
   TRANSACTION = 'transaction', // sign and send tx; only sign tx for Cosmos chains
+  SIGN_TRANSACTION = 'signTransaction', // only sign tx
   SIGN_MSG = 'signMessage',
   SIGN_TYPED_DATA = 'signTypedData',
   WATCH_ASSET = 'watchAsset',
@@ -104,7 +105,8 @@ class ConsentServicePartial implements IConsentService {
       }
 
       const { signedTx, txHash } =
-        req.type === ConsentType.TRANSACTION
+        req.type === ConsentType.TRANSACTION ||
+        req.type === ConsentType.SIGN_TRANSACTION
           ? await this.processRequestSignTx(req)
           : ({} as any)
 
@@ -116,7 +118,8 @@ class ConsentServicePartial implements IConsentService {
     } catch (err: any) {
       console.error(err)
       if (
-        req.type === ConsentType.TRANSACTION &&
+        (req.type === ConsentType.TRANSACTION ||
+          req.type === ConsentType.SIGN_TRANSACTION) &&
         !err.toString().includes('User rejected the request')
       ) {
         EXTENSION.showNotification(
@@ -164,7 +167,11 @@ class ConsentServicePartial implements IConsentService {
       // in case of WalletConnect protocol
       assert(network!.kind === NetworkKind.EVM)
     } else {
-      signedTx = await provider!.signTransaction(account!, payload.txParams)
+      signedTx = await provider!.signTransaction(
+        account!,
+        payload.txParams,
+        payload.populatedParams
+      )
     }
 
     return {
@@ -257,9 +264,11 @@ class ConsentService extends ConsentServicePartial {
     ctx?: Context,
     waitCompleted = true
   ): Promise<any> {
-    // check wallet keystore ability for signing request
+    // check wallet ability for signing request
     switch (request.type) {
       case ConsentType.TRANSACTION:
+      // pass through
+      case ConsentType.SIGN_TRANSACTION:
       // pass through
       case ConsentType.SIGN_MSG:
       // pass through
@@ -358,7 +367,9 @@ class ConsentService extends ConsentServicePartial {
           req.payload
         )
         break
-      case ConsentType.TRANSACTION: {
+      case ConsentType.TRANSACTION:
+      // pass through
+      case ConsentType.SIGN_TRANSACTION: {
         response = this.processRequestTransaction(
           req,
           account!,
@@ -438,11 +449,14 @@ class ConsentService extends ConsentServicePartial {
         case NetworkKind.COSM:
           break
         default:
-          txResponse = await provider.sendTransaction(
-            account,
-            signedTx,
-            payload.txParams
-          )
+          if (req.type === ConsentType.TRANSACTION) {
+            txResponse = await provider.sendTransaction(
+              account,
+              signedTx,
+              payload.txParams,
+              payload.populatedParams
+            )
+          }
           break
       }
     } else {
@@ -470,6 +484,9 @@ class ConsentService extends ConsentServicePartial {
             payload.populatedParams?.functionSig
           )
         }
+        break
+      case NetworkKind.STARKNET:
+        // TODO
         break
       case NetworkKind.COSM:
         txResponse = signedTx

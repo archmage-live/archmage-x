@@ -73,7 +73,7 @@ export class EvmProvider extends EvmBasicProvider {
     extra?: any
   ): Promise<any> {
     if (!(await isErc4337Account(account))) {
-      return super.sendTransaction(account, signedTransaction, extra)
+      return super.sendTransaction(account, signedTransaction)
     } else {
       return (await this.getErc4337Provider()).sendTransaction(
         account,
