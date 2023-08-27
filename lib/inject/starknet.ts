@@ -1,4 +1,6 @@
-import icon from 'data-base64:~assets/archmage.svg'
+import archmageLogo from 'data-base64:~assets/archmage.svg'
+import argentLogo from 'data-base64:~assets/thirdparty/argent.svg'
+import braavosLogo from 'data-base64:~assets/thirdparty/braavos.svg'
 import type { RpcMessage, StarknetWindowObject } from 'get-starknet-core'
 import {
   Abi,
@@ -47,6 +49,7 @@ declare global {
   var starknet: StarknetWindowObject | undefined
   var starknet_archmage: StarknetWindowObject | undefined
   var starknet_argentX: StarknetWindowObject | undefined
+  var starknet_braavos: StarknetWindowObject | undefined
 }
 
 if (
@@ -65,7 +68,7 @@ if (
     id: 'archmage',
     name: 'Archmage',
     version: process.env.PLASMO_PUBLIC_VERSION || '',
-    icon,
+    icon: archmageLogo,
 
     provider: undefined,
     account: undefined,
@@ -205,13 +208,29 @@ if (
 
   globalThis.starknet = starknet
   globalThis.starknet_archmage = starknet
-  // TODO
   globalThis.starknet_argentX = new Proxy(starknet, {
     get: (target: StarknetWindowObject, method: string | symbol) => {
       if (method === 'id') {
         return 'argentX'
       } else if (method === 'name') {
         return 'Argent X'
+      } else if (method === 'icon') {
+        return argentLogo
+      } else if (typeof (target as any)[method] === 'function') {
+        return (target as any)[method].bind(target)
+      } else {
+        return (target as any)[method]
+      }
+    }
+  })
+  globalThis.starknet_braavos = new Proxy(starknet, {
+    get: (target: StarknetWindowObject, method: string | symbol) => {
+      if (method === 'id') {
+        return 'braavos'
+      } else if (method === 'name') {
+        return 'Braavos'
+      } else if (method === 'icon') {
+        return braavosLogo
       } else if (typeof (target as any)[method] === 'function') {
         return (target as any)[method].bind(target)
       } else {

@@ -70,6 +70,7 @@ export const CopyArea = ({
       <chakra.span fontWeight="medium" sx={{ fontFeatureSettings: '"tnum"' }}>
         {area || copy}
       </chakra.span>
+      &nbsp;
       <Icon as={!hasCopied ? FiCopy : FiCheckCircle} />
     </>
   )

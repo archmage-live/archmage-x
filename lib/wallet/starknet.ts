@@ -45,7 +45,7 @@ export enum StarknetAccountType {
   BRAAVOS = 'braavos'
 }
 
-const STARKNET_ACCOUNT_TYPE: StarknetAccountType = StarknetAccountType.BRAAVOS
+const STARKNET_ACCOUNT_TYPE: StarknetAccountType = StarknetAccountType.ARGENT
 
 export class StarknetWallet implements KeystoreSigningWallet {
   static defaultPath = "m/44'/9004'/0'/0/0"

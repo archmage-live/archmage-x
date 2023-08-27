@@ -95,7 +95,7 @@ export const SubWalletEdit = ({
             copy={account.address}
             noWrap
             props={{
-              width: 'fit-content'
+              noOfLines: 2
             }}
           />
         </Stack>
