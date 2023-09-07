@@ -85,6 +85,7 @@ import {
 import { EvmTransactionData } from './EvmTransactionData'
 import { FromToWithCheck } from './FromTo'
 import { useTabsHeaderScroll } from './helpers'
+import assert from "assert";
 
 export const EvmTransaction = ({
   origin,
@@ -331,6 +332,11 @@ export const EvmTransaction = ({
       tx.maxPriorityFeePerGas = tx.gasPrice
       tx.maxFeePerGas = tx.gasPrice
       delete tx.gasPrice
+    } else if (tx.maxPriorityFeePerGas || tx.maxFeePerGas) {
+      assert((tx.maxPriorityFeePerGas && tx.maxFeePerGas))
+      if (tx.type !== 2) {
+        tx.type = 2
+      }
     }
 
     const process = async (signed?: any) => {
