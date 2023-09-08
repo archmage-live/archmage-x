@@ -1,19 +1,26 @@
 import { arrayify, hexlify } from '@ethersproject/bytes'
 import {
-  Base64DataBuffer,
   Ed25519Keypair,
-  SignableTransaction,
-  SignaturePubkeyPair,
-  TxnDataSerializer,
+  SerializedSignature,
+  isValidSuiAddress,
   normalizeSuiAddress
 } from '@mysten/sui.js'
-import { isValidSuiAddress } from '@mysten/sui.js/src/types/common'
 import assert from 'assert'
 
 import { HDNode, HardenedBit } from '~lib/crypto/ed25519'
 import { DerivePosition } from '~lib/schema'
 
-import { KeystoreSigningWallet, WalletOpts, WalletType, generatePath } from '.'
+import {
+  KeystoreSigningWallet,
+  WalletOpts,
+  WalletType,
+  generatePath
+} from './base'
+
+export interface SignatureWithBytes {
+  bytes: string
+  signature: SerializedSignature
+}
 
 export class SuiWallet implements KeystoreSigningWallet {
   static defaultPath = "m/44'/784'/0'/0'/0'"
@@ -42,10 +49,10 @@ export class SuiWallet implements KeystoreSigningWallet {
           path = SuiWallet.defaultPath
         }
         const node = HDNode.fromMnemonic(mnemonic.phrase).derivePath(path)
-        wallet = Ed25519Keypair.fromSecretKey(arrayify(node.secretKey!))
+        wallet = Ed25519Keypair.fromSecretKey(arrayify(node.privateKey))
       } else {
         assert(!path)
-        wallet = Ed25519Keypair.fromSeed(arrayify(keystore.privateKey))
+        wallet = Ed25519Keypair.fromSecretKey(arrayify(keystore.privateKey))
       }
     }
     assert(wallet)
@@ -62,7 +69,7 @@ export class SuiWallet implements KeystoreSigningWallet {
     assert(this.wallet instanceof HDNode)
     const path = generatePath(pathTemplate, index, derivePosition)
     const node = this.wallet.derivePath(path)
-    const wallet = Ed25519Keypair.fromSecretKey(arrayify(node.secretKey!))
+    const wallet = Ed25519Keypair.fromSecretKey(arrayify(node.privateKey))
     return new SuiWallet(wallet)
   }
 
@@ -81,83 +88,14 @@ export class SuiWallet implements KeystoreSigningWallet {
     return this.wallet.getPublicKey().toString()
   }
 
-  async signTransaction(
-    transaction: Base64DataBuffer | SignableTransaction,
-    serializer?: TxnDataSerializer
-  ): Promise<{ txnBytes: string; signature: SignaturePubkeyPair }> {
+  async signTransaction(transaction: Uint8Array): Promise<SignatureWithBytes> {
     assert(this.wallet instanceof Ed25519Keypair)
-
-    if (
-      transaction instanceof Base64DataBuffer ||
-      transaction.kind === 'bytes'
-    ) {
-      const txBytes =
-        transaction instanceof Base64DataBuffer
-          ? transaction
-          : new Base64DataBuffer(transaction.data)
-
-      const signature = {
-        signatureScheme: this.wallet.getKeyScheme(),
-        signature: this.wallet.signData(txBytes),
-        pubKey: this.wallet.getPublicKey()
-      } as SignaturePubkeyPair
-
-      return {
-        txnBytes: txBytes.toString(),
-        signature
-      }
-    }
-
-    assert(serializer)
-
-    const signerAddress = this.address
-    let txBytes
-
-    switch (transaction.kind) {
-      case 'moveCall':
-        txBytes = await serializer.newMoveCall(signerAddress, transaction.data)
-        break
-      case 'transferSui':
-        txBytes = await serializer.newTransferSui(
-          signerAddress,
-          transaction.data
-        )
-        break
-      case 'transferObject':
-        txBytes = await serializer.newTransferObject(
-          signerAddress,
-          transaction.data
-        )
-        break
-      case 'mergeCoin':
-        txBytes = await serializer.newMergeCoin(signerAddress, transaction.data)
-        break
-      case 'splitCoin':
-        txBytes = await serializer.newSplitCoin(signerAddress, transaction.data)
-        break
-      case 'pay':
-        txBytes = await serializer.newPay(signerAddress, transaction.data)
-        break
-      case 'paySui':
-        txBytes = await serializer.newPaySui(signerAddress, transaction.data)
-        break
-      case 'payAllSui':
-        txBytes = await serializer.newPayAllSui(signerAddress, transaction.data)
-        break
-      case 'publish':
-        txBytes = await serializer.newPublish(signerAddress, transaction.data)
-        break
-      default:
-        throw new Error(
-          `Unknown transaction kind: "${(transaction as any).kind}"`
-        )
-    }
-
-    return this.signTransaction(txBytes)
+    return this.wallet.signTransactionBlock(transaction)
   }
 
-  async signMessage(message: any): Promise<string> {
-    throw new Error('not implemented')
+  async signMessage(message: any): Promise<SignatureWithBytes> {
+    assert(this.wallet instanceof Ed25519Keypair)
+    return this.wallet.signPersonalMessage(arrayify(message))
   }
 
   async signTypedData(typedData: any): Promise<string> {
@@ -166,11 +104,10 @@ export class SuiWallet implements KeystoreSigningWallet {
 
   static checkAddress(address: string): string | false {
     try {
-      const addr = normalizeSuiAddress(address)
-      if (!isValidSuiAddress(addr)) {
+      if (!isValidSuiAddress(address)) {
         return false
       }
-      return addr
+      return normalizeSuiAddress(address)
     } catch {
       return false
     }

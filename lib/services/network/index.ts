@@ -1,34 +1,39 @@
-import assert from 'assert';
-import { useLiveQuery } from 'dexie-react-hooks';
-import { useMemo, useState } from 'react';
-import { useAsyncRetry, useInterval } from 'react-use';
+import assert from 'assert'
+import { useLiveQuery } from 'dexie-react-hooks'
+import { useMemo, useState } from 'react'
+import { useAsyncRetry, useInterval } from 'react-use'
 
+import { DB, getNextField } from '~lib/db'
+import { isBackgroundWorker } from '~lib/detect'
+import { NetworkKind } from '~lib/network'
+import { AptosChainInfo } from '~lib/network/aptos'
+import { BtcChainInfo } from '~lib/network/btc'
+import { CosmAppChainInfo } from '~lib/network/cosm'
+import { EvmChainInfo } from '~lib/network/evm'
+import { StarknetChainInfo } from '~lib/network/starknet'
+import { ChainId, IChainAccount, INetwork, IToken } from '~lib/schema'
+import {
+  CHAINLIST_API,
+  useEvmChainLogoUrl
+} from '~lib/services/datasource/chainlist'
+import {
+  COSMOS_CHAIN_REGISTRY_API,
+  useCosmChainLogoUrl
+} from '~lib/services/datasource/cosmos'
+import { DENOM_TO_SUBDIRECTORY } from '~lib/services/datasource/cosmostation/helpers'
+import {
+  CRYPTO_COMPARE_SERVICE,
+  useCryptoComparePrice
+} from '~lib/services/datasource/cryptocompare'
+import { JIFFYSCAN_NETWORKS } from '~lib/services/datasource/jiffyscan'
+import { CosmTokenInfo } from '~lib/services/token/cosm'
 
-
-import { DB, getNextField } from '~lib/db';
-import { isBackgroundWorker } from '~lib/detect';
-import { NetworkKind } from '~lib/network';
-import { AptosChainInfo } from '~lib/network/aptos';
-import { BtcChainInfo } from '~lib/network/btc';
-import { CosmAppChainInfo } from '~lib/network/cosm';
-import { EvmChainInfo } from '~lib/network/evm';
-import { StarknetChainInfo } from '~lib/network/starknet';
-import { ChainId, IChainAccount, INetwork, IToken } from '~lib/schema';
-import { CHAINLIST_API, useEvmChainLogoUrl } from '~lib/services/datasource/chainlist';
-import { COSMOS_CHAIN_REGISTRY_API, useCosmChainLogoUrl } from '~lib/services/datasource/cosmos';
-import { DENOM_TO_SUBDIRECTORY } from '~lib/services/datasource/cosmostation/helpers';
-import { CRYPTO_COMPARE_SERVICE, useCryptoComparePrice } from '~lib/services/datasource/cryptocompare';
-import { JIFFYSCAN_NETWORKS } from '~lib/services/datasource/jiffyscan';
-import { CosmTokenInfo } from '~lib/services/token/cosm';
-
-
-
-import { AptosNetworkService } from './aptosService';
-import { BtcNetworkService } from './btcService';
-import { CosmNetworkService } from './cosmService';
-import { EvmNetworkService } from './evmService';
-import { StarknetNetworkService } from './starknetService';
-
+import { AptosNetworkService } from './aptosService'
+import { BtcNetworkService } from './btcService'
+import { CosmNetworkService } from './cosmService'
+import { EvmNetworkService } from './evmService'
+import { StarknetNetworkService } from './starknetService'
+import { SuiNetworkService } from './suiService'
 
 export interface NetworkInfo {
   name: string
@@ -293,9 +298,7 @@ export function getTokenUrl(
   }
 }
 
-export function getFaucetUrl(
-  network: INetwork,
-): string | undefined {
+export function getFaucetUrl(network: INetwork): string | undefined {
   switch (network.kind) {
     case NetworkKind.STARKNET: {
       const info = network.info as StarknetChainInfo
@@ -306,9 +309,7 @@ export function getFaucetUrl(
   }
 }
 
-export function getBridgeUrl(
-  network: INetwork,
-): string | undefined {
+export function getBridgeUrl(network: INetwork): string | undefined {
   switch (network.kind) {
     case NetworkKind.STARKNET: {
       const info = network.info as StarknetChainInfo
@@ -327,6 +328,7 @@ export class NetworkService {
       await CosmNetworkService.init()
       await StarknetNetworkService.init()
       await AptosNetworkService.init()
+      await SuiNetworkService.init()
     }
   }
 
@@ -369,6 +371,9 @@ export class NetworkService {
         break
       case NetworkKind.APTOS:
         network = AptosNetworkService.buildNetwork(chainId, info)
+        break
+      case NetworkKind.SUI:
+        network = SuiNetworkService.buildNetwork(chainId, info)
         break
       default:
         throw new Error(`network ${kind} is not implemented`)

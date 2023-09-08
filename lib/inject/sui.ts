@@ -1,20 +1,27 @@
 // https://github.com/MystenLabs/sui/blob/main/apps/wallet/src/dapp-interface/WalletStandardInterface.ts
 
 import {
+  SUI_CHAINS,
   registerWallet,
   StandardConnectFeature,
   StandardEventsFeature,
   StandardEventsListeners,
   SuiFeatures,
-  type Wallet, WalletAccount,
+  type Wallet,
+  WalletAccount,
   type WalletIcon,
-  IdentifierString, StandardConnectMethod
+  IdentifierString,
+  StandardConnectMethod,
+  SuiSignTransactionBlockMethod,
+  SuiSignAndExecuteTransactionBlockMethod,
+  SuiSignMessageMethod, SuiSignPersonalMessageMethod
 } from "@mysten/wallet-standard";
 import archmageLogo from 'data-base64:~assets/archmage.svg'
 import { isBackgroundWorker } from "~lib/detect";
 import { context, Context, EventEmitter, EventType, Listener, RpcClientInjected } from "~lib/inject/client";
-import { arrayify } from "@ethersproject/bytes";
+import { arrayify, hexlify } from "@ethersproject/bytes";
 import mitt, { Emitter } from "mitt";
+import { isTransactionBlock } from "@mysten/sui.js/transactions";
 
 export const SUI_PROVIDER_NAME = 'starknetProvider'
 
@@ -46,16 +53,11 @@ export class SuiWallet implements Wallet {
   }
 
   async init() {
-    const accounts: {address: string, publicKey: string}[] = await this.service.request(
-      { method: 'accounts' },
-      context()
-    )
-    this.#setAccounts(accounts)
-
     this.service.on(
       'networkChanged',
       ({network}: {network: string}) => {
         this.#activeChain = network as IdentifierString
+
       })
 
     this.service.on(
@@ -65,11 +67,27 @@ export class SuiWallet implements Wallet {
           { method: 'accounts' },
           context()
         )
+
         this.#setAccounts(accounts)
+
+        this.#events.emit('change', { accounts: this.accounts })
       })
   }
 
   #connect: StandardConnectMethod = async (input) => {
+    const {network, accounts} = await this.service.request({
+      method: 'connect',
+      params: [input?.silent],
+    }, context())
+
+    this.#activeChain = network
+    this.#setAccounts(accounts)
+
+    this.#events.emit('change', { accounts: this.accounts })
+
+    return {
+      accounts: this.accounts
+    }
   }
 
   #setAccounts(accounts: {address: string, publicKey: string}[]) {
@@ -131,6 +149,52 @@ export class SuiWallet implements Wallet {
         signPersonalMessage: this.#signPersonalMessage,
       },
     };
+  }
+
+  #signTransactionBlock: SuiSignTransactionBlockMethod = async (input) => {
+    if (!isTransactionBlock(input.transactionBlock)) {
+      throw new Error(
+        'Unexpect transaction format found. Ensure that you are using the `Transaction` class.',
+      );
+    }
+    return await this.service.request({
+      method: 'signTransactionBlock',
+      params: [input.transactionBlock.serialize()],
+    })
+  }
+
+  #signAndExecuteTransactionBlock: SuiSignAndExecuteTransactionBlockMethod = async (input) => {
+    if (!isTransactionBlock(input.transactionBlock)) {
+      throw new Error(
+        'Unexpect transaction format found. Ensure that you are using the `Transaction` class.',
+      );
+    }
+
+    return await this.service.request({
+      method: 'signAndExecuteTransactionBlock',
+      params: [input.transactionBlock.serialize(), input.options],
+    })
+  }
+
+  #stake = async (input: StakeInput) => {
+    return await this.service.request({
+      method: 'stake',
+      params: [input.validatorAddress],
+    })
+  }
+
+  #signMessage: SuiSignMessageMethod = async ({ message, account }) => {
+    return await this.service.request({
+      method: 'signMessage',
+      params: [hexlify(message)],
+    })
+  }
+
+  #signPersonalMessage: SuiSignPersonalMessageMethod = async ({ message, account }) => {
+    return await this.service.request({
+      method: 'signPersonalMessage',
+      params: [hexlify(message)],
+    })
   }
 }
 
