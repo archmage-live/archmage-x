@@ -45,6 +45,7 @@ export * from './aptos'
 export * from './sui'
 export * from './aleo'
 export * from './sol'
+export * from './starknet'
 
 export function isUseEd25519Curve(networkKind: NetworkKind): boolean {
   switch (networkKind) {

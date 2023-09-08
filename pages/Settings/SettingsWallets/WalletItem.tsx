@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { DraggableProvidedDragHandleProps } from 'react-beautiful-dnd'
 
 import { AccountAvatar } from '~components/AccountAvatar'
+import { TruncatedText } from '~components/TruncatedText'
 import { TypeBadge } from '~components/TypeBadge'
 import { dayjs } from '~lib/dayjs'
 import { SelectedWalletId, WalletEntry } from '~lib/services/wallet/tree'
@@ -137,7 +138,9 @@ export const WalletItem = ({
                 <Text>{subWallets.length} accounts</Text>
               )}
 
-              <Text>Created At: {dayjs(wallet.createdAt).fromNow()}</Text>
+              <TruncatedText>
+                Created At: {dayjs(wallet.createdAt).fromNow()}
+              </TruncatedText>
             </Stack>
 
             <Box {...dragHandleProps} p={2}>

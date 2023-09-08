@@ -15,7 +15,11 @@ import * as React from 'react'
 import { AlertBox } from '~components/AlertBox'
 import { CopyArea } from '~components/CopyIcon'
 import { useActive } from '~lib/active'
-import { getNetworkInfo } from '~lib/services/network'
+import {
+  getBridgeUrl,
+  getFaucetUrl,
+  getNetworkInfo
+} from '~lib/services/network'
 import { canWalletSign } from '~lib/wallet'
 import { useModalBox } from '~pages/Popup/ModalBox'
 
@@ -30,6 +34,10 @@ export const Deposit = ({ onClose }: { onClose: () => void }) => {
 
   const qrCodeBg = useColorModeValue('white', 'black')
   const qrCodeFg = useColorModeValue('black', 'white')
+
+  const faucet = network && getFaucetUrl(network)
+
+  const bridge = network && getBridgeUrl(network)
 
   if (!network || !account) {
     return <></>
@@ -87,6 +95,19 @@ export const Deposit = ({ onClose }: { onClose: () => void }) => {
             </Stack>
           )}
         </Stack>
+      </Stack>
+
+      <Stack>
+        {faucet && (
+          <Button variant="outline" size="lg" onClick={onClose}>
+            Get tokens from faucet
+          </Button>
+        )}
+        {bridge && (
+          <Button variant="outline" size="lg" onClick={onClose}>
+            Bridge funds
+          </Button>
+        )}
       </Stack>
 
       <Button variant="outline" size="lg" onClick={onClose}>

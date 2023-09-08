@@ -266,9 +266,8 @@ export enum MultisigWalletType {
 }
 
 export enum AccountAbstractionType {
-  // NATIVE = 'native', // starknet
   ERC4337 = 'erc4337',
-  SAFE = 'safe'
+  SAFE = 'safe',
 }
 
 export interface AccountAbstractionInfo {
@@ -292,6 +291,34 @@ export interface SafeOwner {
   name: string
   address: string // ethereum address
   associated?: SubIndex
+}
+
+export interface StarknetInfo {
+  type: StarknetAccountType
+  info: StarknetAccountArgentInfo | StarknetAccountBraavosInfo | StarknetAccountOzInfo
+}
+
+export enum StarknetAccountType {
+  ARGENT = 'argent',
+  BRAAVOS = 'braavos',
+  OZ = 'oz' // OpenZeppelin
+}
+
+export interface StarknetAccountArgentInfo {
+  publicKey: string
+  contractClassHash: string
+  accountClassHash: string
+}
+
+export interface StarknetAccountBraavosInfo {
+  publicKey: string
+  proxyClassHash: string
+  initialClassHash: string
+}
+
+export interface StarknetAccountOzInfo {
+  publicKey: string
+  contractClassHash: string
 }
 
 export enum KeylessWalletType {

@@ -20,7 +20,13 @@ import { argentGrindKey } from '~lib/crypto/argentGrindKey'
 import { braavosKey } from '~lib/crypto/braavosKey'
 import { DerivePosition } from '~lib/schema'
 
-import { KeystoreSigningWallet, WalletOpts, WalletType, generatePath } from '.'
+import {
+  KeystoreSigningWallet,
+  StarknetAccountType,
+  WalletOpts,
+  WalletType,
+  generatePath
+} from './base'
 
 export const ARGENT_PROXY_CONTRACT_CLASS_HASHES = [
   '0x25ec026985a3bf9d0cc1fe17326b245dfdc3ff89b8fde106542a3ea56c5a918'
@@ -40,10 +46,8 @@ export const BRAAVOS_INITIAL_CLASS_HASH =
 export const BRAAVOS_ACCOUNT_CLASS_HASH =
   '0x2c2b8f559e1221468140ad7b2352b1a5be32660d0bf1a3ae3a054a4ec5254e4'
 
-export enum StarknetAccountType {
-  ARGENT = 'argent',
-  BRAAVOS = 'braavos'
-}
+export const OZ_ACCOUNT_CLASS_HASH =
+  '0x2794ce20e5f2ff0d40e632cb53845b9f4e526ebd8471983f7dbd355b721d5a'
 
 const STARKNET_ACCOUNT_TYPE: StarknetAccountType = StarknetAccountType.ARGENT
 
@@ -116,6 +120,13 @@ export class StarknetWallet implements KeystoreSigningWallet {
         const wallet = this.wallet.derivePath(path)
         return new StarknetWallet(wallet, braavosKey(wallet.privateKey))
       }
+      case StarknetAccountType.OZ: {
+        const wallet = this.wallet.derivePath(path)
+        return new StarknetWallet(
+          wallet,
+          ec.starkCurve.grindKey(wallet.privateKey)
+        )
+      }
     }
   }
 
@@ -154,6 +165,15 @@ export class StarknetWallet implements KeystoreSigningWallet {
           0
         )
 
+        break
+      }
+      case StarknetAccountType.OZ: {
+        addr = hash.calculateContractAddressFromHash(
+          this.publicKey,
+          OZ_ACCOUNT_CLASS_HASH,
+          CallData.compile({ publicKey: this.publicKey }),
+          0
+        )
         break
       }
     }

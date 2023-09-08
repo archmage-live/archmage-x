@@ -1,5 +1,5 @@
 import { NetworkKind } from '~lib/network'
-import { SafeInfo } from '~lib/wallet'
+import { SafeInfo, StarknetInfo } from "~lib/wallet";
 
 import { ChainId } from './network'
 import { Index } from './subWallet'
@@ -20,6 +20,7 @@ export interface ChainAccountInfo {
   subAccounts?: SubChainAccount[][] // for Bitcoin sub addresses
 
   safe?: SafeInfo
+  starknet?: StarknetInfo
 }
 
 // Bitcoin sub address
