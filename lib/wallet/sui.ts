@@ -1,10 +1,7 @@
 import { arrayify, hexlify } from '@ethersproject/bytes'
-import {
-  Ed25519Keypair,
-  SerializedSignature,
-  isValidSuiAddress,
-  normalizeSuiAddress
-} from '@mysten/sui.js'
+import { SerializedSignature } from '@mysten/sui.js/cryptography'
+import { Ed25519Keypair } from '@mysten/sui.js/keypairs/ed25519'
+import { isValidSuiAddress, normalizeSuiAddress } from '@mysten/sui.js/utils'
 import assert from 'assert'
 
 import { HDNode, HardenedBit } from '~lib/crypto/ed25519'

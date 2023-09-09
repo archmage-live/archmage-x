@@ -51,10 +51,9 @@ export interface StarknetTransactionPayload extends TransactionPayload {
   populatedParams: StarknetTxPopulatedParams
 }
 
-export function formatStarknetTxParams(payload: {
-  txParams: StarknetTxParams
-  populatedParams: StarknetTxPopulatedParams
-}): TransactionPayload {
+export function formatStarknetTxParams(
+  payload: StarknetTransactionPayload
+): TransactionPayload {
   const { txParams, populatedParams } = payload
 
   return {

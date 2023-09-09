@@ -8,6 +8,8 @@ import { EvmProvider } from '~lib/services/provider/evm/provider'
 import { formatEvmTxParams } from '~lib/services/provider/evm/types'
 import { StarknetProvider } from '~lib/services/provider/starknet/provider'
 import { formatStarknetTxParams } from '~lib/services/provider/starknet/types'
+import { SuiProvider } from '~lib/services/provider/sui/provider'
+import { formatSuiTxParams } from '~lib/services/provider/sui/types'
 
 export interface Provider {
   isOk(): Promise<boolean>
@@ -66,6 +68,8 @@ export async function getProvider(network: INetwork): Promise<Provider> {
       return await CosmProvider.from(network)
     case NetworkKind.APTOS:
       return await AptosProvider.from(network)
+    case NetworkKind.SUI:
+      return await SuiProvider.from(network)
     case NetworkKind.SOL:
       break
   }
@@ -90,6 +94,8 @@ export function formatTxPayload(
       return formatCosmTxParams(payload)
     case NetworkKind.APTOS:
       return formatAptosTxParams(payload)
+    case NetworkKind.SUI:
+      return formatSuiTxParams(payload)
   }
   throw new Error(`provider for network ${network.kind} is not implemented`)
 }
