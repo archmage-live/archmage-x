@@ -1,5 +1,6 @@
 // https://github.com/MystenLabs/sui/blob/main/apps/wallet/src/dapp-interface/WalletStandardInterface.ts
-import { arrayify, hexlify } from '@ethersproject/bytes'
+import { hexlify } from '@ethersproject/bytes'
+import { fromB64 } from '@mysten/bcs'
 import { isTransactionBlock } from '@mysten/sui.js/transactions'
 import { normalizeSuiAddress } from '@mysten/sui.js/utils'
 import { registerWallet } from '@mysten/wallet-standard'
@@ -31,7 +32,7 @@ import {
   context
 } from '~lib/inject/client'
 
-export const SUI_PROVIDER_NAME = 'starknetProvider'
+export const SUI_PROVIDER_NAME = 'suiProvider'
 
 export interface ISuiProviderService extends EventEmitter {
   request(
@@ -108,7 +109,7 @@ export class SuiWallet implements Wallet {
     this.#accounts = accounts.map(({ address, publicKey }) => {
       return {
         address,
-        publicKey: publicKey ? arrayify(publicKey) : new Uint8Array(),
+        publicKey: publicKey ? fromB64(publicKey) : new Uint8Array(),
         chains: this.#activeChain ? [this.#activeChain] : [],
         features: ['sui:signAndExecuteTransaction']
       }
@@ -235,7 +236,7 @@ export class SuiWallet implements Wallet {
   }) => {
     assert(
       normalizeSuiAddress(account.address) ===
-      normalizeSuiAddress(this.accounts[0]?.address),
+        normalizeSuiAddress(this.accounts[0]?.address),
       'Account must match the current account'
     )
     return await this.service.request(

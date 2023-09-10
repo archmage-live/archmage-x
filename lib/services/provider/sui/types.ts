@@ -1,5 +1,6 @@
-import { TransactionPayload } from "~lib/services/provider";
-import { TransactionBlock } from "@mysten/sui.js/transactions";
+import { TransactionBlock } from '@mysten/sui.js/transactions'
+
+import { TransactionPayload } from '~lib/services/provider'
 
 export interface SuiTransactionPayload extends TransactionPayload {
   txParams: TransactionBlock | string

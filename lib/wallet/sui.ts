@@ -82,7 +82,7 @@ export class SuiWallet implements KeystoreSigningWallet {
 
   get publicKey() {
     assert(this.wallet instanceof Ed25519Keypair)
-    return this.wallet.getPublicKey().toString()
+    return this.wallet.getPublicKey().toBase64()
   }
 
   async signTransaction(transaction: Uint8Array): Promise<SignatureWithBytes> {

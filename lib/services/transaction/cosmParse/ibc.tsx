@@ -5,11 +5,11 @@ import assert from 'assert'
 import { DenomTrace } from 'cosmjs-types/ibc/applications/transfer/v1/transfer'
 import { ReactNode } from 'react'
 
+import { FromTo } from '~components/FromTo'
 import { CosmAppChainInfo } from '~lib/network/cosm'
 import { TokenInfo } from '~lib/services/datasource/cosmostation'
 import { TransactionType } from '~lib/services/transaction'
 import { shortenString } from '~lib/utils'
-import { FromTo } from '~pages/Popup/Consent/Transaction/FromTo'
 
 import { CosmMsg, CosmTxInfo } from '.'
 import { extractEventAttributes, formatCosmCoin } from './util'

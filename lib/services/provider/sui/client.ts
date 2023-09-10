@@ -3,7 +3,7 @@ import { SuiClient } from '@mysten/sui.js/client'
 import { SuiChainInfo } from '~lib/network/sui'
 import { ChainId, INetwork } from '~lib/schema'
 
-export {SuiClient} from '@mysten/sui.js/client'
+export { SuiClient } from '@mysten/sui.js/client'
 
 const SUI_CLIENTS = new Map<ChainId, SuiClient>()
 

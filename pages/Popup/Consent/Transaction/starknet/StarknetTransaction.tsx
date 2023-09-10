@@ -21,6 +21,7 @@ import { ReactNode, useCallback, useMemo, useState } from 'react'
 import { TransactionType } from 'starknet'
 
 import { AlertBox } from '~components/AlertBox'
+import { FromToWithCheck } from '~components/FromTo'
 import { SpinningOverlay } from '~components/SpinningOverlay'
 import { TextLink } from '~components/TextLink'
 import { IChainAccount, INetwork, ISubWallet, IWallet } from '~lib/schema'
@@ -38,9 +39,8 @@ import {
   useStarknetTokenTransfers,
   useStarknetTxEvents
 } from '~lib/services/transaction/starknet/events'
-import { FromToWithCheck } from '~pages/Popup/Consent/Transaction/FromTo'
-import { useTabsHeaderScroll } from '~pages/Popup/Consent/Transaction/helpers'
 
+import { useTabsHeaderScroll } from '../helpers'
 import { StarknetTxPayload } from './StarknetTransactionData'
 
 export const StarknetTransaction = ({

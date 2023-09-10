@@ -267,7 +267,7 @@ export enum MultisigWalletType {
 
 export enum AccountAbstractionType {
   ERC4337 = 'erc4337',
-  SAFE = 'safe',
+  SAFE = 'safe'
 }
 
 export interface AccountAbstractionInfo {
@@ -295,7 +295,10 @@ export interface SafeOwner {
 
 export interface StarknetInfo {
   type: StarknetAccountType
-  info: StarknetAccountArgentInfo | StarknetAccountBraavosInfo | StarknetAccountOzInfo
+  info:
+    | StarknetAccountArgentInfo
+    | StarknetAccountBraavosInfo
+    | StarknetAccountOzInfo
 }
 
 export enum StarknetAccountType {
@@ -401,6 +404,8 @@ export function getDefaultDerivePosition(
     case NetworkKind.BTC:
       return DerivePosition.ACCOUNT
     case NetworkKind.APTOS:
+      return DerivePosition.ACCOUNT
+    case NetworkKind.SUI:
       return DerivePosition.ACCOUNT
     default:
       return DerivePosition.ADDRESS_INDEX

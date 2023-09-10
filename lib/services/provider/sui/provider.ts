@@ -19,7 +19,7 @@ export class SuiProvider implements Provider {
 
   async isOk(): Promise<boolean> {
     try {
-      await this.client.getCurrentEpoch()
+      await this.client.getChainIdentifier()
       return true
     } catch {
       return false

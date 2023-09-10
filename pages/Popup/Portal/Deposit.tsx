@@ -11,6 +11,7 @@ import {
 import { atom } from 'jotai'
 import { QRCodeSVG } from 'qrcode.react'
 import * as React from 'react'
+import browser from 'webextension-polyfill'
 
 import { AlertBox } from '~components/AlertBox'
 import { CopyArea } from '~components/CopyIcon'
@@ -99,12 +100,22 @@ export const Deposit = ({ onClose }: { onClose: () => void }) => {
 
       <Stack>
         {faucet && (
-          <Button variant="outline" size="lg" onClick={onClose}>
+          <Button
+            variant="outline"
+            size="lg"
+            onClick={() => {
+              browser.tabs.create({ url: faucet }).then()
+            }}>
             Get tokens from faucet
           </Button>
         )}
         {bridge && (
-          <Button variant="outline" size="lg" onClick={onClose}>
+          <Button
+            variant="outline"
+            size="lg"
+            onClick={() => {
+              browser.tabs.create({ url: bridge }).then()
+            }}>
             Bridge funds
           </Button>
         )}

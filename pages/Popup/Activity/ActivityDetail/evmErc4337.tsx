@@ -18,6 +18,7 @@ import { useMemo, useState } from 'react'
 import { useAsync } from 'react-use'
 import browser from 'webextension-polyfill'
 
+import { FromTo } from '~components/FromTo'
 import { dayjs } from '~lib/dayjs'
 import { formatNumber } from '~lib/formatNumber'
 import { INetwork, IPendingTx, ITransaction } from '~lib/schema'
@@ -34,7 +35,6 @@ import {
 import { getTransactionInfo } from '~lib/services/transaction'
 import { EvmTransactionInfo } from '~lib/services/transaction/evmService'
 import { shortenString } from '~lib/utils'
-import { FromTo } from '~pages/Popup/Consent/Transaction/FromTo'
 
 import { Status } from './evm'
 

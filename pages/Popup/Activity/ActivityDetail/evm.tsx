@@ -24,6 +24,7 @@ import { useMemo, useState } from 'react'
 import { useAsync } from 'react-use'
 import browser from 'webextension-polyfill'
 
+import { FromTo } from '~components/FromTo'
 import { dayjs } from '~lib/dayjs'
 import { formatNumber } from '~lib/formatNumber'
 import { useTransparentize } from '~lib/hooks/useColor'
@@ -40,8 +41,6 @@ import {
   ReducedTransactionResponse
 } from '~lib/services/transaction/evmService'
 import { shortenString } from '~lib/utils'
-
-import { FromTo } from '../../Consent/Transaction/FromTo'
 
 export const Status = ({ status }: { status: TransactionStatus }) => {
   let bgColor, color, Icon, text

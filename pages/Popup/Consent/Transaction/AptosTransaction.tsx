@@ -30,6 +30,7 @@ import * as React from 'react'
 import { ReactNode, useCallback, useEffect, useMemo, useState } from 'react'
 
 import { AlertBox } from '~components/AlertBox'
+import { FromToWithCheck } from '~components/FromTo'
 import { SpinningOverlay } from '~components/SpinningOverlay'
 import { formatNumber } from '~lib/formatNumber'
 import { IChainAccount, INetwork, ISubWallet, IWallet } from '~lib/schema'
@@ -59,7 +60,6 @@ import {
   AptosTransactionEvents,
   AptosTransactionPayload
 } from '~pages/Popup/Consent/Transaction/AptosTransactionData'
-import { FromToWithCheck } from '~pages/Popup/Consent/Transaction/FromTo'
 
 import { useTabsHeaderScroll } from './helpers'
 

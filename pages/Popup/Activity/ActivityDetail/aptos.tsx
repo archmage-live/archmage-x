@@ -16,6 +16,7 @@ import Decimal from 'decimal.js'
 import { useMemo } from 'react'
 import browser from 'webextension-polyfill'
 
+import { FromTo } from '~components/FromTo'
 import { dayjs } from '~lib/dayjs'
 import { formatNumber } from '~lib/formatNumber'
 import { IChainAccount, INetwork, IPendingTx, ITransaction } from '~lib/schema'
@@ -29,7 +30,6 @@ import {
 } from '~lib/services/transaction/aptosService'
 import { shortenString } from '~lib/utils'
 
-import { FromTo } from '../../Consent/Transaction/FromTo'
 import { Status } from './evm'
 
 export const AptosActivityDetail = ({

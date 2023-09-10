@@ -40,9 +40,7 @@ export const STARKNET_NETWORKS_PRESET: StarknetChainInfo[] = [
     },
     baseUrl: 'https://alpha-mainnet.starknet.io',
     explorers: ['https://starkscan.co', 'https://voyager.online'],
-    bridges: [
-      'https://starkgate.starknet.io'
-    ],
+    bridges: ['https://starkgate.starknet.io'],
     accountClassHash: [
       {
         name: 'Argent Account',
@@ -68,12 +66,8 @@ export const STARKNET_NETWORKS_PRESET: StarknetChainInfo[] = [
       'https://testnet.starkscan.co',
       'https://goerli.voyager.online'
     ],
-    faucets: [
-      'https://faucet.goerli.starknet.io'
-    ],
-    bridges: [
-      'https://goerli.starkgate.starknet.io'
-    ],
+    faucets: ['https://faucet.goerli.starknet.io'],
+    bridges: ['https://goerli.starkgate.starknet.io'],
     accountClassHash: [
       {
         name: 'Argent Account',

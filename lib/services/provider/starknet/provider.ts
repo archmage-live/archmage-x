@@ -137,9 +137,7 @@ export class StarknetProvider implements Provider {
     )
   }
 
-  async getNextNonce(
-    account: IChainAccount,
-  ): Promise<number> {
+  async getNextNonce(account: IChainAccount): Promise<number> {
     return Number(await this.client.getNonceForAddress(account.address!))
   }
 

@@ -32,6 +32,7 @@ import { ReactNode, useCallback, useEffect, useMemo, useState } from 'react'
 import * as React from 'react'
 
 import { AlertBox } from '~components/AlertBox'
+import { FromToWithCheck } from '~components/FromTo'
 import { SpinningOverlay } from '~components/SpinningOverlay'
 import { formatNumber } from '~lib/formatNumber'
 import { toCosmSignDoc } from '~lib/inject/cosm'
@@ -55,7 +56,6 @@ import {
   CosmTransactionEvents,
   CosmTransactionMessages
 } from './CosmTransactionData'
-import { FromToWithCheck } from './FromTo'
 import { useTabsHeaderScroll } from './helpers'
 
 export const CosmTransaction = ({

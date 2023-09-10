@@ -11,6 +11,7 @@ import { BtcChainInfo } from '~lib/network/btc'
 import { CosmAppChainInfo } from '~lib/network/cosm'
 import { EvmChainInfo } from '~lib/network/evm'
 import { StarknetChainInfo } from '~lib/network/starknet'
+import { SuiChainInfo } from '~lib/network/sui'
 import { ChainId, IChainAccount, INetwork, IToken } from '~lib/schema'
 import {
   CHAINLIST_API,
@@ -119,6 +120,20 @@ export function getNetworkInfo(network: INetwork): NetworkInfo {
         explorerUrl: info.explorers.at(0)
       }
     }
+    case NetworkKind.SUI: {
+      const info = network.info as SuiChainInfo
+      return {
+        name: info.name,
+        description: info.name,
+        chainId: info.chainId,
+        isTestnet: info.isTestnet,
+        currencyName: info.currency.name,
+        currencySymbol: info.currency.symbol,
+        decimals: info.currency.decimals,
+        rpcUrl: info.rpc.at(0),
+        explorerUrl: info.explorers.at(0)
+      }
+    }
     default:
       return {} as NetworkInfo
   }
@@ -166,6 +181,9 @@ export function getAccountUrl(
         break
       case NetworkKind.APTOS:
         pathPrefix = !url.host.includes('aptoscan.com') ? 'account' : 'address'
+        break
+      case NetworkKind.SUI:
+        pathPrefix = 'address'
         break
       default:
         return undefined
@@ -224,6 +242,9 @@ export function getTransactionUrl(
         break
       case NetworkKind.APTOS:
         pathPrefix = !url.host.includes('aptoscan.com') ? 'txn' : 'version'
+        break
+      case NetworkKind.SUI:
+        pathPrefix = 'txblock'
         break
       default:
         return undefined
@@ -284,6 +305,9 @@ export function getTokenUrl(
       case NetworkKind.APTOS:
         // TODO
         return undefined
+      case NetworkKind.SUI:
+        // TODO
+        return undefined
       default:
         return undefined
     }
@@ -302,6 +326,10 @@ export function getFaucetUrl(network: INetwork): string | undefined {
   switch (network.kind) {
     case NetworkKind.STARKNET: {
       const info = network.info as StarknetChainInfo
+      return info.faucets?.at(0)
+    }
+    case NetworkKind.SUI: {
+      const info = network.info as SuiChainInfo
       return info.faucets?.at(0)
     }
     default:

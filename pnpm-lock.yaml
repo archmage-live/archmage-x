@@ -83,6 +83,7 @@ specifiers:
   '@moralisweb3/core': ^2.7.0
   '@moralisweb3/evm-api': ^2.7.0
   '@moralisweb3/evm-utils': ^2.7.0
+  '@mysten/bcs': ^0.7.4
   '@mysten/sui.js': ^0.41.1
   '@mysten/wallet-standard': ^0.7.1
   '@noble/hashes': file:./resolutions/@noble/hashes
@@ -274,6 +275,7 @@ dependencies:
   '@moralisweb3/core': 2.7.0
   '@moralisweb3/evm-api': 2.7.0
   '@moralisweb3/evm-utils': 2.7.0
+  '@mysten/bcs': 0.7.4
   '@mysten/sui.js': 0.41.1
   '@mysten/wallet-standard': 0.7.1
   '@noble/hashes': file:resolutions/@noble/hashes
@@ -4104,6 +4106,12 @@ packages:
 
   /@mysten/bcs/0.7.3:
     resolution: {integrity: sha512-fbusBfsyc2MpTACi72H5edWJ670T84va+qn9jSPpb5BzZ+pzUM1Q0ApPrF5OT+mB1o5Ng+mxPQpBCZQkfiV2TA==}
+    dependencies:
+      bs58: 5.0.0
+    dev: false
+
+  /@mysten/bcs/0.7.4:
+    resolution: {integrity: sha512-6DKzM4L10Au3Og5EJRBqJZmXWZ7hS/clVjbVUH4sA0aFtS3AZo2xc+r5fUFfdJbaWZUxVaDiQ8BNiEZWkAnEOw==}
     dependencies:
       bs58: 5.0.0
     dev: false

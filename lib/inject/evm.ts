@@ -40,45 +40,6 @@ if (
   const init = async () => {
     const listeners = new Map<string, Function[]>()
 
-    service.on('unlocked', (isUnlocked) => {
-      globalThis.ethereum._state.isUnlocked = isUnlocked
-    })
-
-    service.on('networkChanged', ({ chainId, networkVersion }) => {
-      globalThis.ethereum.chainId = chainId
-      globalThis.ethereum.networkVersion = networkVersion
-
-      listeners.get('chainChanged')?.forEach((handler) => handler(chainId))
-    })
-
-    service.on('accountsChanged', async () => {
-      const { chainId, networkVersion, ...state } = await service.state(
-        context()
-      )
-      globalThis.ethereum._state = state
-      globalThis.ethereum.selectedAddress = state.accounts.length
-        ? state.accounts[0]
-        : null
-
-      listeners
-        .get('accountsChanged')
-        ?.forEach((handler) => handler(state.accounts.slice(0, 1)))
-    })
-
-    service.on('message', (...args: any[]) => {
-      listeners.get('message')?.forEach((handler) => handler(...args))
-    })
-
-    service.state(context()).then(({ chainId, networkVersion, ...state }) => {
-      const ethereum = globalThis.ethereum
-      ethereum._state = state
-      ethereum.chainId = chainId
-      ethereum.networkVersion = networkVersion
-      ethereum.selectedAddress = state.accounts.length
-        ? state.accounts[0]
-        : null
-    })
-
     globalThis.ethereum = {
       ...globalThis.archmage.evm,
 
@@ -170,6 +131,45 @@ if (
         }
       }
     }
+
+    service.on('unlocked', (isUnlocked) => {
+      globalThis.ethereum._state.isUnlocked = isUnlocked
+    })
+
+    service.on('networkChanged', ({ chainId, networkVersion }) => {
+      globalThis.ethereum.chainId = chainId
+      globalThis.ethereum.networkVersion = networkVersion
+
+      listeners.get('chainChanged')?.forEach((handler) => handler(chainId))
+    })
+
+    service.on('accountsChanged', async () => {
+      const { chainId, networkVersion, ...state } = await service.state(
+        context()
+      )
+      globalThis.ethereum._state = state
+      globalThis.ethereum.selectedAddress = state.accounts.length
+        ? state.accounts[0]
+        : null
+
+      listeners
+        .get('accountsChanged')
+        ?.forEach((handler) => handler(state.accounts.slice(0, 1)))
+    })
+
+    service.on('message', (...args: any[]) => {
+      listeners.get('message')?.forEach((handler) => handler(...args))
+    })
+
+    service.state(context()).then(({ chainId, networkVersion, ...state }) => {
+      const ethereum = globalThis.ethereum
+      ethereum._state = state
+      ethereum.chainId = chainId
+      ethereum.networkVersion = networkVersion
+      ethereum.selectedAddress = state.accounts.length
+        ? state.accounts[0]
+        : null
+    })
 
     globalThis.dispatchEvent(new CustomEvent('ethereum#initialized'))
   }

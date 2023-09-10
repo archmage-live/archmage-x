@@ -499,6 +499,8 @@ class ConsentService extends ConsentServicePartial {
           req.origin
         )
         break
+      case NetworkKind.SUI:
+        break
     }
 
     if (txResponse) {

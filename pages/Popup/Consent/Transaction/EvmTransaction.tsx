@@ -25,6 +25,7 @@ import {
 } from '@chakra-ui/react'
 import { BigNumber } from '@ethersproject/bignumber'
 import { BiQuestionMark } from '@react-icons/all-files/bi/BiQuestionMark'
+import assert from 'assert'
 import Decimal from 'decimal.js'
 import { useScroll } from 'framer-motion'
 import * as React from 'react'
@@ -38,6 +39,7 @@ import {
 } from 'react'
 
 import { AlertBox } from '~components/AlertBox'
+import { FromToWithCheck } from '~components/FromTo'
 import { SpinningOverlay } from '~components/SpinningOverlay'
 import { formatNumber } from '~lib/formatNumber'
 import { IChainAccount, INetwork, ISubWallet, IWallet } from '~lib/schema'
@@ -83,9 +85,7 @@ import {
   optionGasFee
 } from './EvmGasFeeEditModal'
 import { EvmTransactionData } from './EvmTransactionData'
-import { FromToWithCheck } from './FromTo'
 import { useTabsHeaderScroll } from './helpers'
-import assert from "assert";
 
 export const EvmTransaction = ({
   origin,
@@ -333,7 +333,7 @@ export const EvmTransaction = ({
       tx.maxFeePerGas = tx.gasPrice
       delete tx.gasPrice
     } else if (tx.maxPriorityFeePerGas || tx.maxFeePerGas) {
-      assert((tx.maxPriorityFeePerGas && tx.maxFeePerGas))
+      assert(tx.maxPriorityFeePerGas && tx.maxFeePerGas)
       if (tx.type !== 2) {
         tx.type = 2
       }
