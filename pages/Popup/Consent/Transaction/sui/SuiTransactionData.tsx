@@ -1,15 +1,11 @@
-import { Box, Stack, Text, useColorModeValue } from '@chakra-ui/react'
+import { Stack, Text } from '@chakra-ui/react'
 import { DryRunTransactionBlockResponse } from '@mysten/sui.js/client'
 import { TransactionBlock } from '@mysten/sui.js/transactions'
 import * as React from 'react'
-import ReactJson from 'react-json-view'
 
 import { JsonDisplay } from '~components/JsonDisplay'
 
 export const SuiTransactionData = ({ data }: { data: TransactionBlock }) => {
-  const rjvTheme = useColorModeValue('rjv-default', 'brewer')
-  const rjvBg = useColorModeValue('gray.50', 'rgb(12, 13, 14)')
-
   return (
     <Stack spacing={6}>
       <Stack>

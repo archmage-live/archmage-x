@@ -127,6 +127,13 @@ export class BaseTokenService {
     })
   }
 
+  /**
+   * Initialize default token lists
+   * @param networkKind
+   * @param defaultTokenListUrls
+   * @param fetchTokenLists
+   * @protected
+   */
   protected async initDefaultTokenLists(
     networkKind: NetworkKind,
     defaultTokenListUrls: string[],
@@ -138,6 +145,7 @@ export class BaseTokenService {
       )) || {}
     const local = localDefaultTokenListUrls[networkKind]
 
+    // check if default token lists changed
     if (
       local?.length === defaultTokenListUrls.length &&
       local.every((item, i) => item === defaultTokenListUrls[i])
@@ -146,26 +154,33 @@ export class BaseTokenService {
       return false
     }
 
-    const newUrls = defaultTokenListUrls.filter(
-      (url) => !local || local.indexOf(url) < 0
-    )
+    // update default token lists urls
     localDefaultTokenListUrls[networkKind] = defaultTokenListUrls
 
-    const existingLists = (await this.getTokenLists(networkKind)).map(
+    const newListUrls = defaultTokenListUrls.filter(
+      (url) => !local || local.indexOf(url) < 0
+    )
+
+    const existingListUrls = (await this.getTokenLists(networkKind)).map(
       (item) => item.url
     )
-    const tokenLists = await fetchTokenLists(
-      newUrls.filter((url) => existingLists.indexOf(url) < 0)
+
+    // fetch new token lists
+    const newTokenLists = await fetchTokenLists(
+      newListUrls.filter((url) => existingListUrls.indexOf(url) < 0)
     )
 
-    if (tokenLists.length) {
-      if (!existingLists.length) {
-        tokenLists[0].enabled = true // enable first list
+    // persist new token lists
+    if (newTokenLists.length) {
+      if (!existingListUrls.length) {
+        // enable first list
+        newTokenLists[0].enabled = true
       }
 
-      await DB.tokenLists.bulkAdd(tokenLists)
+      await DB.tokenLists.bulkAdd(newTokenLists)
     }
 
+    // persist default token lists urls
     await LOCAL_STORE.set(StoreKey.TOKEN_LISTS, localDefaultTokenListUrls)
 
     return true

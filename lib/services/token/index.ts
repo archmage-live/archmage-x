@@ -29,6 +29,11 @@ import {
   getEvmTokenBrief,
   getEvmTokenListBrief
 } from './evm'
+import {
+  SUI_TOKEN_SERVICE,
+  getSuiTokenBrief,
+  getSuiTokenListBrief
+} from './sui'
 
 export interface Amount {
   symbol: string
@@ -58,6 +63,8 @@ export function getTokenBrief(token: IToken): TokenBrief {
       return getEvmTokenBrief(token)
     case NetworkKind.COSM:
       return getCosmTokenBrief(token)
+    case NetworkKind.SUI:
+      return getSuiTokenBrief(token)
     default:
       throw new Error('unknown token')
   }
@@ -91,6 +98,8 @@ export function getTokenListBrief(
       return getEvmTokenListBrief(tokenList, chainId)
     case NetworkKind.COSM:
       return getCosmTokenListBrief(tokenList, chainId)
+    case NetworkKind.SUI:
+      return getSuiTokenListBrief(tokenList, chainId)
     default:
       throw new Error('unknown token')
   }
@@ -103,6 +112,11 @@ export function formatTokenIdentifier(networkKind: NetworkKind, token: string) {
     default:
       throw new Error('unknown token')
   }
+}
+
+export type SearchedTokenFromTokenLists = {
+  token: IToken
+  tokenList: ITokenList
 }
 
 export type SearchedToken = {
@@ -149,7 +163,7 @@ interface ITokenService {
   searchTokenFromTokenLists(
     account: IChainAccount,
     token: string
-  ): Promise<{ tokenList: ITokenList; token: IToken } | undefined>
+  ): Promise<SearchedTokenFromTokenLists | undefined>
 
   searchToken(
     account: IChainAccount,
@@ -165,13 +179,22 @@ class TokenServicePartial extends BaseTokenService implements ITokenService {}
 export class TokenService extends TokenServicePartial {
   private synchronizer = new Synchronizer()
 
+  /**
+   * Initialize default token lists of all networks
+   */
   static async init() {
     if (isBackgroundWorker()) {
       await EVM_TOKEN_SERVICE.init()
       await COSM_TOKEN_SERVICE.init()
+      await SUI_TOKEN_SERVICE.init()
     }
   }
 
+  /**
+   * Update token list of specified network
+   * @param tokenList
+   * @param network
+   */
   async updateTokenList(
     tokenList: ITokenList,
     network: INetwork
@@ -200,6 +223,11 @@ export class TokenService extends TokenServicePartial {
     resolve()
   }
 
+  /**
+   * Fetch token list of specified network kind from specified url
+   * @param networkKind
+   * @param url
+   */
   async fetchTokenList(
     networkKind: NetworkKind,
     url: string
@@ -223,6 +251,9 @@ export class TokenService extends TokenServicePartial {
       case NetworkKind.COSM:
         tokenList = await COSM_TOKEN_SERVICE.fetchTokenList(url)
         break
+      case NetworkKind.SUI:
+        tokenList = await SUI_TOKEN_SERVICE.fetchTokenList(url)
+        break
     }
 
     resolve(tokenList ? shallowCopy(tokenList) : undefined)
@@ -232,12 +263,14 @@ export class TokenService extends TokenServicePartial {
   async searchTokenFromTokenLists(
     account: IChainAccount,
     token: string
-  ): Promise<{ tokenList: ITokenList; token: IToken } | undefined> {
+  ): Promise<SearchedTokenFromTokenLists | undefined> {
     switch (account.networkKind) {
       case NetworkKind.EVM:
         return EVM_TOKEN_SERVICE.searchTokenFromTokenLists(account, token)
       case NetworkKind.COSM:
         return COSM_TOKEN_SERVICE.searchTokenFromTokenLists(account, token)
+      case NetworkKind.SUI:
+        return SUI_TOKEN_SERVICE.searchTokenFromTokenLists(account, token)
     }
     return undefined
   }
@@ -285,6 +318,9 @@ export class TokenService extends TokenServicePartial {
         case NetworkKind.COSM:
           foundToken = await COSM_TOKEN_SERVICE.searchToken(account, token)
           break
+        case NetworkKind.SUI:
+          foundToken = await SUI_TOKEN_SERVICE.searchToken(account, token)
+          break
       }
     } catch (err) {
       console.error(`search token ${token}: ${err}`)
@@ -315,6 +351,9 @@ export class TokenService extends TokenServicePartial {
         break
       case NetworkKind.COSM:
         await COSM_TOKEN_SERVICE.fetchTokens(account)
+        break
+      case NetworkKind.SUI:
+        await SUI_TOKEN_SERVICE.fetchTokens(account)
         break
     }
 

@@ -202,6 +202,7 @@ specifiers:
   starknet4: npm:starknet@4.22.0
   stream-http: ^3.2.0
   string_decoder: ^1.3.0
+  superstruct: 1.0.3
   swr: ^1.3.0
   tiny-secp256k1: ^2.2.1
   ts-jest: ^28.0.5
@@ -373,6 +374,7 @@ dependencies:
   starknet4: /starknet/4.22.0
   stream-http: 3.2.0
   string_decoder: 1.3.0
+  superstruct: 1.0.3
   swr: 1.3.0_react@18.2.0
   tiny-secp256k1: 2.2.1
   tweetnacl: 1.0.3
@@ -5497,7 +5499,7 @@ packages:
     dependencies:
       '@noble/curves': 1.0.0
       '@noble/hashes': file:resolutions/@noble/hashes
-      '@scure/base': 1.1.1
+      '@scure/base': 1.1.3
     dev: false
 
   /@scure/bip32/1.3.2:
@@ -5512,21 +5514,21 @@ packages:
     resolution: {integrity: sha512-pwrPOS16VeTKg98dYXQyIjJEcWfz7/1YJIwxUEPFfQPtc86Ym/1sVgQ2RLoD43AazMk2l/unK4ITySSpW2+82w==}
     dependencies:
       '@noble/hashes': file:resolutions/@noble/hashes
-      '@scure/base': 1.1.1
+      '@scure/base': 1.1.3
     dev: false
 
   /@scure/bip39/1.2.0:
     resolution: {integrity: sha512-SX/uKq52cuxm4YFXWFaVByaSHJh2w3BnokVSeUJVCv6K7WulT9u2BuNRBhuFl8vAuYnzx9bEu9WgpcNYTrYieg==}
     dependencies:
       '@noble/hashes': file:resolutions/@noble/hashes
-      '@scure/base': 1.1.1
+      '@scure/base': 1.1.3
     dev: false
 
   /@scure/bip39/1.2.1:
     resolution: {integrity: sha512-Z3/Fsz1yr904dduJD0NpiyRHhRYHdcnyh73FZWiV+/qhWi83wNJ3NWolYqCEN+ZWsUz2TWwajJggcRE9r1zUYg==}
     dependencies:
       '@noble/hashes': file:resolutions/@noble/hashes
-      '@scure/base': 1.1.1
+      '@scure/base': 1.1.3
     dev: false
 
   /@scure/btc-signer/1.0.0:
@@ -18409,7 +18411,7 @@ packages:
     dev: false
 
   github.com/ethereumjs/ethereumjs-abi/ee3994657fa7a427238e6ba92a84d0b529bbcde0:
-    resolution: {tarball: https://codeload.github.com/ethereumjs/ethereumjs-abi/tar.gz/ee3994657fa7a427238e6ba92a84d0b529bbcde0}
+    resolution: {commit: ee3994657fa7a427238e6ba92a84d0b529bbcde0, repo: git+ssh://git@github.com/ethereumjs/ethereumjs-abi.git, type: git}
     name: ethereumjs-abi
     version: 0.6.8
     dependencies:

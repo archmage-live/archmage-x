@@ -306,7 +306,7 @@ export function getTokenUrl(
         // TODO
         return undefined
       case NetworkKind.SUI:
-        // TODO
+        pathPrefix = 'coin' // TODO
         return undefined
       default:
         return undefined

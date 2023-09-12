@@ -13,11 +13,16 @@ import {
   Text,
   useColorModeValue
 } from '@chakra-ui/react'
+import {
+  MoveCallTransaction,
+  TransferObjectsTransaction
+} from '@mysten/sui.js/src/builder/Transactions'
 import { normalizeSuiAddress } from '@mysten/sui.js/src/utils'
 import { TransactionBlock } from '@mysten/sui.js/transactions'
 import Decimal from 'decimal.js'
 import { ReactNode, useCallback, useMemo, useState } from 'react'
 import * as React from 'react'
+import { is } from 'superstruct'
 
 import { AlertBox } from '~components/AlertBox'
 import { FromToWithCheck } from '~components/FromTo'
@@ -28,6 +33,8 @@ import { NetworkInfo } from '~lib/services/network'
 import { formatTxPayload } from '~lib/services/provider'
 import { useSuiTransaction } from '~lib/services/provider/sui/hooks'
 import { Amount } from '~lib/services/token'
+import { useSuiTokenInfos } from '~lib/services/token/sui'
+import { shortenString } from '~lib/utils'
 import { useTabsHeaderScroll } from '~pages/Popup/Consent/Transaction/helpers'
 import {
   SuiTransactionData,
@@ -62,7 +69,40 @@ export const SuiTransaction = ({
 
   const gas = useMemo(() => txParams.blockData.gasConfig, [txParams])
 
+  const to = useMemo(() => {
+    const txs = txParams.blockData.transactions.filter(
+      (tx) => tx.kind !== 'SplitCoins' && tx.kind !== 'MergeCoins'
+    )
+    if (txs.length === 1) {
+      const tx = txs[0]
+      if (is(tx, TransferObjectsTransaction)) {
+        if (typeof tx.address === 'string') {
+          return tx.address
+        }
+      } else if (is(tx, MoveCallTransaction)) {
+        return tx.target
+      }
+    }
+    return undefined
+  }, [txParams])
+
+  const operation = useMemo(() => {
+    const txs = txParams.blockData.transactions
+    if (txs.length === 1) {
+      return txs[0].kind
+    }
+    const kinds = txs
+      .filter((tx) => tx.kind !== 'SplitCoins' && tx.kind !== 'MergeCoins')
+      .map((tx) => tx.kind)
+    if (kinds.length) {
+      return kinds.length === 1 ? kinds[0] : `${kinds[0]}...`
+    }
+    return `${txs.map((tx) => tx.kind)[0]}...`
+  }, [txParams])
+
   const dryRun = useSuiTransaction(network, account, txParams)
+
+  const tokenInfos = useSuiTokenInfos(network.chainId)
 
   const [ignoreEstimateError, setIgnoreEstimateError] = useState(false)
 
@@ -107,7 +147,7 @@ export const SuiTransaction = ({
           <FromToWithCheck
             subWallet={subWallet}
             from={account.address!}
-            to={''}
+            to={to}
           />
         </Box>
 
@@ -125,7 +165,11 @@ export const SuiTransaction = ({
                 py={1}
                 borderRadius="4px"
                 borderWidth="1px"
-                maxW="full"></HStack>
+                maxW="full">
+                <Text fontSize="md" color="gray.500">
+                  {operation.toUpperCase()}
+                </Text>
+              </HStack>
             </HStack>
 
             {dryRun && dryRun.balanceChanges.length && (
@@ -158,10 +202,16 @@ export const SuiTransaction = ({
                               : 'red.500'
                           }>
                           {new Decimal(change.amount)
+                            .div(
+                              new Decimal(10).pow(
+                                tokenInfos?.get(change.coinType)?.decimals || 0
+                              )
+                            )
                             .toDecimalPlaces(8)
                             .toString()}
                           &nbsp;
-                          {change.coinType}
+                          {tokenInfos?.get(change.coinType)?.symbol ||
+                            shortenString(change.coinType)}
                         </Text>
                       </HStack>
                     )

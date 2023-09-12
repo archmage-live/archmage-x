@@ -14,6 +14,7 @@ import { AptosTransaction } from './AptosTransaction'
 import { CosmTransaction } from './CosmTransactioin'
 import { EvmTransaction } from './EvmTransaction'
 import { StarknetTransaction } from './starknet/StarknetTransaction'
+import { SuiTransaction } from './sui/SuiTransaction'
 
 export const Transaction = ({
   request,
@@ -91,6 +92,21 @@ export const Transaction = ({
     case NetworkKind.APTOS:
       return (
         <AptosTransaction
+          origin={request.origin}
+          request={request}
+          network={network}
+          networkInfo={networkInfo}
+          wallet={wallet}
+          subWallet={subWallet}
+          account={account}
+          balance={balance}
+          onComplete={onComplete}
+          suffix={rejectAllButton}
+        />
+      )
+    case NetworkKind.SUI:
+      return (
+        <SuiTransaction
           origin={request.origin}
           request={request}
           network={network}

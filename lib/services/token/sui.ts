@@ -1,46 +1,41 @@
 import { shallowCopy } from '@ethersproject/properties'
 import assert from 'assert'
-import { Metadata } from 'cosmjs-types/cosmos/bank/v1beta1/bank'
 import Decimal from 'decimal.js'
+import { useAsync } from 'react-use'
 
 import { DB } from '~lib/db'
 import { NetworkKind } from '~lib/network'
-import { COSM_NETWORKS_PRESET, CosmAppChainInfo } from '~lib/network/cosm'
-import { Coin } from '~lib/network/cosm/coin'
 import {
   ChainId,
   IChainAccount,
-  INetwork,
   IToken,
   ITokenList,
   TokenVisibility
 } from '~lib/schema'
+import { SUI_SCAN_API } from '~lib/services/datasource/suiscan'
 import {
-  COSMOSTATION_API,
-  COSMOSTATION_REPO_URL,
+  SUI_VISION_API,
   TokenInfo,
   TokenList
-} from '~lib/services/datasource/cosmostation'
+} from '~lib/services/datasource/suivision'
 import { NETWORK_SERVICE } from '~lib/services/network'
-import { getCosmClient } from '~lib/services/provider/cosm/client'
+import { getSuiClient } from '~lib/services/provider/sui/client'
+import { CosmTokenInfo } from '~lib/services/token/cosm'
+import { normalizeSuiType } from '~lib/wallet'
 
-import {
-  SearchedTokenFromTokenLists,
-  TokenBrief,
-  TokenListBrief
-} from '.'
+import { SearchedTokenFromTokenLists, TokenBrief, TokenListBrief } from '.'
 import { BaseTokenService } from './base'
 
-export type CosmTokenInfo = {
+type SuiTokenInfo = {
   info: TokenInfo
   balance: string
 }
 
-export function getCosmTokenBrief(token: IToken): TokenBrief {
-  const { info, balance } = token.info as CosmTokenInfo
+export function getSuiTokenBrief(token: IToken): TokenBrief {
+  const { info, balance } = token.info as SuiTokenInfo
   return {
     name: info.symbol,
-    iconUrl: info.image,
+    iconUrl: info.iconUrl,
     balance: {
       symbol: info.symbol,
       decimals: info.decimals,
@@ -52,7 +47,7 @@ export function getCosmTokenBrief(token: IToken): TokenBrief {
   }
 }
 
-export function getCosmTokenListBrief(
+export function getSuiTokenListBrief(
   token: ITokenList,
   chainId: ChainId
 ): TokenListBrief {
@@ -70,44 +65,44 @@ export function getCosmTokenListBrief(
   }
 }
 
-export class CosmTokenService extends BaseTokenService {
+export class SuiTokenService extends BaseTokenService {
   async init() {
-    if (!process.env.PLASMO_PUBLIC_ENABLE_COSMOS) {
+    if (!process.env.PLASMO_PUBLIC_ENABLE_SUI) {
       return
     }
 
     await this._initDefaultTokenLists()
 
-    console.log('initialized cosm tokens')
+    console.log('initialized sui tokens')
   }
 
   private async _initDefaultTokenLists() {
-    const defaultTokenListUrls = [COSMOSTATION_REPO_URL]
+    const networks = await NETWORK_SERVICE.getNetworks(NetworkKind.SUI)
+    const defaultTokenLists: TokenList[] = []
+    for (const network of networks) {
+      let tokenList = await SUI_VISION_API.getTokenList(
+        network.chainId as string
+      )
+      if (tokenList) {
+        defaultTokenLists.push(tokenList)
+      }
+      tokenList = await SUI_SCAN_API.getTokenList(network.chainId as string)
+      if (tokenList) {
+        defaultTokenLists.push(tokenList)
+      }
+    }
 
     return this.initDefaultTokenLists(
-      NetworkKind.COSM,
-      defaultTokenListUrls,
+      NetworkKind.SUI,
+      defaultTokenLists.map(({ url }) => url),
       async (urls: string[]) => {
-        if (!urls.length) {
-          return []
+        const tokenLists: ITokenList[] = []
+        for (const url of urls) {
+          const list = defaultTokenLists.find((list) => list.url === url)
+          assert(list)
+          tokenLists.push(this._makeTokenList(url, list))
         }
-        assert(urls[0] === COSMOSTATION_REPO_URL)
-
-        let tokenList: TokenList | undefined
-        for (const chain of COSM_NETWORKS_PRESET) {
-          const newTokenList = await COSMOSTATION_API.getTokenList(
-            chain,
-            tokenList
-          )
-          if (!newTokenList) {
-            continue
-          }
-          tokenList = newTokenList
-        }
-
-        return tokenList
-          ? [this._makeTokenList(COSMOSTATION_REPO_URL, tokenList)]
-          : []
+        return tokenLists
       }
     )
   }
@@ -117,33 +112,12 @@ export class CosmTokenService extends BaseTokenService {
     delete info.tokens
 
     return {
-      networkKind: NetworkKind.COSM,
+      networkKind: NetworkKind.SUI,
       url,
       enabled,
       info,
       tokens: tokenList.tokens
     } as ITokenList
-  }
-
-  async updateTokenList(
-    tokenList: ITokenList,
-    network: INetwork
-  ): Promise<void> {
-    assert(network.kind === NetworkKind.COSM)
-    const info = network.info as CosmAppChainInfo
-
-    let list: TokenList = shallowCopy(tokenList.info)
-    list.tokens = tokenList.tokens
-    const newList = await COSMOSTATION_API.getTokenList(info, list)
-    if (!newList) {
-      return
-    }
-
-    tokenList.info = newList
-    tokenList.tokens = newList.tokens
-    delete tokenList.info.tokens
-
-    await DB.tokenLists.put(tokenList)
   }
 
   async fetchTokenList(url: string): Promise<ITokenList | undefined> {
@@ -152,9 +126,9 @@ export class CosmTokenService extends BaseTokenService {
 
   async searchTokenFromTokenLists(
     account: IChainAccount,
-    token: string // denom
+    token: string // coin type
   ): Promise<SearchedTokenFromTokenLists | undefined> {
-    assert(account.networkKind === NetworkKind.COSM)
+    assert(account.networkKind === NetworkKind.SUI)
 
     let foundToken: IToken | undefined
     const tokenLists = await this.getTokenLists(account.networkKind)
@@ -163,7 +137,10 @@ export class CosmTokenService extends BaseTokenService {
         return
       }
       return (tokenList.tokens as TokenInfo[]).find((info) => {
-        if (info.chainId === account.chainId && info.denom === token) {
+        if (
+          info.chainId === account.chainId &&
+          info.coinType === normalizeSuiType(token)
+        ) {
           foundToken = {
             masterId: account.masterId,
             index: account.index,
@@ -175,7 +152,7 @@ export class CosmTokenService extends BaseTokenService {
             visible: TokenVisibility.UNSPECIFIED,
             info: {
               info
-            } as CosmTokenInfo
+            } as SuiTokenInfo
           } as IToken
           return true
         }
@@ -184,7 +161,7 @@ export class CosmTokenService extends BaseTokenService {
 
     if (!tokenList || !foundToken) return undefined
 
-    const info = foundToken.info as CosmTokenInfo
+    const info = foundToken.info as SuiTokenInfo
     try {
       const balances = await this._fetchTokensBalance(account, [info.info])
       info.balance = balances[0][1]
@@ -200,42 +177,24 @@ export class CosmTokenService extends BaseTokenService {
 
   async searchToken(
     account: IChainAccount,
-    token: string
+    token: string // coin type
   ): Promise<IToken | undefined> {
-    assert(account.networkKind === NetworkKind.COSM)
+    assert(account.networkKind === NetworkKind.SUI)
     assert(account.address)
 
     const network = await NETWORK_SERVICE.getNetwork({
-      kind: NetworkKind.COSM,
+      kind: NetworkKind.SUI,
       chainId: account.chainId
     })
     assert(network)
 
-    const client = await getCosmClient(network)
-    const queryClient = client.getQueryClient()
+    const client = await getSuiClient(network)
 
-    const coin = Coin.fromProto(await queryClient.bank.supplyOf(token))
-    if (!coin.amount.isPositive()) {
-      return
-    }
-    const balance = Coin.fromProto(
-      await queryClient.bank.balance(account.address, token)
-    )
-    let metadata: Metadata | undefined
-    let decimals = 0
-    try {
-      metadata = await queryClient.bank.denomMetadata(token)
-      if (metadata) {
-        for (const denomUnit of metadata.denomUnits) {
-          if (denomUnit.exponent > 0) {
-            decimals = denomUnit.exponent
-            break
-          }
-        }
-      }
-    } catch (err) {
-      console.error(`cosm denomMetadata for denom ${token}: ${err}`)
-    }
+    const metadata = await client.getCoinMetadata({ coinType: token })
+    const balance = await client.getBalance({
+      owner: account.address,
+      coinType: token
+    })
 
     return {
       masterId: account.masterId,
@@ -249,19 +208,22 @@ export class CosmTokenService extends BaseTokenService {
       info: {
         info: {
           chainId: account.chainId,
-          denom: token,
-          type: 'native',
+          coinType: token,
+          package: undefined,
+          creator: undefined,
+          name: metadata?.name || '',
           symbol: metadata?.symbol || token,
-          decimals,
-          description: metadata?.description
+          decimals: metadata?.decimals || 0,
+          desc: metadata?.description || '',
+          iconUrl: metadata?.iconUrl
         } as TokenInfo,
-        balance: balance.amount.toString()
-      } as CosmTokenInfo
+        balance: balance.totalBalance
+      } as SuiTokenInfo
     } as IToken
   }
 
   async fetchTokens(account: IChainAccount): Promise<void> {
-    assert(account.networkKind === NetworkKind.COSM)
+    assert(account.networkKind === NetworkKind.SUI)
     if (!account.address) {
       return
     }
@@ -283,7 +245,7 @@ export class CosmTokenService extends BaseTokenService {
       .map((t) => t.id)
 
     const bulkAdd: IToken[] = []
-    const bulkUpdate: [number, CosmTokenInfo][] = []
+    const bulkUpdate: [number, SuiTokenInfo][] = []
     for (const [token, info] of tokensBalance.entries()) {
       const existing = existingTokensMap.get(token)
       if (!existing) {
@@ -317,7 +279,7 @@ export class CosmTokenService extends BaseTokenService {
   private async _fetchTokens(
     account: IChainAccount,
     whitelistedTokens: IToken[]
-  ): Promise<Map<string, CosmTokenInfo>> {
+  ): Promise<Map<string, SuiTokenInfo>> {
     if (!account.address) {
       return new Map()
     }
@@ -338,7 +300,7 @@ export class CosmTokenService extends BaseTokenService {
 
     const tokenBalances = await this._fetchTokensBalance(account, tokens)
 
-    const result = new Map<string, CosmTokenInfo>()
+    const result = new Map<string, SuiTokenInfo>()
     for (const [token, balance] of tokenBalances) {
       const info = tokensMap.get(token)
       if (!info) continue
@@ -367,30 +329,29 @@ export class CosmTokenService extends BaseTokenService {
     assert(account.address)
 
     const network = await NETWORK_SERVICE.getNetwork({
-      kind: NetworkKind.COSM,
+      kind: NetworkKind.SUI,
       chainId: account.chainId
     })
     assert(network)
 
-    const client = await getCosmClient(network)
-    const queryClient = client.getQueryClient()
-
-    const balances: Coin[] = (
-      await queryClient.bank.allBalances(account.address)
-    ).map(Coin.fromProto)
+    const client = await getSuiClient(network)
+    const balances = await client.getAllBalances({ owner: account.address })
     const balancesMap = new Map(
-      balances.map((balance) => [balance.denom, balance.amount.toString()])
+      balances.map((balance) => [
+        normalizeSuiType(balance.coinType),
+        balance.totalBalance
+      ])
     )
 
     return tokens.map((info) => {
-      return [info.denom, balancesMap.get(info.denom) || '0']
+      return [info.coinType, balancesMap.get(info.coinType) || '0']
     })
   }
 
   private async _getTokensFromLists(
     chainId: string
   ): Promise<Map<string, TokenInfo>> {
-    const tokenLists = (await this.getTokenLists(NetworkKind.COSM)).filter(
+    const tokenLists = (await this.getTokenLists(NetworkKind.SUI)).filter(
       (list) => {
         // only consider enabled list
         return list.enabled
@@ -407,10 +368,27 @@ export class CosmTokenService extends BaseTokenService {
     // deduplicate
     return new Map<string, TokenInfo>(
       tokens.map((token) => {
-        return [token.denom, token]
+        return [token.coinType, token]
       })
     )
   }
 }
 
-export const COSM_TOKEN_SERVICE = new CosmTokenService()
+export const SUI_TOKEN_SERVICE = new SuiTokenService()
+
+export function useSuiTokenInfos(chainId?: ChainId) {
+  const { value } = useAsync(async () => {
+    if (!chainId) {
+      return
+    }
+    const tokenLists = await SUI_TOKEN_SERVICE.getTokenLists(NetworkKind.SUI)
+    const tokenInfos = tokenLists
+      .flatMap((tokenList) => tokenList.tokens as TokenInfo[])
+      .filter((tokenInfo) => tokenInfo.chainId === chainId)
+    return new Map(
+      tokenInfos.map((tokenInfo) => [tokenInfo.coinType, tokenInfo])
+    )
+  }, [chainId])
+
+  return value
+}
