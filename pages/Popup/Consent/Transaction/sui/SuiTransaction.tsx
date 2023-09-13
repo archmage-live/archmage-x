@@ -13,15 +13,12 @@ import {
   Text,
   useColorModeValue
 } from '@chakra-ui/react'
-import {
-  MoveCallTransaction,
-  TransferObjectsTransaction
-} from '@mysten/sui.js/src/builder/Transactions'
-import { normalizeSuiAddress } from '@mysten/sui.js/src/utils'
+// TODO: deprecated
+import { MoveCallTransaction, TransferObjectsTransaction } from '@mysten/sui.js'
 import { TransactionBlock } from '@mysten/sui.js/transactions'
+import { normalizeSuiAddress } from '@mysten/sui.js/utils'
 import Decimal from 'decimal.js'
 import { ReactNode, useCallback, useMemo, useState } from 'react'
-import * as React from 'react'
 import { is } from 'superstruct'
 
 import { AlertBox } from '~components/AlertBox'

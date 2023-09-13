@@ -24,11 +24,7 @@ import {
 import { NETWORK_SERVICE } from '~lib/services/network'
 import { getCosmClient } from '~lib/services/provider/cosm/client'
 
-import {
-  SearchedTokenFromTokenLists,
-  TokenBrief,
-  TokenListBrief
-} from '.'
+import { SearchedTokenFromTokenLists, TokenBrief, TokenListBrief } from '.'
 import { BaseTokenService } from './base'
 
 export type CosmTokenInfo = {

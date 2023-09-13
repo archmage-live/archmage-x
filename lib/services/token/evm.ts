@@ -20,7 +20,7 @@ import { TOKENLISTS_API } from '~lib/services/datasource/tokenlists'
 import { NETWORK_SERVICE } from '~lib/services/network'
 import { EvmClient } from '~lib/services/provider/evm/client'
 
-import { SearchedTokenFromTokenLists, TokenBrief, TokenListBrief } from ".";
+import { SearchedTokenFromTokenLists, TokenBrief, TokenListBrief } from '.'
 import { BaseTokenService } from './base'
 
 type EvmTokenInfo = {
