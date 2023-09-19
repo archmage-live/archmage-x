@@ -11,7 +11,6 @@ import { DB } from '~lib/db'
 import { Erc4337CallDataDecoder } from '~lib/erc4337/callData'
 import { IChainAccount, IPendingTx, ITransaction } from '~lib/schema'
 import { getEvmSignatureFrom4Bytes } from '~lib/services/datasource/4byte'
-import { EvmTxType } from '~lib/services/datasource/etherscan'
 import { JIFFYSCAN_API, UserOp } from '~lib/services/datasource/jiffyscan'
 import { NETWORK_SERVICE } from '~lib/services/network'
 import { UserOperationResponse } from '~lib/services/provider/evm'
@@ -21,6 +20,7 @@ import {
   EvmBasicTransactionService,
   EvmPendingTxInfo,
   EvmTransactionInfo,
+  EvmTxType,
   isEvmUserOperationResponse
 } from './evmService'
 

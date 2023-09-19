@@ -120,6 +120,7 @@ export abstract class BaseTransactionService {
             account.chainId,
             account.address,
             type,
+            // index1 && index2 as cursor
             lastIndex1 !== undefined && lastIndex1 !== null
               ? lastIndex1
               : Dexie.maxKey,
@@ -127,8 +128,9 @@ export abstract class BaseTransactionService {
               ? lastIndex2
               : Dexie.maxKey
           ]
+          // don't include lower or upper
         )
-        .reverse()
+        .reverse() // reverse order
         .limit(limit)
         .toArray()
     ).map((tx) => decodeTransaction(tx) as ITransaction)
@@ -144,6 +146,11 @@ export abstract class BaseTransactionService {
     return decodeTransaction(await DB.transactions.get(id)) as
       | ITransaction
       | undefined
+  }
+
+  signAndSendTx(account: IChainAccount, ...args: any[]): Promise<IPendingTx> {
+    // this method should be implemented by subclasses
+    throw new Error('not implemented')
   }
 
   async checkPendingTx(

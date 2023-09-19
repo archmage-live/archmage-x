@@ -16,6 +16,7 @@ import {
   getEvmTransactionInfo,
   getEvmTransactionTypes
 } from './evmService'
+import { SUI_TRANSACTION_SERVICE } from './suiService'
 
 export interface ITransactionService {
   getPendingTxCount(account: IChainAccount): Promise<number>
@@ -73,6 +74,8 @@ export function getTransactionService(
       return COSM_TRANSACTION_SERVICE
     case NetworkKind.APTOS:
       return APTOS_TRANSACTION_SERVICE
+    case NetworkKind.SUI:
+      return SUI_TRANSACTION_SERVICE
   }
   throw new Error('transaction service not found')
 }

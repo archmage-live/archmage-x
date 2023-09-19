@@ -5,7 +5,6 @@ import { Network } from '@ethersproject/networks'
 import { EtherscanProvider } from '@ethersproject/providers'
 import { version } from '@ethersproject/providers/lib/_version'
 import { ConnectionInfo } from '@ethersproject/web'
-import assert from 'assert'
 import { useMemo } from 'react'
 
 import { fetchJson, fetchJsonWithCache } from '~lib/fetch'
@@ -86,30 +85,6 @@ export interface EtherscanTxResponse {
   txreceipt_status: string
   methodId: string
   functionName: string
-}
-
-export enum EvmTxType {
-  NORMAL = '',
-  INTERNAL = 'internal',
-  ERC20 = 'erc20',
-  ERC721 = 'erc721',
-  ERC1155 = 'erc1155',
-  UserOp = 'userOperation' // for erc4337
-}
-
-function getAction(type: EvmTxType) {
-  switch (type) {
-    case EvmTxType.NORMAL:
-      return 'txlist'
-    case EvmTxType.INTERNAL:
-      return 'txlistinternal'
-    case EvmTxType.ERC20:
-      return 'tokentx'
-    case EvmTxType.ERC721:
-      return 'tokennfttx'
-    case EvmTxType.ERC1155:
-      return 'token1155tx'
-  }
 }
 
 class CachedEtherscanProvider extends EtherscanProvider {
@@ -234,12 +209,10 @@ class CachedEtherscanProvider extends EtherscanProvider {
   }
 
   async getTransactions(
-    type: EvmTxType,
+    action: string,
     addressOrName: string,
     startblock?: number
   ): Promise<Array<[TransactionResponse, EtherscanTxResponse]>> {
-    const action = getAction(type)
-    assert(action)
     const params = {
       action,
       address: await this.resolveName(addressOrName),

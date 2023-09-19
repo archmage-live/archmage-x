@@ -440,9 +440,10 @@ export class CosmTransactionService extends CosmTransactionServicePartial {
     const deletePendingTxs = existingPendingTxsForTxs.map((tx) => tx.id)
 
     await DB.transaction('rw', [DB.pendingTxs, DB.transactions], async () => {
-      if (deletePendingTxs.length)
+      if (deletePendingTxs.length) {
         await DB.pendingTxs.bulkDelete(deletePendingTxs)
-      if (addTxs.length)
+      }
+      if (addTxs.length) {
         await DB.transactions.bulkAdd(
           addTxs.map((tx) => {
             return {
@@ -451,11 +452,8 @@ export class CosmTransactionService extends CosmTransactionServicePartial {
             }
           })
         )
+      }
     })
-  }
-
-  signAndSendTx(account: IChainAccount, ...args: any[]): Promise<IPendingTx> {
-    throw new Error('not implemented')
   }
 
   async addPendingTx(

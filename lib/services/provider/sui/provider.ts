@@ -19,7 +19,7 @@ export class SuiProvider implements Provider {
 
   async isOk(): Promise<boolean> {
     try {
-      await this.client.getChainIdentifier()
+      await this.client.getLatestCheckpointSequenceNumber()
       return true
     } catch {
       return false

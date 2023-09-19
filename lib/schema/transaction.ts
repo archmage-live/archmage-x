@@ -12,9 +12,9 @@ export interface ITransaction {
   address: string
   type: string // transaction type, e.g., normal/internal/erc20/erc721/...
   index1: number | string // e.g., block number
-  index2: number | string // e.g., transaction index
+  index2: number | string // e.g., transaction index or hash
   info: any
 }
 
 export const transactionSchemaV1 =
-  '++id, &[masterId+index+networkKind+chainId+address+type+index1+index2], [networkKind+chainId]'
+  '++id, &[masterId+index+networkKind+chainId+address+type+index1+index2], &[masterId+index+networkKind+chainId+address+type+index2], [networkKind+chainId]'

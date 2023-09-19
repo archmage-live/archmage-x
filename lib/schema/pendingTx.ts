@@ -10,9 +10,10 @@ export interface IPendingTx {
   networkKind: NetworkKind
   chainId: ChainId
   address: string
-  nonce: number
+  nonce: number // nonce of the transaction; for no-nonce chain, it can be the timestamp
+  hash?: string // it can be the transaction hash
   info: any
 }
 
 export const pendingTxSchemaV1 =
-  '++id, &[masterId+index+networkKind+chainId+address+nonce], &[networkKind+chainId+masterId+index+address+nonce]'
+  '++id, &[masterId+index+networkKind+chainId+address+nonce], &[networkKind+chainId+masterId+index+address+nonce], [masterId+index+networkKind+chainId+address+hash]'

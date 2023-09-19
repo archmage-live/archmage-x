@@ -18,8 +18,7 @@ import { NetworkKind } from '~lib/network'
 import { IChainAccount, IPendingTx, ITransaction } from '~lib/schema'
 import {
   ETHERSCAN_API,
-  EtherscanTxResponse,
-  EvmTxType
+  EtherscanTxResponse
 } from '~lib/services/datasource/etherscan'
 import { JIFFYSCAN_API, UserOp } from '~lib/services/datasource/jiffyscan'
 import { NETWORK_SERVICE } from '~lib/services/network'
@@ -41,6 +40,30 @@ import {
   TransactionStatus,
   TransactionType
 } from '../'
+
+export enum EvmTxType {
+  NORMAL = '',
+  INTERNAL = 'internal',
+  ERC20 = 'erc20',
+  ERC721 = 'erc721',
+  ERC1155 = 'erc1155',
+  UserOp = 'userOperation' // for erc4337
+}
+
+function getEtherscanEvmTxAction(type: EvmTxType) {
+  switch (type) {
+    case EvmTxType.NORMAL:
+      return 'txlist'
+    case EvmTxType.INTERNAL:
+      return 'txlistinternal'
+    case EvmTxType.ERC20:
+      return 'tokentx'
+    case EvmTxType.ERC721:
+      return 'tokennfttx'
+    case EvmTxType.ERC1155:
+      return 'token1155tx'
+  }
+}
 
 export function getEvmTransactionTypes() {
   return [
@@ -775,7 +798,7 @@ export class EvmBasicTransactionService extends EvmTransactionServicePartial {
       : 0
 
     const transactions = await etherscanProvider.getTransactions(
-      type as EvmTxType,
+      getEtherscanEvmTxAction(type as EvmTxType) as string,
       account.address,
       startBlock
     )

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 
 import { useActive } from '~lib/active'
 import { IPendingTx } from '~lib/schema'
-import { EvmTxType } from '~lib/services/datasource/etherscan'
+import { EvmTxType } from '~lib/services/transaction/evmService'
 import { useTransactionsMixed } from '~lib/services/transaction/hooks'
 
 import { ActivityDetailModal } from './ActivityDetail'
