@@ -1,6 +1,12 @@
-import { SuiTransactionBlockResponse } from '@mysten/sui.js/client'
+import {
+  MoveCallSuiTransaction,
+  SuiArgument,
+  SuiTransactionBlockResponse
+} from '@mysten/sui.js/client'
 import { TransactionBlock } from '@mysten/sui.js/transactions'
+import { normalizeSuiAddress } from '@mysten/sui.js/utils'
 import assert from 'assert'
+import Decimal from 'decimal.js'
 
 import { DB } from '~lib/db'
 import { isBackgroundWorker } from '~lib/detect'
@@ -9,8 +15,15 @@ import { SERVICE_WORKER_CLIENT, SERVICE_WORKER_SERVER } from '~lib/rpc'
 import { IChainAccount, IPendingTx, ITransaction } from '~lib/schema'
 import { NETWORK_SERVICE } from '~lib/services/network'
 import { getSuiClient } from '~lib/services/provider/sui/client'
+import { normalizeSuiType } from '~lib/wallet'
 
-import { ITransactionService } from '.'
+import {
+  ITransactionService,
+  TransactionInfo,
+  TransactionStatus,
+  TransactionType,
+  isPendingTx
+} from '.'
 import { BaseTransactionService } from './baseService'
 
 export interface SuiPendingTxInfo {
@@ -27,6 +40,131 @@ export interface SuiTransactionInfo {
   tx?: string // serialized TransactionBlock; only exists for local sent transaction
 
   origin?: string // only exists for local sent transaction
+}
+
+export function getSuiTransactionInfo(
+  transaction: IPendingTx | ITransaction
+): TransactionInfo {
+  const info = transaction.info as SuiPendingTxInfo | SuiTransactionInfo
+  const txResponse = info.txResponse
+
+  const data = txResponse.transaction?.data
+  const from = data?.sender ? normalizeSuiAddress(data.sender) : undefined
+  const txBlockKind = data?.transaction
+
+  const balanceChange = txResponse.balanceChanges?.find((change) => {
+    const owner = change.owner as {
+      AddressOwner: string
+    }
+    return (
+      normalizeSuiType(change.coinType) === normalizeSuiType('0x2::sui::SUI') &&
+      normalizeSuiAddress(owner.AddressOwner) === transaction.address
+    )
+  })
+  const amount = balanceChange?.amount
+    ? new Decimal(balanceChange.amount)
+    : undefined
+
+  const timestamp =
+    typeof txResponse.timestampMs === 'string'
+      ? Number(txResponse.timestampMs)
+      : undefined
+
+  let type, name
+  if (txBlockKind?.kind === 'ProgrammableTransaction') {
+    const txs = txBlockKind.transactions
+
+    const txsNotSplitMergeCoins = txs.filter((tx) => {
+      const stx = tx as SuiTx
+      return !stx.SplitCoins && !stx.MergeCoins
+    })
+
+    const kind = (object: Object) => Object.keys(object)[0] as keyof SuiTx
+
+    if (txs.length === 1) {
+      name = kind(txs[0])
+    } else {
+      if (txsNotSplitMergeCoins.length) {
+        const firstKind = kind(txsNotSplitMergeCoins[0])
+        name =
+          txsNotSplitMergeCoins.length === 1 ? firstKind : `${firstKind}...`
+      } else {
+        name = `${kind(txs[0])}...`
+      }
+    }
+
+    if (name === 'TransferObjects') {
+      type = amount?.isPositive()
+        ? TransactionType.Receive
+        : TransactionType.Send
+    } else if (name === 'Publish' || name === 'Upgrade') {
+      type = TransactionType.DeployContract
+    } else {
+      type = TransactionType.CallContract
+    }
+
+    if (txsNotSplitMergeCoins.length === 1) {
+      const tx = txsNotSplitMergeCoins[0] as SuiTx
+      if (tx.TransferObjects) {
+        // TODO
+      }
+    }
+  }
+
+  return {
+    type,
+    isPending: isPendingTx(transaction),
+    isCancelled: false,
+    name,
+    from,
+    to: undefined,
+    origin: info.origin,
+    amount: amount?.abs().toString(),
+    hash: txResponse.digest,
+    nonce:
+      timestamp !== undefined
+        ? timestamp
+        : isPendingTx(transaction)
+        ? transaction.nonce
+        : 0, // should not be 0
+    status: isPendingTx(transaction)
+      ? TransactionStatus.PENDING
+      : txResponse.effects?.status.status !== 'failure'
+      ? TransactionStatus.CONFIRMED
+      : TransactionStatus.CONFIRMED_FAILURE,
+    timestamp
+  } as TransactionInfo
+}
+
+type SuiTx = Partial<
+  SuiMoveCall &
+    SuiTransferObjects &
+    SuiSplitCoins &
+    SuiMergeCoins &
+    SuiPublish &
+    SuiUpgrade &
+    SuiMakeMoveVec
+>
+type SuiMoveCall = {
+  MoveCall: MoveCallSuiTransaction
+}
+type SuiTransferObjects = {
+  TransferObjects: [SuiArgument[], SuiArgument]
+}
+type SuiSplitCoins = {
+  SplitCoins: [SuiArgument, SuiArgument[]]
+}
+type SuiMergeCoins = {
+  MergeCoins: [SuiArgument, SuiArgument[]]
+}
+type SuiPublish = {
+  Publish: string[]
+}
+type SuiUpgrade = {
+  Upgrade: [string[], string, SuiArgument]
+}
+type SuiMakeMoveVec = {
+  MakeMoveVec: [string | null, SuiArgument[]]
 }
 
 // @ts-ignore
@@ -49,6 +187,7 @@ export class SuiTransactionService extends SuiTransactionServicePartial {
       networkKind: account.networkKind,
       chainId: account.chainId,
       address: account.address,
+      // here we use timestamp as nonce, since Sui doesn't use nonce
       nonce: txResponse.timestampMs
         ? Number(txResponse.timestampMs)
         : Date.now(),

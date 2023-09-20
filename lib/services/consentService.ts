@@ -21,6 +21,7 @@ import { TOKEN_SERVICE } from '~lib/services/token'
 import { APTOS_TRANSACTION_SERVICE } from '~lib/services/transaction/aptosService'
 import { COSM_TRANSACTION_SERVICE } from '~lib/services/transaction/cosmService'
 import { EVM_TRANSACTION_SERVICE } from '~lib/services/transaction/evmService'
+import { SUI_TRANSACTION_SERVICE } from '~lib/services/transaction/suiService'
 import { WALLET_SERVICE } from '~lib/services/wallet'
 import { SESSION_STORE, StoreKey, useSessionStorage } from '~lib/store'
 import { createWindow } from '~lib/tab'
@@ -500,6 +501,12 @@ class ConsentService extends ConsentServicePartial {
         )
         break
       case NetworkKind.SUI:
+        await SUI_TRANSACTION_SERVICE.addPendingTx(
+          account,
+          payload.txParams,
+          txResponse,
+          req.origin
+        )
         break
     }
 

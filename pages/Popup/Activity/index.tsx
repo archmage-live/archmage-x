@@ -3,7 +3,7 @@ import { useVirtualizer } from '@tanstack/react-virtual'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
 import { useActive } from '~lib/active'
-import { IPendingTx } from '~lib/schema'
+import { isPendingTx } from '~lib/services/transaction'
 import { EvmTxType } from '~lib/services/transaction/evmService'
 import { useTransactionsMixed } from '~lib/services/transaction/hooks'
 
@@ -74,8 +74,7 @@ export default function Activity() {
       return
     }
     return transactions?.find((tx) => {
-      const isPending = typeof (tx as IPendingTx).nonce === 'number'
-      return tx.id === txId.id && isPending === txId.isPending
+      return tx.id === txId.id && isPendingTx(tx) === txId.isPending
     })
   }, [transactions, txId])
 
@@ -141,7 +140,7 @@ export default function Activity() {
             }
 
             const tx = transactions[item.index - 1]
-            const isPending = typeof (tx as IPendingTx).nonce === 'number'
+            const isPending = isPendingTx(tx)
 
             return (
               <Box
@@ -200,7 +199,7 @@ export default function Activity() {
         />
       )}
 
-      {network && tx && typeof (tx as IPendingTx).nonce === 'number' && (
+      {network && tx && isPendingTx(tx) && (
         <EvmSpeedUpOrCancelModal
           isOpen={isSpeedUpOpen}
           onClose={onSpeedUpClose}

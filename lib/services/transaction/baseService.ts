@@ -2,8 +2,10 @@ import Dexie from 'dexie'
 
 import { DB } from '~lib/db'
 import { EXTENSION } from '~lib/extension'
+import { NetworkKind } from '~lib/network'
 import { IChainAccount, INetwork, IPendingTx, ITransaction } from '~lib/schema'
 import { getTransactionUrl } from '~lib/services/network'
+import { shortenString } from '~lib/utils'
 
 import { TransactionStatus, decodeTransaction, getTransactionInfo } from '.'
 import { PENDING_TX_CHECKER } from './check'
@@ -163,16 +165,19 @@ export abstract class BaseTransactionService {
   async notifyTransaction(network: INetwork, transaction: ITransaction) {
     const info = getTransactionInfo(transaction, network)
     const success = info.status === TransactionStatus.CONFIRMED
-    const nonce = info.nonce
+
+    // Sui doesn't use nonce
+    const identifier =
+      network.kind !== NetworkKind.SUI ? info.nonce : shortenString(info.hash)
 
     const explorerUrl = getTransactionUrl(network, info.hash)
 
     const title = success ? 'Confirmed transaction' : 'Failed transaction'
     const message = success
-      ? `Transaction ${nonce} confirmed! ${
+      ? `Transaction ${identifier} confirmed! ${
           explorerUrl ? 'View on block explorer' : ''
         }`
-      : `Transaction ${nonce} failed! Transaction encountered an error.`
+      : `Transaction ${identifier} failed! Transaction encountered an error.`
 
     EXTENSION.showNotification(title, message, explorerUrl)
   }

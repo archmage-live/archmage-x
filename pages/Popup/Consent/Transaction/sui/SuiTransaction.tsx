@@ -73,8 +73,11 @@ export const SuiTransaction = ({
     if (txs.length === 1) {
       const tx = txs[0]
       if (is(tx, TransferObjectsTransaction)) {
-        if (typeof tx.address === 'string') {
-          return tx.address
+        if (
+          tx.address.kind === 'Input' &&
+          typeof tx.address.value === 'string'
+        ) {
+          return tx.address.value
         }
       } else if (is(tx, MoveCallTransaction)) {
         return tx.target
