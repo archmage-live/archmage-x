@@ -7,7 +7,9 @@ export interface SuiTransactionPayload extends TransactionPayload {
   populatedParams: undefined
 }
 
-export function formatSuiTxParams(payload: SuiTransactionPayload) {
+export function formatSuiTxPayload(
+  payload: SuiTransactionPayload
+): SuiTransactionPayload {
   let { txParams, populatedParams } = payload
 
   if (typeof txParams === 'string') {
@@ -18,4 +20,16 @@ export function formatSuiTxParams(payload: SuiTransactionPayload) {
     txParams,
     populatedParams
   }
+}
+
+export function compactSuiTxPayload(
+  payload: SuiTransactionPayload
+): SuiTransactionPayload {
+  const { txParams } = payload
+
+  if (txParams instanceof TransactionBlock) {
+    payload.txParams = txParams.serialize()
+  }
+
+  return payload
 }

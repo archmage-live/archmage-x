@@ -83,9 +83,12 @@ export class SuiProvider implements Provider {
 
   async populateTransaction(
     account: IChainAccount,
-    transaction: any
+    tx: any
   ): Promise<TransactionPayload> {
-    throw new Error('not implemented')
+    return {
+      txParams: tx,
+      populatedParams: undefined
+    }
   }
 
   async signTransaction(

@@ -1,15 +1,21 @@
 import { NetworkKind } from '~lib/network'
 import { IChainAccount, INetwork } from '~lib/schema'
 import { AptosProvider } from '~lib/services/provider/aptos/provider'
-import { formatAptosTxParams } from '~lib/services/provider/aptos/types'
+import {
+  compactAptosTxPayload,
+  formatAptosTxPayload
+} from '~lib/services/provider/aptos/types'
 import { CosmProvider } from '~lib/services/provider/cosm/provider'
-import { formatCosmTxParams } from '~lib/services/provider/cosm/types'
+import { formatCosmTxPayload } from '~lib/services/provider/cosm/types'
 import { EvmProvider } from '~lib/services/provider/evm/provider'
-import { formatEvmTxParams } from '~lib/services/provider/evm/types'
+import { formatEvmTxPayload } from '~lib/services/provider/evm/types'
 import { StarknetProvider } from '~lib/services/provider/starknet/provider'
-import { formatStarknetTxParams } from '~lib/services/provider/starknet/types'
+import { formatStarknetTxPayload } from '~lib/services/provider/starknet/types'
 import { SuiProvider } from '~lib/services/provider/sui/provider'
-import { formatSuiTxParams } from '~lib/services/provider/sui/types'
+import {
+  compactSuiTxPayload,
+  formatSuiTxPayload
+} from '~lib/services/provider/sui/types'
 
 export interface Provider {
   isOk(): Promise<boolean>
@@ -87,15 +93,29 @@ export function formatTxPayload(
 ): TransactionPayload {
   switch (network.kind) {
     case NetworkKind.EVM:
-      return formatEvmTxParams(payload)
+      return formatEvmTxPayload(payload)
     case NetworkKind.STARKNET:
-      return formatStarknetTxParams(payload)
+      return formatStarknetTxPayload(payload)
     case NetworkKind.COSM:
-      return formatCosmTxParams(payload)
+      return formatCosmTxPayload(payload)
     case NetworkKind.APTOS:
-      return formatAptosTxParams(payload)
+      return formatAptosTxPayload(payload)
     case NetworkKind.SUI:
-      return formatSuiTxParams(payload)
+      return formatSuiTxPayload(payload)
   }
   throw new Error(`provider for network ${network.kind} is not implemented`)
+}
+
+export function compactTxPayload(
+  network: INetwork,
+  payload: TransactionPayload
+): TransactionPayload {
+  switch (network.kind) {
+    case NetworkKind.APTOS:
+      return compactAptosTxPayload(payload)
+    case NetworkKind.SUI:
+      return compactSuiTxPayload(payload)
+    default:
+      return payload
+  }
 }

@@ -20,13 +20,12 @@ import {
 } from '~lib/services/datasource/suivision'
 import { NETWORK_SERVICE } from '~lib/services/network'
 import { getSuiClient } from '~lib/services/provider/sui/client'
-import { CosmTokenInfo } from '~lib/services/token/cosm'
 import { normalizeSuiType } from '~lib/wallet'
 
 import { SearchedTokenFromTokenLists, TokenBrief, TokenListBrief } from '.'
 import { BaseTokenService } from './base'
 
-type SuiTokenInfo = {
+export type SuiTokenInfo = {
   info: TokenInfo
   balance: string
 }
@@ -130,6 +129,8 @@ export class SuiTokenService extends BaseTokenService {
   ): Promise<SearchedTokenFromTokenLists | undefined> {
     assert(account.networkKind === NetworkKind.SUI)
 
+    token = normalizeSuiType(token)
+
     let foundToken: IToken | undefined
     const tokenLists = await this.getTokenLists(account.networkKind)
     const tokenList = tokenLists.find((tokenList) => {
@@ -137,10 +138,7 @@ export class SuiTokenService extends BaseTokenService {
         return
       }
       return (tokenList.tokens as TokenInfo[]).find((info) => {
-        if (
-          info.chainId === account.chainId &&
-          info.coinType === normalizeSuiType(token)
-        ) {
+        if (info.chainId === account.chainId && info.coinType === token) {
           foundToken = {
             masterId: account.masterId,
             index: account.index,
@@ -181,6 +179,8 @@ export class SuiTokenService extends BaseTokenService {
   ): Promise<IToken | undefined> {
     assert(account.networkKind === NetworkKind.SUI)
     assert(account.address)
+
+    token = normalizeSuiType(token)
 
     const network = await NETWORK_SERVICE.getNetwork({
       kind: NetworkKind.SUI,

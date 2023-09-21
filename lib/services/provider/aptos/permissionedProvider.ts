@@ -1,4 +1,3 @@
-import { hexlify } from '@ethersproject/bytes'
 import {
   AptosClient,
   BCS,
@@ -21,15 +20,16 @@ import {
   SignTypedDataPayload
 } from '~lib/services/consentService'
 import { getNetworkInfo } from '~lib/services/network'
-import { TransactionPayload } from '~lib/services/provider'
 import { getAptosClient } from '~lib/services/provider/aptos/client'
 import { AptosProvider } from '~lib/services/provider/aptos/provider'
 import { BasePermissionedProvider } from '~lib/services/provider/base'
 import { getSigningWallet } from '~lib/wallet'
 
 import {
+  AptosTransactionPayload,
   SignMessagePayload,
   SignMessageResponse,
+  compactAptosTxPayload,
   isAptosEntryFunctionPayload
 } from './types'
 
@@ -300,8 +300,10 @@ export class AptosPermissionedProvider extends BasePermissionedProvider {
   ): Promise<Types.PendingTransaction> {
     assert(this.account)
 
-    const serializer = new BCS.Serializer()
-    rawTransaction.serialize(serializer)
+    const payload = {
+      txParams: rawTransaction,
+      populatedParams: userTransaction
+    } as AptosTransactionPayload
 
     return CONSENT_SERVICE.requestConsent(
       {
@@ -309,10 +311,7 @@ export class AptosPermissionedProvider extends BasePermissionedProvider {
         accountId: this.account.id,
         type: ConsentType.TRANSACTION,
         origin: this.origin,
-        payload: {
-          txParams: hexlify(serializer.getBytes()),
-          populatedParams: userTransaction
-        } as TransactionPayload
+        payload: compactAptosTxPayload(payload)
       },
       ctx
     )

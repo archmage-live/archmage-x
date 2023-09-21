@@ -13,11 +13,8 @@ import {
   Text,
   useDisclosure
 } from '@chakra-ui/react'
-import { hexlify } from '@ethersproject/bytes'
 import { BiQuestionMark } from '@react-icons/all-files/bi/BiQuestionMark'
 import { IoSwapVertical } from '@react-icons/all-files/io5/IoSwapVertical'
-import { BCS, Types } from 'aptos'
-import { APTOS_COIN } from 'aptos/src/utils'
 import assert from 'assert'
 import Decimal from 'decimal.js'
 import { atom, useAtom } from 'jotai'
@@ -29,7 +26,6 @@ import { AlertBox } from '~components/AlertBox'
 import { useActive } from '~lib/active'
 import { formatNumber } from '~lib/formatNumber'
 import { NetworkKind } from '~lib/network'
-import { ERC20__factory } from '~lib/network/evm/abi'
 import { IChainAccount, INetwork, IToken } from '~lib/schema'
 import { CONSENT_SERVICE, ConsentType } from '~lib/services/consentService'
 import { useCoinGeckoTokenPrice } from '~lib/services/datasource/coingecko'
@@ -37,13 +33,12 @@ import { useCryptoComparePrice } from '~lib/services/datasource/cryptocompare'
 import {
   Provider,
   addressZero,
+  compactTxPayload,
   useBalance,
   useEstimateGasFee,
   useIsContract,
   useProvider
 } from '~lib/services/provider'
-import { EvmProvider } from '~lib/services/provider/evm/provider'
-import { EvmTxParams } from '~lib/services/provider/evm/types'
 import { NativeToken, getTokenBrief, useTokenById } from '~lib/services/token'
 import { canWalletSign, checkAddress } from '~lib/wallet'
 import { useConsentModal } from '~pages/Popup/Consent'
@@ -51,6 +46,9 @@ import { useModalBox } from '~pages/Popup/ModalBox'
 import { TokenItem, TokenItemStyle } from '~pages/Popup/Portal/TokenItem'
 
 import { SelectTokenModal } from './SelectTokenModal'
+import { buildSendAptosTx } from './sendAptos'
+import { buildSendEthTx } from './sendEth'
+import { buildSendSuiTx } from './sendSui'
 
 const isOpenAtom = atom<boolean>(false)
 
@@ -79,6 +77,8 @@ export const Send = ({
     onClose()
   }, [network, onClose])
 
+  const provider = useProvider(network)
+
   const [tokenId, setTokenId] = useSendTokenId()
 
   const { nativeToken, balance, price, iconUrl, token } = useTokenInfo(
@@ -87,12 +87,16 @@ export const Send = ({
     tokenId
   )
 
+  // the address input
   const [address, setAddress] = useState('')
-  const [amount, setAmount] = useState('')
+  // the amount of token or the converted amount in quote currency
   const [amountInput, setAmountInput] = useState('')
-  const [isQuote, setIsQuote] = useState(false)
+  // the amount of token
+  const [amount, setAmount] = useState('')
+  // whether the amountInput is in quote currency
+  const [useQuote, setUseQuote] = useState(false)
 
-  const tx = useBuildSendTx(network, account, token)
+  const tx = useBuildSendTx(network, provider, account, nativeToken, token)
   const gasFee = useEstimateGasFee(
     network,
     account,
@@ -105,10 +109,11 @@ export const Send = ({
   const [ignoreContract, setIgnoreContract] = useState(false)
   const [nextEnabled, setNextEnabled] = useState(false)
 
+  // reset
   useEffect(() => {
     setAddress('')
     setAmountInput('')
-    setIsQuote(false)
+    setUseQuote(false)
     setAddrAlert('')
     setAmountAlert('')
     setIgnoreContract(false)
@@ -120,22 +125,26 @@ export const Send = ({
     setAmountAlert('')
   }, [tokenId])
 
+  // set amount from amountInput
   useEffect(() => {
-    if (!isQuote) {
+    if (!useQuote) {
       setAmount(amountInput)
     } else {
+      // amount = amount-in-quote / price
       setAmount(
         new Decimal(amountInput || 0)
           .div(price?.price || 1)
-          .toDecimalPlaces(9, Decimal.ROUND_FLOOR)
+          .toDecimalPlaces(9, Decimal.ROUND_FLOOR) // round floor
           .toString()
       )
     }
-  }, [amountInput, isQuote, price])
+  }, [amountInput, useQuote, price])
 
-  const toggleIsQuote = useCallback(() => {
-    const useQuote = !isQuote
-    if (useQuote) {
+  // callback to toggle useQuote
+  const toggleUseQuote = useCallback(() => {
+    const newUseQuote = !useQuote
+    if (newUseQuote) {
+      // amount-in-quote = amount * price
       setAmountInput(
         new Decimal(amountInput || 0)
           .mul(price?.price || 0)
@@ -143,6 +152,7 @@ export const Send = ({
           .toString()
       )
     } else {
+      // amount = amount-in-quote / price
       setAmountInput(
         new Decimal(amountInput || 0)
           .div(price?.price || 1)
@@ -150,9 +160,10 @@ export const Send = ({
           .toString()
       )
     }
-    setIsQuote(useQuote)
-  }, [amountInput, isQuote, price])
+    setUseQuote(newUseQuote)
+  }, [amountInput, useQuote, price])
 
+  // whether the address is a contract address
   const isContract = useIsContract(
     network,
     (network && checkAddress(network.kind, address)) || undefined
@@ -198,20 +209,25 @@ export const Send = ({
     if (!checkPrecondition()) {
       return false
     }
+    assert(gasFee && balance && nativeToken)
 
-    const amt = new Decimal(amount).mul(new Decimal(10).pow(balance!.decimals))
-    if (amt.gt(balance!.amountParticle)) {
+    // amount in the least unit
+    const amt = new Decimal(amount).mul(new Decimal(10).pow(balance.decimals))
+    if (amt.gt(balance.amountParticle)) {
       setAmountAlert('Insufficient balance')
       return false
     }
 
+    // check gas fee
     if (tokenId === undefined) {
-      if (amt.add(gasFee!).gt(balance!.amountParticle)) {
+      // for native token
+      if (amt.add(gasFee).gt(balance.amountParticle)) {
         setAmountAlert('Insufficient funds for gas')
         return false
       }
     } else {
-      if (new Decimal(gasFee!).gt(nativeToken!.balance.amountParticle)) {
+      // for non-native token
+      if (new Decimal(gasFee).gt(nativeToken.balance.amountParticle)) {
         setAmountAlert('Insufficient funds for gas')
         return false
       }
@@ -234,26 +250,30 @@ export const Send = ({
     if (!checkPrecondition()) {
       return false
     }
+    assert(balance)
 
-    let amount = new Decimal(balance!.amountParticle)
+    let amount = new Decimal(balance.amountParticle)
     if (tokenId === undefined) {
       amount = amount.sub(gasFee!)
     }
     amount = amount
-      .div(new Decimal(10).pow(balance!.decimals))
+      .div(new Decimal(10).pow(balance.decimals))
       .toDecimalPlaces(9, Decimal.ROUND_FLOOR)
 
-    if (amount.lte(0)) {
+    // NOTE: allow sending 0 amount
+    if (amount.lt(0)) {
       setAmountInput('')
       if (tokenId === undefined) {
+        // for native token
         setAmountAlert('Insufficient funds for gas')
       } else {
+        // for non-native token
         setAmountAlert('Insufficient balance')
       }
       return
     }
 
-    if (!isQuote) {
+    if (!useQuote) {
       setAmountInput(amount.toString())
     } else {
       setAmountInput(
@@ -264,11 +284,9 @@ export const Send = ({
       )
     }
     setAmountAlert('')
-  }, [checkPrecondition, balance, tokenId, isQuote, gasFee, price])
+  }, [checkPrecondition, balance, tokenId, useQuote, gasFee, price])
 
   useInterval(check, 1000)
-
-  const provider = useProvider(network)
 
   const [isLoading, setIsLoading] = useState(false)
 
@@ -276,23 +294,26 @@ export const Send = ({
     if (!check()) {
       return
     }
+    assert(nativeToken)
 
     if (!network || !account?.address || !provider) {
       return
     }
 
+    // amount in the least unit
     const amt = new Decimal(amount)
       .mul(new Decimal(10).pow(balance!.decimals))
       .toDecimalPlaces(0)
       .toString()
 
-    assert(tokenId === undefined || !!token)
-    let params = await buildSendTx(
+    assert(tokenId === undefined || token)
+    const params = await buildSendTx(
       network,
       provider,
       account,
       address,
       amt,
+      nativeToken,
       token
     )
     if (!params) {
@@ -303,18 +324,12 @@ export const Send = ({
 
     const txPayload = await provider.populateTransaction(account, params)
 
-    if (network.kind === NetworkKind.APTOS) {
-      const serializer = new BCS.Serializer()
-      txPayload.txParams.serialize(serializer)
-      txPayload.txParams = hexlify(serializer.getBytes())
-    }
-
     await CONSENT_SERVICE.requestConsent(
       {
         networkId: network.id,
         accountId: account.id,
         type: ConsentType.TRANSACTION,
-        payload: txPayload
+        payload: compactTxPayload(network, txPayload)
       },
       undefined,
       false
@@ -329,6 +344,7 @@ export const Send = ({
     account,
     provider,
     token,
+    nativeToken,
     amount,
     balance,
     onConsentOpen,
@@ -425,11 +441,11 @@ export const Send = ({
               userSelect="none">
               <HStack
                 cursor="pointer"
-                onClick={() => price?.price !== undefined && toggleIsQuote()}>
+                onClick={() => price?.price !== undefined && toggleUseQuote()}>
                 {price?.price !== undefined && (
                   <>
                     <Text>
-                      {!isQuote ? (
+                      {!useQuote ? (
                         <>
                           {price.currencySymbol}
                           {formatNumber(
@@ -449,7 +465,7 @@ export const Send = ({
               </HStack>
               <Text cursor="pointer" onClick={setMaxAmount}>
                 Balance:&nbsp;
-                {!isQuote ? (
+                {!useQuote ? (
                   <>
                     {formatNumber(balance?.amount)} {balance?.symbol}
                   </>
@@ -606,23 +622,31 @@ function useTokenInfo(
 
 function useBuildSendTx(
   network?: INetwork,
+  provider?: Provider,
   account?: IChainAccount,
+  nativeToken?: NativeToken,
   token?: IToken,
   to?: string,
   amount?: string | number
 ) {
-  const provider = useProvider(network)
-
   const { value } = useAsync(async () => {
-    if (!network || !provider || !account) {
+    if (!network || !provider || !account || !nativeToken) {
       return
     }
 
     to = to ? to : addressZero(network)
     amount = amount ? amount : 0
 
-    return buildSendTx(network, provider, account, to, amount, token)
-  }, [network, account, token, to, amount, provider])
+    return buildSendTx(
+      network,
+      provider,
+      account,
+      to,
+      amount,
+      nativeToken,
+      token
+    )
+  }, [network, account, nativeToken, token, to, amount, provider])
 
   return value
 }
@@ -633,44 +657,16 @@ async function buildSendTx(
   account: IChainAccount,
   to: string,
   amount: string | number,
+  nativeToken: NativeToken,
   token?: IToken
 ) {
   switch (network.kind) {
-    case NetworkKind.EVM: {
-      if (!token) {
-        return {
-          from: account.address,
-          to,
-          value: amount
-        } as EvmTxParams
-      } else {
-        const tokenContract = ERC20__factory.connect(
-          token.token,
-          (provider as EvmProvider).provider
-        )
-        return await tokenContract.populateTransaction.transfer(to, amount)
-      }
-    }
-    case NetworkKind.APTOS: {
-      if (!token) {
-        // return new CoinClient(
-        //   (provider as AptosProvider).client
-        // ).transactionBuilder.buildTransactionPayload(
-        //   '0x1::coin::transfer',
-        //   [APTOS_COIN],
-        //   [to, amount]
-        // )
-        return {
-          type: 'entry_function_payload',
-          function: '0x1::aptos_account::transfer', // or '0x1::coin::transfer'
-          type_arguments: [], // or [APTOS_COIN]
-          arguments: [to, amount]
-        } as Types.TransactionPayload_EntryFunctionPayload
-      } else {
-        // TODO
-        return
-      }
-    }
+    case NetworkKind.EVM:
+      return buildSendEthTx(provider, account, to, amount, token)
+    case NetworkKind.APTOS:
+      return buildSendAptosTx(provider, account, to, amount, token)
+    case NetworkKind.SUI:
+      return buildSendSuiTx(provider, account, to, amount, nativeToken, token)
     default:
       return
   }

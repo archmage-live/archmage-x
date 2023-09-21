@@ -1,4 +1,4 @@
-import { arrayify } from '@ethersproject/bytes'
+import { arrayify, hexlify } from '@ethersproject/bytes'
 import { BCS, TxnBuilderTypes, Types } from 'aptos'
 
 import { TransactionPayload } from '~lib/services/provider'
@@ -50,19 +50,34 @@ export interface SignMessageResponse {
   bitmap?: Uint8Array // a 4-byte (32 bits) bit-vector of length N
 }
 
-export function formatAptosTxParams(payload: {
-  txParams?: string | TxnBuilderTypes.RawTransaction
-  populatedParams?: Types.UserTransaction
-}): TransactionPayload {
+export interface AptosTransactionPayload extends TransactionPayload {
+  txParams: string | TxnBuilderTypes.RawTransaction | undefined
+  populatedParams: Types.UserTransaction | undefined
+}
+
+export function formatAptosTxPayload(
+  payload: AptosTransactionPayload
+): AptosTransactionPayload {
   const { txParams } = payload
 
   if (txParams && !(txParams instanceof TxnBuilderTypes.RawTransaction)) {
     const deserializer = new BCS.Deserializer(arrayify(txParams))
-    payload = {
-      ...payload,
-      txParams: TxnBuilderTypes.RawTransaction.deserialize(deserializer)
-    }
+    payload.txParams = TxnBuilderTypes.RawTransaction.deserialize(deserializer)
   }
 
-  return payload as TransactionPayload
+  return payload
+}
+
+export function compactAptosTxPayload(
+  payload: AptosTransactionPayload
+): AptosTransactionPayload {
+  const { txParams } = payload
+
+  if (txParams instanceof TxnBuilderTypes.RawTransaction) {
+    const serializer = new BCS.Serializer()
+    txParams.serialize(serializer)
+    payload.txParams = hexlify(serializer.getBytes())
+  }
+
+  return payload
 }
