@@ -1033,13 +1033,17 @@ class WalletService extends WalletServicePartial {
   private _ensureLocks = new Map<number, Promise<unknown>>()
 
   private async _ensureLock(id: number): Promise<Function> {
-    let promise = this._ensureLocks.get(id)
-    if (promise) {
-      await promise
+    while (true) {
+      const promise = this._ensureLocks.get(id)
+      if (promise) {
+        await promise
+      } else {
+        break
+      }
     }
 
     let resolve: Function
-    promise = new Promise((r) => {
+    const promise = new Promise((r) => {
       resolve = r
     })
     this._ensureLocks.set(id, promise)
