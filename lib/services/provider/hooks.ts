@@ -32,18 +32,18 @@ export function addressZero(network: INetwork): string {
   throw new Error(`provider for network ${network.kind} is not implemented`)
 }
 
-export function getGasFeeBrief(network: INetwork, gasFee: any): string {
+export function getGasFeeBrief(network: INetwork, gasFee: any): string | null {
+  if (gasFee === null) {
+    return null
+  }
   switch (network.kind) {
     case NetworkKind.BTC:
       return getBtcFeeBrief(gasFee).toString()
     case NetworkKind.EVM:
       return getEvmGasFeeBrief(gasFee)
-    case NetworkKind.STARKNET:
-      return gasFee
-    case NetworkKind.APTOS:
+    default:
       return gasFee
   }
-  throw new Error(`provider for network ${network.kind} is not implemented`)
 }
 
 export function useNetworkStatus(network?: INetwork, retryInterval?: number) {

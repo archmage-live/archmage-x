@@ -62,12 +62,12 @@ export class StarknetProvider implements Provider {
     }
   }
 
-  async estimateGasPrice(account: IChainAccount): Promise<string> {
-    return '0'
+  async estimateGasPrice(account: IChainAccount): Promise<null> {
+    return null
   }
 
-  async estimateGas(account: IChainAccount): Promise<string> {
-    return '0'
+  async estimateGas(account: IChainAccount): Promise<null> {
+    return null
   }
 
   async estimateGasFee(

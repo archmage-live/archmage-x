@@ -250,11 +250,11 @@ export const Send = ({
     if (!checkPrecondition()) {
       return false
     }
-    assert(balance)
+    assert(gasFee && balance)
 
     let amount = new Decimal(balance.amountParticle)
     if (tokenId === undefined) {
-      amount = amount.sub(gasFee!)
+      amount = amount.sub(gasFee)
     }
     amount = amount
       .div(new Decimal(10).pow(balance.decimals))

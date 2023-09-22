@@ -32,11 +32,11 @@ export interface Provider {
     accountsOrAddresses: IChainAccount[] | string[]
   ): Promise<(string | undefined)[]>
 
-  estimateGasPrice(account: IChainAccount): Promise<any>
+  estimateGasPrice(account: IChainAccount): Promise<any | null>
 
-  estimateGas(account: IChainAccount, tx: any): Promise<string>
+  estimateGas(account: IChainAccount, tx: any): Promise<string | null>
 
-  estimateGasFee(account: IChainAccount, tx: any): Promise<string>
+  estimateGasFee(account: IChainAccount, tx: any): Promise<string | null>
 
   populateTransaction(
     account: IChainAccount,

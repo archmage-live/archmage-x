@@ -27,22 +27,24 @@ export class SuiProvider implements Provider {
   }
 
   async isContract(address: string): Promise<boolean> {
-    throw new Error('not implemented')
+    return false
   }
 
   async estimateGasPrice(account: IChainAccount): Promise<string> {
-    throw new Error('not implemented')
+    return (await this.client.getReferenceGasPrice()).toString()
   }
 
-  async estimateGas(account: IChainAccount): Promise<string> {
-    throw new Error('not implemented')
+  async estimateGas(account: IChainAccount): Promise<null> {
+    return null
   }
 
   async estimateGasFee(
     account: IChainAccount,
-    txParams: TransactionBlock
+    tx: TransactionBlock
   ): Promise<string> {
-    throw new Error('not implemented')
+    // build should have been called before
+    // await tx.build({ client: this.client })
+    return tx.blockData.gasConfig.budget!
   }
 
   async getBalance(

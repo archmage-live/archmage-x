@@ -115,12 +115,12 @@ export class BtcProvider implements Provider {
     return await this.api.getFeeEstimates()
   }
 
-  estimateGas(account: IChainAccount, tx: any): Promise<string> {
-    throw new Error('not implemented')
+  async estimateGas(account: IChainAccount, tx: any): Promise<null> {
+    return null
   }
 
-  estimateGasFee(account: IChainAccount, tx: any): Promise<string> {
-    throw new Error('not implemented')
+  async estimateGasFee(account: IChainAccount, tx: any): Promise<null> {
+    return null
   }
 
   async populateTransaction(

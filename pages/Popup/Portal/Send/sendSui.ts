@@ -1,3 +1,4 @@
+import { SUI_TYPE_ARG } from '@mysten/sui.js'
 import type {
   CoinStruct,
   PaginatedCoins,
@@ -67,9 +68,6 @@ async function getAllCoins(
 
   return allData
 }
-
-export const SUI_FRAMEWORK_ADDRESS = '0x2'
-export const SUI_TYPE_ARG = `${SUI_FRAMEWORK_ADDRESS}::sui::SUI`
 
 interface Options {
   coinType: string

@@ -116,13 +116,16 @@ export class SuiPermissionedProvider extends BasePermissionedProvider {
     ]
   }
 
-  async signTransactionBlock(ctx: Context, tx: string) {
+  async signTransactionBlock(ctx: Context, transaction: string) {
     if (!this.account?.address) {
       throw ethErrors.provider.unauthorized()
     }
 
-    const txParams = TransactionBlock.from(tx)
-    txParams.setSender(this.account.address)
+    const tx = TransactionBlock.from(transaction)
+    tx.setSender(this.account.address)
+
+    // call build to check and fill parameters
+    await tx.build({ client: this.client })
 
     return await CONSENT_SERVICE.requestConsent(
       {
@@ -131,20 +134,23 @@ export class SuiPermissionedProvider extends BasePermissionedProvider {
         type: ConsentType.SIGN_TRANSACTION,
         origin: this.origin,
         payload: {
-          txParams: txParams.serialize()
+          txParams: tx.serialize()
         } as SuiTransactionPayload
       },
       ctx
     )
   }
 
-  async signAndExecuteTransactionBlock(ctx: Context, tx: string) {
+  async signAndExecuteTransactionBlock(ctx: Context, transaction: string) {
     if (!this.account?.address) {
       throw ethErrors.provider.unauthorized()
     }
 
-    const txParams = TransactionBlock.from(tx)
-    txParams.setSender(this.account.address)
+    const tx = TransactionBlock.from(transaction)
+    tx.setSender(this.account.address)
+
+    // call build to check and fill parameters
+    await tx.build({ client: this.client })
 
     return await CONSENT_SERVICE.requestConsent(
       {
@@ -153,7 +159,7 @@ export class SuiPermissionedProvider extends BasePermissionedProvider {
         type: ConsentType.TRANSACTION,
         origin: this.origin,
         payload: {
-          txParams: txParams.serialize()
+          txParams: tx.serialize()
         } as SuiTransactionPayload
       },
       ctx
