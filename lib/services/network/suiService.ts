@@ -5,6 +5,9 @@ import { NetworkKind, checkNetworkKindInitialized } from '~lib/network'
 import { SUI_NETWORKS_PRESET, SuiChainInfo } from '~lib/network/sui'
 import { ChainId, INetwork, createSearchString } from '~lib/schema'
 
+export const SuiAddressZero =
+  '0x0000000000000000000000000000000000000000000000000000000000000000'
+
 export class SuiNetworkService {
   static async init() {
     if (!process.env.PLASMO_PUBLIC_ENABLE_SUI) {

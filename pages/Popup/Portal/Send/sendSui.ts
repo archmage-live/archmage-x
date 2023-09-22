@@ -5,12 +5,10 @@ import type {
   SuiClient
 } from '@mysten/sui.js/client'
 import { TransactionBlock } from '@mysten/sui.js/transactions'
-import Decimal from 'decimal.js'
 
 import { IChainAccount, IToken } from '~lib/schema'
 import { Provider } from '~lib/services/provider'
 import { SuiProvider } from '~lib/services/provider/sui/provider'
-import { NativeToken } from '~lib/services/token'
 import { SuiTokenInfo } from '~lib/services/token/sui'
 
 export async function buildSendSuiTx(
@@ -18,8 +16,8 @@ export async function buildSendSuiTx(
   account: IChainAccount,
   to: string,
   amount: string | number,
-  nativeToken: NativeToken,
-  token?: IToken
+  token?: IToken,
+  isSendAll?: boolean
 ) {
   const client = (provider as SuiProvider).client
 
@@ -29,16 +27,18 @@ export async function buildSendSuiTx(
 
   const tokenInfo = token?.info as SuiTokenInfo | undefined
 
-  return createTokenTransferTransaction({
+  const tx = createTokenTransferTransaction({
     to,
     amount: amount.toString(),
     coins,
     coinType,
-    coinDecimals: tokenInfo
-      ? tokenInfo.info.decimals
-      : nativeToken.balance.decimals,
-    isPayAllSui: false // TODO
+    isPayAllSui: isSendAll || false
   })
+
+  tx.setSender(account.address!)
+  await tx.build({ client })
+
+  return tx
 }
 
 const MAX_COINS_PER_REQUEST = 100
@@ -73,7 +73,6 @@ interface Options {
   coinType: string
   to: string
   amount: string
-  coinDecimals: number
   isPayAllSui: boolean
   coins: CoinStruct[]
 }
@@ -84,7 +83,6 @@ function createTokenTransferTransaction({
   amount,
   coins,
   coinType,
-  coinDecimals,
   isPayAllSui
 }: Options) {
   const tx = new TransactionBlock()
@@ -104,7 +102,7 @@ function createTokenTransferTransaction({
     return tx
   }
 
-  const bigIntAmount = parseAmount(amount, coinDecimals)
+  const bigIntAmount = BigInt(amount)
   const [primaryCoin, ...mergeCoins] = coins.filter(
     (coin) => coin.coinType === coinType
   )
@@ -126,14 +124,4 @@ function createTokenTransferTransaction({
   }
 
   return tx
-}
-
-function parseAmount(amount: string, coinDecimals: number) {
-  try {
-    return BigInt(
-      new Decimal(amount).mul(new Decimal(10).pow(coinDecimals)).toString()
-    )
-  } catch (e) {
-    return BigInt(0)
-  }
 }

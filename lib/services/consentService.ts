@@ -14,6 +14,7 @@ import { PASSWORD_SERVICE } from '~lib/services/passwordService'
 import { EvmProvider } from '~lib/services/provider/evm'
 import {
   Provider,
+  compactTxPayload,
   formatTxPayload,
   getProvider
 } from '~lib/services/provider/provider'
@@ -442,7 +443,7 @@ class ConsentService extends ConsentServicePartial {
     signedTx?: any,
     txHash?: string
   ) {
-    const payload = formatTxPayload(network, req.payload)
+    let payload = formatTxPayload(network, req.payload)
 
     let txResponse
     if (signedTx) {
@@ -473,6 +474,8 @@ class ConsentService extends ConsentServicePartial {
         // here do not throw
       }
     }
+
+    payload = compactTxPayload(network, payload)
 
     switch (network.kind) {
       case NetworkKind.EVM:

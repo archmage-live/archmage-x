@@ -10,16 +10,13 @@ export interface SuiTransactionPayload extends TransactionPayload {
 export function formatSuiTxPayload(
   payload: SuiTransactionPayload
 ): SuiTransactionPayload {
-  let { txParams, populatedParams } = payload
+  let { txParams } = payload
 
   if (typeof txParams === 'string') {
-    txParams = TransactionBlock.from(txParams)
+    payload.txParams = TransactionBlock.from(txParams)
   }
 
-  return {
-    txParams,
-    populatedParams
-  }
+  return payload
 }
 
 export function compactSuiTxPayload(

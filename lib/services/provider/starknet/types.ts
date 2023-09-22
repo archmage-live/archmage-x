@@ -56,8 +56,8 @@ export function formatStarknetTxPayload(
 ): TransactionPayload {
   const { txParams, populatedParams } = payload
 
-  return {
-    txParams: stringifyBigNumberish(txParams),
-    populatedParams: stringifyBigNumberish(populatedParams)
-  }
+  payload.txParams = stringifyBigNumberish(txParams)
+  payload.populatedParams = stringifyBigNumberish(populatedParams)
+
+  return payload
 }

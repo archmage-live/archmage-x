@@ -8,6 +8,7 @@ import {
   Image,
   Input,
   InputGroup,
+  InputLeftElement,
   InputRightElement,
   Stack,
   Text,
@@ -246,6 +247,7 @@ export const Send = ({
     [checkAddr, checkAmount, ignoreContract, isContract]
   )
 
+  const [isSendAll, setIsSendAll] = useState(false)
   const setMaxAmount = useCallback(() => {
     if (!checkPrecondition()) {
       return false
@@ -254,8 +256,10 @@ export const Send = ({
 
     let amount = new Decimal(balance.amountParticle)
     if (tokenId === undefined) {
+      // gas fee should be retained, for native token
       amount = amount.sub(gasFee)
     }
+
     amount = amount
       .div(new Decimal(10).pow(balance.decimals))
       .toDecimalPlaces(9, Decimal.ROUND_FLOOR)
@@ -283,6 +287,7 @@ export const Send = ({
           .toString()
       )
     }
+    setIsSendAll(true)
     setAmountAlert('')
   }, [checkPrecondition, balance, tokenId, useQuote, gasFee, price])
 
@@ -294,7 +299,7 @@ export const Send = ({
     if (!check()) {
       return
     }
-    assert(nativeToken)
+    assert(nativeToken && balance)
 
     if (!network || !account?.address || !provider) {
       return
@@ -302,11 +307,14 @@ export const Send = ({
 
     // amount in the least unit
     const amt = new Decimal(amount)
-      .mul(new Decimal(10).pow(balance!.decimals))
+      .mul(new Decimal(10).pow(balance.decimals))
       .toDecimalPlaces(0)
       .toString()
 
     assert(tokenId === undefined || token)
+
+    setIsLoading(true)
+
     const params = await buildSendTx(
       network,
       provider,
@@ -314,13 +322,14 @@ export const Send = ({
       address,
       amt,
       nativeToken,
-      token
+      token,
+      isSendAll
     )
     if (!params) {
+      // TODO: alert
+      setIsLoading(false)
       return
     }
-
-    setIsLoading(true)
 
     const txPayload = await provider.populateTransaction(account, params)
 
@@ -349,7 +358,8 @@ export const Send = ({
     balance,
     onConsentOpen,
     tokenId,
-    address
+    address,
+    isSendAll
   ])
 
   const {
@@ -397,7 +407,16 @@ export const Send = ({
 
           <Stack>
             <InputGroup size="lg">
+              {useQuote && price?.price !== undefined && (
+                <InputLeftElement zIndex={0}>
+                  {price.currencySymbol}
+                </InputLeftElement>
+              )}
               <Input
+                sx={{
+                  paddingInlineStart:
+                    useQuote && price?.price !== undefined ? 8 : 4
+                }}
                 type="number"
                 placeholder="0.0"
                 errorBorderColor="red.500"
@@ -409,6 +428,7 @@ export const Send = ({
                 onChange={(e) => {
                   setAmountAlert('')
                   setAmountInput(e.target.value)
+                  setIsSendAll(false)
                 }}
               />
               <InputRightElement zIndex={0}>
@@ -447,7 +467,7 @@ export const Send = ({
                     <Text>
                       {!useQuote ? (
                         <>
-                          {price.currencySymbol}
+                          {price.currencySymbol}&nbsp;
                           {formatNumber(
                             new Decimal(price.price).mul(amount || 0)
                           )}
@@ -471,7 +491,7 @@ export const Send = ({
                   </>
                 ) : (
                   <>
-                    {price?.currencySymbol}
+                    {price?.currencySymbol}&nbsp;
                     {formatNumber(
                       new Decimal(price?.price || 0).mul(balance?.amount || 0)
                     )}
@@ -627,7 +647,8 @@ function useBuildSendTx(
   nativeToken?: NativeToken,
   token?: IToken,
   to?: string,
-  amount?: string | number
+  amount?: string | number,
+  isSendAll?: boolean
 ) {
   const { value } = useAsync(async () => {
     if (!network || !provider || !account || !nativeToken) {
@@ -637,16 +658,21 @@ function useBuildSendTx(
     to = to ? to : addressZero(network)
     amount = amount ? amount : 0
 
-    return buildSendTx(
-      network,
-      provider,
-      account,
-      to,
-      amount,
-      nativeToken,
-      token
-    )
-  }, [network, account, nativeToken, token, to, amount, provider])
+    try {
+      return await buildSendTx(
+        network,
+        provider,
+        account,
+        to,
+        amount,
+        nativeToken,
+        token,
+        isSendAll
+      )
+    } catch (err) {
+      console.error(err)
+    }
+  }, [network, provider, account, nativeToken, token, to, amount, isSendAll])
 
   return value
 }
@@ -658,7 +684,8 @@ async function buildSendTx(
   to: string,
   amount: string | number,
   nativeToken: NativeToken,
-  token?: IToken
+  token?: IToken,
+  isSendAll?: boolean
 ) {
   switch (network.kind) {
     case NetworkKind.EVM:
@@ -666,7 +693,7 @@ async function buildSendTx(
     case NetworkKind.APTOS:
       return buildSendAptosTx(provider, account, to, amount, token)
     case NetworkKind.SUI:
-      return buildSendSuiTx(provider, account, to, amount, nativeToken, token)
+      return buildSendSuiTx(provider, account, to, amount, token, isSendAll)
     default:
       return
   }

@@ -1,3 +1,4 @@
+import { normalizeStructTag } from '@mysten/sui.js/src/utils/sui-types'
 import { normalizeSuiAddress, normalizeSuiObjectId } from '@mysten/sui.js/utils'
 import {
   SUI_DEVNET_CHAIN,
@@ -8,7 +9,6 @@ import suiScanLogo from 'data-base64:~assets/thirdparty/sui-scan.svg'
 
 import { fetchJsonWithCache } from '~lib/fetch'
 import { TokenInfo, TokenList } from '~lib/services/datasource/suivision'
-import { normalizeSuiType } from '~lib/wallet'
 
 class SuiScanApi {
   async getTokenList(chainId: string): Promise<TokenList | undefined> {
@@ -74,7 +74,7 @@ class SuiScanApi {
       }
 
       for (const item of result.content) {
-        const coinType = normalizeSuiType(item.type)
+        const coinType = normalizeStructTag(item.type)
         if (deduplicates.has(coinType)) {
           continue
         }

@@ -1,9 +1,9 @@
 import { normalizeSuiAddress, normalizeSuiObjectId } from '@mysten/sui.js/utils'
+import { normalizeStructTag } from '@mysten/sui.js/utils'
 import { SUI_MAINNET_CHAIN, SUI_TESTNET_CHAIN } from '@mysten/wallet-standard'
 import suiVisionLogo from 'data-base64:~assets/thirdparty/sui-vision.svg'
 
 import { fetchJsonWithCache } from '~lib/fetch'
-import { normalizeSuiType } from '~lib/wallet'
 
 export interface TokenInfo {
   chainId: string
@@ -95,7 +95,7 @@ class SuiVisionApi {
       }
 
       for (const item of result.result.data) {
-        const coinType = normalizeSuiType(item.coinID)
+        const coinType = normalizeStructTag(item.coinID)
         if (deduplicates.has(coinType)) {
           continue
         }

@@ -1,4 +1,5 @@
 import { shallowCopy } from '@ethersproject/properties'
+import { normalizeStructTag } from '@mysten/sui.js/utils'
 import assert from 'assert'
 import Decimal from 'decimal.js'
 import { useAsync } from 'react-use'
@@ -20,7 +21,6 @@ import {
 } from '~lib/services/datasource/suivision'
 import { NETWORK_SERVICE } from '~lib/services/network'
 import { getSuiClient } from '~lib/services/provider/sui/client'
-import { normalizeSuiType } from '~lib/wallet'
 
 import { SearchedTokenFromTokenLists, TokenBrief, TokenListBrief } from '.'
 import { BaseTokenService } from './base'
@@ -70,7 +70,10 @@ export class SuiTokenService extends BaseTokenService {
       return
     }
 
-    await this._initDefaultTokenLists()
+    const init = await this._initDefaultTokenLists()
+    if (!init) {
+      // TODO: update
+    }
 
     console.log('initialized sui tokens')
   }
@@ -129,7 +132,7 @@ export class SuiTokenService extends BaseTokenService {
   ): Promise<SearchedTokenFromTokenLists | undefined> {
     assert(account.networkKind === NetworkKind.SUI)
 
-    token = normalizeSuiType(token)
+    token = normalizeStructTag(token)
 
     let foundToken: IToken | undefined
     const tokenLists = await this.getTokenLists(account.networkKind)
@@ -180,7 +183,7 @@ export class SuiTokenService extends BaseTokenService {
     assert(account.networkKind === NetworkKind.SUI)
     assert(account.address)
 
-    token = normalizeSuiType(token)
+    token = normalizeStructTag(token)
 
     const network = await NETWORK_SERVICE.getNetwork({
       kind: NetworkKind.SUI,
@@ -338,7 +341,7 @@ export class SuiTokenService extends BaseTokenService {
     const balances = await client.getAllBalances({ owner: account.address })
     const balancesMap = new Map(
       balances.map((balance) => [
-        normalizeSuiType(balance.coinType),
+        normalizeStructTag(balance.coinType),
         balance.totalBalance
       ])
     )

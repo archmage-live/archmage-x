@@ -8,14 +8,11 @@ export function formatCosmTxPayload(payload: {
   txParams: CosmSignDoc | SignDoc | StdSignDoc
   populatedParams: any
 }): TransactionPayload {
-  let txParams = payload.txParams
+  const { txParams } = payload
 
   if (isCosmSignDoc(txParams)) {
-    txParams = toSignDoc(txParams)
+    payload.txParams = toSignDoc(txParams)
   }
 
-  return {
-    ...payload,
-    txParams
-  }
+  return payload
 }

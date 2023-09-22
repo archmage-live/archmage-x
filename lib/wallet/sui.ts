@@ -114,9 +114,3 @@ export class SuiWallet implements KeystoreSigningWallet {
     }
   }
 }
-
-export function normalizeSuiType(type: string) {
-  const splits = type.split('::')
-  splits[0] = normalizeSuiObjectId(splits[0])
-  return splits.join('::')
-}

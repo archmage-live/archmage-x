@@ -1,4 +1,5 @@
 import {
+  Badge,
   Box,
   Button,
   Center,
@@ -16,7 +17,8 @@ import {
 // TODO: deprecated
 import { MoveCallTransaction, TransferObjectsTransaction } from '@mysten/sui.js'
 import { TransactionBlock } from '@mysten/sui.js/transactions'
-import { normalizeSuiAddress } from '@mysten/sui.js/utils'
+import { parseStructTag } from '@mysten/sui.js/utils'
+import { normalizeStructTag, normalizeSuiAddress } from '@mysten/sui.js/utils'
 import Decimal from 'decimal.js'
 import { ReactNode, useCallback, useMemo, useState } from 'react'
 import { is } from 'superstruct'
@@ -31,7 +33,6 @@ import { formatTxPayload } from '~lib/services/provider'
 import { useSuiTransaction } from '~lib/services/provider/sui/hooks'
 import { Amount } from '~lib/services/token'
 import { useSuiTokenInfos } from '~lib/services/token/sui'
-import { shortenString } from '~lib/utils'
 import { useTabsHeaderScroll } from '~pages/Popup/Consent/Transaction/helpers'
 import {
   SuiTransactionData,
@@ -192,6 +193,14 @@ export const SuiTransaction = ({
                       return undefined
                     }
 
+                    const tokenInfo = tokenInfos?.get(
+                      normalizeStructTag(change.coinType)
+                    )
+
+                    const symbol = getCoinSymbol(
+                      parseStructTag(change.coinType)
+                    )
+
                     return (
                       <HStack key={i}>
                         <Text
@@ -202,17 +211,15 @@ export const SuiTransaction = ({
                               : 'red.500'
                           }>
                           {new Decimal(change.amount)
-                            .div(
-                              new Decimal(10).pow(
-                                tokenInfos?.get(change.coinType)?.decimals || 0
-                              )
-                            )
+                            .div(new Decimal(10).pow(tokenInfo?.decimals || 0))
                             .toDecimalPlaces(8)
                             .toString()}
                           &nbsp;
-                          {tokenInfos?.get(change.coinType)?.symbol ||
-                            shortenString(change.coinType)}
+                          {tokenInfo?.symbol || symbol}
                         </Text>
+                        {!tokenInfo?.symbol && (
+                          <Badge colorScheme="red">Unrecognized</Badge>
+                        )}
                       </HStack>
                     )
                   })}
@@ -334,4 +341,21 @@ export const SuiTransaction = ({
       </Box>
     </>
   )
+}
+
+type StructTag = {
+  address: string
+  module: string
+  name: string
+  typeParams: (string | StructTag)[]
+}
+
+function getCoinSymbol(tag: StructTag): string {
+  if (tag.typeParams.length) {
+    // use the last param
+    const lastParam = tag.typeParams[tag.typeParams.length - 1]
+    return typeof lastParam === 'string' ? lastParam : getCoinSymbol(lastParam)
+  } else {
+    return tag.name
+  }
 }

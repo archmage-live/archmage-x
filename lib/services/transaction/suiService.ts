@@ -1,10 +1,10 @@
 import {
   MoveCallSuiTransaction,
   SuiArgument,
-  SuiTransactionBlockResponse
+  SuiTransactionBlockResponse,
+  TransactionFilter
 } from '@mysten/sui.js/client'
-import { TransactionBlock } from '@mysten/sui.js/transactions'
-import { normalizeSuiAddress } from '@mysten/sui.js/utils'
+import { normalizeStructTag, normalizeSuiAddress } from '@mysten/sui.js/utils'
 import assert from 'assert'
 import Decimal from 'decimal.js'
 
@@ -15,7 +15,7 @@ import { SERVICE_WORKER_CLIENT, SERVICE_WORKER_SERVER } from '~lib/rpc'
 import { IChainAccount, IPendingTx, ITransaction } from '~lib/schema'
 import { NETWORK_SERVICE } from '~lib/services/network'
 import { getSuiClient } from '~lib/services/provider/sui/client'
-import { normalizeSuiType } from '~lib/wallet'
+import { stall } from '~lib/utils'
 
 import {
   ITransactionService,
@@ -57,7 +57,8 @@ export function getSuiTransactionInfo(
       AddressOwner: string
     }
     return (
-      normalizeSuiType(change.coinType) === normalizeSuiType('0x2::sui::SUI') &&
+      normalizeStructTag(change.coinType) ===
+        normalizeStructTag('0x2::sui::SUI') &&
       normalizeSuiAddress(owner.AddressOwner) === transaction.address
     )
   })
@@ -175,7 +176,7 @@ class SuiTransactionServicePartial
 export class SuiTransactionService extends SuiTransactionServicePartial {
   async addPendingTx(
     account: IChainAccount,
-    tx: TransactionBlock,
+    tx: string,
     txResponse: SuiTransactionBlockResponse,
     origin?: string
   ): Promise<IPendingTx> {
@@ -193,7 +194,7 @@ export class SuiTransactionService extends SuiTransactionServicePartial {
         : Date.now(),
       hash: txResponse.digest,
       info: {
-        tx: tx.serialize(),
+        tx,
         txResponse,
         origin
       } as SuiPendingTxInfo
@@ -227,20 +228,28 @@ export class SuiTransactionService extends SuiTransactionServicePartial {
 
     const client = await getSuiClient(network)
 
-    const txResponse = await client.waitForTransactionBlock({
-      digest: info.txResponse.digest,
-      options: {
-        showBalanceChanges: true,
-        showEffects: true,
-        showEvents: true,
-        showInput: true,
-        showObjectChanges: true
+    let txResponse: SuiTransactionBlockResponse | undefined
+    for (let i = 0; i < 3; ++i) {
+      txResponse = await client.waitForTransactionBlock({
+        digest: info.txResponse.digest,
+        options: {
+          showBalanceChanges: true,
+          showEffects: true,
+          showEvents: true,
+          showInput: true,
+          showObjectChanges: true
+        }
+      })
+      if (txResponse.checkpoint) {
+        break
       }
-    })
+      // TODO
+      await stall(3000)
+    }
 
-    if (!txResponse.checkpoint) {
+    if (!txResponse?.checkpoint) {
       throw new Error(
-        `Transaction with digest ${txResponse.digest} was submitted but was not yet found on the chain. You might want to check later.`
+        `Transaction with digest ${info.txResponse.digest} was submitted but was not yet found on the chain. You might want to check later.`
       )
     }
 
@@ -269,8 +278,8 @@ export class SuiTransactionService extends SuiTransactionServicePartial {
           chainId: pendingTx.chainId,
           address: pendingTx.address,
           type: '',
-          index1: Number(txResponse.checkpoint),
-          index2: txResponse.digest
+          index1: Number(txResponse!.checkpoint),
+          index2: txResponse!.digest
         })
         .first()
       if (!existingTx) {
@@ -322,136 +331,142 @@ export class SuiTransactionService extends SuiTransactionServicePartial {
       .last()
     const lastCheckpoint = lastTx?.index1 as number | undefined
 
-    let cursor: string | undefined
-    while (true) {
-      const { data, hasNextPage, nextCursor } =
-        await client.queryTransactionBlocks({
-          cursor,
-          limit: 100,
-          order: 'descending',
-          filter: {
-            // filter by from/to address
-            FromOrToAddress: {
-              addr: account.address
+    const filters: TransactionFilter[] = [
+      { FromAddress: account.address },
+      { ToAddress: account.address }
+    ]
+
+    for (const filter of filters) {
+      let cursor: string | undefined
+      while (true) {
+        const { data, hasNextPage, nextCursor } =
+          await client.queryTransactionBlocks({
+            cursor,
+            limit: 100,
+            order: 'descending',
+            filter,
+            options: {
+              showBalanceChanges: true,
+              showEffects: true,
+              showEvents: true,
+              showInput: true,
+              showObjectChanges: true
             }
-          },
-          options: {
-            showBalanceChanges: true,
-            showEffects: true,
-            showEvents: true,
-            showInput: true,
-            showObjectChanges: true
-          }
-        })
+          })
 
-      if (!data.length) {
-        break
-      }
-
-      let done = false
-      if (!hasNextPage || !nextCursor) {
-        done = true
-      }
-      cursor = nextCursor || undefined
-
-      const txResponses = []
-      const txQuery = []
-      for (const txResponse of data) {
-        if (typeof txResponse.checkpoint !== 'string') {
-          // we always filter out the transaction if it is not included into a checkpoint
-          continue
+        if (!data.length) {
+          break
         }
-        const checkpoint = Number(txResponse.checkpoint)
 
-        if (lastCheckpoint !== undefined && checkpoint <= lastCheckpoint) {
+        let done = false
+        if (!hasNextPage || !nextCursor) {
           done = true
         }
+        cursor = nextCursor || undefined
 
-        txResponses.push(txResponse)
+        const txResponses = []
+        const txQuery = []
+        for (const txResponse of data) {
+          if (typeof txResponse.checkpoint !== 'string') {
+            // we always filter out the transaction if it is not included into a checkpoint
+            continue
+          }
+          const checkpoint = Number(txResponse.checkpoint)
 
-        txQuery.push([
-          account.masterId,
-          account.index,
-          account.networkKind,
-          account.chainId,
-          account.address!,
-          type,
-          checkpoint,
-          txResponse.digest
-        ])
-      }
+          if (lastCheckpoint !== undefined && checkpoint <= lastCheckpoint) {
+            done = true
+          }
 
-      const existingTxs = await DB.transactions
-        .where(
-          '[masterId+index+networkKind+chainId+address+type+index1+index2]'
+          txResponses.push(txResponse)
+
+          txQuery.push([
+            account.masterId,
+            account.index,
+            account.networkKind,
+            account.chainId,
+            account.address!,
+            type,
+            checkpoint,
+            txResponse.digest
+          ])
+        }
+
+        const existingTxs = await DB.transactions
+          .where(
+            '[masterId+index+networkKind+chainId+address+type+index1+index2]'
+          )
+          .anyOf(txQuery)
+          .toArray()
+        const existingTxsSet = new Set(existingTxs.map((tx) => tx.index2))
+
+        const addTxs: ITransaction[] = []
+        const pendingTxsForTxsQuery = []
+        for (const txResponse of txResponses) {
+          if (existingTxsSet.has(txResponse.digest)) {
+            continue
+          }
+
+          addTxs.push({
+            masterId: account.masterId,
+            index: account.index,
+            networkKind: account.networkKind,
+            chainId: account.chainId,
+            address: account.address!,
+            type,
+            index1: Number(txResponse.checkpoint),
+            index2: txResponse.digest,
+            info: {
+              txResponse
+            } as SuiTransactionInfo
+          } as ITransaction)
+
+          pendingTxsForTxsQuery.push([
+            account.masterId,
+            account.index,
+            account.networkKind,
+            account.chainId,
+            account.address!,
+            txResponse.digest
+          ])
+        }
+
+        const existingPendingTxsForTxs = await DB.pendingTxs
+          .where('[masterId+index+networkKind+chainId+address+hash]')
+          .anyOf(pendingTxsForTxsQuery)
+          .toArray()
+        const existingPendingTxsForTxsMap = new Map(
+          existingPendingTxsForTxs.map((tx) => [
+            tx.hash,
+            tx.info as SuiPendingTxInfo
+          ])
         )
-        .anyOf(txQuery)
-        .toArray()
-      const existingTxsSet = new Set(existingTxs.map((tx) => tx.index2))
+        addTxs.forEach((tx) => {
+          const info = tx.info as SuiTransactionInfo
+          const pendingTxInfo = existingPendingTxsForTxsMap.get(
+            info.txResponse.digest
+          )
+          info.tx = pendingTxInfo?.tx
+          info.origin = pendingTxInfo?.origin
+        })
 
-      const addTxs: ITransaction[] = []
-      const pendingTxsForTxsQuery = []
-      for (const txResponse of txResponses) {
-        if (existingTxsSet.has(txResponse.digest)) {
-          continue
-        }
+        const deletePendingTxs = existingPendingTxsForTxs.map((tx) => tx.id)
 
-        addTxs.push({
-          masterId: account.masterId,
-          index: account.index,
-          networkKind: account.networkKind,
-          chainId: account.chainId,
-          address: account.address!,
-          type,
-          index1: Number(txResponse.checkpoint),
-          index2: txResponse.digest,
-          info: {
-            txResponse
-          } as SuiTransactionInfo
-        } as ITransaction)
-
-        pendingTxsForTxsQuery.push([
-          account.masterId,
-          account.index,
-          account.networkKind,
-          account.chainId,
-          account.address!,
-          txResponse.digest
-        ])
-      }
-
-      const existingPendingTxsForTxs = await DB.pendingTxs
-        .where('[masterId+index+networkKind+chainId+address+hash]')
-        .anyOf(pendingTxsForTxsQuery)
-        .toArray()
-      const existingPendingTxsForTxsMap = new Map(
-        existingPendingTxsForTxs.map((tx) => [
-          tx.hash,
-          tx.info as SuiPendingTxInfo
-        ])
-      )
-      addTxs.forEach((tx) => {
-        const info = tx.info as SuiTransactionInfo
-        const pendingTxInfo = existingPendingTxsForTxsMap.get(
-          info.txResponse.digest
+        await DB.transaction(
+          'rw',
+          [DB.pendingTxs, DB.transactions],
+          async () => {
+            if (deletePendingTxs.length) {
+              await DB.pendingTxs.bulkDelete(deletePendingTxs)
+            }
+            if (addTxs.length) {
+              await DB.transactions.bulkAdd(addTxs)
+            }
+          }
         )
-        info.tx = pendingTxInfo?.tx
-        info.origin = pendingTxInfo?.origin
-      })
 
-      const deletePendingTxs = existingPendingTxsForTxs.map((tx) => tx.id)
-
-      await DB.transaction('rw', [DB.pendingTxs, DB.transactions], async () => {
-        if (deletePendingTxs.length) {
-          await DB.pendingTxs.bulkDelete(deletePendingTxs)
+        if (done) {
+          break
         }
-        if (addTxs.length) {
-          await DB.transactions.bulkAdd(addTxs)
-        }
-      })
-
-      if (done) {
-        break
       }
     }
   }

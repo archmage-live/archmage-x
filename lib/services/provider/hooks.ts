@@ -16,6 +16,7 @@ import {
 } from '~lib/services/cacheService'
 import { getNetworkInfo } from '~lib/services/network'
 import { AptosAddressZero } from '~lib/services/network/aptosService'
+import { SuiAddressZero } from '~lib/services/network/suiService'
 import { getBtcFeeBrief } from '~lib/services/provider/btc/fee'
 import { getEvmGasFeeBrief } from '~lib/services/provider/evm/gasFee'
 import { Provider, getProvider } from '~lib/services/provider/provider'
@@ -28,6 +29,8 @@ export function addressZero(network: INetwork): string {
       return AddressZero
     case NetworkKind.APTOS:
       return AptosAddressZero
+    case NetworkKind.SUI:
+      return SuiAddressZero
   }
   throw new Error(`provider for network ${network.kind} is not implemented`)
 }
@@ -259,6 +262,7 @@ export function useEstimateGasFee(
   const gas = useEstimateGas(network, account, tx, retryInterval)
 
   const provider = useProvider(network)
+
   const {
     value: _gasFee,
     loading,
@@ -268,7 +272,7 @@ export function useEstimateGasFee(
     if (!account?.address || !tx || !provider) {
       return
     }
-    return provider.estimateGasFee(account!, tx)
+    return await provider.estimateGasFee(account!, tx)
   }, [account, tx, provider])
 
   useInterval(retry, retryInterval && !loading && error ? retryInterval : null)
