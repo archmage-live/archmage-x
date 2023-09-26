@@ -17,6 +17,7 @@ import { useCallback, useState } from 'react'
 
 import { useNetworkTreeState } from '~/lib/hooks/useNetworkTreeState'
 import { AccountAvatar } from '~components/AccountAvatar'
+import { WrappedDeleteWalletModal } from '~components/DeleteWalletModal'
 import { WalletId, useActive } from '~lib/active'
 import { useWalletTreeState } from '~lib/hooks/useWalletTreeState'
 import {
@@ -30,7 +31,6 @@ import {
   filterWalletTreeBySearch,
   useWalletTree
 } from '~lib/services/wallet/tree'
-import { WrappedDeleteWalletModal } from '~pages/Settings/SettingsWallets/DeleteWalletModal'
 
 import { NetworkDrawer } from './NetworkDrawer'
 import { WalletDrawer } from './WalletDrawer'

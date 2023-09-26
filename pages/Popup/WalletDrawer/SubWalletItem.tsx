@@ -27,13 +27,13 @@ import browser from 'webextension-polyfill'
 import { AccountAvatar } from '~components/AccountAvatar'
 import { useAccountDetailModal } from '~components/AccountDetailModal'
 import { BtnBox } from '~components/BtnBox'
+import { DeleteWalletOpts } from '~components/DeleteWalletModal'
 import { formatNumber } from '~lib/formatNumber'
 import { INetwork } from '~lib/schema'
 import { getAccountUrl } from '~lib/services/network'
 import { Amount } from '~lib/services/token'
 import { SubWalletEntry } from '~lib/services/wallet/tree'
 import { shortenString } from '~lib/utils'
-import { DeleteWalletOpts } from '~pages/Settings/SettingsWallets/DeleteWalletModal'
 
 export const SubWalletItem = ({
   network,

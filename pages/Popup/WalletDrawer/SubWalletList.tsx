@@ -2,12 +2,12 @@ import { Box } from '@chakra-ui/react'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { useEffect, useRef } from 'react'
 
+import { DeleteWalletOpts } from '~components/DeleteWalletModal'
 import { WalletId } from '~lib/active'
 import { usePaginatedBalances } from '~lib/hooks/usePaginatedBalances'
 import { useInitialWalletTreeState } from '~lib/hooks/useWalletTreeState'
 import { INetwork, IWallet } from '~lib/schema'
 import { SubWalletEntry } from '~lib/services/wallet/tree'
-import { DeleteWalletOpts } from '~pages/Settings/SettingsWallets/DeleteWalletModal'
 
 import { SubWalletItem } from './SubWalletItem'
 

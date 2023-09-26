@@ -24,6 +24,7 @@ import { useEffect } from 'react'
 import { useNetworkState } from 'react-use'
 
 import { AccountAbstractionPopover } from '~components/AccountAbstractionPopover'
+import { ExportMnemonicModal } from '~components/ExportMnemonicModal'
 import { useActive } from '~lib/active'
 import { formatNumber } from '~lib/formatNumber'
 import { WalletInfo } from '~lib/schema'
@@ -38,7 +39,6 @@ import { useKeylessOnboardToast } from '~pages/KeylessOnboard/useKeylessOnboardT
 import { ConnectedAccountsModal } from '~pages/Popup/Portal/ConnectedAccounts'
 import { useDepositModal } from '~pages/Popup/Portal/Deposit'
 import { useSendModal } from '~pages/Popup/Portal/Send'
-import { ExportMnemonicModal } from '~pages/Settings/SettingsWallets/ExportMnemonicModal'
 
 import { AccountMenu } from './AccountMenu'
 import { TokenListSection } from './TokenList'

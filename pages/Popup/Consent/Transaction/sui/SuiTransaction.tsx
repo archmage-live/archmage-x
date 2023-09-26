@@ -293,6 +293,15 @@ export const SuiTransaction = ({
                         {networkInfo.currencySymbol}
                       </Text>
                     </HStack>
+
+                    <HStack justify="space-between">
+                      <Text>Inputs</Text>
+                      <Text>{txParams.blockData.inputs.length}</Text>
+                    </HStack>
+                    <HStack justify="space-between">
+                      <Text>Transactions</Text>
+                      <Text>{txParams.blockData.transactions.length}</Text>
+                    </HStack>
                   </Stack>
                 </Stack>
               </TabPanel>

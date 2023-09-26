@@ -28,6 +28,9 @@ import browser from 'webextension-polyfill'
 
 import { AccountAvatar } from '~components/AccountAvatar'
 import { CopyArea } from '~components/CopyIcon'
+import { ExportMnemonicModal } from '~components/ExportMnemonicModal'
+import { ExportPrivateKeyModal } from '~components/ExportPrivateKeyModal'
+import { SubWalletNameEdit, WalletNameEdit } from '~components/WalletNameEdit'
 import { useActive } from '~lib/active'
 import {
   IChainAccount,
@@ -40,10 +43,6 @@ import {
 import { NETWORK_SERVICE, getAccountUrl } from '~lib/services/network'
 import { WALLET_SERVICE } from '~lib/services/wallet'
 import { WalletType, hasWalletKeystore } from '~lib/wallet'
-import { ExportMnemonicModal } from '~pages/Settings/SettingsWallets/ExportMnemonicModal'
-import { ExportPrivateKeyModal } from '~pages/Settings/SettingsWallets/ExportPrivateKeyModal'
-import { SubWalletNameEdit } from '~pages/Settings/SettingsWallets/SubWalletEdit'
-import { WalletNameEdit } from '~pages/Settings/SettingsWallets/WalletEdit'
 
 const isOpenAccountDetailModalAtom = atom<boolean>(false)
 const accountDetailModalArgsAtom = atom<

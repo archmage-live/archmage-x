@@ -1,33 +1,27 @@
 import { Select, Stack, useColorMode } from '@chakra-ui/react'
-import { useEffect } from 'react'
 
 import { SaveInput } from '~components/SaveInput'
-import { SettingItem, useForPopupSettings } from '~components/SettingItem'
+import { SettingItem } from '~components/SettingItem'
 import { LOCALE_LABEL } from '~lib/constants/locales'
 import { useUserLocale } from '~lib/hooks/useActiveLocale'
 import { useLockTime } from '~lib/hooks/useLockTime'
 import { QUOTE_CURRENCY_LABEL, useQuoteCurrency } from '~lib/quoteCurrency'
 
-export const SettingsGeneral = () => {
-  const [, setForPopupSettings] = useForPopupSettings()
-  useEffect(() => {
-    setForPopupSettings(false)
-  }, [setForPopupSettings])
-
+export const SettingsGeneral = ({ forPopup }: { forPopup?: boolean }) => {
   return (
-    <Stack spacing={12}>
-      <SettingsGeneralTheme />
+    <Stack spacing={forPopup ? 6 : 12}>
+      <SettingsGeneralTheme forPopup={forPopup} />
 
-      <SettingsGeneralLocale />
+      <SettingsGeneralLocale forPopup={forPopup} />
 
-      <SettingsGeneralQuoteCurrency />
+      <SettingsGeneralQuoteCurrency forPopup={forPopup} />
 
-      <SettingsGeneralLockTime />
+      <SettingsGeneralLockTime forPopup={forPopup} />
     </Stack>
   )
 }
 
-export const SettingsGeneralTheme = () => {
+export const SettingsGeneralTheme = ({ forPopup }: { forPopup?: boolean }) => {
   const { colorMode, setColorMode } = useColorMode()
 
   return (
@@ -43,11 +37,12 @@ export const SettingsGeneralTheme = () => {
           <option value="dark">Dark</option>
         </Select>
       }
+      forPopup={forPopup}
     />
   )
 }
 
-export const SettingsGeneralLocale = () => {
+export const SettingsGeneralLocale = ({ forPopup }: { forPopup?: boolean }) => {
   const { userLocale, setUserLocale } = useUserLocale()
 
   return (
@@ -70,11 +65,16 @@ export const SettingsGeneralLocale = () => {
             })}
         </Select>
       }
+      forPopup={forPopup}
     />
   )
 }
 
-export const SettingsGeneralQuoteCurrency = () => {
+export const SettingsGeneralQuoteCurrency = ({
+  forPopup
+}: {
+  forPopup?: boolean
+}) => {
   const { quoteCurrency, setQuoteCurrency } = useQuoteCurrency()
 
   return (
@@ -95,11 +95,16 @@ export const SettingsGeneralQuoteCurrency = () => {
           })}
         </Select>
       }
+      forPopup={forPopup}
     />
   )
 }
 
-export const SettingsGeneralLockTime = () => {
+export const SettingsGeneralLockTime = ({
+  forPopup
+}: {
+  forPopup?: boolean
+}) => {
   const [lockTime, setLockTime] = useLockTime()
 
   return (
@@ -128,6 +133,7 @@ export const SettingsGeneralLockTime = () => {
           onChange={(value) => setLockTime(+value)}
         />
       }
+      forPopup={forPopup}
     />
   )
 }

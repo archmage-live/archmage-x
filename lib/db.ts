@@ -3,11 +3,11 @@ import { Config, animals, uniqueNamesGenerator } from 'unique-names-generator'
 
 import {
   IActiveBinding,
-  IAddressBook,
   IAptosEvent,
   ICache,
   IChainAccount,
   IConnectedSite,
+  IContact,
   IHdPath,
   IKeystore,
   INetwork,
@@ -18,11 +18,11 @@ import {
   ITransaction,
   IWallet,
   activeBindingSchemaV1,
-  addressBookSchemaV1,
   aptosEventSchemaV1,
   cacheSchemaV1,
   chainAccountSchemaV1,
   connectedSiteSchemaV1,
+  contactSchemaV1,
   hdPathSchemaV1,
   keystoreSchemaV1,
   networkSchemaV1,
@@ -47,7 +47,7 @@ export class Database extends Dexie {
   tokens!: Dexie.Table<IToken, number>
   connectedSites!: Dexie.Table<IConnectedSite, number>
   activeBindings!: Dexie.Table<IActiveBinding, number>
-  addressBook!: Dexie.Table<IAddressBook, number>
+  contacts!: Dexie.Table<IContact, number>
   cache!: Dexie.Table<ICache, number>
   aptosEvents!: Dexie.Table<IAptosEvent, number>
 
@@ -66,7 +66,7 @@ export class Database extends Dexie {
       tokens: tokenSchemaV1,
       connectedSites: connectedSiteSchemaV1,
       activeBindings: activeBindingSchemaV1,
-      addressBook: addressBookSchemaV1,
+      contacts: contactSchemaV1,
       cache: cacheSchemaV1,
       aptosEvents: aptosEventSchemaV1
     })

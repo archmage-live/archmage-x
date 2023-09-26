@@ -1,7 +1,6 @@
 import {
   Button,
   FormControl,
-  FormErrorMessage,
   FormLabel,
   HStack,
   Stack,
@@ -11,19 +10,18 @@ import {
 import { stringToPath } from '@cosmjs/crypto'
 import { useState } from 'react'
 
-import { HdPathInput } from '~components/HdPathInput'
-import { SaveInput } from '~components/SaveInput'
-import { DB } from '~lib/db'
-import { INetwork, IWallet, WalletInfo } from '~lib/schema'
-import { WALLET_SERVICE, useHdPath, useSubWallets } from '~lib/services/wallet'
-import { WalletType, getWalletTypeTitle } from '~lib/wallet'
-import { ChangeHdPathModal } from '~pages/Settings/SettingsWallets/ChangeHdPathModal'
-
+import { ChangeHdPathModal } from '~components/ChangeHdPathModal'
 import {
   WrappedDeleteWalletModal,
   useDeleteWalletModal
-} from './DeleteWalletModal'
-import { ExportMnemonicModal } from './ExportMnemonicModal'
+} from '~components/DeleteWalletModal'
+import { ExportMnemonicModal } from '~components/ExportMnemonicModal'
+import { HdPathInput } from '~components/HdPathInput'
+import { SaveInput } from '~components/SaveInput'
+import { WalletNameEdit } from '~components/WalletNameEdit'
+import { INetwork, IWallet, WalletInfo } from '~lib/schema'
+import { WALLET_SERVICE, useHdPath, useSubWallets } from '~lib/services/wallet'
+import { WalletType, getWalletTypeTitle } from '~lib/wallet'
 
 interface WalletEditProps {
   network: INetwork
@@ -156,29 +154,5 @@ export const WalletEdit = ({ network, wallet, onDelete }: WalletEditProps) => {
 
       <WrappedDeleteWalletModal onDelete={onDelete} />
     </Stack>
-  )
-}
-
-export const WalletNameEdit = ({ wallet }: { wallet: IWallet }) => {
-  const [isNameExists, setIsNameExists] = useState(false)
-
-  return (
-    <FormControl isInvalid={isNameExists}>
-      <FormLabel>Wallet Name</FormLabel>
-      <SaveInput
-        hideSaveIfNoChange
-        stretchInput
-        value={wallet.name}
-        validate={(value: string) => value.trim().slice(0, 64) || false}
-        asyncValidate={async (value: string) => {
-          return !(await DB.wallets.where('name').equals(value).first())
-        }}
-        onChange={(value: string) => {
-          DB.wallets.update(wallet, { name: value })
-        }}
-        onInvalid={setIsNameExists}
-      />
-      <FormErrorMessage>This wallet name exists.</FormErrorMessage>
-    </FormControl>
   )
 }

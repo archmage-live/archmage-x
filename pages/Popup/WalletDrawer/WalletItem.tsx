@@ -29,6 +29,7 @@ import browser from 'webextension-polyfill'
 
 import { AccountAvatar } from '~components/AccountAvatar'
 import { useAccountDetailModal } from '~components/AccountDetailModal'
+import { useDeleteWalletModal } from '~components/DeleteWalletModal'
 import { TypeBadge } from '~components/TypeBadge'
 import { WalletId } from '~lib/active'
 import { formatNumber } from '~lib/formatNumber'
@@ -43,7 +44,6 @@ import {
 import { SubWalletEntry, WalletEntry } from '~lib/services/wallet/tree'
 import { shortenString } from '~lib/utils'
 import { WalletType, getWalletTypeIdentifier, isWalletGroup } from '~lib/wallet'
-import { useDeleteWalletModal } from '~pages/Settings/SettingsWallets/DeleteWalletModal'
 
 import { MenuBtn } from './SubWalletItem'
 import { SubWalletList } from './SubWalletList'

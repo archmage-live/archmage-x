@@ -16,11 +16,11 @@ import { MdQrCode } from '@react-icons/all-files/md/MdQrCode'
 import browser from 'webextension-polyfill'
 
 import { useAccountDetailModal } from '~components/AccountDetailModal'
+import { DeleteWalletModal } from '~components/DeleteWalletModal'
 import { useActive } from '~lib/active'
 import { getAccountUrl } from '~lib/services/network'
 import { createTab } from '~lib/tab'
 import { ConnectedSitesModal } from '~pages/Popup/Portal/ConnectedSites'
-import { DeleteWalletModal } from '~pages/Settings/SettingsWallets/DeleteWalletModal'
 
 export const AccountMenu = () => {
   const { network, wallet, subWallet, account } = useActive()

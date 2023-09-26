@@ -22,9 +22,9 @@ import {
 import { getNetworkInfo, useNetwork, useNetworks } from '~lib/services/network'
 import { useWalletTree } from '~lib/services/wallet/tree'
 import { createTab } from '~lib/tab'
-import { SubWalletEdit } from '~pages/Settings/SettingsWallets/SubWalletEdit'
-import { WalletEdit } from '~pages/Settings/SettingsWallets/WalletEdit'
 
+import { SubWalletEdit } from './SubWalletEdit'
+import { WalletEdit } from './WalletEdit'
 import { WalletList } from './WalletList'
 
 export const SettingsWallets = () => {

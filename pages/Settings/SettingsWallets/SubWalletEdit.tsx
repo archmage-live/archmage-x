@@ -1,7 +1,6 @@
 import {
   Button,
   FormControl,
-  FormErrorMessage,
   FormLabel,
   HStack,
   Stack,
@@ -9,15 +8,18 @@ import {
   useDisclosure
 } from '@chakra-ui/react'
 import { stringToPath } from '@cosmjs/crypto'
-import { useState } from 'react'
 import browser from 'webextension-polyfill'
 
 import { CopyArea } from '~components/CopyIcon'
+import {
+  WrappedDeleteWalletModal,
+  useDeleteWalletModal
+} from '~components/DeleteWalletModal'
+import { ExportPrivateKeyModal } from '~components/ExportPrivateKeyModal'
 import { HdPathInput } from '~components/HdPathInput'
-import { SaveInput } from '~components/SaveInput'
-import { DB } from '~lib/db'
+import { SubWalletNameEdit, WalletNameEdit } from '~components/WalletNameEdit'
 import { formatNumber } from '~lib/formatNumber'
-import { INetwork, ISubWallet, IWallet, isSubNameInvalid } from '~lib/schema'
+import { INetwork, ISubWallet, IWallet } from '~lib/schema'
 import { getAccountUrl } from '~lib/services/network'
 import { useBalance } from '~lib/services/provider'
 import { useChainAccountByIndex, useHdPath } from '~lib/services/wallet'
@@ -26,13 +28,6 @@ import {
   hasWalletKeystore,
   isWalletGroup
 } from '~lib/wallet'
-import { WalletNameEdit } from '~pages/Settings/SettingsWallets/WalletEdit'
-
-import {
-  WrappedDeleteWalletModal,
-  useDeleteWalletModal
-} from './DeleteWalletModal'
-import { ExportPrivateKeyModal } from './ExportPrivateKeyModal'
 
 interface SubWalletEditProps {
   network: INetwork
@@ -157,45 +152,5 @@ export const SubWalletEdit = ({
 
       <WrappedDeleteWalletModal onDelete={onDelete} />
     </Stack>
-  )
-}
-
-export const SubWalletNameEdit = ({
-  wallet,
-  subWallet
-}: {
-  wallet: IWallet
-  subWallet: ISubWallet
-}) => {
-  const [isNameExists, setIsNameExists] = useState(false)
-
-  return (
-    <FormControl isInvalid={isNameExists}>
-      <FormLabel>Account Name</FormLabel>
-      <SaveInput
-        hideSaveIfNoChange
-        stretchInput
-        value={subWallet.name}
-        validate={(value: string) => {
-          value = value.trim().slice(0, 64)
-          if (!value || isSubNameInvalid(value, subWallet.index)) {
-            return false
-          } else {
-            return value
-          }
-        }}
-        asyncValidate={async (value: string) => {
-          return !(await DB.subWallets
-            .where('[masterId+name]')
-            .equals([wallet.id, value])
-            .first())
-        }}
-        onChange={async (value: string) => {
-          await DB.subWallets.update(subWallet, { name: value })
-        }}
-        onInvalid={setIsNameExists}
-      />
-      <FormErrorMessage>This account name exists.</FormErrorMessage>
-    </FormControl>
   )
 }

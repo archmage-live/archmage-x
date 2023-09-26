@@ -14,8 +14,6 @@ import { ChainId, INetwork, ISubWallet, IWallet } from '~lib/schema'
 import { EvmClient } from '~lib/services/provider/evm'
 import { isMultisigWallet } from '~lib/wallet'
 
-export * from './computeSafeAddress'
-
 // https://docs.safe.global/safe-core-api/available-services
 const SAFE_TX_SERVICE_URLS = new Map([
   [1, 'https://safe-transaction-mainnet.safe.global'],

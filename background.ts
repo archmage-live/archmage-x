@@ -1,6 +1,7 @@
 import { checkLockTime } from '~lib/hooks/useLockTime'
 import '~lib/keystore'
 import { SERVICE_WORKER_SERVER } from '~lib/rpc'
+import '~lib/services/contactService'
 import { NetworkService } from '~lib/services/network'
 import { PASSWORD_SERVICE } from '~lib/services/passwordService'
 import '~lib/services/provider/aptos/providerService'
