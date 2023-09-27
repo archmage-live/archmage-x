@@ -36,6 +36,8 @@ import { EvmNetworkService } from './evmService'
 import { StarknetNetworkService } from './starknetService'
 import { SuiNetworkService } from './suiService'
 
+export * from './reorder'
+
 export interface NetworkInfo {
   name: string
   description?: string
@@ -369,7 +371,7 @@ export class NetworkService {
   }
 
   async getNetwork(
-    id: number | { kind: NetworkKind; chainId: number | string }
+    id: number | { kind: NetworkKind; chainId: ChainId }
   ): Promise<INetwork | undefined> {
     if (typeof id === 'number') {
       return DB.networks.get(id)
@@ -460,8 +462,20 @@ export function useNetwork(id?: number) {
     if (id === undefined) {
       return undefined
     }
-    return DB.networks.get(id)
+    return NETWORK_SERVICE.getNetwork(id)
   }, [id])
+}
+
+export function useNetwork2(kind?: NetworkKind, chainId?: ChainId) {
+  return useLiveQuery(() => {
+    if (kind === undefined || chainId === undefined) {
+      return undefined
+    }
+    return NETWORK_SERVICE.getNetwork({
+      kind,
+      chainId
+    })
+  }, [kind, chainId])
 }
 
 export function useNetworkLogos(): Record<number, string> {
@@ -540,55 +554,4 @@ export function useNetworkLogoUrl(network?: INetwork) {
     default:
       return result?.imageUrl
   }
-}
-
-export function reorderNetworks(
-  networks: INetwork[],
-  startIndex: number,
-  endIndex: number
-): [INetwork[], number, number] {
-  const [startSortId, endSortId] = [
-    networks[startIndex].sortId,
-    networks[endIndex].sortId
-  ]
-  const nets = networks.slice()
-  const [lower, upper] = [
-    Math.min(startIndex, endIndex),
-    Math.max(startIndex, endIndex)
-  ]
-  const sortIds = nets.slice(lower, upper + 1).map((net) => net.sortId)
-  const [removed] = nets.splice(startIndex, 1)
-  nets.splice(endIndex, 0, removed)
-  for (let index = lower; index <= upper; ++index) {
-    nets[index].sortId = sortIds[index - lower]
-  }
-  return [nets, startSortId, endSortId]
-}
-
-export async function persistReorderNetworks(
-  startSortId: number,
-  endSortId: number
-) {
-  const clockwise = startSortId < endSortId
-  const [lower, upper] = clockwise
-    ? [startSortId, endSortId]
-    : [endSortId, startSortId]
-
-  await DB.transaction('rw', [DB.networks], async () => {
-    const items = await DB.networks
-      .where('sortId')
-      .between(lower, upper, true, true)
-      .sortBy('sortId')
-    if (!items.length) {
-      return
-    }
-
-    for (let i = 0; i < items.length; i++) {
-      let sortId = items[i].sortId + (clockwise ? -1 : 1)
-      if (sortId > upper) sortId = lower
-      else if (sortId < lower) sortId = upper
-
-      await DB.networks.update(items[i], { sortId })
-    }
-  })
 }

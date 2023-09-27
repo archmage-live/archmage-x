@@ -17,13 +17,22 @@ export function shortenString(
     return 'Not Available'
   }
 
-  const { leadingChars = 2, prefixChars = 3, suffixChars = 4 } = opts || {}
+  const {
+    leadingChars: _leadingChars = 2,
+    prefixChars = 3,
+    suffixChars = 4
+  } = opts || {}
 
-  return `${str.substring(
-    0,
-    (typeof leadingChars === 'number' ? leadingChars : leadingChars.length) +
-      prefixChars
-  )}...${str.substring(str.length - suffixChars)}`
+  const leadingChars =
+    typeof _leadingChars === 'number' ? _leadingChars : _leadingChars.length
+
+  if (str.length <= leadingChars + prefixChars + suffixChars) {
+    return str
+  }
+
+  return `${str.substring(0, leadingChars + prefixChars)}...${str.substring(
+    str.length - suffixChars
+  )}`
 }
 
 export function shallowClean<T>(object: T): T {

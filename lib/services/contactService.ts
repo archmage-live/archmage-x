@@ -1,3 +1,5 @@
+import { useLiveQuery } from 'dexie-react-hooks'
+
 import { DB } from '~lib/db'
 import { isBackgroundWorker } from '~lib/detect'
 import { SERVICE_WORKER_CLIENT, SERVICE_WORKER_SERVER } from '~lib/rpc'
@@ -57,3 +59,9 @@ function createContactService() {
 }
 
 export const CONTACT_SERVICE = createContactService()
+
+export function useContacts() {
+  return useLiveQuery(() => {
+    return CONTACT_SERVICE.getContacts()
+  }, [])
+}

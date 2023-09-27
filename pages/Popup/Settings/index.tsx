@@ -34,6 +34,8 @@ import browser from 'webextension-polyfill'
 import { createTab } from '~lib/tab'
 import { SettingsGeneral } from '~pages/Settings/SettingsGeneral'
 
+import { Contacts } from './Contacts'
+
 export default function Settings() {
   const { isOpen, onOpen, onClose } = useDisclosure()
   const [settings, setSettings] = useState<Settings>('general')
@@ -200,7 +202,7 @@ const SettingsDrawer = ({
                 {settings === 'general'
                   ? 'General'
                   : settings === 'contacts'
-                  ? 'Contacts'
+                  ? 'Address Book'
                   : settings === 'about'
                   ? 'About'
                   : ''}
@@ -215,7 +217,7 @@ const SettingsDrawer = ({
               {settings === 'general' ? (
                 <SettingsGeneral forPopup />
               ) : settings === 'contacts' ? (
-                <></>
+                <Contacts />
               ) : settings === 'about' ? (
                 <></>
               ) : (

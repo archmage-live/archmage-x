@@ -3,23 +3,16 @@ import {
   HStack,
   Icon,
   ListItem,
-  Select,
   SimpleGrid,
   Stack,
   UnorderedList
 } from '@chakra-ui/react'
 import { MdDragIndicator } from '@react-icons/all-files/md/MdDragIndicator'
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useTimeout } from 'react-use'
 
-import {
-  NETWORK_SCOPES,
-  NETWORK_SCOPE_ANY,
-  NetworkKind,
-  NetworkScope,
-  getNetworkKind
-} from '~lib/network'
-import { getNetworkInfo, useNetwork, useNetworks } from '~lib/services/network'
+import { NetworkSelectCombiner } from '~components/NetworkSelect'
+import { INetwork } from '~lib/schema'
 import { useWalletTree } from '~lib/services/wallet/tree'
 import { createTab } from '~lib/tab'
 
@@ -28,25 +21,7 @@ import { WalletEdit } from './WalletEdit'
 import { WalletList } from './WalletList'
 
 export const SettingsWallets = () => {
-  const [networkScope, setNetworkScope] = useState<NetworkScope | undefined>(
-    NETWORK_SCOPES[0]
-  )
-  const [networkKind, setNetworkKind] = useState<NetworkKind>()
-  useEffect(() => {
-    setNetworkKind(getNetworkKind(networkScope))
-  }, [networkScope])
-
-  const networksOfKind = useNetworks(networkKind)
-  const [networkId, setNetworkId] = useState<number>()
-  const network = useNetwork(networkId)
-
-  useEffect(() => {
-    if (networksOfKind?.length) {
-      setNetworkId(networksOfKind[0].id)
-    } else {
-      setNetworkId(undefined)
-    }
-  }, [networksOfKind])
+  const [network, setNetwork] = useState<INetwork>()
 
   const { wallets, toggleOpen, setSelected } = useWalletTree(network)
 
@@ -71,60 +46,20 @@ export const SettingsWallets = () => {
 
   const [isReady] = useTimeout(50)
 
-  if (!wallets) {
-    return <></>
-  }
-
   return (
     <Stack spacing={12} h="full">
       <SimpleGrid columns={2} spacing={16} h="full">
         <Stack spacing={6}>
-          <HStack justify="space-around" spacing={8}>
-            <Select
-              value={networkScope || NETWORK_SCOPE_ANY}
-              onChange={(e) => {
-                setNetworkScope(
-                  e.target.value === NETWORK_SCOPE_ANY
-                    ? undefined
-                    : e.target.value
-                )
-              }}>
-              {[NETWORK_SCOPE_ANY, ...NETWORK_SCOPES].map((scope) => {
-                return (
-                  <option key={scope} value={scope}>
-                    {scope}
-                  </option>
-                )
-              })}
-            </Select>
-
-            <Select
-              placeholder={
-                networksOfKind && !networksOfKind.length
-                  ? `No ${networkScope ? `${networkScope} ` : ''}Network`
-                  : undefined
-              }
-              value={networkId}
-              onChange={(e) => {
-                setNetworkId(+e.target.value)
-              }}>
-              {networksOfKind?.map((net) => {
-                const info = getNetworkInfo(net)
-                return (
-                  <option key={net.id} value={net.id}>
-                    {info.name}
-                  </option>
-                )
-              })}
-            </Select>
-          </HStack>
+          <NetworkSelectCombiner onSet={setNetwork} />
 
           <Stack spacing={6} visibility={isReady() ? 'visible' : 'hidden'}>
-            <WalletList
-              walletEntries={wallets}
-              onToggleOpen={toggleOpen}
-              onSelected={setSelected}
-            />
+            {wallets && (
+              <WalletList
+                walletEntries={wallets}
+                onToggleOpen={toggleOpen}
+                onSelected={setSelected}
+              />
+            )}
 
             <UnorderedList
               fontSize="sm"

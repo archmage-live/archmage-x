@@ -12,11 +12,11 @@ export enum NetworkKind {
 
 export const NETWORK_SCOPES: string[] = []
 
-if (process.env.PLASMO_PUBLIC_ENABLE_BITCOIN) {
-  NETWORK_SCOPES.push('Bitcoin')
-}
 if (process.env.PLASMO_PUBLIC_ENABLE_EVM) {
   NETWORK_SCOPES.push('Ethereum')
+}
+if (process.env.PLASMO_PUBLIC_ENABLE_BITCOIN) {
+  NETWORK_SCOPES.push('Bitcoin')
 }
 if (process.env.PLASMO_PUBLIC_ENABLE_COSMOS) {
   NETWORK_SCOPES.push('Cosmos')
@@ -33,8 +33,6 @@ if (process.env.PLASMO_PUBLIC_ENABLE_SUI) {
 if (process.env.PLASMO_PUBLIC_ENABLE_SOLANA) {
   NETWORK_SCOPES.push('Solana')
 }
-
-export const NETWORK_SCOPE_ANY = 'Any Network Kind'
 
 export type NetworkScope = typeof NETWORK_SCOPES[number]
 
@@ -54,7 +52,7 @@ export function getNetworkKind(scope?: NetworkScope): NetworkKind {
   return NETWORK_KINDS[scope as any]!
 }
 
-export function getNetworkScope(kind: NetworkKind): NetworkScope {
+export function getNetworkScope(kind?: NetworkKind): NetworkScope {
   switch (kind) {
     case NetworkKind.BTC:
       return 'Bitcoin'
@@ -70,6 +68,8 @@ export function getNetworkScope(kind: NetworkKind): NetworkScope {
       return 'Sui'
     case NetworkKind.SOL:
       return 'Solana'
+    default:
+      return undefined!
   }
 }
 

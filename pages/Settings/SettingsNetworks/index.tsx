@@ -2,23 +2,21 @@ import {
   Box,
   Button,
   HStack,
-  Select,
+  Icon,
+  ListItem,
   SimpleGrid,
   Stack,
-  Text
+  Text,
+  UnorderedList
 } from '@chakra-ui/react'
+import { MdDragIndicator } from '@react-icons/all-files/md/MdDragIndicator'
 import { useEffect, useState } from 'react'
 import { useTimeout } from 'react-use'
 
 import { AlertBox } from '~components/AlertBox'
+import { NetworkKindSelect } from '~components/NetworkSelect'
 import { SpinningOverlay } from '~components/SpinningOverlay'
-import {
-  NETWORK_SCOPES,
-  NETWORK_SCOPE_ANY,
-  NetworkKind,
-  NetworkScope,
-  getNetworkKind
-} from '~lib/network'
+import { NetworkKind, getNetworkScope } from '~lib/network'
 import { ChainId, INetwork } from '~lib/schema/network'
 import { NETWORK_SERVICE, useNetworks } from '~lib/services/network'
 import { NetworkAdd } from '~pages/Settings/SettingsNetworks/NetworkAdd'
@@ -27,21 +25,17 @@ import { NetworkEdit } from './NetworkEdit'
 import { NetworkList } from './NetworkList'
 
 export const SettingsNetworks = () => {
-  const [networkScope, setNetworkScope] = useState<NetworkScope | undefined>(
-    NETWORK_SCOPES[0]
-  )
-
   const [networkKind, setNetworkKind] = useState<NetworkKind>()
+  const networkScope = getNetworkScope(networkKind)
   const networks = useNetworks(networkKind)
   const [selectedId, setSelectedId] = useState<number>()
   const [editNetwork, setEditNetwork] = useState<INetwork>()
   const [addNetwork, setAddNetwork] = useState<boolean>()
 
   useEffect(() => {
-    setNetworkKind(networkScope ? getNetworkKind(networkScope) : undefined)
     setSelectedId(undefined)
     setAddNetwork(false)
-  }, [networkScope])
+  }, [networkKind])
 
   useEffect(() => {
     if (selectedId !== undefined) {
@@ -61,24 +55,7 @@ export const SettingsNetworks = () => {
         <SimpleGrid columns={2} spacing={16} h="full">
           <Stack spacing={6}>
             <HStack h={10}>
-              <Select
-                w="calc(50% - 14px)"
-                value={networkScope || NETWORK_SCOPE_ANY}
-                onChange={(e) => {
-                  setNetworkScope(
-                    e.target.value === NETWORK_SCOPE_ANY
-                      ? undefined
-                      : e.target.value
-                  )
-                }}>
-                {[NETWORK_SCOPE_ANY, ...NETWORK_SCOPES].map((scope) => {
-                  return (
-                    <option key={scope} value={scope}>
-                      {scope}
-                    </option>
-                  )
-                })}
-              </Select>
+              <NetworkKindSelect w="calc(50% - 14px)" onSet={setNetworkKind} />
             </HStack>
 
             <Stack spacing={6} visibility={isReady() ? 'visible' : 'hidden'}>
@@ -92,6 +69,24 @@ export const SettingsNetworks = () => {
                   }}
                 />
               )}
+
+              <UnorderedList
+                fontSize="sm"
+                color="gray.500"
+                ps={4}
+                sx={{ listStyle: "'* ' outside" }}>
+                <ListItem>
+                  Press icon&nbsp;
+                  <Icon
+                    as={MdDragIndicator}
+                    fontSize="lg"
+                    fontWeight="medium"
+                    verticalAlign="sub"
+                  />
+                  &nbsp;at the right side of any entry and drag to the desired
+                  position to specify its order in the list.
+                </ListItem>
+              </UnorderedList>
             </Stack>
           </Stack>
 
