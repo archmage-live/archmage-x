@@ -32,14 +32,18 @@ export const ContactItem = ({
         <HStack>
           <AccountAvatar text={contact.address} scale={0.8} />
 
-          <Stack>
-            <Text>{contact.name}</Text>
-            <Text>{contact.memo}</Text>
+          <Stack maxW="120px">
+            <Text noOfLines={1} display="block">
+              {contact.name}
+            </Text>
+            <Text noOfLines={1} display="block">
+              {contact.memo}
+            </Text>
           </Stack>
         </HStack>
 
-        <Stack>
-          <Text fontSize="sm" color="gray.500" noOfLines={1}>
+        <Stack maxW="80px">
+          <Text fontSize="sm" color="gray.500" noOfLines={1} display="block">
             {info ? info.name : getNetworkScope(contact.networkKind)}
           </Text>
           <Text>{shortenString(contact.address)}</Text>

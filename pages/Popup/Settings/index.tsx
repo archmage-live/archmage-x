@@ -18,6 +18,7 @@ import {
   DrawerBody,
   DrawerContent,
   DrawerOverlay,
+  Flex,
   HStack,
   Icon,
   IconButton,
@@ -186,7 +187,7 @@ const SettingsDrawer = ({
       <DrawerOverlay />
       <DrawerContent>
         <DrawerBody>
-          <Stack ms={-3} pb={4} h="full">
+          <Flex ms={-3} pb={4} h="full" direction="column" gap={2}>
             <HStack justify="space-between">
               <IconButton
                 icon={<ChevronLeftIcon fontSize="2xl" />}
@@ -213,7 +214,7 @@ const SettingsDrawer = ({
 
             <Divider />
 
-            <Stack overflowY="auto" m={4}>
+            <Stack flex={1} overflowY="auto" m={4}>
               {settings === 'general' ? (
                 <SettingsGeneral forPopup />
               ) : settings === 'contacts' ? (
@@ -224,7 +225,7 @@ const SettingsDrawer = ({
                 <></>
               )}
             </Stack>
-          </Stack>
+          </Flex>
         </DrawerBody>
       </DrawerContent>
     </Drawer>

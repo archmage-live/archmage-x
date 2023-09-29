@@ -25,27 +25,30 @@ export const NetworkSelectCombiner = ({
 
   return (
     <HStack justify="space-around" spacing={8} {...props}>
-      <NetworkKindSelect onSet={setNetworkKind} />
+      <NetworkKindSelect onSetNetworkKind={setNetworkKind} />
 
-      <NetworkSelect networkKind={networkKind} onSet={onSet} />
+      <NetworkSelect networkKind={networkKind} onSetNetwork={onSet} />
     </HStack>
   )
 }
 
 interface NetworkKindSelectProps extends SelectProps {
-  onSet: (kind?: NetworkKind) => void
+  networkKind?: NetworkKind
+  onSetNetworkKind: (kind?: NetworkKind) => void
 }
 
 export const NetworkKindSelect = ({
-  onSet,
+  networkKind,
+  onSetNetworkKind,
   ...props
 }: NetworkKindSelectProps) => {
   const [networkScope, setNetworkScope] = useState<NetworkScope | undefined>(
-    NETWORK_SCOPES[0]
+    networkKind ? getNetworkScope(networkKind) : NETWORK_SCOPES[0]
   )
+
   useEffect(() => {
-    onSet(getNetworkKind(networkScope))
-  }, [onSet, networkScope])
+    onSetNetworkKind(getNetworkKind(networkScope))
+  }, [onSetNetworkKind, networkScope])
 
   return (
     <Select
@@ -69,31 +72,47 @@ export const NetworkKindSelect = ({
 
 interface NetworkSelectProps extends SelectProps {
   networkKind?: NetworkKind
-  onSet: (network?: INetwork) => void
+  network?: INetwork
+  onSetNetwork: (network?: INetwork) => void
+  allowAnyNetwork?: boolean
 }
+
+const NETWORK_ANY_ID = -1
 
 export const NetworkSelect = ({
   networkKind,
-  onSet,
+  network,
+  onSetNetwork,
+  allowAnyNetwork,
   ...props
 }: NetworkSelectProps) => {
   const networkScope = getNetworkScope(networkKind)
 
   const networksOfKind = useNetworks(networkKind)
   const [networkId, setNetworkId] = useState<number>()
-  const network = useNetwork(networkId)
+  const net = useNetwork(networkId !== NETWORK_ANY_ID ? networkId : undefined)
 
   useEffect(() => {
-    if (networksOfKind?.length) {
-      setNetworkId(networksOfKind[0].id)
+    if (!networksOfKind) {
+      // not ready
+      return
+    }
+    if (networksOfKind.length) {
+      if (network && networksOfKind.find((net) => net.id === network.id)) {
+        setNetworkId(network.id)
+      } else if (allowAnyNetwork) {
+        setNetworkId(NETWORK_ANY_ID)
+      } else {
+        setNetworkId(networksOfKind[0].id)
+      }
     } else {
       setNetworkId(undefined)
     }
-  }, [networksOfKind])
+  }, [network, networksOfKind, allowAnyNetwork])
 
   useEffect(() => {
-    onSet(network)
-  }, [onSet, network])
+    onSetNetwork(net)
+  }, [onSetNetwork, net])
 
   return (
     <Select
@@ -107,6 +126,9 @@ export const NetworkSelect = ({
       onChange={(e) => {
         setNetworkId(+e.target.value)
       }}>
+      {allowAnyNetwork && networkScope && (
+        <option value={NETWORK_ANY_ID}>Any {networkScope} Network</option>
+      )}
       {networksOfKind?.map((net) => {
         const info = getNetworkInfo(net)
         return (

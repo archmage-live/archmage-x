@@ -1,6 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 
-import { DB } from '~lib/db'
+import { DB, getNextField } from '~lib/db'
 import { isBackgroundWorker } from '~lib/detect'
 import { SERVICE_WORKER_CLIENT, SERVICE_WORKER_SERVER } from '~lib/rpc'
 import { IContact } from '~lib/schema'
@@ -10,7 +10,7 @@ interface IContactService {
 
   getContact(id: number): Promise<IContact | undefined>
 
-  addContact(address: IContact): Promise<IContact>
+  addContact(contact: IContact): Promise<IContact>
 
   updateContact(contact: IContact): Promise<void>
 
@@ -29,9 +29,10 @@ class ContactServicePartial implements IContactService {
 }
 
 class ContactService extends ContactServicePartial {
-  async addContact(address: IContact): Promise<IContact> {
-    address.id = await DB.contacts.add(address)
-    return address
+  async addContact(contact: IContact): Promise<IContact> {
+    contact.sortId = await getNextField(DB.contacts)
+    contact.id = await DB.contacts.add(contact)
+    return contact
   }
 
   async updateContact(contact: IContact): Promise<void> {

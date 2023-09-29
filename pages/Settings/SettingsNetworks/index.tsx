@@ -55,7 +55,10 @@ export const SettingsNetworks = () => {
         <SimpleGrid columns={2} spacing={16} h="full">
           <Stack spacing={6}>
             <HStack h={10}>
-              <NetworkKindSelect w="calc(50% - 14px)" onSet={setNetworkKind} />
+              <NetworkKindSelect
+                w="calc(50% - 14px)"
+                onSetNetworkKind={setNetworkKind}
+              />
             </HStack>
 
             <Stack spacing={6} visibility={isReady() ? 'visible' : 'hidden'}>

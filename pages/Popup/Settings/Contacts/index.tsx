@@ -24,12 +24,8 @@ export const Contacts = () => {
   const { isOpen, onOpen, onClose } = useDisclosure()
 
   return (
-    <Stack h="full" justify="space-between">
-      <Box
-        ref={parentRef}
-        maxH="calc(100vh - 68px)"
-        overflowY="auto"
-        userSelect="none">
+    <Stack h="full" justify="space-between" spacing={4}>
+      <Box flex={1} ref={parentRef} overflowY="auto" userSelect="none">
         <Box h={virtualizer.getTotalSize() + 'px'} position="relative">
           {virtualizer.getVirtualItems().map((item) => {
             const contact = contacts![item.index]
@@ -70,6 +66,7 @@ export const Contacts = () => {
       )}
 
       <Button
+        size="lg"
         onClick={() => {
           setSelectedContact(undefined)
           onOpen()

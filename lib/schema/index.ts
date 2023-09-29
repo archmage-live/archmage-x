@@ -24,6 +24,8 @@ export * from './cache'
 export * from './aptosEvent'
 export * from './activeBinding'
 
+export const MAX_NAME_LENGTH = 64
+
 export interface CompositeAccount {
   wallet: IWallet
   subWallet: ISubWallet
