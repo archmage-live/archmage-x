@@ -23,6 +23,7 @@ export * from './contact'
 export * from './cache'
 export * from './aptosEvent'
 export * from './activeBinding'
+export * from './nft'
 
 export const MAX_NAME_LENGTH = 64
 

@@ -6,7 +6,7 @@ import { SignDoc } from 'cosmjs-types/cosmos/tx/v1beta1/tx'
 import {
   encodeEthSecp256k1Signature,
   rawEthSecp256k1PubkeyToRawAddress
-} from '../modules/amino'
+} from '../amino'
 import { AccountData, OfflineDirectSigner } from './signer'
 
 /**

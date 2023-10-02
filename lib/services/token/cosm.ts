@@ -3,7 +3,7 @@ import assert from 'assert'
 import { Metadata } from 'cosmjs-types/cosmos/bank/v1beta1/bank'
 import Decimal from 'decimal.js'
 
-import { DB } from '~lib/db'
+import { DB, getNextField } from '~lib/db'
 import { NetworkKind } from '~lib/network'
 import { COSM_NETWORKS_PRESET, CosmAppChainInfo } from '~lib/network/cosm'
 import { Coin } from '~lib/network/cosm/coin'
@@ -166,7 +166,7 @@ export class CosmTokenService extends BaseTokenService {
             networkKind: account.networkKind,
             chainId: account.chainId,
             address: account.address,
-            sortId: 0, // TODO
+            sortId: 0, // not used
             token,
             visible: TokenVisibility.UNSPECIFIED,
             info: {
@@ -239,7 +239,7 @@ export class CosmTokenService extends BaseTokenService {
       networkKind: account.networkKind,
       chainId: account.chainId,
       address: account.address,
-      sortId: 0, // TODO
+      sortId: 0, // not used
       token,
       visible: TokenVisibility.UNSPECIFIED,
       info: {
@@ -289,7 +289,7 @@ export class CosmTokenService extends BaseTokenService {
           networkKind: account.networkKind,
           chainId: account.chainId,
           address: account.address,
-          sortId: 0, // TODO
+          sortId: await getNextField(DB.tokens),
           token,
           visible: TokenVisibility.UNSPECIFIED,
           info

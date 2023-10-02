@@ -4,9 +4,9 @@ import {
   getChain
 } from '@alchemy/aa-core'
 import { AccountSigner, EthersProviderAdapter } from '@alchemy/aa-ethers'
+import { Alchemy } from '@archmagelive/alchemy-sdk'
 import { Signer, VoidSigner } from '@ethersproject/abstract-signer'
 import { JsonRpcProvider } from '@ethersproject/providers'
-import { Alchemy } from 'alchemy-sdk'
 import assert from 'assert'
 
 import { ChainId } from '~lib/schema'

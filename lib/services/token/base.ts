@@ -1,6 +1,6 @@
 import Dexie from 'dexie'
 
-import { DB } from '~lib/db'
+import { DB, getNextField } from '~lib/db'
 import { NetworkKind } from '~lib/network'
 import { IChainAccount, IToken, ITokenList, TokenVisibility } from '~lib/schema'
 import { formatTokenIdentifier } from '~lib/services/token'
@@ -108,7 +108,7 @@ export class BaseTokenService {
         networkKind: account.networkKind,
         chainId: account.chainId,
         address: account.address,
-        sortId: 0, // TODO
+        sortId: await getNextField(DB.tokens),
         token: tokenAddr,
         visible: TokenVisibility.SHOW,
         info

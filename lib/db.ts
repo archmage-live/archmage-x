@@ -11,6 +11,7 @@ import {
   IHdPath,
   IKeystore,
   INetwork,
+  INft,
   IPendingTx,
   ISubWallet,
   IToken,
@@ -26,6 +27,7 @@ import {
   hdPathSchemaV1,
   keystoreSchemaV1,
   networkSchemaV1,
+  nftSchemaV1,
   pendingTxSchemaV1,
   subWalletSchemaV1,
   tokenListSchemaV1,
@@ -45,6 +47,7 @@ export class Database extends Dexie {
   transactions!: Dexie.Table<ITransaction, number>
   tokenLists!: Dexie.Table<ITokenList, number>
   tokens!: Dexie.Table<IToken, number>
+  nfts!: Dexie.Table<INft, number>
   connectedSites!: Dexie.Table<IConnectedSite, number>
   activeBindings!: Dexie.Table<IActiveBinding, number>
   contacts!: Dexie.Table<IContact, number>
@@ -64,6 +67,7 @@ export class Database extends Dexie {
       transactions: transactionSchemaV1,
       tokenLists: tokenListSchemaV1,
       tokens: tokenSchemaV1,
+      nfts: nftSchemaV1,
       connectedSites: connectedSiteSchemaV1,
       activeBindings: activeBindingSchemaV1,
       contacts: contactSchemaV1,

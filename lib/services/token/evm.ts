@@ -5,7 +5,7 @@ import Decimal from 'decimal.js'
 import { ethers } from 'ethers'
 import stableHash from 'stable-hash'
 
-import { DB } from '~lib/db'
+import { DB, getNextField } from '~lib/db'
 import { NetworkKind } from '~lib/network'
 import { ERC20__factory } from '~lib/network/evm/abi'
 import {
@@ -180,7 +180,7 @@ export class EvmTokenService extends BaseTokenService {
             networkKind: account.networkKind,
             chainId: account.chainId,
             address: account.address,
-            sortId: 0, // TODO
+            sortId: 0, // not used
             token,
             visible: TokenVisibility.UNSPECIFIED,
             info: {
@@ -231,7 +231,7 @@ export class EvmTokenService extends BaseTokenService {
       networkKind: account.networkKind,
       chainId: account.chainId,
       address: account.address,
-      sortId: 0, // TODO
+      sortId: 0, // not used
       token,
       visible: TokenVisibility.UNSPECIFIED,
       info: {
@@ -391,12 +391,12 @@ export class EvmTokenService extends BaseTokenService {
           networkKind: account.networkKind,
           chainId: account.chainId,
           address: account.address,
-          sortId: 0, // TODO
+          sortId: await getNextField(DB.tokens),
           token,
           visible: TokenVisibility.UNSPECIFIED,
           info
         } as IToken)
-      } else {
+      } else if (stableHash(existing.info) !== stableHash(info)) {
         bulkUpdate.push([existing.id, info])
       }
     }

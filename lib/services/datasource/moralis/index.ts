@@ -1,8 +1,6 @@
-import type from '@moralisweb3/api-utils'
-import MoralisCore from '@moralisweb3/core'
-import MoralisEvmApi from '@moralisweb3/evm-api'
-import { EvmChain } from '@moralisweb3/evm-utils'
+import { EvmChain, EvmNft } from '@moralisweb3/common-evm-utils'
 import assert from 'assert'
+import Moralis from 'moralis'
 
 import { NetworkKind } from '~lib/network'
 import { INetwork } from '~lib/schema'
@@ -10,6 +8,7 @@ import { INetwork } from '~lib/schema'
 const defaultApiKey =
   'dnsmQi95M5a3ESOCoT5bzXRgLCkNJvMq5PytWMM2kgCLcWFi4aaiH2vKxHqgis9E'
 
+// https://docs.moralis.io/web3-data-api/evm/nft-api#supported-chains
 const networkByChain = new Map([
   [1, EvmChain.ETHEREUM],
   [5, EvmChain.GOERLI],
@@ -19,28 +18,26 @@ const networkByChain = new Map([
   [56, EvmChain.BSC],
   [97, EvmChain.BSC_TESTNET],
   [43114, EvmChain.AVALANCHE],
-  [43113, EvmChain.FUJI],
   [250, EvmChain.FANTOM],
   [25, EvmChain.CRONOS],
-  [338, EvmChain.CRONOS_TESTNET]
+  [11297108109, EvmChain.PALM],
+  [42161, EvmChain.ARBITRUM]
 ])
 
-class Moralis {
-  constructor(private core: MoralisCore) {}
-
-  get evmApi() {
-    return this.core.getModule<MoralisEvmApi>(MoralisEvmApi.moduleName)
-  }
+class MoralisChainApi {
+  constructor(private chain: EvmChain) {}
 
   getNFTs(address: string) {
-    return this.evmApi.nft.getWalletNFTs({
-      address
+    return Moralis.EvmApi.nft.getWalletNFTs({
+      address,
+      chain: this.chain
     })
   }
 }
 
 class MoralisApi {
-  private apis = new Map<number, Moralis>()
+  private apis = new Map<number, MoralisChainApi>()
+  private started = false
 
   async api(network: INetwork) {
     assert(network.kind === NetworkKind.EVM)
@@ -49,18 +46,25 @@ class MoralisApi {
       return
     }
 
+    if (!this.started) {
+      this.started = true
+      try {
+        await Moralis.start({
+          apiKey: defaultApiKey,
+          defaultNetwork: 'Evm',
+          // defaultEvmApiChain: net,
+          formatEvmAddress: 'checksum',
+          formatEvmChainId: 'decimal'
+        })
+      } catch (err) {
+        console.error(err)
+        this.started = false
+      }
+    }
+
     let api = this.apis.get(network.id)
     if (!api) {
-      const core = MoralisCore.create()
-      core.registerModules([MoralisEvmApi])
-      await core.start({
-        apiKey: defaultApiKey,
-        defaultNetwork: 'Evm',
-        defaultEvmApiChain: net,
-        formatEvmAddress: 'checksum',
-        formatEvmChainId: 'decimal'
-      })
-      api = new Moralis(core)
+      api = new MoralisChainApi(net)
       this.apis.set(network.id, api)
     }
     return api
@@ -68,3 +72,5 @@ class MoralisApi {
 }
 
 export const MORALIS_API = new MoralisApi()
+
+export type MoralisNft = ReturnType<EvmNft['toJSON']>

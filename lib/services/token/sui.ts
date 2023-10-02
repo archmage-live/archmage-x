@@ -4,7 +4,7 @@ import assert from 'assert'
 import Decimal from 'decimal.js'
 import { useAsync } from 'react-use'
 
-import { DB } from '~lib/db'
+import { DB, getNextField } from '~lib/db'
 import { NetworkKind } from '~lib/network'
 import {
   ChainId,
@@ -148,7 +148,7 @@ export class SuiTokenService extends BaseTokenService {
             networkKind: account.networkKind,
             chainId: account.chainId,
             address: account.address,
-            sortId: 0, // TODO
+            sortId: 0, // not used
             token,
             visible: TokenVisibility.UNSPECIFIED,
             info: {
@@ -205,7 +205,7 @@ export class SuiTokenService extends BaseTokenService {
       networkKind: account.networkKind,
       chainId: account.chainId,
       address: account.address,
-      sortId: 0, // TODO
+      sortId: 0, // not used
       token,
       visible: TokenVisibility.UNSPECIFIED,
       info: {
@@ -258,7 +258,7 @@ export class SuiTokenService extends BaseTokenService {
           networkKind: account.networkKind,
           chainId: account.chainId,
           address: account.address,
-          sortId: 0, // TODO
+          sortId: await getNextField(DB.tokens),
           token,
           visible: TokenVisibility.UNSPECIFIED,
           info
