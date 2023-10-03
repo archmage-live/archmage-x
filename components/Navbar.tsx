@@ -6,6 +6,7 @@ import {
   useColorModeValue
 } from '@chakra-ui/react'
 import { IoFlashSharp } from '@react-icons/all-files/io5/IoFlashSharp'
+import { IoGrid } from '@react-icons/all-files/io5/IoGrid'
 import { IoMdSettings } from '@react-icons/all-files/io/IoMdSettings'
 import { RiMoneyDollarCircleFill } from '@react-icons/all-files/ri/RiMoneyDollarCircleFill'
 import { motion } from 'framer-motion'
@@ -64,7 +65,7 @@ export const Navbar = ({ value, onChange }: NavbarProps) => {
 
       <HStack w="full" pt="12px" pb="4" px="4" justify="space-around">
         <Btn target="Assets" icon={<RiMoneyDollarCircleFill />} />
-        {/*<Btn target="NFTs" icon={<IoGrid />} />*/}
+        <Btn target="NFTs" icon={<IoGrid />} />
         {/*<Btn target="Swap" icon={<IoMdSwap />} />*/}
         <Btn target="Activity" icon={<IoFlashSharp />} />
         <Btn target="Settings" icon={<IoMdSettings />} />

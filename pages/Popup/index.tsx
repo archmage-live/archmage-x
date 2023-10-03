@@ -10,7 +10,7 @@ import { CONSENT_SERVICE } from '~lib/services/consentService'
 import ActivityPage from '~pages/Popup/Activity'
 import ConsentPage from '~pages/Popup/Consent'
 import { ModalBox } from '~pages/Popup/ModalBox'
-import NFTsPage from '~pages/Popup/NFTs'
+import NftsPage from '~pages/Popup/NFTs'
 import { OverlayCheckUnlocked } from '~pages/Popup/Overlay'
 import PortalPage from '~pages/Popup/Portal'
 import SettingsPage from '~pages/Popup/Settings'
@@ -84,7 +84,7 @@ export const HomePage = () => {
             <Box h="calc(100% - 63px)">
               <LazyTabs index={tabIndex(navTarget)}>
                 <PortalPage onLoaded={() => setLoaded(true)} />
-                {/*<NFTsPage />*/}
+                <NftsPage />
                 <ActivityPage />
                 <SettingsPage />
               </LazyTabs>

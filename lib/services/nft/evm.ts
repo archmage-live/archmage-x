@@ -8,11 +8,29 @@ import { NetworkKind } from '~lib/network'
 import { IChainAccount, INft, NftVisibility } from '~lib/schema'
 import { ALCHEMY_API, AlchemyNft } from '~lib/services/datasource/alchemy'
 
+import { NftBrief } from '.'
 import { BaseNftService, formatNftUniqueKey } from './base'
 
 // import { MoralisNft } from "~lib/services/datasource/moralis";
 
 export type EvmNftInfo = AlchemyNft // | MoralisNft
+
+export function getEvmNftBrief(nft: INft): NftBrief {
+  const info = nft.info as EvmNftInfo
+  return {
+    name:
+      info.contract.openSea?.collectionName ||
+      info.contract.name ||
+      info.rawMetadata?.name ||
+      info.title,
+    tokenId: Number(info.tokenId).toString(),
+    imageUrl:
+      info.media.at(0)?.gateway ||
+      info.media.at(0)?.raw ||
+      info.rawMetadata?.image,
+    balance: info.balance
+  }
+}
 
 export class EvmNftService extends BaseNftService {
   private async _fetchNfts(
