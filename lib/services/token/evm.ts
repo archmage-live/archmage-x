@@ -21,7 +21,7 @@ import { NETWORK_SERVICE } from '~lib/services/network'
 import { EvmClient } from '~lib/services/provider/evm/client'
 
 import { SearchedTokenFromTokenLists, TokenBrief, TokenListBrief } from '.'
-import { BaseTokenService } from './base'
+import { BaseTokenService, getNextTokenSortId } from './base'
 
 type EvmTokenInfo = {
   info: TokenInfo
@@ -391,7 +391,7 @@ export class EvmTokenService extends BaseTokenService {
           networkKind: account.networkKind,
           chainId: account.chainId,
           address: account.address,
-          sortId: await getNextField(DB.tokens),
+          sortId: await getNextTokenSortId(account),
           token,
           visible: TokenVisibility.UNSPECIFIED,
           info

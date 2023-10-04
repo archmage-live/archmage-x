@@ -10,7 +10,7 @@ import { CONSENT_SERVICE } from '~lib/services/consentService'
 import ActivityPage from '~pages/Popup/Activity'
 import ConsentPage from '~pages/Popup/Consent'
 import { ModalBox } from '~pages/Popup/ModalBox'
-import NftsPage from '~pages/Popup/NFTs'
+import NftsPage from '~pages/Popup/Nfts'
 import { OverlayCheckUnlocked } from '~pages/Popup/Overlay'
 import PortalPage from '~pages/Popup/Portal'
 import SettingsPage from '~pages/Popup/Settings'
@@ -22,10 +22,12 @@ function tabIndex(navTarget: NavTarget) {
   switch (navTarget) {
     case 'Assets':
       return 0
-    case 'Activity':
+    case 'NFTs':
       return 1
-    case 'Settings':
+    case 'Activity':
       return 2
+    case 'Settings':
+      return 3
   }
   return 0
 }

@@ -398,14 +398,12 @@ class WalletServicePartial implements IWalletService {
     const wallet = await this.getWallet(id)
     assert(wallet)
 
-    const nextSortId = await getNextField(DB.subWallets, 'sortId', {
-      key: 'masterId',
-      value: id
-    })
-    const nextIndex = await getNextField(DB.subWallets, 'index', {
-      key: 'masterId',
-      value: id
-    })
+    const nextSortId = await getNextField(DB.subWallets, 'sortId', 'masterId', [
+      id
+    ])
+    const nextIndex = await getNextField(DB.subWallets, 'index', 'masterId', [
+      id
+    ])
 
     if (pseudo) {
       assert(nextSortId === 0 && nextIndex === 0)

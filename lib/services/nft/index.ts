@@ -9,7 +9,12 @@ import { IChainAccount, INft, NftVisibility } from '~lib/schema'
 import { Synchronizer } from '~lib/utils/synchronizer'
 
 import { BaseNftService } from './base'
-import { EVM_NFT_SERVICE, getEvmNftBrief } from './evm'
+import {
+  EVM_NFT_SERVICE,
+  formatEvmNftCollection,
+  formatEvmNftIdentifier,
+  getEvmNftBrief
+} from './evm'
 
 export interface NftBrief {
   name: string
@@ -25,6 +30,37 @@ export function getNftBrief(nft: INft): NftBrief {
     default:
       throw new Error('unknown nft')
   }
+}
+
+export function formatNftCollection(
+  networkKind: NetworkKind,
+  collection: string
+) {
+  switch (networkKind) {
+    case NetworkKind.EVM:
+      return formatEvmNftCollection(collection)
+    default:
+      return collection
+  }
+}
+
+export function formatNftIdentifier(networkKind: NetworkKind, tokenId: string) {
+  switch (networkKind) {
+    case NetworkKind.EVM:
+      return formatEvmNftIdentifier(tokenId)
+    default:
+      return tokenId
+  }
+}
+
+export function formatNftUniqueKey({
+  collection,
+  tokenId
+}: {
+  collection: string
+  tokenId: string
+}) {
+  return `${collection}-${tokenId}`
 }
 
 interface INftService {

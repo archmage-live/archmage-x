@@ -25,7 +25,7 @@ import { NETWORK_SERVICE } from '~lib/services/network'
 import { getCosmClient } from '~lib/services/provider/cosm/client'
 
 import { SearchedTokenFromTokenLists, TokenBrief, TokenListBrief } from '.'
-import { BaseTokenService } from './base'
+import { BaseTokenService, getNextTokenSortId } from './base'
 
 export type CosmTokenInfo = {
   info: TokenInfo
@@ -289,7 +289,7 @@ export class CosmTokenService extends BaseTokenService {
           networkKind: account.networkKind,
           chainId: account.chainId,
           address: account.address,
-          sortId: await getNextField(DB.tokens),
+          sortId: await getNextTokenSortId(account),
           token,
           visible: TokenVisibility.UNSPECIFIED,
           info

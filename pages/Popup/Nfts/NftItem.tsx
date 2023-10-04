@@ -8,6 +8,7 @@ import {
   useColorModeValue
 } from '@chakra-ui/react'
 
+import { useTransparentize } from '~lib/hooks/useColor'
 import { INft } from '~lib/schema'
 import { getNftBrief } from '~lib/services/nft'
 
@@ -20,27 +21,38 @@ export const NftItem = ({
 }) => {
   const info = getNftBrief(nft)
 
-  const bgColor = useColorModeValue('gray.500', 'gray.500')
+  const bgColor = useColorModeValue('gray.50', 'whiteAlpha.50')
+  const titleBgColor = useTransparentize('gray.100', 'rgb (24, 24, 24)', 0.85)
 
   return (
     <Box
       position="relative"
+      boxSize="160px"
       borderRadius="8px"
       cursor="pointer"
       bg={bgColor}
       onClick={onClick}>
       <Image
         boxSize="160px"
+        borderRadius="8px"
         fit="contain"
         src={info.imageUrl}
         alt="NFT image"
-        fallback={<Skeleton size="160px" />}
+        fallback={<Skeleton boxSize="160px" />}
       />
 
       <Box position="absolute" left="4px" right="4px" bottom="4px">
-        <Stack>
+        <Stack
+          spacing={0}
+          w="full"
+          px="10px"
+          py="2px"
+          borderRadius="6px"
+          bg={titleBgColor}
+          backdropFilter="auto"
+          backdropBlur="15px">
           <Text fontWeight="medium">#{info.tokenId}</Text>
-          <HStack>
+          <HStack w="full">
             <Text flex={1} noOfLines={1}>
               {info.name}
             </Text>

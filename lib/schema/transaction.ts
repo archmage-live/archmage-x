@@ -17,4 +17,4 @@ export interface ITransaction {
 }
 
 export const transactionSchemaV1 =
-  '++id, &[masterId+index+networkKind+chainId+address+type+index1+index2], &[masterId+index+networkKind+chainId+address+type+index2], [networkKind+chainId]'
+  '++id, &[masterId+index+networkKind+chainId+address+type+index1+index2], &[masterId+index+networkKind+chainId+address+type+index2+index1], [networkKind+chainId]'

@@ -1,10 +1,9 @@
 import Dexie from 'dexie'
 
 import { DB, getNextField } from '~lib/db'
-import { NetworkKind } from '~lib/network'
 import { IChainAccount, INft, NftVisibility } from '~lib/schema'
 
-import { formatEvmNftCollection, formatEvmNftIdentifier } from './evm'
+import { formatNftCollection, formatNftIdentifier } from '.'
 
 export class BaseNftService {
   async getNftCount(account: IChainAccount): Promise<number> {
@@ -94,7 +93,7 @@ export class BaseNftService {
         networkKind: account.networkKind,
         chainId: account.chainId,
         address: account.address,
-        sortId: await getNextField(DB.nfts),
+        sortId: await getNextNftSortId(account),
         collection,
         tokenId,
         visible: NftVisibility.UNSPECIFIED,
@@ -115,33 +114,17 @@ export class BaseNftService {
   }
 }
 
-export function formatNftCollection(
-  networkKind: NetworkKind,
-  collection: string
-) {
-  switch (networkKind) {
-    case NetworkKind.EVM:
-      return formatEvmNftCollection(collection)
-    default:
-      return collection
-  }
-}
-
-export function formatNftIdentifier(networkKind: NetworkKind, tokenId: string) {
-  switch (networkKind) {
-    case NetworkKind.EVM:
-      return formatEvmNftIdentifier(tokenId)
-    default:
-      return tokenId
-  }
-}
-
-export function formatNftUniqueKey({
-  collection,
-  tokenId
-}: {
-  collection: string
-  tokenId: string
-}) {
-  return `${collection}-${tokenId}`
+export function getNextNftSortId(account: IChainAccount) {
+  return getNextField(
+    DB.nfts,
+    'sortId',
+    'masterId+index+networkKind+chainId+address',
+    [
+      account.masterId,
+      account.index,
+      account.networkKind,
+      account.chainId,
+      account.address!
+    ]
+  )
 }

@@ -23,7 +23,7 @@ import { NETWORK_SERVICE } from '~lib/services/network'
 import { getSuiClient } from '~lib/services/provider/sui/client'
 
 import { SearchedTokenFromTokenLists, TokenBrief, TokenListBrief } from '.'
-import { BaseTokenService } from './base'
+import { BaseTokenService, getNextTokenSortId } from './base'
 
 export type SuiTokenInfo = {
   info: TokenInfo
@@ -258,7 +258,7 @@ export class SuiTokenService extends BaseTokenService {
           networkKind: account.networkKind,
           chainId: account.chainId,
           address: account.address,
-          sortId: await getNextField(DB.tokens),
+          sortId: await getNextTokenSortId(account),
           token,
           visible: TokenVisibility.UNSPECIFIED,
           info

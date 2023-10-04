@@ -4,7 +4,7 @@ import { useMemo, useRef, useState } from 'react'
 
 import { useActive } from '~lib/active'
 import { useNfts } from '~lib/services/nft'
-import { NftDetailModal } from '~pages/Popup/NFTs/NftDetail'
+import { NftDetailModal } from '~pages/Popup/Nfts/NftDetail'
 
 import { NftItem } from './NftItem'
 
@@ -65,11 +65,11 @@ export default function Nfts() {
               return <></>
             }
 
-            const nft = nfts[item.index - 1]
+            const rowNfts = nfts.slice(2 * (item.index - 1), 2 * item.index)
 
             return (
               <HStack
-                key={nft.id}
+                key={rowNfts[0].id}
                 position="absolute"
                 top={0}
                 left={0}
@@ -80,13 +80,18 @@ export default function Nfts() {
                 spacing={4}
                 ref={virtualizer.measureElement}
                 data-index={item.index}>
-                <NftItem
-                  nft={nft}
-                  onClick={() => {
-                    setNftId(nft.id)
-                    onDetailOpen()
-                  }}
-                />
+                {rowNfts.map((nft) => {
+                  return (
+                    <NftItem
+                      key={nft.id}
+                      nft={nft}
+                      onClick={() => {
+                        setNftId(nft.id)
+                        onDetailOpen()
+                      }}
+                    />
+                  )
+                })}
               </HStack>
             )
           })}

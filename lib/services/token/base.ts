@@ -108,7 +108,7 @@ export class BaseTokenService {
         networkKind: account.networkKind,
         chainId: account.chainId,
         address: account.address,
-        sortId: await getNextField(DB.tokens),
+        sortId: await getNextTokenSortId(account),
         token: tokenAddr,
         visible: TokenVisibility.SHOW,
         info
@@ -185,4 +185,19 @@ export class BaseTokenService {
 
     return true
   }
+}
+
+export function getNextTokenSortId(account: IChainAccount) {
+  return getNextField(
+    DB.tokens,
+    'sortId',
+    'masterId+index+networkKind+chainId+address',
+    [
+      account.masterId,
+      account.index,
+      account.networkKind,
+      account.chainId,
+      account.address!
+    ]
+  )
 }

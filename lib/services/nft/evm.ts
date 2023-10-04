@@ -8,8 +8,8 @@ import { NetworkKind } from '~lib/network'
 import { IChainAccount, INft, NftVisibility } from '~lib/schema'
 import { ALCHEMY_API, AlchemyNft } from '~lib/services/datasource/alchemy'
 
-import { NftBrief } from '.'
-import { BaseNftService, formatNftUniqueKey } from './base'
+import { NftBrief, formatNftUniqueKey } from '.'
+import { BaseNftService, getNextNftSortId } from './base'
 
 // import { MoralisNft } from "~lib/services/datasource/moralis";
 
@@ -25,6 +25,7 @@ export function getEvmNftBrief(nft: INft): NftBrief {
       info.title,
     tokenId: Number(info.tokenId).toString(),
     imageUrl:
+      info.media.at(0)?.thumbnail ||
       info.media.at(0)?.gateway ||
       info.media.at(0)?.raw ||
       info.rawMetadata?.image,
@@ -97,7 +98,7 @@ export class EvmNftService extends BaseNftService {
           networkKind: account.networkKind,
           chainId: account.chainId,
           address: account.address,
-          sortId: await getNextField(DB.nfts),
+          sortId: await getNextNftSortId(account),
           collection: formatEvmNftCollection(info.contract.address),
           tokenId: formatEvmNftIdentifier(info.tokenId),
           visible: NftVisibility.UNSPECIFIED,

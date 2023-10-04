@@ -1,3 +1,4 @@
+import assert from 'assert'
 import Dexie from 'dexie'
 import { Config, animals, uniqueNamesGenerator } from 'unique-names-generator'
 
@@ -88,13 +89,29 @@ export async function getNextField<
 >(
   table: Dexie.Table<T>,
   key = 'sortId' as StringLiteral<K>,
-  leading?: { key: string; value: string | number }
+  leadingKeys?: string | string[],
+  leadingValues?: (string | number)[]
 ): Promise<number> {
-  const collection = !leading
-    ? table.orderBy(key)
-    : table
-        .where(`[${leading.key}+${key}]`)
-        .between([leading.value, Dexie.minKey], [leading.value, Dexie.maxKey])
+  let collection
+  if (!leadingKeys) {
+    collection = table.orderBy(key)
+  } else {
+    assert(leadingValues)
+    if (Array.isArray(leadingKeys)) {
+      assert(leadingKeys.length === leadingValues.length)
+      leadingKeys = leadingKeys.join('+')
+    } else {
+      assert(leadingKeys.split('+').length === leadingValues.length)
+    }
+
+    collection = table
+      .where(`[${leadingKeys}+${key}]`)
+      .between(
+        [...leadingValues, Dexie.minKey],
+        [...leadingValues, Dexie.maxKey]
+      )
+  }
+
   const lastBySortId = await collection.reverse().first()
   return lastBySortId && lastBySortId[key] !== undefined
     ? lastBySortId[key] + 1

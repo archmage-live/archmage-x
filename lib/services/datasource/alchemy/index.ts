@@ -42,8 +42,27 @@ class AlchemyApi {
 
     let api = this.apis.get(chainId)
     if (!api) {
+      let apiKey
+      switch (net) {
+        case Network.ETH_MAINNET:
+          apiKey = process.env.PLASMO_PUBLIC_ALCHEMY_API_KEY_ETHEREUM
+          break
+        case Network.ARB_MAINNET:
+          apiKey = process.env.PLASMO_PUBLIC_ALCHEMY_API_KEY_ARBITRUM
+          break
+        case Network.OPT_MAINNET:
+          apiKey = process.env.PLASMO_PUBLIC_ALCHEMY_API_KEY_OPTIMISM
+          break
+        case Network.MATIC_MAINNET:
+          apiKey = process.env.PLASMO_PUBLIC_ALCHEMY_API_KEY_POLYGON
+          break
+      }
+      if (!apiKey) {
+        apiKey = defaultApiKey
+      }
+
       api = new Alchemy({
-        apiKey: defaultApiKey,
+        apiKey,
         network: net,
         batchRequests: true
       })

@@ -81,7 +81,7 @@ export default function Settings() {
         variant="solid-secondary">
         <MenuButton
           icon={<CalendarIcon />}
-          title="Contacts"
+          title="Address Book"
           onClick={() => {
             setSettings('contacts')
             onOpen()

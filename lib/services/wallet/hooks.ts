@@ -277,10 +277,7 @@ export function useExistingGroupWallets(
 export function useNextSubWalletIndex(walletId?: number) {
   const { value } = useAsync(async () => {
     if (walletId !== undefined) {
-      return await getNextField(DB.subWallets, 'index', {
-        key: 'masterId',
-        value: walletId
-      })
+      return await getNextField(DB.subWallets, 'index', 'masterId', [walletId])
     } else {
       return 0
     }
