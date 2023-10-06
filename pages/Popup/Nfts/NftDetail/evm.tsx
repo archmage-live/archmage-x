@@ -1,6 +1,7 @@
 import { ChevronLeftIcon } from '@chakra-ui/icons'
 import {
   Box,
+  Button,
   Divider,
   HStack,
   Icon,
@@ -16,17 +17,16 @@ import Markdown from 'react-markdown'
 
 import { Card } from '~components/Card'
 import { CopyArea } from '~components/CopyIcon'
-import { INetwork, INft } from '~lib/schema'
+import { INft } from '~lib/schema'
 import { getNftBrief } from '~lib/services/nft'
 import { EvmNftInfo } from '~lib/services/nft/evm'
 import { shortenString } from '~lib/utils'
+import { useSendNftId, useSendNftModal } from '~pages/Popup/Nfts/SendNft'
 
 export const EvmNftDetail = ({
-  network,
   nft,
   onClose
 }: {
-  network: INetwork
   nft: INft
   onClose: () => void
 }) => {
@@ -37,16 +37,26 @@ export const EvmNftDetail = ({
   const description =
     info.description || info.rawMetadata?.description || openSea?.description
 
+  const { onOpen: onSendNftOpen } = useSendNftModal()
+  const [, setSetNftId] = useSendNftId()
+
   return (
-    <Stack w="full" spacing={6} pb={6}>
-      <HStack justify="space-between">
+    <Stack
+      w="full"
+      h="full"
+      overflowY="auto"
+      spacing={6}
+      px={4}
+      pt={2}
+      pb={6}
+      align="center">
+      <HStack w="full" justify="space-between">
         <IconButton
           icon={<ChevronLeftIcon fontSize="2xl" />}
           aria-label="Close"
           variant="ghost"
-          size="md"
-          minW={8}
-          minH={8}
+          borderRadius="full"
+          size="sm"
           onClick={onClose}
         />
 
@@ -61,17 +71,26 @@ export const EvmNftDetail = ({
         <Image
           boxSize="320px"
           fit="contain"
-          src={
-            info.media.at(0)?.gateway ||
-            info.media.at(0)?.raw ||
-            info.rawMetadata?.image
-          }
+          src={brief.imageUrl}
           alt="NFT image"
           fallback={<Skeleton boxSize="320px" />}
         />
       </Card>
 
-      <Card>
+      <Box w="full">
+        <Button
+          w="full"
+          size="lg"
+          colorScheme="purple"
+          onClick={() => {
+            onSendNftOpen()
+            setSetNftId(nft.id)
+          }}>
+          Send
+        </Button>
+      </Box>
+
+      <Card w="full">
         <Stack spacing={4}>
           <Stack spacing={0}>
             <HStack>
@@ -109,16 +128,32 @@ export const EvmNftDetail = ({
         </Stack>
       </Card>
 
-      <Card>
+      <Card w="full">
         <Stack>
           <Text>Info</Text>
           <Divider />
 
+          <HStack justify="space-between">
+            <Text color="gray.500">Contract</Text>
+            <CopyArea
+              name="Contract Address"
+              copy={info.contract.address}
+              area={shortenString(info.contract.address)}
+              props={{
+                bg: undefined,
+                color: undefined,
+                _hover: undefined,
+                borderRadius: 0,
+                p: 0
+              }}
+            />
+          </HStack>
+
           {info.contract.contractDeployer && (
             <HStack justify="space-between">
-              <Text color="gray.500">Contract</Text>
+              <Text color="gray.500">Deployer</Text>
               <CopyArea
-                name="Contract Address"
+                name="Deployer Address"
                 copy={info.contract.contractDeployer}
                 area={shortenString(info.contract.contractDeployer)}
                 props={{
@@ -145,7 +180,7 @@ export const EvmNftDetail = ({
       </Card>
 
       {info.rawMetadata?.attributes?.length && (
-        <Card>
+        <Card w="full">
           <Stack>
             <Text>Properties</Text>
             <Divider />

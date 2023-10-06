@@ -1,45 +1,34 @@
-import { Modal, ModalBody, ModalContent, ModalOverlay } from '@chakra-ui/react'
+import { atom, useAtom } from 'jotai'
 
 import { NetworkKind } from '~lib/network'
-import { INetwork, INft } from '~lib/schema'
+import { INft } from '~lib/schema'
+import { useModalBox } from '~pages/Popup/ModalBox'
 import { EvmNftDetail } from '~pages/Popup/Nfts/NftDetail/evm'
 
-export const NftDetail = ({
-  network,
-  nft,
-  onClose
-}: {
-  network: INetwork
-  nft: INft
-  onClose: () => void
-}) => {
-  switch (network.kind) {
+const isOpenAtom = atom<boolean>(false)
+const nftAtom = atom<INft | undefined>(undefined)
+
+export function useNftDetailModal() {
+  const modal = useModalBox(isOpenAtom)
+  const [nft, setNft] = useAtom(nftAtom)
+  return {
+    ...modal,
+    nft,
+    setNft
+  }
+}
+
+export const NftDetail = ({ onClose }: { onClose: () => void }) => {
+  const { nft } = useNftDetailModal()
+
+  if (!nft) {
+    return <></>
+  }
+
+  switch (nft.networkKind) {
     case NetworkKind.EVM:
-      return <EvmNftDetail network={network} nft={nft} onClose={onClose} />
+      return <EvmNftDetail nft={nft} onClose={onClose} />
   }
 
   return <></>
-}
-
-export const NftDetailModal = ({
-  network,
-  nft,
-  isOpen,
-  onClose
-}: {
-  network: INetwork
-  nft: INft
-  isOpen: boolean
-  onClose: () => void
-}) => {
-  return (
-    <Modal size="full" isOpen={isOpen} onClose={onClose}>
-      <ModalOverlay />
-      <ModalContent>
-        <ModalBody>
-          <NftDetail network={network} nft={nft} onClose={onClose} />
-        </ModalBody>
-      </ModalContent>
-    </Modal>
-  )
 }

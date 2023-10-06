@@ -1,4 +1,4 @@
-import { NftFilters } from '@archmagelive/alchemy-sdk'
+import { NftFilters, NftTokenType } from '@archmagelive/alchemy-sdk'
 import { getAddress } from '@ethersproject/address'
 import assert from 'assert'
 import stableHash from 'stable-hash'
@@ -56,6 +56,13 @@ export class EvmNftService extends BaseNftService {
       )
 
       for (const nft of ownedNfts) {
+        if (
+          nft.tokenType !== NftTokenType.ERC721 &&
+          nft.tokenType !== NftTokenType.ERC1155
+        ) {
+          // only retain ERC721/ERC1155 NFT
+          continue
+        }
         const collection = formatEvmNftCollection(nft.contract.address)
         const tokenId = formatEvmNftIdentifier(nft.tokenId)
         result.set(formatNftUniqueKey({ collection, tokenId }), nft)

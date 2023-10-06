@@ -505,7 +505,7 @@ export const Send = ({
             {isContract && !ignoreContract && (
               <AlertBox nowrap>
                 <Text>
-                  Warning: you are about to send to a token contract which could
+                  Warning: you are about to send to a contract which could
                   result in a loss of funds.
                 </Text>
                 <Text

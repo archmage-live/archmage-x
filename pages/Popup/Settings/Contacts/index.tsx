@@ -53,17 +53,17 @@ export const Contacts = () => {
             )
           })}
         </Box>
-      </Box>
 
-      {!contacts?.length && (
-        <Text
-          textAlign="center"
-          fontSize="xl"
-          fontWeight="medium"
-          color="gray.500">
-          No Address
-        </Text>
-      )}
+        {!contacts?.length && (
+          <Text
+            textAlign="center"
+            fontSize="xl"
+            fontWeight="medium"
+            color="gray.500">
+            No Address
+          </Text>
+        )}
+      </Box>
 
       <Button
         size="lg"

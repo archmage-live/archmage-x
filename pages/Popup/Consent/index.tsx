@@ -31,6 +31,7 @@ import {
   ConsentType,
   useConsentRequests
 } from '~lib/services/consentService'
+import { useSendNftModal } from '~pages/Popup/Nfts/SendNft'
 import { useSendModal } from '~pages/Popup/Portal/Send'
 
 import { useModalBox } from '../ModalBox'
@@ -58,6 +59,7 @@ export default function Consent({
   const isPopupWindow = useIsPopupWindow()
 
   const { onClose: onSendClose } = useSendModal()
+  const { onClose: onSendNftClose } = useSendNftModal()
 
   const navigate = useNavigate()
 
@@ -92,7 +94,8 @@ export default function Consent({
     }
     onClose?.()
     onSendClose()
-  }, [isPopupWindow, onClose, onSendClose])
+    onSendNftClose()
+  }, [isPopupWindow, onClose, onSendClose, onSendNftClose])
 
   const {
     isOpen: isRejectOpen,

@@ -1,10 +1,10 @@
 import { Box, HStack, Text, useDisclosure } from '@chakra-ui/react'
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 import { useActive } from '~lib/active'
 import { useNfts } from '~lib/services/nft'
-import { NftDetailModal } from '~pages/Popup/Nfts/NftDetail'
+import { useNftDetailModal } from '~pages/Popup/Nfts/NftDetail'
 
 import { NftItem } from './NftItem'
 
@@ -31,11 +31,10 @@ export default function Nfts() {
     return nfts?.find((nft) => nft.id === nftId)
   }, [nfts, nftId])
 
-  const {
-    isOpen: isDetailOpen,
-    onClose: onDetailClose,
-    onOpen: onDetailOpen
-  } = useDisclosure()
+  const { onOpen: onNftDetailOpen, setNft } = useNftDetailModal()
+  useEffect(() => {
+    setNft(nft)
+  }, [nft, setNft])
 
   return (
     <Box px={4}>
@@ -87,7 +86,7 @@ export default function Nfts() {
                       nft={nft}
                       onClick={() => {
                         setNftId(nft.id)
-                        onDetailOpen()
+                        onNftDetailOpen()
                       }}
                     />
                   )
@@ -97,15 +96,6 @@ export default function Nfts() {
           })}
         </Box>
       </Box>
-
-      {network && nft && (
-        <NftDetailModal
-          network={network}
-          nft={nft}
-          isOpen={isDetailOpen}
-          onClose={onDetailClose}
-        />
-      )}
     </Box>
   )
 }

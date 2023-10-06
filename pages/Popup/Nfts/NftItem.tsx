@@ -14,10 +14,14 @@ import { getNftBrief } from '~lib/services/nft'
 
 export const NftItem = ({
   nft,
-  onClick
+  onClick,
+  size = '160px',
+  noBalance
 }: {
   nft: INft
-  onClick: () => void
+  onClick?: () => void
+  size?: string
+  noBalance?: boolean
 }) => {
   const info = getNftBrief(nft)
 
@@ -27,18 +31,18 @@ export const NftItem = ({
   return (
     <Box
       position="relative"
-      boxSize="160px"
+      boxSize={size}
       borderRadius="8px"
       cursor="pointer"
       bg={bgColor}
       onClick={onClick}>
       <Image
-        boxSize="160px"
+        boxSize={size}
         borderRadius="8px"
         fit="contain"
         src={info.imageUrl}
         alt="NFT image"
-        fallback={<Skeleton boxSize="160px" />}
+        fallback={<Skeleton boxSize={size} />}
       />
 
       <Box position="absolute" left="4px" right="4px" bottom="4px">
@@ -56,7 +60,9 @@ export const NftItem = ({
             <Text flex={1} noOfLines={1}>
               {info.name}
             </Text>
-            {info.balance > 1 && <Text color="gray.500">{info.balance}</Text>}
+            {!noBalance && info.balance > 1 && (
+              <Text color="gray.500">{info.balance}</Text>
+            )}
           </HStack>
         </Stack>
       </Box>

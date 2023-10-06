@@ -1,10 +1,12 @@
 import { Box, useColorModeValue } from '@chakra-ui/react'
 import { motion } from 'framer-motion'
 import { atom, useAtom } from 'jotai'
-import { PrimitiveAtom } from 'jotai/core/atom'
+import type { PrimitiveAtom } from 'jotai/core/atom'
 import { ElementType, useCallback, useEffect } from 'react'
 
 import Consent, { useConsentModal } from '~pages/Popup/Consent'
+import { NftDetail, useNftDetailModal } from '~pages/Popup/Nfts/NftDetail'
+import { SendNft, useSendNftModal } from '~pages/Popup/Nfts/SendNft'
 import { Deposit, useDepositModal } from '~pages/Popup/Portal/Deposit'
 import { Send, useSendModal } from '~pages/Popup/Portal/Send'
 import TokenDetail, {
@@ -45,9 +47,12 @@ export const ModalBox = () => {
   const [isOpen] = useAtom(isOpenModalBoxAtom)
 
   const { isOpen: isSendOpen, onClose: onSendClose } = useSendModal()
+  const { isOpen: isSendNftOpen, onClose: onSendNftClose } = useSendNftModal()
   const { isOpen: isDepositOpen, onClose: onDepositClose } = useDepositModal()
   const { isOpen: isTokenDetailOpen, onClose: onTokenDetailClose } =
     useTokenDetailModal()
+  const { isOpen: isNftDetailOpen, onClose: onNftDetailClose } =
+    useNftDetailModal()
   const { isOpen: isConsentOpen, onClose: onConsentClose } = useConsentModal()
 
   const animate = !isOpen ? 'hidden' : 'visible'
@@ -78,9 +83,21 @@ export const ModalBox = () => {
         />
 
         <ModalBoxRender
+          isOpen={isNftDetailOpen}
+          onClose={onNftDetailClose}
+          child={NftDetail}
+        />
+
+        <ModalBoxRender
           isOpen={isSendOpen}
           onClose={onSendClose}
           child={Send}
+        />
+
+        <ModalBoxRender
+          isOpen={isSendNftOpen}
+          onClose={onSendNftClose}
+          child={SendNft}
         />
 
         <ModalBoxRender

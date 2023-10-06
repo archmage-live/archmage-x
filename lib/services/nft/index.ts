@@ -151,3 +151,10 @@ export function useNfts(account?: IChainAccount): {
 
   return { nfts, fetchNfts }
 }
+
+export function useNft(id?: number) {
+  return useLiveQuery(async () => {
+    if (!id) return
+    return NFT_SERVICE.getNft(id)
+  }, [id])
+}
