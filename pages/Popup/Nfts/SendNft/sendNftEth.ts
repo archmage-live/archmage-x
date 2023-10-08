@@ -19,12 +19,9 @@ export async function buildSendNftEthTx(
       info.contract.address,
       (provider as EvmProvider).provider
     )
-    // @ts-ignore
-    return await erc721.populateTransaction.safeTransferFrom(
-      account.address!,
-      to,
-      info.tokenId
-    )
+    return await erc721.populateTransaction[
+      'safeTransferFrom(address,address,uint256)'
+    ](account.address!, to, info.tokenId)
   } else if (info.tokenType === NftTokenType.ERC1155) {
     const erc1155 = ERC1155__factory.connect(
       info.contract.address,
