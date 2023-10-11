@@ -20,6 +20,7 @@ overrides:
   '@cosmjs/stargate': ^0.29.5
   '@cosmjs/tendermint-rpc': ^0.29.5
   '@noble/hashes': file:./resolutions/@noble/hashes
+  '@aleohq/wasm': file:./resolutions/@aleohq/wasm
 
 dependencies:
   '@account-abstraction/sdk':
@@ -733,7 +734,7 @@ packages:
   /@aleohq/sdk@0.6.1:
     resolution: {integrity: sha512-m1ZhJYzjslQT54pskCn8LVpqZOW8yYawlb/mW2McahyTgA3m40KgEb9D+vMBQalqhhziYgEY2qnNwCFvSLC2qg==}
     dependencies:
-      '@aleohq/wasm': 0.6.0
+      '@aleohq/wasm': file:resolutions/@aleohq/wasm
       axios: 0.27.2
       comlink: 4.4.1
       jsdoc: 3.6.11
@@ -741,10 +742,6 @@ packages:
       sync-request: 6.1.0
     transitivePeerDependencies:
       - debug
-    dev: false
-
-  /@aleohq/wasm@0.6.0:
-    resolution: {integrity: sha512-fd2VYieoXjUkQim8aYLm7rgUz8vZHKyRv6GGj9ld8VkRG8Z+B6YsLF1d5CSti5/FqLmcZTu2ZM0UMtrKSLhuUw==}
     dev: false
 
   /@ambire/signature-validator@1.3.0:
@@ -19685,6 +19682,11 @@ packages:
       react: '*'
     dependencies:
       react: 18.2.0
+    dev: false
+
+  file:resolutions/@aleohq/wasm:
+    resolution: {directory: resolutions/@aleohq/wasm, type: directory}
+    name: '@aleohq/wasm'
     dev: false
 
   file:resolutions/@cosmjs/crypto:

@@ -264,7 +264,8 @@
       "@cosmjs/proto-signing": "^0.29.5",
       "@cosmjs/stargate": "^0.29.5",
       "@cosmjs/tendermint-rpc": "^0.29.5",
-      "@noble/hashes": "file:./resolutions/@noble/hashes"
+      "@noble/hashes": "file:./resolutions/@noble/hashes",
+      "@aleohq/wasm": "file:./resolutions/@aleohq/wasm"
     }
   },
   "alias": {
