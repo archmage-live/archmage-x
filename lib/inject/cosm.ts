@@ -16,6 +16,7 @@ import Long from 'long'
 import { isBackgroundWorker } from '~lib/detect'
 
 import {
+  ArchmageWindow,
   Context,
   EventEmitter,
   RpcClientInjected,
@@ -30,11 +31,6 @@ export interface ICosmProviderService extends EventEmitter {
     args: { method: string; params?: Array<any> },
     ctx?: Context
   ): Promise<any>
-}
-
-declare global {
-  var cosm: any
-  var keplr: any
 }
 
 if (
@@ -244,3 +240,10 @@ export function toSignDoc(signDoc: CosmSignDoc): SignDoc {
     accountNumber: Long.fromString(signDoc.accountNumber)
   } as SignDoc
 }
+
+export interface CosmWindow extends ArchmageWindow {
+  cosm: any
+  keplr: any
+}
+
+declare const globalThis: CosmWindow

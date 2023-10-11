@@ -1,6 +1,7 @@
 import { isBackgroundWorker } from '~lib/detect'
 
 import {
+  ArchmageWindow,
   Context,
   EventEmitter,
   Listener,
@@ -16,10 +17,6 @@ export interface IAptosProviderService extends EventEmitter {
     args: { method: string; params?: Array<any> },
     ctx?: Context
   ): Promise<any>
-}
-
-declare global {
-  var aptos: any
 }
 
 if (
@@ -81,3 +78,9 @@ if (
   globalThis.aptos = aptos
   globalThis.archmage.aptos = aptos
 }
+
+export interface AptosWindow extends ArchmageWindow {
+  aptos: any
+}
+
+declare const globalThis: AptosWindow

@@ -231,9 +231,11 @@ export class RpcClientInjected extends AbstractRpcClient {
   }
 }
 
-declare global {
-  var archmage: any
+export interface ArchmageWindow extends Window {
+  archmage: any
 }
+
+declare const globalThis: ArchmageWindow;
 
 if (!globalThis.archmage) {
   globalThis.archmage = {}

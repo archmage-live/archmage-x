@@ -11,7 +11,6 @@ import { NetworkKind } from '~lib/network'
 import {
   DerivePosition,
   IHdPath,
-  INetwork,
   IWallet,
   Index,
   SubIndex

@@ -1,6 +1,12 @@
 import { isBackgroundWorker } from '~lib/detect'
 
-import { Context, EventEmitter, RpcClientInjected, context } from './client'
+import {
+  ArchmageWindow,
+  Context,
+  EventEmitter,
+  RpcClientInjected,
+  context
+} from './client'
 
 export const EVM_PROVIDER_NAME = 'evmProvider'
 
@@ -17,10 +23,6 @@ export interface IEvmProviderService extends EventEmitter {
     args: { method: string; params?: Array<any> },
     ctx?: Context
   ): Promise<any>
-}
-
-declare global {
-  var ethereum: any
 }
 
 if (
@@ -48,7 +50,7 @@ if (
       isMetaMask: true,
       isArchmage: true,
 
-      isConnected: () => ethereum._state.isConnected,
+      isConnected: () => globalThis.ethereum._state.isConnected,
 
       on: (event: string, handler: (...args: any[]) => void) => {
         let handlers = listeners.get(event)
@@ -79,7 +81,7 @@ if (
       },
 
       _metamask: {
-        isUnlocked: () => ethereum._state.isUnlocked
+        isUnlocked: () => globalThis.ethereum._state.isUnlocked
       },
 
       // deprecated
@@ -88,7 +90,8 @@ if (
       selectedAddress: null,
 
       // deprecated
-      enable: () => ethereum.request({ method: 'eth_requestAccounts' }),
+      enable: () =>
+        globalThis.ethereum.request({ method: 'eth_requestAccounts' }),
 
       // deprecated
       sendAsync(
@@ -176,3 +179,9 @@ if (
 
   init().finally()
 }
+
+export interface EthereumWindow extends ArchmageWindow {
+  ethereum: any
+}
+
+declare const globalThis: EthereumWindow

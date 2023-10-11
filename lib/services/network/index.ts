@@ -27,6 +27,7 @@ import {
   useCryptoComparePrice
 } from '~lib/services/datasource/cryptocompare'
 import { JIFFYSCAN_NETWORKS } from '~lib/services/datasource/jiffyscan'
+import { AleoNetworkService } from '~lib/services/network/aleoService'
 import { CosmTokenInfo } from '~lib/services/token/cosm'
 
 import { AptosNetworkService } from './aptosService'
@@ -359,6 +360,7 @@ export class NetworkService {
       await StarknetNetworkService.init()
       await AptosNetworkService.init()
       await SuiNetworkService.init()
+      await AleoNetworkService.init()
     }
   }
 
@@ -404,6 +406,9 @@ export class NetworkService {
         break
       case NetworkKind.SUI:
         network = SuiNetworkService.buildNetwork(chainId, info)
+        break
+      case NetworkKind.ALEO:
+        network = AleoNetworkService.buildNetwork(chainId, info)
         break
       default:
         throw new Error(`network ${kind} is not implemented`)

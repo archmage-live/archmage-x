@@ -28,6 +28,7 @@ import { isBackgroundWorker } from '~lib/detect'
 import { stringifyBigNumberish } from '~lib/utils'
 
 import {
+  ArchmageWindow,
   Context,
   EventEmitter,
   EventType,
@@ -43,13 +44,6 @@ export interface IStarknetProviderService extends EventEmitter {
     args: { method: string; params?: Array<any> },
     ctx?: Context
   ): Promise<any>
-}
-
-declare global {
-  var starknet: StarknetWindowObject | undefined
-  var starknet_archmage: StarknetWindowObject | undefined
-  var starknet_argentX: StarknetWindowObject | undefined
-  var starknet_braavos: StarknetWindowObject | undefined
 }
 
 if (
@@ -352,3 +346,12 @@ class StarknetSigner implements SignerInterface {
     )
   }
 }
+
+export interface StarknetWindow extends ArchmageWindow {
+  starknet?: StarknetWindowObject
+  starknet_archmage?: StarknetWindowObject
+  starknet_argentX?: StarknetWindowObject
+  starknet_braavos?: StarknetWindowObject
+}
+
+declare const globalThis: StarknetWindow

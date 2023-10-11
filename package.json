@@ -20,6 +20,7 @@
     "@alchemy/aa-alchemy": "0.1.0-alpha.12",
     "@alchemy/aa-core": "0.1.0-alpha.11",
     "@alchemy/aa-ethers": "0.1.0-alpha.11",
+    "@aleohq/sdk": "^0.6.1",
     "@archmagelive/alchemy-sdk": "^2.10.1",
     "@archmagelive/plasmo": "0.56.0",
     "@bitcoinerlab/secp256k1": "^1.0.2",
@@ -33,6 +34,8 @@
     "@cosmjs/stargate": "^0.29.5",
     "@cosmjs/tendermint-rpc": "^0.29.5",
     "@ctrl/tinycolor": "^3.4.1",
+    "@demox-labs/aleo-wallet-adapter-base": "^0.0.18",
+    "@demox-labs/aleo-wallet-adapter-leo": "^0.0.17",
     "@emotion/react": "^11.9.3",
     "@emotion/styled": "^11.9.3",
     "@ethersproject/abi": "^5.7.0",
@@ -220,6 +223,9 @@
   "manifest": {
     "version": "1.0.0",
     "version_name": "1.0.0-beta.4",
+    "content_security_policy": {
+      "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self';"
+    },
     "host_permissions": [
       "<all_urls>"
     ],

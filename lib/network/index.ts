@@ -7,7 +7,8 @@ export enum NetworkKind {
   STARKNET = 'starknet',
   APTOS = 'aptos',
   SUI = 'sui',
-  SOL = 'sol'
+  SOL = 'sol',
+  ALEO = 'aleo'
 }
 
 export const NETWORK_SCOPES: string[] = []
@@ -33,6 +34,9 @@ if (process.env.PLASMO_PUBLIC_ENABLE_SUI) {
 if (process.env.PLASMO_PUBLIC_ENABLE_SOLANA) {
   NETWORK_SCOPES.push('Solana')
 }
+if (process.env.PLASMO_PUBLIC_ENABLE_ALEO) {
+  NETWORK_SCOPES.push('Aleo')
+}
 
 export type NetworkScope = typeof NETWORK_SCOPES[number]
 
@@ -45,7 +49,8 @@ const NETWORK_KINDS: {
   StarkNet: NetworkKind.STARKNET,
   Aptos: NetworkKind.APTOS,
   Sui: NetworkKind.SUI,
-  Solana: NetworkKind.SOL
+  Solana: NetworkKind.SOL,
+  Aleo: NetworkKind.ALEO
 }
 
 export function getNetworkKind(scope?: NetworkScope): NetworkKind {
@@ -68,6 +73,8 @@ export function getNetworkScope(kind?: NetworkKind): NetworkScope {
       return 'Sui'
     case NetworkKind.SOL:
       return 'Solana'
+    case NetworkKind.ALEO:
+      return 'Aleo'
     default:
       return undefined!
   }

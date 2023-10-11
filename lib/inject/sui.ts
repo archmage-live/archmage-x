@@ -24,6 +24,7 @@ import mitt, { Emitter } from 'mitt'
 
 import { isBackgroundWorker } from '~lib/detect'
 import {
+  ArchmageWindow,
   Context,
   EventEmitter,
   EventType,
@@ -263,3 +264,7 @@ if (
 
   globalThis.archmage.sui = sui
 }
+
+export interface SuiWindow extends ArchmageWindow {}
+
+declare const globalThis: SuiWindow

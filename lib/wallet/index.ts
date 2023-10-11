@@ -36,6 +36,7 @@ import { EvmHwErc4337Wallet } from './evmHwErc4337'
 import { SolWallet } from './sol'
 import { StarknetWallet } from './starknet'
 import { SuiWallet } from './sui'
+import {AleoWallet} from './aleo'
 
 export * from './base'
 export * from './btc'
@@ -74,6 +75,8 @@ export function getDefaultPath(networkKind: NetworkKind): string {
       return SuiWallet.defaultPath
     case NetworkKind.SOL:
       return SolWallet.defaultPath
+    case NetworkKind.ALEO:
+      return AleoWallet.defaultPath
   }
 }
 
@@ -119,6 +122,8 @@ export function checkAddress(
       return AptosWallet.checkAddress(address)
     case NetworkKind.SUI:
       return SuiWallet.checkAddress(address)
+    case NetworkKind.ALEO:
+      return AleoWallet.checkAddress(address)
     default:
       return false
   }
@@ -220,6 +225,8 @@ export async function getStructuralSigningWallet(
       return SuiWallet.from(opts)
     case NetworkKind.SOL:
       return SolWallet.from(opts)
+    case NetworkKind.ALEO:
+      return AleoWallet.from(opts)
   }
 }
 
