@@ -38,6 +38,9 @@ dependencies:
   '@aleohq/sdk':
     specifier: ^0.6.1
     version: 0.6.1
+  '@aleohq/wasm':
+    specifier: file:C:\Users\RideWindX\ethereum\archmage\archmage-x\resolutions\@aleohq\wasm
+    version: file:resolutions/@aleohq/wasm
   '@archmagelive/alchemy-sdk':
     specifier: ^2.10.1
     version: 2.10.1

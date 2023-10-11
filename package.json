@@ -21,6 +21,7 @@
     "@alchemy/aa-core": "0.1.0-alpha.11",
     "@alchemy/aa-ethers": "0.1.0-alpha.11",
     "@aleohq/sdk": "^0.6.1",
+    "@aleohq/wasm": "^0.6.0",
     "@archmagelive/alchemy-sdk": "^2.10.1",
     "@archmagelive/plasmo": "0.56.0",
     "@bitcoinerlab/secp256k1": "^1.0.2",
@@ -236,7 +237,9 @@
     ],
     "web_accessible_resources": [
       {
-        "resources": [],
+        "resources": [
+          "node_modules/@aleohq/wasm/dist/assets/aleo_wasm-*.wasm"
+        ],
         "matches": [
           "<all_urls>"
         ]

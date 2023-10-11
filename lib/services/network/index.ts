@@ -6,6 +6,7 @@ import { useAsyncRetry, useInterval } from 'react-use'
 import { DB, getNextField } from '~lib/db'
 import { isBackgroundWorker } from '~lib/detect'
 import { NetworkKind } from '~lib/network'
+import { AleoNetworkInfo } from '~lib/network/aleo'
 import { AptosChainInfo } from '~lib/network/aptos'
 import { BtcChainInfo } from '~lib/network/btc'
 import { CosmAppChainInfo } from '~lib/network/cosm'
@@ -129,6 +130,20 @@ export function getNetworkInfo(network: INetwork): NetworkInfo {
         name: info.name,
         description: info.name,
         chainId: info.chainId,
+        isTestnet: info.isTestnet,
+        currencyName: info.currency.name,
+        currencySymbol: info.currency.symbol,
+        decimals: info.currency.decimals,
+        rpcUrl: info.rpc.at(0),
+        explorerUrl: info.explorers.at(0)
+      }
+    }
+    case NetworkKind.ALEO: {
+      const info = network.info as AleoNetworkInfo
+      return {
+        name: info.name,
+        description: info.name,
+        chainId: info.networkId,
         isTestnet: info.isTestnet,
         currencyName: info.currency.name,
         currencySymbol: info.currency.symbol,

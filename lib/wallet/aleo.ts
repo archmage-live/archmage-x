@@ -1,7 +1,9 @@
-import { Account, Address, initializeWasm } from '@aleohq/sdk'
+import { Account, Address } from '@aleohq/sdk'
+import { wasm } from '@aleohq/wasm'
 import { arrayify } from '@ethersproject/bytes'
 import assert from 'assert'
 import { ethers } from 'ethers'
+import browser from 'webextension-polyfill'
 
 import { DerivePosition } from '~lib/schema'
 
@@ -20,7 +22,10 @@ export class AleoWallet implements KeystoreSigningWallet {
   static async init() {
     if (!AleoWallet.initialized) {
       AleoWallet.initialized = true
-      await initializeWasm()
+      await wasm({
+        importHook: (path) =>
+          browser.runtime.getURL(`node_modules/@aleohq/wasm/dist/${path}`)
+      })
     }
   }
 

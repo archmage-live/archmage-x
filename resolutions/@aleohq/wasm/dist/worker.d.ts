@@ -1,1 +1,1 @@
-export {};
+export function initializeWorker(): Promise<void>;
