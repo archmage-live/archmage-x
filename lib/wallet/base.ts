@@ -8,13 +8,7 @@ import { ethers } from 'ethers'
 
 import { Erc4337AccountType } from '~lib/erc4337'
 import { NetworkKind } from '~lib/network'
-import {
-  DerivePosition,
-  IHdPath,
-  IWallet,
-  Index,
-  SubIndex
-} from '~lib/schema'
+import { DerivePosition, IHdPath, IWallet, Index, SubIndex } from '~lib/schema'
 
 export enum WalletType {
   HD = 'hd', // Hierarchical Deterministic, derived from mnemonic

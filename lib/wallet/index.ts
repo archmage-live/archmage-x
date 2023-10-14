@@ -11,6 +11,7 @@ import { IWallet } from '~lib/schema/wallet'
 import { NETWORK_SERVICE } from '~lib/services/network'
 import { WALLET_SERVICE } from '~lib/services/wallet'
 
+import { AleoWallet } from './aleo'
 import { AptosWallet } from './aptos'
 import {
   AccountAbstractionType,
@@ -36,7 +37,6 @@ import { EvmHwErc4337Wallet } from './evmHwErc4337'
 import { SolWallet } from './sol'
 import { StarknetWallet } from './starknet'
 import { SuiWallet } from './sui'
-import {AleoWallet} from './aleo'
 
 export * from './base'
 export * from './btc'

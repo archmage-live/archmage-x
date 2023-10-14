@@ -32,7 +32,7 @@ export class AleoWallet
   implements LeoWallet
 {
   constructor(private service: IAleoProviderService) {
-    super();
+    super()
   }
 
   connect(
