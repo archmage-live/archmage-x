@@ -9,6 +9,7 @@ import { BtcTxParams } from '~lib/services/provider/btc'
 
 import {
   BtcAddressType,
+  HardwareWalletType,
   SigningWallet,
   WalletPathSchema,
   generatePath
@@ -19,6 +20,7 @@ export class BtcHwWallet implements SigningWallet {
   path: string
 
   constructor(
+    public hwType: HardwareWalletType,
     public hwHash: string,
     public address: string,
     public addressType: BtcAddressType,

@@ -251,7 +251,8 @@ export interface AccountInfo {
 export type AccountsInfo = Partial<Record<NetworkKind, AccountInfo>>
 
 export enum HardwareWalletType {
-  LEDGER = 'Ledger'
+  LEDGER = 'Ledger',
+  TREZOR = 'Trezor'
 }
 
 export enum MultisigWalletType {

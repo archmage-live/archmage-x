@@ -4,34 +4,35 @@ import {
   TypedDataField,
   TypedDataSigner
 } from '@ethersproject/abstract-signer'
-import { Bytes, arrayify } from '@ethersproject/bytes'
+import { Bytes, arrayify, hexlify, joinSignature } from '@ethersproject/bytes'
 import { _TypedDataEncoder } from '@ethersproject/hash'
 import { Deferrable } from '@ethersproject/properties'
 import { Provider, TransactionRequest } from '@ethersproject/providers'
 import LedgerAppEth from '@ledgerhq/hw-app-eth'
+import { transformTypedData } from '@trezor/connect-plugin-ethereum'
 import { UserOperationStruct } from '@zerodevapp/contracts'
 import assert from 'assert'
-import { ethers } from 'ethers'
 
 import { makeZeroDevSigner } from '~lib/erc4337/zerodev'
+import type { TrezorConnectApp } from '~lib/hardware/trezor'
 import { INetwork } from '~lib/schema'
 import { EvmErc4337Client } from '~lib/services/provider/evm'
-import { WalletPathSchema } from '~lib/wallet/base'
 
-import { Erc4337Wallet } from './base'
+import { Erc4337Wallet, HardwareWalletType, WalletPathSchema } from './base'
 import { signErc4337Transaction } from './evmErc4337'
 import { EvmHwWallet } from './evmHw'
 
 export class EvmHwErc4337Wallet extends EvmHwWallet implements Erc4337Wallet {
   constructor(
     private network: INetwork,
+    hwType: HardwareWalletType,
     hwHash: string,
     hwAddress: string,
     pathSchema: WalletPathSchema,
     pathOrIndex: string | number,
     publicKey?: string
   ) {
-    super(hwHash, hwAddress, pathSchema, pathOrIndex, publicKey)
+    super(hwType, hwHash, hwAddress, pathSchema, pathOrIndex, publicKey)
   }
 
   _provider: EvmErc4337Client | undefined
@@ -55,11 +56,19 @@ export class EvmHwErc4337Wallet extends EvmHwWallet implements Erc4337Wallet {
   }
 
   private async getSigner() {
-    const appEth = await this.getLedgerApp()
+    let app
+    switch (this.hwType) {
+      case HardwareWalletType.LEDGER:
+        app = await this.getLedgerApp()
+        break
+      case HardwareWalletType.TREZOR:
+        app = await this.getTrezorApp()
+        break
+    }
 
     return await makeZeroDevSigner({
       provider: this.provider.provider,
-      signer: new HwSigner(appEth, this.hwAddress, this.path)
+      signer: new HwSigner(this.hwType, app, this.hwAddress, this.path)
     })
   }
 
@@ -98,7 +107,8 @@ export class EvmHwErc4337Wallet extends EvmHwWallet implements Erc4337Wallet {
 
 class HwSigner extends Signer implements TypedDataSigner {
   constructor(
-    private appEth: LedgerAppEth,
+    private hwType: HardwareWalletType,
+    private hwApp: LedgerAppEth | TrezorConnectApp,
     private address: string,
     private path: string
   ) {
@@ -115,14 +125,38 @@ class HwSigner extends Signer implements TypedDataSigner {
   }
 
   async signMessage(message: Bytes | string): Promise<string> {
-    const messageHex = ethers.utils
-      .hexlify(arrayify(message as string))
-      .substring(2)
+    switch (this.hwType) {
+      case HardwareWalletType.LEDGER:
+        return this._signMessageLedger(message)
+      case HardwareWalletType.TREZOR:
+        return this._signMessageTrezor(message)
+    }
+  }
 
-    const sig = await this.appEth.signPersonalMessage(this.path, messageHex)
+  async _signMessageLedger(message: Bytes | string): Promise<string> {
+    const messageHex = hexlify(arrayify(message as string)).substring(2)
+
+    const sig = await (this.hwApp as LedgerAppEth).signPersonalMessage(
+      this.path,
+      messageHex
+    )
     sig.r = '0x' + sig.r
     sig.s = '0x' + sig.s
-    return ethers.utils.joinSignature(sig)
+    return joinSignature(sig)
+  }
+
+  async _signMessageTrezor(message: Bytes | string): Promise<string> {
+    const rep = await (this.hwApp as TrezorConnectApp).ethereumSignMessage({
+      path: this.path,
+      message: hexlify(arrayify(message as string)),
+      hex: true
+    })
+
+    if (!rep.success) {
+      throw new Error(rep.payload.error)
+    }
+
+    return rep.payload.signature
   }
 
   signTransaction(
@@ -137,10 +171,52 @@ class HwSigner extends Signer implements TypedDataSigner {
     types: Record<string, Array<TypedDataField>>,
     value: Record<string, any>
   ): Promise<string> {
+    switch (this.hwType) {
+      case HardwareWalletType.LEDGER:
+        return this._signTypedDataLedger(domain, types, value)
+      case HardwareWalletType.TREZOR:
+        return this._signTypedDataTrezor(domain, types, value)
+    }
+  }
+
+  async _signTypedDataLedger(
+    domain: TypedDataDomain,
+    types: Record<string, Array<TypedDataField>>,
+    value: Record<string, any>
+  ): Promise<string> {
     const typedData = _TypedDataEncoder.getPayload(domain, types, value)
-    const sig = await this.appEth.signEIP712Message(this.path, typedData)
+    const sig = await (this.hwApp as LedgerAppEth).signEIP712Message(
+      this.path,
+      typedData
+    )
     sig.r = '0x' + sig.r
     sig.s = '0x' + sig.s
-    return ethers.utils.joinSignature(sig)
+    return joinSignature(sig)
+  }
+
+  async _signTypedDataTrezor(
+    domain: TypedDataDomain,
+    types: Record<string, Array<TypedDataField>>,
+    value: Record<string, any>
+  ): Promise<string> {
+    const typedData = _TypedDataEncoder.getPayload(domain, types, value)
+    const { domain_separator_hash, message_hash } = transformTypedData(
+      typedData,
+      true
+    )
+
+    const rep = await (this.hwApp as TrezorConnectApp).ethereumSignTypedData({
+      path: this.path,
+      data: typedData,
+      metamask_v4_compat: true,
+      domain_separator_hash,
+      message_hash: message_hash || undefined
+    })
+
+    if (!rep.success) {
+      throw new Error(rep.payload.error)
+    }
+
+    return rep.payload.signature
   }
 }

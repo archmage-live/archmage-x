@@ -15,6 +15,7 @@ import { AleoWallet } from './aleo'
 import { AptosWallet } from './aptos'
 import {
   AccountAbstractionType,
+  HardwareWalletType,
   KeystoreSigningWallet,
   SigningWallet,
   WalletOpts,
@@ -235,9 +236,7 @@ export async function getHardwareSigningWallet(
   subWallet: ISubWallet,
   account: IChainAccount
 ): Promise<SigningWallet | undefined> {
-  if (!isHardwareWallet(wallet.type)) {
-    return undefined
-  }
+  assert(isHardwareWallet(wallet.type))
 
   const network = await NETWORK_SERVICE.getNetwork({
     kind: account.networkKind,
@@ -249,6 +248,7 @@ export async function getHardwareSigningWallet(
     case NetworkKind.BTC: {
       const info = network.info as BtcChainInfo
       return new BtcHwWallet(
+        wallet.info.hwType!,
         wallet.hash,
         account.address!,
         wallet.info.addressType!,
@@ -264,6 +264,7 @@ export async function getHardwareSigningWallet(
     }
     case NetworkKind.EVM:
       const args = [
+        wallet.info.hwType!,
         wallet.hash,
         account.address!,
         {
@@ -273,7 +274,14 @@ export async function getHardwareSigningWallet(
         wallet.type === WalletType.HW ? wallet.info.path! : account.index,
         account.info.publicKey ||
           subWallet?.info.accounts?.[account.networkKind]?.publicKey
-      ] as [string, string, WalletPathSchema, string | number, string?]
+      ] as [
+        HardwareWalletType,
+        string,
+        string,
+        WalletPathSchema,
+        string | number,
+        string?
+      ]
 
       if (!wallet.info.accountAbstraction) {
         return new EvmHwWallet(...args)
@@ -289,16 +297,16 @@ export async function getHardwareSigningWallet(
 export async function getSigningWallet(
   account: IChainAccount
 ): Promise<SigningWallet | undefined> {
-  const master = await WALLET_SERVICE.getWallet(account.masterId)
+  const wallet = await WALLET_SERVICE.getWallet(account.masterId)
   const subWallet = await WALLET_SERVICE.getSubWallet({
     masterId: account.masterId,
     index: account.index
   })
-  assert(master && subWallet)
+  assert(wallet && subWallet)
 
-  if (hasWalletKeystore(master.type) || isKeylessWallet(master.type)) {
+  if (hasWalletKeystore(wallet.type) || isKeylessWallet(wallet.type)) {
     let signingWallet = await getStructuralSigningWallet(
-      master,
+      wallet,
       subWallet,
       account.networkKind,
       account.chainId,
@@ -308,7 +316,7 @@ export async function getSigningWallet(
       return undefined
     }
 
-    if (isHdWallet(master.type)) {
+    if (isHdWallet(wallet.type)) {
       const hdPath = await WALLET_SERVICE.getHdPath(
         account.masterId,
         account.networkKind
@@ -325,7 +333,7 @@ export async function getSigningWallet(
 
     assert(signingWallet.address === account.address)
     return signingWallet
-  } else if (isHardwareWallet(master.type)) {
-    return getHardwareSigningWallet(master, subWallet, account)
+  } else if (isHardwareWallet(wallet.type)) {
+    return getHardwareSigningWallet(wallet, subWallet, account)
   }
 }
