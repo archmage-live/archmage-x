@@ -22,7 +22,8 @@ import {
   getNetworkInfo
 } from '~lib/services/network'
 import { canWalletSign } from '~lib/wallet'
-import { useModalBox } from '~pages/Popup/ModalBox'
+
+import { useModalBox } from "~components/ModalBox";
 
 const isOpenAtom = atom<boolean>(false)
 

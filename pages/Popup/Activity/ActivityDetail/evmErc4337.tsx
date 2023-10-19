@@ -146,10 +146,10 @@ export const EvmErc4337ActivityDetail = ({
             />
           </Tooltip>
           {txUrl && (
-            <Tooltip label="View On Block Explorer" placement="top">
+            <Tooltip label="View On Explorer" placement="top">
               <IconButton
                 variant="ghost"
-                aria-label="View On Block Explorer"
+                aria-label="View On Explorer"
                 size="xs"
                 icon={<ExternalLinkIcon />}
                 onClick={() => {

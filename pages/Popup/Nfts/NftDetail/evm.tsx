@@ -17,6 +17,7 @@ import Markdown from 'react-markdown'
 
 import { Card } from '~components/Card'
 import { CopyArea } from '~components/CopyIcon'
+import { ImageWithFallback } from '~components/ImageWithFallback'
 import { INft } from '~lib/schema'
 import { getNftBrief } from '~lib/services/nft'
 import { EvmNftInfo } from '~lib/services/nft/evm'
@@ -68,12 +69,11 @@ export const EvmNftDetail = ({
       </HStack>
 
       <Card boxSize="320px" p={0}>
-        <Image
+        <ImageWithFallback
           boxSize="320px"
           fit="contain"
           src={brief.imageUrl}
           alt="NFT image"
-          fallback={<Skeleton boxSize="320px" />}
         />
       </Card>
 

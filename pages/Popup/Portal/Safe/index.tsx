@@ -1,7 +1,7 @@
 import { ChevronLeftIcon } from '@chakra-ui/icons'
 import { Box, HStack, IconButton, Stack, Text } from '@chakra-ui/react'
 
-export const Send = ({
+export const Safe = ({
   isOpen,
   onClose
 }: {

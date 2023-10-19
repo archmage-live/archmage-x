@@ -9,7 +9,7 @@ import { useIsPopupWindow } from '~lib/hooks/useIsPopupWindow'
 import { CONSENT_SERVICE } from '~lib/services/consentService'
 import ActivityPage from '~pages/Popup/Activity'
 import ConsentPage from '~pages/Popup/Consent'
-import { ModalBox } from '~pages/Popup/ModalBox'
+import { ModalBoxPage } from '~pages/Popup/ModalBoxPage'
 import NftsPage from '~pages/Popup/Nfts'
 import { OverlayCheckUnlocked } from '~pages/Popup/Overlay'
 import PortalPage from '~pages/Popup/Portal'
@@ -81,7 +81,7 @@ export const HomePage = () => {
           <Toolbar />
 
           <Box w="full" h="calc(100% - 68px)" position="relative">
-            <ModalBox />
+            <ModalBoxPage />
 
             <Box h="calc(100% - 63px)">
               <LazyTabs index={tabIndex(navTarget)}>

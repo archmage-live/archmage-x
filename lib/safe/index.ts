@@ -14,6 +14,8 @@ import { ChainId, INetwork, ISubWallet, IWallet } from '~lib/schema'
 import { EvmClient } from '~lib/services/provider/evm'
 import { isMultisigWallet } from '~lib/wallet'
 
+export * from './safeTransactions'
+
 // https://docs.safe.global/safe-core-api/available-services
 const SAFE_TX_SERVICE_URLS = new Map([
   [1, 'https://safe-transaction-mainnet.safe.global'],
@@ -27,7 +29,9 @@ const SAFE_TX_SERVICE_URLS = new Map([
   [1313161554, 'https://safe-transaction-aurora.safe.global'],
   [8453, 'https://safe-transaction-base.safe.global'],
   [84531, 'https://safe-transaction-base-testnet.safe.global'],
-  [42220, 'https://safe-transaction-celo.safe.global']
+  [42220, 'https://safe-transaction-celo.safe.global'],
+  [1101, 'https://safe-transaction-zkevm.safe.global'],
+  [324, 'https://safe-transaction-zksync.safe.global']
 ])
 
 export function isSafeSupported(chainId: ChainId) {

@@ -8,6 +8,7 @@ import {
   useColorModeValue
 } from '@chakra-ui/react'
 
+import { ImageWithFallback } from '~components/ImageWithFallback'
 import { useTransparentize } from '~lib/hooks/useColor'
 import { INft } from '~lib/schema'
 import { getNftBrief } from '~lib/services/nft'
@@ -36,13 +37,12 @@ export const NftItem = ({
       cursor="pointer"
       bg={bgColor}
       onClick={onClick}>
-      <Image
+      <ImageWithFallback
         boxSize={size}
         borderRadius="8px"
         fit="contain"
         src={info.imageUrl}
         alt="NFT image"
-        fallback={<Skeleton boxSize={size} />}
       />
 
       <Box position="absolute" left="4px" right="4px" bottom="4px">

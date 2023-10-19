@@ -43,13 +43,13 @@ import {
 import { NativeToken, getTokenBrief, useTokenById } from '~lib/services/token'
 import { canWalletSign, checkAddress } from '~lib/wallet'
 import { useConsentModal } from '~pages/Popup/Consent'
-import { useModalBox } from '~pages/Popup/ModalBox'
 import { TokenItem, TokenItemStyle } from '~pages/Popup/Portal/TokenItem'
 
 import { SelectTokenModal } from './SelectTokenModal'
 import { buildSendAptosTx } from './sendAptos'
 import { buildSendEthTx } from './sendEth'
 import { buildSendSuiTx } from './sendSui'
+import { useModalBox } from "~components/ModalBox";
 
 const isOpenAtom = atom<boolean>(false)
 

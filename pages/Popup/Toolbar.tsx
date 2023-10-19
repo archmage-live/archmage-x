@@ -12,6 +12,7 @@ import {
   useColorModeValue,
   useDisclosure
 } from '@chakra-ui/react'
+import Avvvatars from 'avvvatars-react'
 import icon from 'data-base64:~assets/archmage.svg'
 import { useCallback, useState } from 'react'
 
@@ -102,7 +103,19 @@ export const Toolbar = () => {
               boxSize="20px"
               fit="cover"
               src={networkLogoUrl}
-              fallback={<Box w="20px" />}
+              fallback={
+                networkInfo ? (
+                  <Avvvatars
+                    value={networkInfo.name}
+                    displayValue={
+                      networkInfo.name ? networkInfo.name[0] : undefined
+                    }
+                    size={20}
+                  />
+                ) : (
+                  <Box w="20px" />
+                )
+              }
               alt="Network Logo"
             />
             <Text noOfLines={1} display="block">

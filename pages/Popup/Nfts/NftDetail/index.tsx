@@ -2,8 +2,8 @@ import { atom, useAtom } from 'jotai'
 
 import { NetworkKind } from '~lib/network'
 import { INft } from '~lib/schema'
-import { useModalBox } from '~pages/Popup/ModalBox'
 import { EvmNftDetail } from '~pages/Popup/Nfts/NftDetail/evm'
+import { useModalBox } from "~components/ModalBox";
 
 const isOpenAtom = atom<boolean>(false)
 const nftAtom = atom<INft | undefined>(undefined)

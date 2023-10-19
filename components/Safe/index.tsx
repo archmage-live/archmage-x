@@ -1,6 +1,15 @@
-import { Button, HStack, Stack, Text, useDisclosure } from '@chakra-ui/react'
+import { AddIcon, EditIcon, MinusIcon } from '@chakra-ui/icons'
+import {
+  Button,
+  HStack,
+  IconButton,
+  Stack,
+  Text,
+  useDisclosure
+} from '@chakra-ui/react'
 import assert from 'assert'
 import { useEffect, useState } from 'react'
+import * as React from 'react'
 import { useAsync } from 'react-use'
 
 import { AccountAvatar } from '~components/AccountAvatar'
@@ -175,9 +184,18 @@ export const SafeSettings = ({
         description="Add, remove and replace or rename existing owners. Owner names are only stored locally and will never be shared with Safe or any third parties."
         setting={
           <Stack>
-            {owners.map((owner) => {
+            {owners.map((owner, index) => {
               return (
-                <Owner key={owner.address} network={network} owner={owner} />
+                <Owner
+                  key={owner.address}
+                  network={network}
+                  owner={owner}
+                  isNotOnlyOne={owners.length > 1}
+                  isLast={index === owners.length - 1}
+                  changeOwner={() => {}}
+                  addOwner={() => {}}
+                  removeOwner={() => {}}
+                />
               )
             })}
           </Stack>
@@ -192,7 +210,13 @@ export const SafeSettings = ({
             <Text>
               {threshold} out of {owners.length} owners.
             </Text>
-            <Button onClick={onChangeThresholdOpen}>Change</Button>
+            <IconButton
+              size="xs"
+              aria-label="Change threshold"
+              icon={<EditIcon />}
+              onClick={onChangeThresholdOpen}
+            />
+            {/*<Button onClick={onChangeThresholdOpen}>Change</Button>*/}
           </HStack>
         }
       />
@@ -200,13 +224,29 @@ export const SafeSettings = ({
   )
 }
 
-const Owner = ({ network, owner }: { network: INetwork; owner: SafeOwner }) => {
+const Owner = ({
+  network,
+  owner,
+  isNotOnlyOne,
+  isLast,
+  changeOwner,
+  addOwner,
+  removeOwner
+}: {
+  network: INetwork
+  owner: SafeOwner
+  isNotOnlyOne: boolean
+  isLast: boolean
+  changeOwner: () => void
+  addOwner: () => void
+  removeOwner: () => void
+}) => {
   return (
     <HStack align="center">
       <AccountAvatar text={owner.address} scale={0.8} />
 
       <Stack spacing={1}>
-        <Text>{owner.name}</Text>
+        <Text noOfLines={1}>{owner.name}</Text>
         <TextLink
           text={owner.address}
           name="Address"
@@ -214,6 +254,32 @@ const Owner = ({ network, owner }: { network: INetwork; owner: SafeOwner }) => {
           urlLabel="View on explorer"
         />
       </Stack>
+
+      <HStack>
+        <IconButton
+          size="xs"
+          aria-label="Change owner"
+          icon={<EditIcon />}
+          visibility={isLast ? 'visible' : 'hidden'}
+          onClick={changeOwner}
+        />
+
+        <IconButton
+          size="xs"
+          aria-label="Add owner"
+          icon={<AddIcon />}
+          visibility={isLast ? 'visible' : 'hidden'}
+          onClick={addOwner}
+        />
+
+        <IconButton
+          size="xs"
+          aria-label="Remove owner"
+          icon={<MinusIcon />}
+          visibility={isNotOnlyOne ? 'visible' : 'hidden'}
+          onClick={removeOwner}
+        />
+      </HStack>
     </HStack>
   )
 }

@@ -175,7 +175,7 @@ export abstract class BaseTransactionService {
     const title = success ? 'Confirmed transaction' : 'Failed transaction'
     const message = success
       ? `Transaction ${identifier} confirmed! ${
-          explorerUrl ? 'View on block explorer' : ''
+          explorerUrl ? 'View on explorer' : ''
         }`
       : `Transaction ${identifier} failed! Transaction encountered an error.`
 

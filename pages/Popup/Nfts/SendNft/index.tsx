@@ -31,10 +31,10 @@ import {
 } from '~lib/services/provider'
 import { canWalletSign, checkAddress } from '~lib/wallet'
 import { useConsentModal } from '~pages/Popup/Consent'
-import { useModalBox } from '~pages/Popup/ModalBox'
 import { NftItem } from '~pages/Popup/Nfts/NftItem'
 
 import { buildSendNftEthTx } from './sendNftEth'
+import { useModalBox } from "~components/ModalBox";
 
 const isOpenAtom = atom<boolean>(false)
 

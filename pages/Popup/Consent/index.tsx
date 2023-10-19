@@ -34,7 +34,6 @@ import {
 import { useSendNftModal } from '~pages/Popup/Nfts/SendNft'
 import { useSendModal } from '~pages/Popup/Portal/Send'
 
-import { useModalBox } from '../ModalBox'
 import { AddNetwork } from './AddNetwork'
 import { RequestPermission } from './RequestPermission'
 import { SignMessage } from './SignMessage'
@@ -42,6 +41,7 @@ import { SignTypedData } from './SignTypedData'
 import { SwitchNetwork } from './SwitchNetwork'
 import { Transaction } from './Transaction'
 import { WatchAsset } from './WatchAsset'
+import { useModalBox } from "~components/ModalBox";
 
 const isOpenAtom = atom<boolean>(false)
 
