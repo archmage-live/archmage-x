@@ -56,11 +56,7 @@ export const ModalBoxPage = () => {
           child={NftDetail}
         />
 
-        <ModalBox
-          isOpen={isSendOpen}
-          onClose={onSendClose}
-          child={Send}
-        />
+        <ModalBox isOpen={isSendOpen} onClose={onSendClose} child={Send} />
 
         <ModalBox
           isOpen={isSendNftOpen}

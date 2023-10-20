@@ -15,6 +15,7 @@ import browser from 'webextension-polyfill'
 
 import { AlertBox } from '~components/AlertBox'
 import { CopyArea } from '~components/CopyIcon'
+import { useModalBox } from '~components/ModalBox'
 import { useActive } from '~lib/active'
 import {
   getBridgeUrl,
@@ -22,8 +23,6 @@ import {
   getNetworkInfo
 } from '~lib/services/network'
 import { canWalletSign } from '~lib/wallet'
-
-import { useModalBox } from "~components/ModalBox";
 
 const isOpenAtom = atom<boolean>(false)
 

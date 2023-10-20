@@ -1,7 +1,11 @@
-import { Box, useColorModeValue } from '@chakra-ui/react'
+import { Box, BoxProps, useColorModeValue } from '@chakra-ui/react'
 import ReactJson from 'react-json-view'
 
-export const JsonDisplay = ({ data }: { data: object }) => {
+interface JsonDisplayProps extends BoxProps {
+  data: object
+}
+
+export const JsonDisplay = ({ data, ...props }: JsonDisplayProps) => {
   const rjvTheme = useColorModeValue('rjv-default', 'brewer')
   const rjvBg = useColorModeValue('gray.50', 'rgb(12, 13, 14)')
 
@@ -15,7 +19,8 @@ export const JsonDisplay = ({ data }: { data: object }) => {
       borderColor="gray.500"
       px={4}
       py={2}
-      bg={rjvBg}>
+      bg={rjvBg}
+      {...props}>
       <ReactJson
         src={data}
         name={false}

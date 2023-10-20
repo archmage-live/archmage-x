@@ -16,6 +16,7 @@ import * as React from 'react'
 import { useAsync, useInterval } from 'react-use'
 
 import { AlertBox } from '~components/AlertBox'
+import { useModalBox } from '~components/ModalBox'
 import { useActive } from '~lib/active'
 import { NetworkKind } from '~lib/network'
 import { IChainAccount, INetwork, INft } from '~lib/schema'
@@ -34,7 +35,6 @@ import { useConsentModal } from '~pages/Popup/Consent'
 import { NftItem } from '~pages/Popup/Nfts/NftItem'
 
 import { buildSendNftEthTx } from './sendNftEth'
-import { useModalBox } from "~components/ModalBox";
 
 const isOpenAtom = atom<boolean>(false)
 

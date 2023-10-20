@@ -39,7 +39,7 @@ dependencies:
     specifier: ^0.6.1
     version: 0.6.1
   '@aleohq/wasm':
-    specifier: file:C:\Users\RideWindX\ethereum\archmage\archmage-x\resolutions\@aleohq\wasm
+    specifier: file:/Users/ridewindx/Code/ethereum/archmage/archmage-x/resolutions/@aleohq/wasm
     version: file:resolutions/@aleohq/wasm
   '@archmagelive/alchemy-sdk':
     specifier: ^2.10.1
@@ -63,7 +63,7 @@ dependencies:
     specifier: ^0.29.5
     version: 0.29.5
   '@cosmjs/crypto':
-    specifier: file:C:\Users\RideWindX\ethereum\archmage\archmage-x\resolutions\@cosmjs\crypto
+    specifier: file:/Users/ridewindx/Code/ethereum/archmage/archmage-x/resolutions/@cosmjs/crypto
     version: file:resolutions/@cosmjs/crypto
   '@cosmjs/encoding':
     specifier: ^0.29.5
@@ -216,7 +216,7 @@ dependencies:
     specifier: ^0.1.4
     version: 0.1.4
   '@noble/hashes':
-    specifier: file:C:\Users\RideWindX\ethereum\archmage\archmage-x\resolutions\@noble\hashes
+    specifier: file:/Users/ridewindx/Code/ethereum/archmage/archmage-x/resolutions/@noble/hashes
     version: file:resolutions/@noble/hashes
   '@openzeppelin/contracts':
     specifier: ^4.7.3
@@ -12064,7 +12064,7 @@ packages:
     resolution: {integrity: sha512-iNZ576iTOGcfllftB73cPB5AN+XUQAT/T8xzsILsghXC1o8gJUqe3RHlcDqagu+biFpYQ61KQrZZJza8eRSYqw==}
     deprecated: Deprecated in favor of '@metamask/eth-sig-util'
     dependencies:
-      ethereumjs-abi: git@github.com+ethereumjs/ethereumjs-abi/ee3994657fa7a427238e6ba92a84d0b529bbcde0
+      ethereumjs-abi: github.com/ethereumjs/ethereumjs-abi/ee3994657fa7a427238e6ba92a84d0b529bbcde0
       ethereumjs-util: 5.2.1
     dev: false
 
@@ -20200,8 +20200,8 @@ packages:
       safe-buffer: 5.2.1
     dev: false
 
-  git@github.com+ethereumjs/ethereumjs-abi/ee3994657fa7a427238e6ba92a84d0b529bbcde0:
-    resolution: {commit: ee3994657fa7a427238e6ba92a84d0b529bbcde0, repo: git@github.com:ethereumjs/ethereumjs-abi.git, type: git}
+  github.com/ethereumjs/ethereumjs-abi/ee3994657fa7a427238e6ba92a84d0b529bbcde0:
+    resolution: {tarball: https://codeload.github.com/ethereumjs/ethereumjs-abi/tar.gz/ee3994657fa7a427238e6ba92a84d0b529bbcde0}
     name: ethereumjs-abi
     version: 0.6.8
     dependencies:

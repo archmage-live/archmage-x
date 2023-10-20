@@ -6,6 +6,9 @@ import {
   AccordionIcon,
   AccordionItem,
   AccordionPanel,
+  AccordionProps,
+  Box,
+  Button,
   Center,
   Divider,
   HStack,
@@ -17,24 +20,32 @@ import {
   Tooltip,
   chakra
 } from '@chakra-ui/react'
-import { FormatTypes, TransactionDescription } from '@ethersproject/abi'
-import { ParamType } from '@ethersproject/abi/src.ts/fragments'
-import { BigNumber } from '@ethersproject/bignumber'
-import { hexlify } from '@ethersproject/bytes'
-import { BiQuestionMark } from '@react-icons/all-files/bi/BiQuestionMark'
 import {
+  FormatTypes,
+  Interface,
+  ParamType,
+  TransactionDescription
+} from '@ethersproject/abi'
+import { hexlify } from '@ethersproject/bytes'
+import { Contract } from '@ethersproject/contracts'
+import { BiQuestionMark } from '@react-icons/all-files/bi/BiQuestionMark'
+import { MdOutlineCode } from '@react-icons/all-files/md/MdOutlineCode'
+import {
+  MetaTransactionData,
   OperationType,
   SafeTransaction
 } from '@safe-global/safe-core-sdk-types'
 import assert from 'assert'
 import Decimal from 'decimal.js'
-import { ReactNode } from 'react'
+import { ReactNode, useState } from 'react'
+import * as React from 'react'
 import { useAsyncRetry, useInterval } from 'react-use'
 import browser from 'webextension-polyfill'
 
 import { ImageWithFallback } from '~components/ImageWithFallback'
 import { JsonDisplay } from '~components/JsonDisplay'
 import { TextLink } from '~components/TextLink'
+import { ERC721__factory, ERC1155__factory } from '~lib/network/evm/abi'
 import { SafeTxParams, SafeTxType } from '~lib/safe'
 import { IChainAccount, INetwork } from '~lib/schema'
 import { ALCHEMY_API } from '~lib/services/datasource/alchemy'
@@ -71,12 +82,14 @@ export const SafeConfirmTx = ({
 
   useInterval(retry, !loading && error ? 30000 : null)
 
+  const [expandedIndex, setExpandedIndex] = useState<number[]>([])
+
   if (!descriptors) {
     return <></>
   }
 
   return (
-    <Stack>
+    <Stack spacing={4}>
       <HStack justify="space-between">
         <Text fontSize="lg" fontWeight="medium">
           {descriptors.title}
@@ -92,7 +105,43 @@ export const SafeConfirmTx = ({
       <Stack spacing={4}>
         {descriptors.description}
 
-        <Accordion allowToggle>
+        {descriptors.actions?.length && (
+          <Stack>
+            <HStack justify="space-between">
+              <Text>All actions</Text>
+              <HStack spacing={2}>
+                <Button
+                  colorScheme="gray"
+                  variant="ghost"
+                  onClick={() =>
+                    setExpandedIndex([...descriptors.actions!.keys()])
+                  }>
+                  Expand all
+                </Button>
+                <Divider orientation="vertical" />
+                <Button
+                  colorScheme="gray"
+                  variant="ghost"
+                  onClick={() => setExpandedIndex([])}>
+                  Collapse all
+                </Button>
+              </HStack>
+            </HStack>
+
+            <SafeActionsDisplay
+              network={network}
+              actions={descriptors.actions.map(({ action }) => action)}
+              abis={descriptors.actions.map(({ abi }) => abi)}
+              props={{
+                index: expandedIndex,
+                onChange: (index) =>
+                  setExpandedIndex(Array.isArray(index) ? index : [index])
+              }}
+            />
+          </Stack>
+        )}
+
+        <Accordion allowMultiple allowToggle>
           <AccordionItem>
             <h4>
               <AccordionButton>
@@ -193,58 +242,142 @@ export const SafeConfirmTx = ({
           </AccordionItem>
         </Accordion>
       </Stack>
+
+      <HStack justify="space-between">
+        <Button variant="outline" size="lg">
+          Cancel
+        </Button>
+
+        <HStack spacing={4}>
+          <Button variant="outline" size="lg">
+            ➕ Add to batch
+          </Button>
+
+          <Text color="gray.500">or</Text>
+
+          <Button colorScheme="purple" size="lg">
+            Continue
+          </Button>
+        </HStack>
+      </HStack>
     </Stack>
   )
 }
 
-const SafeAction = ({
+const SafeActionsDisplay = ({
   network,
-  contract,
-  desc
+  actions,
+  abis,
+  props
 }: {
   network: INetwork
-  contract: string
-  desc: TransactionDescription
+  actions: MetaTransactionData[]
+  abis?: (Interface | undefined)[]
+  props?: AccordionProps
+}) => {
+  const {
+    value: _abis,
+    loading,
+    error,
+    retry
+  } = useAsyncRetry(async () => {
+    const etherscanApi = ETHERSCAN_API.getProvider(network)
+    return await Promise.all(
+      actions.map((action, index) => {
+        return abis?.at(index) || etherscanApi?.getAbi(action.to).catch()
+      })
+    )
+  }, [network, actions, abis])
+
+  useInterval(retry, !loading && error ? 30000 : null)
+
+  return (
+    <Accordion allowMultiple allowToggle {...props}>
+      {_abis?.map((abi, index) => {
+        const action = actions[index]
+        const txDesc = abi?.parseTransaction({ data: action.data })
+
+        return (
+          <AccordionItem key={index}>
+            <h4>
+              <AccordionButton>
+                <HStack flex="1" spacing={4}>
+                  <HStack>
+                    <Icon as={MdOutlineCode} color="gray.500" />
+                    <Text>{index + 1}</Text>
+                  </HStack>
+                  <Text noOfLines={1}>{txDesc?.name}</Text>
+                </HStack>
+                <AccordionIcon />
+              </AccordionButton>
+            </h4>
+            <AccordionPanel pb={4}>
+              <Stack spacing={4}>
+                <Stack spacing={2}>
+                  <Text>Interact with:</Text>
+                  <TextLink
+                    text={action.to}
+                    name="Contract Address"
+                    url={getAccountUrl(network, action.to)}
+                    urlLabel="View on explorer"
+                  />
+                </Stack>
+
+                {txDesc ? (
+                  <TxDescDisplay network={network} txDesc={txDesc} />
+                ) : (
+                  <HStack key={index} justify="space-between">
+                    <Text color="gray.500">Data (hex):</Text>
+                    <TextLink text={hexlify(action.data)} name="Data" />
+                  </HStack>
+                )}
+              </Stack>
+            </AccordionPanel>
+          </AccordionItem>
+        )
+      })}
+    </Accordion>
+  )
+}
+
+const TxDescDisplay = ({
+  network,
+  txDesc
+}: {
+  network: INetwork
+  txDesc: TransactionDescription
 }) => {
   return (
-    <Stack spacing={4}>
-      <Stack spacing={2}>
-        <Text>Interact with:</Text>
-        <TextLink
-          text={contract}
-          name="Contract Address"
-          url={getAccountUrl(network, contract)}
-          urlLabel="View on explorer"
-        />
-      </Stack>
+    <Stack spacing={2}>
+      <Text color="gray.500" noOfLines={1}>
+        {txDesc.name}
+      </Text>
 
-      <Stack spacing={2}>
-        <Text color="gray.500">{desc.name}</Text>
+      <Stack spacing={0}>
+        {txDesc.functionFragment.inputs.map((input, index) => {
+          const argValue = txDesc.args[input.name]
+          return (
+            <HStack key={index} justify="space-between">
+              <Text color="gray.500" noOfLines={1}>
+                {input.name + '<' > +input.format(FormatTypes.sighash) + '>'}:
+              </Text>
 
-        <Stack spacing={0}>
-          {desc.functionFragment.inputs.map((input, index) => {
-            const argValue = desc.args[input.name]
-            return (
-              <HStack key={index} justify="space-between">
-                <Text color="gray.500">
-                  {input.name + '<' > +input.format(FormatTypes.sighash) + '>'}:
-                </Text>
-
-                <ArrayParameters
+              <Box maxW="60%">
+                <ArgumentDisplay
                   network={network}
                   input={input}
                   argValue={argValue}
                 />
-              </HStack>
-            )
-          })}
-        </Stack>
+              </Box>
+            </HStack>
+          )
+        })}
       </Stack>
     </Stack>
   )
 }
 
-const ArrayParameters = ({
+const ArgumentDisplay = ({
   network,
   input,
   argValue
@@ -262,7 +395,7 @@ const ArrayParameters = ({
     />
   ) : (input.baseType === 'array' || input.baseType === 'tuple') &&
     Array.isArray(argValue) ? (
-    <JsonDisplay data={argValue} />
+    <JsonDisplay data={argValue} maxH="160px" />
   ) : argValue?.toString ? (
     <TextLink text={argValue.toString()} name={input.name} />
   ) : (
@@ -280,6 +413,10 @@ async function buildSafeTxDescriptors(
   title: string
   description?: ReactNode
   detail?: ReactNode
+  actions?: {
+    action: MetaTransactionData
+    abi?: Interface
+  }[]
 }> {
   switch (params.type) {
     case SafeTxType.EnableFallbackHandler:
@@ -604,7 +741,22 @@ async function buildSafeTxDescriptors(
         assert(nfts.length === params.params.length)
       }
 
-      const etherscanApi = ETHERSCAN_API.getProvider(network)
+      const abis = params.params.map(({ contract, amount }) => {
+        if (amount === undefined) {
+          return ERC721__factory.createInterface()
+        }
+        {
+          return ERC1155__factory.createInterface()
+        }
+      })
+
+      const multiSend = new Contract(tx.data.to, [
+        'function multiSend(bytes memory transactions)'
+      ])
+      const multiSendData = multiSend.interface.decodeFunctionData(
+        'multiSend',
+        tx.data.data
+      )
 
       return {
         title: 'Send NFTs',
@@ -667,17 +819,72 @@ async function buildSafeTxDescriptors(
               />
             </HStack>
           </Stack>
-        )
+        ),
+        detail: (
+          <Stack spacing={1}>
+            <Text color="gray.500">MULTI SEND</Text>
+            <Stack spacing={0}>
+              <HStack justify="space-between">
+                <Text color="gray.500">transactions:</Text>
+                <TextLink
+                  text={hexlify(multiSendData.transactions)}
+                  name="transactions"
+                />
+              </HStack>
+            </Stack>
+          </Stack>
+        ),
+        actions: params.params.map(({ tx }, index) => ({
+          action: tx,
+          abi: abis.at(index)
+        }))
       }
     }
     case SafeTxType.SingleSend:
       return {
         title: 'Transaction'
       }
-    case SafeTxType.MultiSend:
+    case SafeTxType.MultiSend: {
+      const multiSend = new Contract(tx.data.to, [
+        'function multiSend(bytes memory transactions)'
+      ])
+      const multiSendData = multiSend.interface.decodeFunctionData(
+        'multiSend',
+        tx.data.data
+      )
+
       return {
-        title: 'MultiSend'
+        title: 'MultiSend',
+        description: (
+          <HStack spacing={4}>
+            <Text color="gray.500">Interact with:</Text>
+            <TextLink
+              text={tx.data.to}
+              name="Contract Address"
+              url={getAccountUrl(network, tx.data.to)}
+              urlLabel="View on explorer"
+            />
+          </HStack>
+        ),
+        detail: (
+          <Stack spacing={1}>
+            <Text color="gray.500">MULTI SEND</Text>
+            <Stack spacing={0}>
+              <HStack justify="space-between">
+                <Text color="gray.500">transactions:</Text>
+                <TextLink
+                  text={hexlify(multiSendData.transactions)}
+                  name="transactions"
+                />
+              </HStack>
+            </Stack>
+          </Stack>
+        ),
+        actions: params.params.map((action) => ({
+          action
+        }))
       }
+    }
     case SafeTxType.Rejection:
       return {
         title: 'Reject',

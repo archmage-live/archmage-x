@@ -24,6 +24,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useAsync, useInterval } from 'react-use'
 
 import { AlertBox } from '~components/AlertBox'
+import { useModalBox } from '~components/ModalBox'
 import { useActive } from '~lib/active'
 import { formatNumber } from '~lib/formatNumber'
 import { NetworkKind } from '~lib/network'
@@ -49,7 +50,6 @@ import { SelectTokenModal } from './SelectTokenModal'
 import { buildSendAptosTx } from './sendAptos'
 import { buildSendEthTx } from './sendEth'
 import { buildSendSuiTx } from './sendSui'
-import { useModalBox } from "~components/ModalBox";
 
 const isOpenAtom = atom<boolean>(false)
 

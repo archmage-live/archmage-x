@@ -23,6 +23,7 @@ import { ReactNode, useCallback, useEffect, useMemo, useState } from 'react'
 import * as React from 'react'
 import { useNavigate } from 'react-router-dom'
 
+import { useModalBox } from '~components/ModalBox'
 import { useIsPopupWindow } from '~lib/hooks/useIsPopupWindow'
 import { useCheckUnlocked } from '~lib/password'
 import {
@@ -41,7 +42,6 @@ import { SignTypedData } from './SignTypedData'
 import { SwitchNetwork } from './SwitchNetwork'
 import { Transaction } from './Transaction'
 import { WatchAsset } from './WatchAsset'
-import { useModalBox } from "~components/ModalBox";
 
 const isOpenAtom = atom<boolean>(false)
 

@@ -17,6 +17,7 @@ import { atom, useAtom } from 'jotai'
 import * as React from 'react'
 import { useEffect } from 'react'
 
+import { useModalBox } from '~components/ModalBox'
 import { useActive } from '~lib/active'
 import { formatNumber } from '~lib/formatNumber'
 import { IToken } from '~lib/schema'
@@ -25,7 +26,6 @@ import { getTokenBrief } from '~lib/services/token'
 import { useDepositModal } from '~pages/Popup/Portal/Deposit'
 import { useSendModal, useSendTokenId } from '~pages/Popup/Portal/Send'
 import { TokenMenu } from '~pages/Popup/Portal/TokenItem'
-import { useModalBox } from "~components/ModalBox";
 
 const isOpenAtom = atom<boolean>(false)
 const tokenAtom = atom<IToken | undefined>(undefined)
