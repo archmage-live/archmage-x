@@ -4,6 +4,11 @@ import {
   Alchemy as _Alchemy
 } from '@archmagelive/alchemy-sdk'
 import type { OwnedNft } from '@archmagelive/alchemy-sdk'
+import {
+  DebugTransaction,
+  SimulateAssetChangesResponse,
+  SimulateExecutionResponse
+} from '@archmagelive/alchemy-sdk/dist/src/types/types'
 
 export const defaultApiKey = '_gg7wSSi0KMBsdKnGVfHDueq6xMB9EkC'
 
@@ -28,6 +33,17 @@ export const networkByChain = new Map([
 class Alchemy extends _Alchemy {
   constructor(settings?: AlchemySettings) {
     super(settings)
+  }
+
+  async simulateTx(
+    tx: DebugTransaction
+  ): Promise<SimulateExecutionResponse & SimulateAssetChangesResponse> {
+    const exec = await this.transact.simulateExecution(tx)
+    const assetChanges = await this.transact.simulateAssetChanges(tx)
+    return {
+      ...exec,
+      ...assetChanges
+    }
   }
 }
 

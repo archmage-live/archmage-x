@@ -82,7 +82,7 @@ export const SafeSettings = ({
           threshold: safeInfo.threshold
         },
         safeDeploymentConfig: {
-          saltNonce: safeInfo.saltNonce.toString()
+          saltNonce: safeInfo.saltNonce
         }
       })
     }

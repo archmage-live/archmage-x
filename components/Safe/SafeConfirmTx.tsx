@@ -37,6 +37,7 @@ import {
 } from '@safe-global/safe-core-sdk-types'
 import assert from 'assert'
 import Decimal from 'decimal.js'
+import { atom } from 'jotai'
 import { ReactNode, useState } from 'react'
 import * as React from 'react'
 import { useAsyncRetry, useInterval } from 'react-use'
@@ -44,6 +45,7 @@ import browser from 'webextension-polyfill'
 
 import { ImageWithFallback } from '~components/ImageWithFallback'
 import { JsonDisplay } from '~components/JsonDisplay'
+import { useModalBox } from '~components/ModalBox'
 import { TextLink } from '~components/TextLink'
 import { ERC721__factory, ERC1155__factory } from '~lib/network/evm/abi'
 import { SafeTxParams, SafeTxType } from '~lib/safe'
@@ -55,6 +57,12 @@ import { ETHERSCAN_API } from '~lib/services/datasource/etherscan'
 import { getAccountUrl, getNetworkInfo } from '~lib/services/network'
 import { TOKEN_SERVICE, getTokenBrief } from '~lib/services/token'
 import { SafeInfo } from '~lib/wallet'
+
+const isOpenAtom = atom<boolean>(false)
+
+export function useSafeConfirmTxModal() {
+  return useModalBox(isOpenAtom)
+}
 
 export const SafeConfirmTx = ({
   network,

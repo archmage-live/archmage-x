@@ -17,18 +17,23 @@ export const TextLink = ({
   text,
   name,
   url,
-  urlLabel
+  urlLabel,
+  leadingChars,
+  prefixChars = 4,
+  suffixChars
 }: {
   text: string
   name: string
   url?: string
   urlLabel?: string
-}) => {
+} & Parameters<typeof shortenString>[1]) => {
   const { hasCopied, onCopy } = useClipboard(text)
 
   return (
     <HStack fontSize="sm" color="gray.500" spacing={1}>
-      <Text>{shortenString(text, { prefixChars: 4 })}</Text>
+      <Text>
+        {shortenString(text, { leadingChars, prefixChars, suffixChars })}
+      </Text>
       <Tooltip
         label={!hasCopied ? `Copy ${name}` : 'Copied'}
         placement="top"

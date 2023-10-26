@@ -1,5 +1,4 @@
 import {
-  Center,
   Modal,
   ModalBody,
   ModalCloseButton,
@@ -12,6 +11,7 @@ import { useEffect, useState } from 'react'
 import { QrReader } from 'react-qr-reader'
 
 import { AlertBox } from '~components/AlertBox'
+import { ErrorBoundary } from '~components/ErrorBoundary'
 import { useColor } from '~lib/hooks/useColor'
 
 export const ScanQRModal = ({
@@ -44,8 +44,8 @@ export const ScanQRModal = ({
         <ModalHeader>Scan QR</ModalHeader>
         <ModalCloseButton />
         <ModalBody p={0}>
-          <Center px={4} pb={6}>
-            <Stack spacing={4}>
+          <Stack spacing={4} px={4} pb={6} align="center">
+            <ErrorBoundary fallback={<></>}>
               <QrReader
                 constraints={{}}
                 containerStyle={{
@@ -54,9 +54,7 @@ export const ScanQRModal = ({
                   border: `1px solid ${borderColor.toHexString()}`
                 }}
                 onResult={(result, error) => {
-                  if (error) {
-                    setAlert(`Cannot read QR code: ${error.message}`)
-                  } else {
+                  if (!error) {
                     const text = result?.getText()
                     if (text) {
                       setAlert('')
@@ -65,13 +63,15 @@ export const ScanQRModal = ({
                     } else {
                       setAlert('Cannot read QR code')
                     }
+                  } else if (error.message) {
+                    setAlert(`Cannot read QR code: ${error.message}`)
                   }
                 }}
               />
+            </ErrorBoundary>
 
-              <AlertBox level="error">{alert}</AlertBox>
-            </Stack>
-          </Center>
+            <AlertBox level="error">{alert}</AlertBox>
+          </Stack>
         </ModalBody>
       </ModalContent>
     </Modal>

@@ -3,7 +3,7 @@ import PQueue from 'p-queue'
 
 import { DB } from '~lib/db'
 import { NetworkKind } from '~lib/network'
-import { getSafeAccountAddress } from '~lib/safe'
+import { makeSafeAccount } from '~lib/safe'
 import {
   ChainId,
   IChainAccount,
@@ -199,12 +199,16 @@ export async function ensureChainAccounts(
               }
               switch (wallet.info.multisigType) {
                 case MultisigWalletType.SAFE: {
-                  acc.address = await getSafeAccountAddress(
+                  const { address, safe } = await makeSafeAccount(
                     network,
                     wallet,
                     subWallet
                   )
-                  bulkPut.push(acc)
+                  if (address && safe) {
+                    acc.address = address
+                    acc.info.safe = safe
+                    bulkPut.push(acc)
+                  }
                   break
                 }
               }
@@ -301,6 +305,7 @@ export async function ensureChainAccount(
   }
 
   let address
+  const info = existing?.info || {}
   switch (wallet.type) {
     case WalletType.HD:
     // pass through
@@ -363,7 +368,16 @@ export async function ensureChainAccount(
       }
       switch (wallet.info.multisigType) {
         case MultisigWalletType.SAFE: {
-          address = await getSafeAccountAddress(network, wallet, subWallet)
+          const { address: addr, safe } = await makeSafeAccount(
+            network,
+            wallet,
+            subWallet
+          )
+          if (!addr || !safe) {
+            return
+          }
+          address = addr
+          info.safe = safe
           break
         }
       }
@@ -409,7 +423,7 @@ export async function ensureChainAccount(
       networkKind,
       chainId,
       address,
-      info: {}
+      info
     } as IChainAccount
   } else {
     if (!address) {
@@ -417,7 +431,11 @@ export async function ensureChainAccount(
     }
     account = {
       ...existing,
-      address
+      address,
+      info: {
+        ...existing.info,
+        ...info
+      }
     }
   }
 

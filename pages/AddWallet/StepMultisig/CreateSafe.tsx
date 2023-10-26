@@ -1,8 +1,6 @@
 import { AddIcon, MinusIcon, SearchIcon } from '@chakra-ui/icons'
 import {
-  Button,
   ButtonGroup,
-  Checkbox,
   FormControl,
   FormHelperText,
   FormLabel,
@@ -12,157 +10,75 @@ import {
   Input,
   InputGroup,
   InputRightElement,
-  NumberDecrementStepper,
-  NumberIncrementStepper,
-  NumberInput,
-  NumberInputField,
-  NumberInputStepper,
   Select,
   Stack,
   Text,
-  chakra,
   useDisclosure
 } from '@chakra-ui/react'
 import { MdQrCode } from '@react-icons/all-files/md/MdQrCode'
-import { PredictedSafeProps } from '@safe-global/protocol-kit'
-import * as React from 'react'
+import {
+  DEFAULT_SAFE_VERSION,
+  PREDETERMINED_SALT_NONCE,
+  PredictedSafeProps
+} from '@safe-global/protocol-kit'
+import { SafeVersion } from '@safe-global/safe-core-sdk-types'
 import { useCallback, useEffect, useState } from 'react'
+import * as React from 'react'
 import { useAsyncRetry, useDebounce, useInterval } from 'react-use'
-import { useWizard } from 'react-use-wizard'
 
-import { AlertBox } from '~components/AlertBox'
 import { ScanQRModal } from '~components/ScanQrModal'
 import { SelectAccountModal } from '~components/SelectAccountModal'
-import { NetworkKind, getNetworkScope } from '~lib/network'
-import { EVM_MAINNET_CHAINID } from '~lib/network/evm'
-import { getSafeAccount, isSafeSupported } from '~lib/safe'
+import { NetworkKind } from '~lib/network'
+import { ETHEREUM_MAINNET_CHAINID } from '~lib/network/evm'
+import { SAFE_VERSIONS, getSafeAccount } from '~lib/safe'
 import {
   ChainId,
   CompositeAccount,
   IChainAccount,
+  INetwork,
   ISubWallet,
   IWallet,
-  PSEUDO_INDEX,
   accountName
 } from '~lib/schema'
-import { getNetworkInfo, useNetwork, useNetworks } from '~lib/services/network'
 import { EvmClient } from '~lib/services/provider/evm'
-import {
-  ExistingGroupWallet,
-  WALLET_SERVICE,
-  useChainAccounts,
-  useNextSubWalletIndex
-} from '~lib/services/wallet'
-import {
-  AccountAbstractionType,
-  MultisigWalletType,
-  SafeOwner,
-  WalletType,
-  checkAddress
-} from '~lib/wallet'
+import { WALLET_SERVICE, useChainAccounts } from '~lib/services/wallet'
+import { SafeInfo, SafeOwner, checkAddress } from '~lib/wallet'
 
-import { NameInput } from '../NameInput'
-import {
-  SelectExistingWalletModal,
-  WalletItemButton
-} from '../SelectExistingWallet'
-import {
-  AddWalletKind,
-  useAccountAbstraction,
-  useAccounts,
-  useAddSubWallets,
-  useAddWallet,
-  useAddWalletKind,
-  useExistingWallet,
-  useMultisigType,
-  useName
-} from '../addWallet'
-
-export const CreateSafe = () => {
-  const { nextStep } = useWizard()
-
-  // Safe only supports Ethereum network
-  const networkKind = NetworkKind.EVM
-  const networkScope = getNetworkScope(networkKind)
-  const networksOfKind = useNetworks(networkKind)
-  const [networkId, setNetworkId] = useState<number>()
-  const network = useNetwork(networkId)
-
-  useEffect(() => {
-    if (networksOfKind?.length) {
-      setNetworkId(networksOfKind[0].id)
-    } else {
-      setNetworkId(undefined)
+export const CreateSafe = ({
+  network,
+  setAccount,
+  setAlert,
+  setIsLoading
+}: {
+  network: INetwork
+  setAccount: (account?: {
+    hash: string
+    address: string
+    isDeployed: boolean
+    safe: SafeInfo
+  }) => void
+  setAlert: (alert: string) => void
+  setIsLoading: (isLoading: boolean) => void
+}) => {
+  const [safeVersion, setSafeVersion] = useState(DEFAULT_SAFE_VERSION)
+  const [owners, setOwners] = useState<SafeOwner[]>([
+    {
+      name: '',
+      address: ''
     }
-  }, [networksOfKind])
-
-  const [, setMultisigType] = useMultisigType()
-  const [, setAccountAbstraction] = useAccountAbstraction()
-  useEffect(() => {
-    setMultisigType(MultisigWalletType.SAFE)
-    setAccountAbstraction({
-      type: AccountAbstractionType.SAFE
-    })
-  }, [setMultisigType, setAccountAbstraction])
-
-  const [name, setName] = useName()
-  const [accounts, setAccounts] = useAccounts()
-  const [owners, setOwners] = useState<SafeOwner[]>([])
+  ])
   const [threshold, setThreshold] = useState<number>(1)
-  const [saltNonce, setSaltNonce] = useState<number>(Date.now())
-
-  useEffect(() => {
-    if (!owners.length) {
-      setOwners([
-        {
-          name: '',
-          address: ''
-        }
-      ])
-    }
-  }, [owners, setOwners])
+  const [saltNonce, setSaltNonce] = useState<string>(PREDETERMINED_SALT_NONCE)
 
   useEffect(() => {
     if (owners.length > 0 && threshold > owners.length) {
       setThreshold(owners.length)
     }
-  }, [owners, threshold, setThreshold])
+  }, [owners, threshold])
 
-  const [, setAddWalletKind] = useAddWalletKind()
-  const [, setExistingWallet] = useExistingWallet()
-  const [willAddToExistingGroupChecked, setWillAddToExistingGroupChecked] =
-    useState(false)
-  const [existingGroupWallet, setExistingGroupWallet] = useState<
-    ExistingGroupWallet | undefined
-  >(undefined)
-  const [isUseGroupChecked, setIsUseGroupChecked] = useState(false)
-  useEffect(() => {
-    setExistingWallet(existingGroupWallet?.wallet)
-  }, [setExistingWallet, existingGroupWallet])
-  useEffect(() => {
-    setIsUseGroupChecked(willAddToExistingGroupChecked)
-  }, [willAddToExistingGroupChecked])
-
-  useEffect(() => {
-    setAddWalletKind(
-      !isUseGroupChecked
-        ? AddWalletKind.MULTI_SIG
-        : AddWalletKind.MULTI_SIG_GROUP
-    )
-  }, [isUseGroupChecked, setAddWalletKind])
-
-  const nextIndex = useNextSubWalletIndex(existingGroupWallet?.wallet.id)
-
-  const [alert, setAlert] = useState('')
   useEffect(() => {
     setAlert('')
-  }, [name, owners, threshold, saltNonce])
-
-  const {
-    isOpen: isSelectWalletOpen,
-    onOpen: onSelectWalletOpen,
-    onClose: onSelectWalletClose
-  } = useDisclosure()
+  }, [setAlert, owners, threshold, saltNonce])
 
   const {
     isOpen: isSelectAccountOpen,
@@ -181,7 +97,7 @@ export const CreateSafe = () => {
   const [selectedAccount, _setSelectedAccount] = useState<CompositeAccount>()
 
   const allAccounts = useChainAccounts({
-    networkKind,
+    networkKind: network.kind,
     chainId: network?.chainId
   })
 
@@ -195,11 +111,7 @@ export const CreateSafe = () => {
       const name = newOwners[selectedIndex].name
       newOwners[selectedIndex] = {
         name: name.trim() ? name : accountName(account),
-        address: account.account.address!,
-        associated: {
-          masterId: account.wallet.id,
-          index: account.subWallet.index
-        }
+        address: account.account.address!
       }
 
       setOwners(newOwners)
@@ -209,7 +121,7 @@ export const CreateSafe = () => {
 
   const onScanAddress = useCallback(
     async (text: string) => {
-      const address = checkAddress(networkKind, text)
+      const address = checkAddress(network.kind, text)
       if (!address || selectedIndex === undefined) {
         return
       }
@@ -220,40 +132,25 @@ export const CreateSafe = () => {
       }
       setOwners(newOwners)
     },
-    [networkKind, owners, setOwners, selectedIndex]
+    [network, owners, setOwners, selectedIndex]
   )
 
   const onSelectAccountOpen = useCallback(
     async (index: number) => {
-      if (!network) {
-        return
-      }
-
       const owner = owners.at(index)
       if (!owner) {
         return
       }
 
-      let wallet, subWallet, account
-      if (owner.associated) {
-        wallet = await WALLET_SERVICE.getWallet(owner.associated.masterId)
-        subWallet = await WALLET_SERVICE.getSubWallet(owner.associated)
-        account = await WALLET_SERVICE.getChainAccount({
-          masterId: owner.associated.masterId,
-          index: owner.associated.index,
-          networkKind: network.kind,
-          chainId: network.chainId
+      const address = checkAddress(network.kind, owner.address)
+      const account = allAccounts?.find((a) => a.address === address)
+      let wallet, subWallet
+      if (account) {
+        wallet = await WALLET_SERVICE.getWallet(account.masterId)
+        subWallet = await WALLET_SERVICE.getSubWallet({
+          masterId: account.masterId,
+          index: account.index
         })
-      } else {
-        const address = checkAddress(network.kind, owner.address)
-        account = allAccounts?.find((a) => a.address === address)
-        if (account) {
-          wallet = await WALLET_SERVICE.getWallet(account.masterId)
-          subWallet = await WALLET_SERVICE.getSubWallet({
-            masterId: account.masterId,
-            index: account.index
-          })
-        }
       }
 
       setSelectedIndex(index)
@@ -282,40 +179,63 @@ export const CreateSafe = () => {
 
   const [args, setArgs] = useState<{
     chainId: ChainId
+    safeVersion: SafeVersion
     threshold: number
     owners: SafeOwner[]
-    saltNonce: number
+    saltNonce: string
   }>()
 
   useDebounce(
     () => {
+      setArgs(undefined)
+
+      if (!owners.every(({ address }) => checkAddress(network.kind, address))) {
+        if (
+          owners.some(
+            ({ address }) => !!address && !checkAddress(network.kind, address)
+          )
+        ) {
+          setAlert('Invalid address')
+        } else {
+          setAlert('')
+        }
+        return
+      }
+
       if (
-        !network ||
-        !owners.every(({ address }) => checkAddress(network.kind, address))
+        new Set(owners.map(({ address }) => address)).size !== owners.length
       ) {
-        setArgs(undefined)
+        setAlert('Duplicate owner address')
+        return
+      }
+
+      try {
+        const nonce = BigInt(saltNonce)
+        if (nonce < 0 || nonce > (1n << 256n) - 1n) {
+          setAlert('Salt nonce must be in range [0, 2 ^ 256 - 1]')
+          return
+        }
+      } catch {
+        setAlert('Salt nonce must be an integer or its hex representation')
         return
       }
 
       setArgs({
         chainId: network.chainId,
+        safeVersion,
         threshold,
         owners,
         saltNonce
       })
+      setAlert('')
     },
     1000,
-    [network, threshold, owners, saltNonce]
+    [network, safeVersion, threshold, owners, saltNonce]
   )
 
-  const [hash, setHash] = useState<string>()
-  const [accountAddress, setAccountAddress] = useState<string>()
-
   const { loading, error, retry } = useAsyncRetry(async () => {
-    setHash(undefined)
-    setAccountAddress(undefined)
-
     if (!args) {
+      setAccount()
       return
     }
 
@@ -331,304 +251,151 @@ export const CreateSafe = () => {
 
     try {
       // always use mainnet safe address as hash
-      const provider = await EvmClient.from(EVM_MAINNET_CHAINID)
-      const safeAccount = await getSafeAccount(provider, cfg)
-      setHash(await safeAccount.getAddress())
+      const provider0 = await EvmClient.from(ETHEREUM_MAINNET_CHAINID)
+      const safeAccount0 = await getSafeAccount(provider0, cfg)
+      const hash = await safeAccount0.getAddress()
 
-      if (isSafeSupported(args.chainId)) {
-        const provider = await EvmClient.from(args.chainId)
-        const safeAccount = await getSafeAccount(provider, cfg)
-        setAccountAddress(await safeAccount.getAddress())
-      }
+      const provider = await EvmClient.from(args.chainId)
+      const safeAccount = await getSafeAccount(provider, cfg)
+      const address = await safeAccount.getAddress()
+      const isDeployed = await safeAccount.isSafeDeployed()
+
+      setAccount({
+        hash,
+        address,
+        isDeployed,
+        safe: {
+          safeVersion: args.safeVersion,
+          threshold: args.threshold,
+          owners: args.owners.map((owner) => ({
+            ...owner,
+            address: checkAddress(network.kind, owner.address) as string
+          })),
+          setupConfig: {},
+          saltNonce: args.saltNonce
+        }
+      })
+
+      setAlert('')
     } catch (err) {
       console.error(err)
-      setHash(undefined)
-      setAccountAddress(undefined)
+      setAccount()
+      setAlert('Cannot predict the Safe Account address')
       throw err
     }
-  }, [args])
+  }, [setAccount, setAlert, args])
 
   useInterval(retry, !loading && error ? 5000 : null)
 
   useEffect(() => {
-    if (nextIndex === undefined || !args || !hash) {
-      setAccounts([])
-      return
-    }
-    setAccounts(
-      [
-        {
-          index: isUseGroupChecked ? nextIndex : PSEUDO_INDEX,
-          hash,
-          safe: {
-            threshold: args.threshold,
-            owners: args.owners.map((owner) => ({
-              ...owner,
-              address: checkAddress(networkKind, owner.address) as string
-            })),
-            saltNonce: args.saltNonce
-          }
-        }
-      ],
-      isUseGroupChecked
-    )
-  }, [networkKind, isUseGroupChecked, nextIndex, args, setAccounts, hash])
-
-  const addWallet = useAddWallet()
-  const addSubWallets = useAddSubWallets()
-
-  const onNext = useCallback(async () => {
-    const addresses = owners.map(({ address }) => address)
-    if (!addresses.every((addr) => checkAddress(networkKind, addr))) {
-      setAlert('Invalid address')
-      return
-    }
-
-    if (new Set(owners.map(({ address }) => address)).size !== owners.length) {
-      setAlert('Duplicate owner address')
-      return
-    }
-
-    const hashes = accounts.map(({ hash }) => hash)
-    if (
-      new Set(hashes.concat(existingGroupWallet?.hashes || [])).size !==
-      hashes.length + (existingGroupWallet?.hashes.length || 0)
-    ) {
-      setAlert(
-        'Duplicate Safe account (predicted from owners, threshold and salt nonce)'
-      )
-      return
-    }
-
-    if (!willAddToExistingGroupChecked) {
-      const { error } = await addWallet()
-      if (error) {
-        setAlert(error)
-        return
-      }
-    } else {
-      const { error } = await addSubWallets()
-      if (error) {
-        setAlert(error)
-        return
-      }
-    }
-
-    await nextStep()
-  }, [
-    networkKind,
-    accounts,
-    addSubWallets,
-    addWallet,
-    existingGroupWallet,
-    nextStep,
-    owners,
-    willAddToExistingGroupChecked
-  ])
+    setIsLoading(loading)
+  }, [setIsLoading, loading])
 
   return (
-    <Stack spacing={12}>
-      <Stack spacing={8}>
-        <FormControl>
-          <FormLabel>Network kind</FormLabel>
-          <HStack justify="space-around" spacing={8}>
-            <Select w={48} value={networkKind} onChange={() => {}}>
-              <option key={networkScope} value={networkKind}>
-                {networkScope}
-              </option>
-            </Select>
-
-            <Select
-              placeholder={
-                networksOfKind && !networksOfKind.length
-                  ? `No ${networkScope ? `${networkScope} ` : ''}Network`
-                  : undefined
-              }
-              value={networkId}
-              onChange={(e) => {
-                setNetworkId(+e.target.value)
-              }}>
-              {networksOfKind?.map((net) => {
-                const info = getNetworkInfo(net)
-                return (
-                  <option key={net.id} value={net.id}>
-                    {info.name}
-                  </option>
-                )
-              })}
-            </Select>
-          </HStack>
-
-          <FormHelperText>
-            Safe only supports Ethereum networks at the moment.
-          </FormHelperText>
-        </FormControl>
-
-        <FormControl>
-          <FormLabel>Owners</FormLabel>
-          <Stack>
-            {owners.map((owner, index) => {
-              return (
-                <Owner
-                  key={index}
-                  index={index}
-                  isNotOnlyOne={owners.length > 1}
-                  isLast={index === owners.length - 1}
-                  name={owner.name}
-                  setName={(name) => {
-                    const newOwners = [...owners]
-                    newOwners[index] = {
-                      ...newOwners[index],
-                      name
-                    }
-                    setOwners(newOwners)
-                  }}
-                  address={owner.address}
-                  setAddress={(address) => {
-                    const newOwners = [...owners]
-                    newOwners[index] = {
-                      ...newOwners[index],
-                      address
-                    }
-                    setOwners(newOwners)
-                  }}
-                  addOwner={() =>
-                    setOwners([...owners, { name: '', address: '' }])
+    <>
+      <FormControl>
+        <FormLabel>Owners</FormLabel>
+        <Stack>
+          {owners.map((owner, index) => {
+            return (
+              <Owner
+                key={index}
+                index={index}
+                isNotOnlyOne={owners.length > 1}
+                isLast={index === owners.length - 1}
+                name={owner.name}
+                setName={(name) => {
+                  const newOwners = [...owners]
+                  newOwners[index] = {
+                    ...newOwners[index],
+                    name
                   }
-                  removeOwner={() => {
-                    const newOwners = [...owners]
-                    newOwners.splice(index, 1)
-                    setOwners(newOwners)
-                  }}
-                  onScanAddressOpen={() => onScanAddressOpen(index)}
-                  onSelectAccountOpen={() => onSelectAccountOpen(index)}
-                  networkKind={networkKind}
-                />
+                  setOwners(newOwners)
+                }}
+                address={owner.address}
+                setAddress={(address) => {
+                  const newOwners = [...owners]
+                  newOwners[index] = {
+                    ...newOwners[index],
+                    address
+                  }
+                  setOwners(newOwners)
+                }}
+                addOwner={() =>
+                  setOwners([...owners, { name: '', address: '' }])
+                }
+                removeOwner={() => {
+                  const newOwners = [...owners]
+                  newOwners.splice(index, 1)
+                  setOwners(newOwners)
+                }}
+                onScanAddressOpen={() => onScanAddressOpen(index)}
+                onSelectAccountOpen={() => onSelectAccountOpen(index)}
+                networkKind={network.kind}
+              />
+            )
+          })}
+        </Stack>
+        <FormHelperText>
+          Every owner has the same rights within the Safe account and can
+          propose, sign and execute transactions that have the required
+          confirmations.
+        </FormHelperText>
+      </FormControl>
+
+      <FormControl>
+        <FormLabel>Threshold</FormLabel>
+        <HStack>
+          <Select
+            size="lg"
+            w={48}
+            value={threshold}
+            onChange={(e) => setThreshold(Number(e.target.value))}>
+            {[...Array(owners.length).keys()].map((index) => {
+              return (
+                <option key={index} value={index + 1}>
+                  {index + 1}
+                </option>
               )
             })}
-          </Stack>
-          <FormHelperText>
-            Every owner has the same rights within the Safe account and can
-            propose, sign and execute transactions that have the required
-            confirmations.
-          </FormHelperText>
-        </FormControl>
+          </Select>
+          <Text>out of {owners.length} owner(s)</Text>
+        </HStack>
+        <FormHelperText>
+          Recommend using a threshold higher than one to prevent losing access
+          to the Safe account in case an owner key is lost or compromised.
+        </FormHelperText>
+      </FormControl>
 
-        <FormControl>
-          <FormLabel>Threshold</FormLabel>
-          <HStack>
-            <Select
-              size="lg"
-              w={48}
-              value={threshold}
-              onChange={(e) => setThreshold(Number(e.target.value))}>
-              {[...Array(owners.length).keys()].map((index) => {
-                return (
-                  <option key={index} value={index + 1}>
-                    {index + 1}
-                  </option>
-                )
-              })}
-            </Select>
-            <Text>out of {owners.length} owners</Text>
-          </HStack>
-          <FormHelperText>
-            Recommend using a threshold higher than one to prevent losing access
-            to the Safe account in case an owner key is lost or compromised.
-          </FormHelperText>
-        </FormControl>
-
-        <FormControl>
-          <FormLabel>Salt nonce</FormLabel>
-          <NumberInput
-            size="lg"
-            value={saltNonce}
-            onChange={(_, value) => setSaltNonce(value)}
-            precision={0}
-            step={1}
-            min={0}
-            keepWithinRange>
-            <NumberInputField />
-            <NumberInputStepper>
-              <NumberIncrementStepper />
-              <NumberDecrementStepper />
-            </NumberInputStepper>
-          </NumberInput>
-          <FormHelperText>
-            Nonce that will be used to generate the salt to calculate the
-            address of the new account contract.
-          </FormHelperText>
-        </FormControl>
-
-        <Stack>
-          <Checkbox
-            size="lg"
-            colorScheme="purple"
-            isChecked={willAddToExistingGroupChecked}
-            onChange={(e) => {
-              if (e.target.checked) {
-                onSelectWalletOpen()
-              } else {
-                setWillAddToExistingGroupChecked(false)
-                setExistingGroupWallet(undefined)
-              }
-            }}>
-            <chakra.span color="gray.500" fontSize="lg">
-              Add to an existing Safe group wallet.
-            </chakra.span>
-          </Checkbox>
-
-          {existingGroupWallet && (
-            <WalletItemButton
-              wallet={existingGroupWallet}
-              onClick={onSelectWalletOpen}
-              buttonVariant="outline"
-            />
-          )}
-        </Stack>
-
-        {!willAddToExistingGroupChecked && (
-          <Checkbox
-            size="lg"
-            colorScheme="purple"
-            isChecked={isUseGroupChecked}
-            onChange={(e) => setIsUseGroupChecked(e.target.checked)}>
-            <chakra.span color="gray.500" fontSize="lg">
-              Create group to manage this account.
-            </chakra.span>
-          </Checkbox>
-        )}
-
-        <NameInput
-          value={name}
-          onChange={setName}
-          placeholder={isUseGroupChecked ? 'Group Name (Optional)' : undefined}
+      <FormControl>
+        <FormLabel>Salt nonce</FormLabel>
+        <Input
+          size="lg"
+          value={saltNonce}
+          onChange={(e) => setSaltNonce(e.target.value)}
         />
+        <FormHelperText>
+          Nonce that will be used to generate the salt to calculate the address
+          of the new account contract.
+        </FormHelperText>
+      </FormControl>
 
-        <AlertBox>
-          {network && !isSafeSupported(network.chainId)
-            ? `Safe is not supported on ${getNetworkInfo(network).name} network`
-            : undefined}
-        </AlertBox>
-
-        <AlertBox level="info">
-          {!alert && accountAddress
-            ? `Predicted Safe account address: ${accountAddress}`
-            : undefined}
-        </AlertBox>
-
-        <AlertBox>{alert}</AlertBox>
-      </Stack>
-
-      <Button
-        h="14"
-        size="lg"
-        colorScheme="purple"
-        borderRadius="8px"
-        isDisabled={!owners.length || owners.some((owner) => !owner.address)}
-        onClick={onNext}>
-        Continue
-      </Button>
+      <FormControl>
+        <FormLabel>Safe contract version</FormLabel>
+        <Select
+          size="lg"
+          value={safeVersion}
+          onChange={(e) => setSafeVersion(e.target.value as SafeVersion)}>
+          {SAFE_VERSIONS.map((version, index) => {
+            return (
+              <option key={index} value={version}>
+                {version}+
+                {network.chainId === ETHEREUM_MAINNET_CHAINID ? 'L1' : 'L2'}
+              </option>
+            )
+          })}
+        </Select>
+      </FormControl>
 
       <ScanQRModal
         isOpen={isScanAddressOpen}
@@ -643,18 +410,7 @@ export const CreateSafe = () => {
         isOpen={isSelectAccountOpen}
         onClose={onSelectAccountClose}
       />
-
-      <SelectExistingWalletModal
-        walletType={WalletType.MULTI_SIG_GROUP}
-        selected={existingGroupWallet}
-        onSelected={(w) => {
-          setWillAddToExistingGroupChecked(true)
-          setExistingGroupWallet(w)
-        }}
-        isOpen={isSelectWalletOpen}
-        onClose={onSelectWalletClose}
-      />
-    </Stack>
+    </>
   )
 }
 
@@ -704,7 +460,6 @@ const Owner = ({
 
       <InputGroup size="lg">
         <Input
-          size="lg"
           sx={{ paddingInlineEnd: '63px' }}
           placeholder={`Address ${index + 1}`}
           errorBorderColor="red.500"

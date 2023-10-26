@@ -34,7 +34,7 @@ export const NetworkSelectCombiner = ({
 
 interface NetworkKindSelectProps extends SelectProps {
   networkKind?: NetworkKind
-  onSetNetworkKind: (kind?: NetworkKind) => void
+  onSetNetworkKind?: (kind?: NetworkKind) => void
 }
 
 export const NetworkKindSelect = ({
@@ -47,7 +47,7 @@ export const NetworkKindSelect = ({
   )
 
   useEffect(() => {
-    onSetNetworkKind(getNetworkKind(networkScope))
+    onSetNetworkKind?.(getNetworkKind(networkScope))
   }, [onSetNetworkKind, networkScope])
 
   return (

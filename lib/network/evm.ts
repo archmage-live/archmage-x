@@ -37,7 +37,7 @@ interface ChainParent {
   bridges: { url: string }[]
 }
 
-export const EVM_MAINNET_CHAINID = 1
+export const ETHEREUM_MAINNET_CHAINID = 1
 
 export const EVM_NETWORKS_PRESET: EvmChainInfo[] = [
   {

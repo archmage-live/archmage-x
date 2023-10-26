@@ -95,7 +95,8 @@ function checkAccounts(accounts: WalletAccount[]) {
         account.privateKey,
         account.safe,
         account.keyless
-      ].filter(Boolean).length === 1
+      ].filter(Boolean).length === 1 ||
+        [account.addresses, account.safe].filter(Boolean).length === 2
     )
 
     if (account.addresses) {

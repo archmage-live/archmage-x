@@ -1,6 +1,7 @@
 import { Slip10RawIndex, pathToString, stringToPath } from '@cosmjs/crypto'
 import type { _KeystoreAccount } from '@ethersproject/json-wallets/lib.esm/keystore'
 import type { KeystoreAccount } from '@ethersproject/json-wallets/lib/keystore'
+import { SafeAccountConfig } from '@safe-global/protocol-kit/dist/src/types'
 import assert from 'assert'
 import walletConnectLogo from 'data-base64:~assets/thirdparty/walletconnect.svg'
 import web3authLogo from 'data-base64:~assets/thirdparty/web3auth-favicon.svg'
@@ -8,7 +9,15 @@ import { ethers } from 'ethers'
 
 import { Erc4337AccountType } from '~lib/erc4337'
 import { NetworkKind } from '~lib/network'
-import { DerivePosition, IHdPath, IWallet, Index, SubIndex } from '~lib/schema'
+import { SafeVersion } from '~lib/safe'
+import {
+  ChainId,
+  DerivePosition,
+  IHdPath,
+  IWallet,
+  Index,
+  SubIndex
+} from '~lib/schema'
 
 export enum WalletType {
   HD = 'hd', // Hierarchical Deterministic, derived from mnemonic
@@ -245,6 +254,8 @@ export interface AccountInfo {
   // so may need to be bech32 decoded and encoded.
   address: string
   publicKey?: string
+  // if chainId is specified, the address is for the specific chain
+  chainId?: ChainId
 }
 
 // accounts for various network kinds stored inside the sub wallet
@@ -275,10 +286,13 @@ export interface Erc4337Info {
 
 // info of Safe{Core} Protocol based account abstraction
 export interface SafeInfo {
+  safeVersion: SafeVersion
   threshold: number
   owners: SafeOwner[]
-  saltNonce: number
-  // safeVersion: string
+  // the following fields may be not found for imported Safe Account
+  setupConfig?: Omit<SafeAccountConfig, 'threshold' | 'owners'>
+  saltNonce?: string // uint256 string or its hex string
+  isL1SafeMasterCopy?: boolean
 }
 
 export interface SafeOwner {

@@ -10,11 +10,23 @@ import Safe, {
 import assert from 'assert'
 import { ethers } from 'ethers'
 
-import { ChainId, INetwork, ISubWallet, IWallet } from '~lib/schema'
+import { NetworkKind } from '~lib/network'
+import {
+  ChainId,
+  IChainAccount,
+  INetwork,
+  ISubWallet,
+  IWallet
+} from '~lib/schema'
 import { EvmClient } from '~lib/services/provider/evm'
-import { isMultisigWallet } from '~lib/wallet'
+import { SafeInfo, isMultisigWallet } from '~lib/wallet'
+
+export type { SafeVersion } from '@safe-global/safe-core-sdk-types'
+export type { SafeAccountConfig }
 
 export * from './safeTransactions'
+
+export const SAFE_VERSIONS = ['1.4.1', '1.3.0', '1.2.0', '1.1.1', '1.0.0']
 
 // https://docs.safe.global/safe-core-api/available-services
 const SAFE_TX_SERVICE_URLS = new Map([
@@ -50,7 +62,8 @@ export function getSafeService(provider: Provider, chainId: ChainId) {
 
 export async function getSafeAccount(
   provider: Provider,
-  safeAddressOrPredictedSafe: string | PredictedSafeProps
+  safeAddressOrPredictedSafe: string | PredictedSafeProps,
+  isL1SafeMasterCopy?: boolean
 ) {
   const ethAdapter = new EthersAdapter({
     ethers,
@@ -59,12 +72,14 @@ export async function getSafeAccount(
   if (typeof safeAddressOrPredictedSafe === 'string') {
     return await Safe.create({
       ethAdapter,
-      safeAddress: safeAddressOrPredictedSafe
+      safeAddress: safeAddressOrPredictedSafe,
+      isL1SafeMasterCopy
     })
   } else {
     return await Safe.create({
       ethAdapter,
-      predictedSafe: safeAddressOrPredictedSafe
+      predictedSafe: safeAddressOrPredictedSafe,
+      isL1SafeMasterCopy
     })
   }
 }
@@ -103,20 +118,62 @@ export async function getSafeAccountAddress(
   wallet: IWallet,
   subWallet: ISubWallet
 ) {
+  assert(network.kind === NetworkKind.EVM)
   assert(isMultisigWallet(wallet.type))
+  const safe = subWallet.info.safe
+  assert(safe)
 
-  const safe = subWallet.info.safe!
   const cfg: PredictedSafeProps = {
     safeAccountConfig: {
       owners: safe.owners.map((owner) => owner.address),
-      threshold: safe.threshold
+      threshold: safe.threshold,
+      ...safe.setupConfig
     },
     safeDeploymentConfig: {
-      saltNonce: safe.saltNonce.toString()
+      saltNonce: safe.saltNonce,
+      safeVersion: safe.safeVersion
     }
   }
 
   const provider = await EvmClient.from(network)
-  const safeAccount = await getSafeAccount(provider, cfg)
+  const safeAccount = await getSafeAccount(
+    provider,
+    cfg,
+    safe.isL1SafeMasterCopy
+  )
   return await safeAccount.getAddress()
+}
+
+export function isSafeInfoComplete(safe: SafeInfo) {
+  return !!(safe.saltNonce && safe.setupConfig)
+}
+
+export async function makeSafeAccount(
+  network: INetwork,
+  wallet: IWallet,
+  subWallet: ISubWallet
+) {
+  assert(isMultisigWallet(wallet.type))
+  assert(network.kind === NetworkKind.EVM)
+  const safe = subWallet.info.safe
+  assert(safe)
+
+  const accountInfo = subWallet.info.accounts?.[network.kind]
+  let address
+  if (accountInfo?.chainId === network.chainId) {
+    // for created or imported Safe Account on the same network
+    address = accountInfo.address
+  } else if (isSafeInfoComplete(safe)) {
+    // for created or imported (with complete creation info) Safe Account on the different network
+    address = await getSafeAccountAddress(network, wallet, subWallet)
+  } else {
+    // for imported Safe Account on the different network without complete creation info,
+    // we cannot make a new Safe Account
+    return {}
+  }
+
+  return {
+    address,
+    safe
+  }
 }
