@@ -1,4 +1,11 @@
-import { Select, Stack, useColorMode } from '@chakra-ui/react'
+import {
+  Select,
+  Stack,
+  TextProps,
+  useColorMode,
+  useColorModeValue
+} from '@chakra-ui/react'
+import { useMemo } from 'react'
 
 import { SaveInput } from '~components/SaveInput'
 import { SettingItem } from '~components/SettingItem'
@@ -8,20 +15,57 @@ import { useLockTime } from '~lib/hooks/useLockTime'
 import { QUOTE_CURRENCY_LABEL, useQuoteCurrency } from '~lib/quoteCurrency'
 
 export const SettingsGeneral = ({ forPopup }: { forPopup?: boolean }) => {
+  const titleColor = useColorModeValue('purple.600', 'purple.400')
+
+  const titleProps = useMemo(
+    () => ({
+      fontSize: 'xl',
+      fontWeight: forPopup ? 'medium' : undefined,
+      color: !forPopup ? titleColor : undefined
+    }),
+    [forPopup, titleColor]
+  )
+
+  const descriptionProps = useMemo(
+    () => ({
+      fontSize: 'md',
+      color: forPopup ? 'gray.500' : undefined
+    }),
+    [forPopup]
+  )
+
   return (
     <Stack spacing={forPopup ? 6 : 12}>
-      <SettingsGeneralTheme forPopup={forPopup} />
+      <SettingsGeneralTheme
+        titleProps={titleProps}
+        descriptionProps={descriptionProps}
+      />
 
-      <SettingsGeneralLocale forPopup={forPopup} />
+      <SettingsGeneralLocale
+        titleProps={titleProps}
+        descriptionProps={descriptionProps}
+      />
 
-      <SettingsGeneralQuoteCurrency forPopup={forPopup} />
+      <SettingsGeneralQuoteCurrency
+        titleProps={titleProps}
+        descriptionProps={descriptionProps}
+      />
 
-      <SettingsGeneralLockTime forPopup={forPopup} />
+      <SettingsGeneralLockTime
+        titleProps={titleProps}
+        descriptionProps={descriptionProps}
+      />
     </Stack>
   )
 }
 
-export const SettingsGeneralTheme = ({ forPopup }: { forPopup?: boolean }) => {
+export const SettingsGeneralTheme = ({
+  titleProps,
+  descriptionProps
+}: {
+  titleProps?: TextProps
+  descriptionProps?: TextProps
+}) => {
   const { colorMode, setColorMode } = useColorMode()
 
   return (
@@ -37,12 +81,19 @@ export const SettingsGeneralTheme = ({ forPopup }: { forPopup?: boolean }) => {
           <option value="dark">Dark</option>
         </Select>
       }
-      forPopup={forPopup}
+      titleProps={titleProps}
+      descriptionProps={descriptionProps}
     />
   )
 }
 
-export const SettingsGeneralLocale = ({ forPopup }: { forPopup?: boolean }) => {
+export const SettingsGeneralLocale = ({
+  titleProps,
+  descriptionProps
+}: {
+  titleProps?: TextProps
+  descriptionProps?: TextProps
+}) => {
   const { userLocale, setUserLocale } = useUserLocale()
 
   return (
@@ -65,15 +116,18 @@ export const SettingsGeneralLocale = ({ forPopup }: { forPopup?: boolean }) => {
             })}
         </Select>
       }
-      forPopup={forPopup}
+      titleProps={titleProps}
+      descriptionProps={descriptionProps}
     />
   )
 }
 
 export const SettingsGeneralQuoteCurrency = ({
-  forPopup
+  titleProps,
+  descriptionProps
 }: {
-  forPopup?: boolean
+  titleProps?: TextProps
+  descriptionProps?: TextProps
 }) => {
   const { quoteCurrency, setQuoteCurrency } = useQuoteCurrency()
 
@@ -95,15 +149,18 @@ export const SettingsGeneralQuoteCurrency = ({
           })}
         </Select>
       }
-      forPopup={forPopup}
+      titleProps={titleProps}
+      descriptionProps={descriptionProps}
     />
   )
 }
 
 export const SettingsGeneralLockTime = ({
-  forPopup
+  titleProps,
+  descriptionProps
 }: {
-  forPopup?: boolean
+  titleProps?: TextProps
+  descriptionProps?: TextProps
 }) => {
   const [lockTime, setLockTime] = useLockTime()
 
@@ -133,7 +190,8 @@ export const SettingsGeneralLockTime = ({
           onChange={(value) => setLockTime(+value)}
         />
       }
-      forPopup={forPopup}
+      titleProps={titleProps}
+      descriptionProps={descriptionProps}
     />
   )
 }

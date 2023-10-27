@@ -1,5 +1,6 @@
 import {
   Button,
+  Divider,
   FormControl,
   FormLabel,
   HStack,
@@ -17,6 +18,7 @@ import {
 } from '~components/DeleteWalletModal'
 import { ExportPrivateKeyModal } from '~components/ExportPrivateKeyModal'
 import { HdPathInput } from '~components/HdPathInput'
+import { SafeSettings } from '~components/Safe'
 import { SubWalletNameEdit, WalletNameEdit } from '~components/WalletNameEdit'
 import { formatNumber } from '~lib/formatNumber'
 import { INetwork, ISubWallet, IWallet } from '~lib/schema'
@@ -24,8 +26,11 @@ import { getAccountUrl } from '~lib/services/network'
 import { useBalance } from '~lib/services/provider'
 import { useChainAccountByIndex, useHdPath } from '~lib/services/wallet'
 import {
+  MultisigWalletType,
+  getMultisigTypeTitle,
   getWalletTypeTitle,
   hasWalletKeystore,
+  isMultisigWallet,
   isWalletGroup
 } from '~lib/wallet'
 
@@ -114,6 +119,27 @@ export const SubWalletEdit = ({
           />
         </FormControl>
       )}
+
+      {isMultisigWallet(wallet.type) &&
+        wallet.info.multisigType === MultisigWalletType.SAFE &&
+        account && (
+          <Stack spacing={6}>
+            <Divider />
+
+            <Text fontWeight="medium">
+              MultiSig Type: {getMultisigTypeTitle(wallet)}
+            </Text>
+
+            <SafeSettings
+              network={network}
+              wallet={wallet}
+              subWallet={subWallet}
+              account={account}
+            />
+
+            <Divider />
+          </Stack>
+        )}
 
       <HStack justify="end">
         {accountUrl && (

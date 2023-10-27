@@ -31,7 +31,7 @@ export const TextLink = ({
 
   return (
     <HStack fontSize="sm" color="gray.500" spacing={1}>
-      <Text>
+      <Text sx={{ fontFeatureSettings: '"tnum"' }}>
         {shortenString(text, { leadingChars, prefixChars, suffixChars })}
       </Text>
       <Tooltip

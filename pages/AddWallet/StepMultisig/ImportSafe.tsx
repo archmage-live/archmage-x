@@ -314,7 +314,7 @@ const Owner = ({
         name={`Owner ${index + 1}`}
         url={getAccountUrl(network, address)}
         urlLabel="View on explorer"
-        leadingChars={40}
+        prefixChars={40}
       />
     </HStack>
   )

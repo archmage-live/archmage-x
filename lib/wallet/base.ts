@@ -239,12 +239,23 @@ export function getWalletTypeTitle(wallet: IWallet) {
       return 'WalletConnect'
     case WalletType.WALLET_CONNECT_GROUP:
       return 'WalletConnect Group'
+    case WalletType.MULTI_SIG:
+      return 'MultiSig'
+    case WalletType.MULTI_SIG_GROUP:
+      return 'MultiSig Group'
     case WalletType.KEYLESS_HD:
       return 'Keyless Hierarchical Deterministic (HD)'
     case WalletType.KEYLESS:
       return 'Keyless'
     case WalletType.KEYLESS_GROUP:
       return 'Keyless Group'
+  }
+}
+
+export function getMultisigTypeTitle(wallet: IWallet) {
+  switch (wallet.info.multisigType) {
+    case MultisigWalletType.SAFE:
+      return 'Safe'
   }
 }
 

@@ -1,6 +1,5 @@
 import { AddIcon, EditIcon, MinusIcon } from '@chakra-ui/icons'
 import {
-  Button,
   HStack,
   IconButton,
   Stack,
@@ -15,6 +14,7 @@ import { useAsync } from 'react-use'
 import { AccountAvatar } from '~components/AccountAvatar'
 import { SettingItem } from '~components/SettingItem'
 import { TextLink } from '~components/TextLink'
+import { ETHEREUM_MAINNET_CHAINID } from '~lib/network/evm'
 import { getSafeAccount } from '~lib/safe'
 import {
   IChainAccount,
@@ -178,7 +178,7 @@ export const SafeSettings = ({
   }
 
   return (
-    <Stack spacing={12}>
+    <Stack spacing={6}>
       <SettingItem
         title="Owners"
         description="Add, remove and replace or rename existing owners. Owner names are only stored locally and will never be shared with Safe or any third parties."
@@ -200,6 +200,9 @@ export const SafeSettings = ({
             })}
           </Stack>
         }
+        titleProps={{ fontWeight: 'medium' }}
+        descriptionProps={{ color: 'gray.500' }}
+        spacing={4}
       />
 
       <SettingItem
@@ -208,7 +211,7 @@ export const SafeSettings = ({
         setting={
           <HStack>
             <Text>
-              {threshold} out of {owners.length} owners.
+              {threshold} out of {owners.length} owners
             </Text>
             <IconButton
               size="xs"
@@ -216,10 +219,39 @@ export const SafeSettings = ({
               icon={<EditIcon />}
               onClick={onChangeThresholdOpen}
             />
-            {/*<Button onClick={onChangeThresholdOpen}>Change</Button>*/}
           </HStack>
         }
+        titleProps={{ fontWeight: 'medium' }}
+        descriptionProps={{ color: 'gray.500' }}
+        spacing={2}
       />
+
+      <SettingItem
+        title="Safe contract version"
+        setting={
+          <Text>
+            {safeInfo.safeVersion}+
+            {network.chainId === ETHEREUM_MAINNET_CHAINID ||
+            safeInfo.isL1SafeMasterCopy
+              ? 'L1'
+              : 'L2'}
+          </Text>
+        }
+        titleProps={{ fontWeight: 'medium' }}
+        descriptionProps={{ color: 'gray.500' }}
+        spacing={2}
+      />
+
+      {!!safeInfo.saltNonce && (
+        <SettingItem
+          title="Salt nonce"
+          description="The salt nonce for calculating the address"
+          setting={<Text>{safeInfo.saltNonce}</Text>}
+          titleProps={{ fontWeight: 'medium' }}
+          descriptionProps={{ color: 'gray.500' }}
+          spacing={2}
+        />
+      )}
     </Stack>
   )
 }
@@ -242,25 +274,27 @@ const Owner = ({
   removeOwner: () => void
 }) => {
   return (
-    <HStack align="center">
-      <AccountAvatar text={owner.address} scale={0.8} />
+    <HStack justify="space-between" align="center">
+      <HStack align="center">
+        <AccountAvatar text={owner.address} scale={0.8} />
 
-      <Stack spacing={1}>
-        <Text noOfLines={1}>{owner.name}</Text>
-        <TextLink
-          text={owner.address}
-          name="Address"
-          url={getAccountUrl(network, owner.address)}
-          urlLabel="View on explorer"
-        />
-      </Stack>
+        <Stack spacing={1}>
+          <Text noOfLines={1}>{owner.name}</Text>
+          <TextLink
+            text={owner.address}
+            name="Address"
+            url={getAccountUrl(network, owner.address)}
+            urlLabel="View on explorer"
+            prefixChars={40}
+          />
+        </Stack>
+      </HStack>
 
       <HStack>
         <IconButton
           size="xs"
           aria-label="Change owner"
           icon={<EditIcon />}
-          visibility={isLast ? 'visible' : 'hidden'}
           onClick={changeOwner}
         />
 
