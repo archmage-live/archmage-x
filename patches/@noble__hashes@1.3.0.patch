@@ -1,0 +1,15 @@
+diff --git a/package.json b/package.json
+index e89406591385f41373cfb3ea225ff056ee778f90..edf8009c378215e2154eacf4b8f872e18cab6d50 100644
+--- a/package.json
++++ b/package.json
+@@ -48,10 +48,6 @@
+     },
+     "./crypto": {
+       "types": "./crypto.d.ts",
+-      "node": {
+-        "import": "./esm/cryptoNode.js",
+-        "default": "./cryptoNode.js"
+-      },
+       "import": "./esm/crypto.js",
+       "default": "./crypto.js"
+     },

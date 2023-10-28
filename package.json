@@ -21,7 +21,7 @@
     "@alchemy/aa-core": "0.1.0-alpha.11",
     "@alchemy/aa-ethers": "0.1.0-alpha.11",
     "@aleohq/sdk": "^0.6.1",
-    "@aleohq/wasm": "^0.6.0",
+    "@aleohq/wasm": "^0.6.3",
     "@archmagelive/alchemy-sdk": "^2.10.1",
     "@archmagelive/plasmo": "0.56.0",
     "@bitcoinerlab/secp256k1": "^1.0.2",
@@ -242,7 +242,7 @@
     "web_accessible_resources": [
       {
         "resources": [
-          "node_modules/@aleohq/wasm/dist/assets/aleo_wasm-*.wasm"
+          "node_modules/@aleohq/wasm/dist/assets/aleo_wasm.wasm"
         ],
         "matches": [
           "<all_urls>"
@@ -262,7 +262,6 @@
       "libsodium": "file:./resolutions/noop",
       "libsodium-wrappers": "file:./resolutions/noop",
       "readable-stream": "^4.1.0",
-      "@cosmjs/crypto": "file:./resolutions/@cosmjs/crypto",
       "randombytes": "file:./resolutions/randombytes",
       "pbkdf2": "file:./resolutions/pbkdf2",
       "randomfill": "file:./resolutions/randomfill",
@@ -271,8 +270,12 @@
       "@cosmjs/proto-signing": "^0.29.5",
       "@cosmjs/stargate": "^0.29.5",
       "@cosmjs/tendermint-rpc": "^0.29.5",
-      "@noble/hashes": "file:./resolutions/@noble/hashes",
-      "@aleohq/wasm": "file:./resolutions/@aleohq/wasm"
+      "@noble/hashes": "1.3.0"
+    },
+    "patchedDependencies": {
+      "@cosmjs/crypto@0.29.5": "patches/@cosmjs__crypto@0.29.5.patch",
+      "@aleohq/wasm@0.6.3": "patches/@aleohq__wasm@0.6.3.patch",
+      "@noble/hashes@1.3.0": "patches/@noble__hashes@1.3.0.patch"
     }
   },
   "alias": {
