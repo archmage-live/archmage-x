@@ -242,6 +242,8 @@ export const WalletItem = ({
                       logo={typeIdentifier.logo}
                       logoLight={typeIdentifier.logoLight}
                       logoDark={typeIdentifier.logoDark}
+                      logoLightInvert={typeIdentifier.logoLightInvert}
+                      logoDarkInvert={typeIdentifier.logoDarkInvert}
                       logoHeight={typeIdentifier.logoHeight}
                     />
                   </HStack>

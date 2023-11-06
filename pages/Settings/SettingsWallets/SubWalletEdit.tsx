@@ -120,26 +120,26 @@ export const SubWalletEdit = ({
         </FormControl>
       )}
 
-      {isMultisigWallet(wallet.type) &&
-        wallet.info.multisigType === MultisigWalletType.SAFE &&
-        account && (
-          <Stack spacing={6}>
-            <Divider />
+      {isMultisigWallet(wallet.type) && account && (
+        <Stack spacing={6}>
+          <Divider />
 
-            <Text fontWeight="medium">
-              MultiSig Type: {getMultisigTypeTitle(wallet)}
-            </Text>
+          <Text fontWeight="medium">
+            MultiSig Type: {getMultisigTypeTitle(wallet)}
+          </Text>
 
+          {wallet.info.multisigType === MultisigWalletType.SAFE && (
             <SafeSettings
               network={network}
               wallet={wallet}
               subWallet={subWallet}
               account={account}
             />
+          )}
 
-            <Divider />
-          </Stack>
-        )}
+          <Divider />
+        </Stack>
+      )}
 
       <HStack justify="end">
         {accountUrl && (

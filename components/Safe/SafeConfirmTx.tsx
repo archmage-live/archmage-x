@@ -39,7 +39,6 @@ import assert from 'assert'
 import Decimal from 'decimal.js'
 import { atom } from 'jotai'
 import { ReactNode, useState } from 'react'
-import * as React from 'react'
 import { useAsyncRetry, useInterval } from 'react-use'
 import browser from 'webextension-polyfill'
 

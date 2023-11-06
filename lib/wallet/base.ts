@@ -3,6 +3,7 @@ import type { _KeystoreAccount } from '@ethersproject/json-wallets/lib.esm/keyst
 import type { KeystoreAccount } from '@ethersproject/json-wallets/lib/keystore'
 import { SafeAccountConfig } from '@safe-global/protocol-kit/dist/src/types'
 import assert from 'assert'
+import safeLogo from 'data-base64:~assets/thirdparty/Safe_Logos_H-Lockup_Black.svg'
 import walletConnectLogo from 'data-base64:~assets/thirdparty/walletconnect.svg'
 import web3authLogo from 'data-base64:~assets/thirdparty/web3auth-favicon.svg'
 import { ethers } from 'ethers'
@@ -172,12 +173,16 @@ export function getWalletTypeIdentifier(wallet: IWallet): {
   logo?: string
   logoLight?: string
   logoDark?: string
+  logoLightInvert?: boolean
+  logoDarkInvert?: boolean
   logoHeight?: string | number
 } {
   let identifier = undefined
   let logo = undefined
   let logoLight = undefined
   let logoDark = undefined
+  let logoLightInvert = undefined
+  let logoDarkInvert = undefined
   let logoHeight = undefined
   switch (wallet.type) {
     case WalletType.HD:
@@ -206,6 +211,13 @@ export function getWalletTypeIdentifier(wallet: IWallet): {
     case WalletType.WALLET_CONNECT_GROUP:
       logo = walletConnectLogo
       break
+    case WalletType.MULTI_SIG:
+    // pass through
+    case WalletType.MULTI_SIG_GROUP:
+      logo = safeLogo
+      logoDarkInvert = true
+      logoHeight = '20px'
+      break
     case WalletType.KEYLESS_HD:
       identifier = 'HD'
     // pass through
@@ -216,7 +228,15 @@ export function getWalletTypeIdentifier(wallet: IWallet): {
       logoHeight = '20px'
       break
   }
-  return { identifier, logo, logoLight, logoDark, logoHeight }
+  return {
+    identifier,
+    logo,
+    logoLight,
+    logoDark,
+    logoLightInvert,
+    logoDarkInvert,
+    logoHeight
+  }
 }
 
 export function getWalletTypeTitle(wallet: IWallet) {

@@ -2,13 +2,17 @@ import { AddIcon, EditIcon, MinusIcon } from '@chakra-ui/icons'
 import {
   HStack,
   IconButton,
+  Modal,
+  ModalBody,
+  ModalCloseButton,
+  ModalContent,
+  ModalOverlay,
   Stack,
   Text,
   useDisclosure
 } from '@chakra-ui/react'
 import assert from 'assert'
 import { useEffect, useState } from 'react'
-import * as React from 'react'
 import { useAsync } from 'react-use'
 
 import { AccountAvatar } from '~components/AccountAvatar'
@@ -34,6 +38,79 @@ import {
   isWatchWallet
 } from '~lib/wallet'
 
+import { SafeEditModal, SafeEditType } from './SafeEditModal'
+
+export { SafeConfirmTx } from './SafeConfirmTx'
+
+export const SafeSettingsModal = ({
+  isOpen,
+  onClose,
+  network,
+  wallet,
+  subWallet,
+  account
+}: {
+  isOpen: boolean
+  onClose: () => void
+  network: INetwork
+  wallet: IWallet
+  subWallet: ISubWallet
+  account: IChainAccount
+}) => {
+  const [editType, setEditType] = useState<SafeEditType>('changeThreshold')
+  const [editIndex, setEditIndex] = useState<number>()
+
+  const {
+    isOpen: isSafeEditOpen,
+    onOpen: onSafeEditOpen,
+    onClose: onSafeEditClose
+  } = useDisclosure()
+
+  return (
+    <>
+      <Modal
+        isOpen={isOpen}
+        onClose={onClose}
+        isCentered
+        motionPreset="slideInBottom"
+        scrollBehavior="inside"
+        size="lg">
+        <ModalOverlay />
+        <ModalContent my={0}>
+          <ModalCloseButton />
+          <ModalBody p={0}>
+            {isOpen && (
+              <SafeSettingsDisplay
+                network={network}
+                wallet={wallet}
+                subWallet={subWallet}
+                account={account}
+                onEdit={(type, index) => {
+                  setEditType(type)
+                  setEditIndex(index)
+                  onSafeEditOpen()
+                  onClose()
+                }}
+              />
+            )}
+          </ModalBody>
+        </ModalContent>
+      </Modal>
+
+      <SafeEditModal
+        isOpen={isSafeEditOpen}
+        onClose={onSafeEditClose}
+        network={network}
+        wallet={wallet}
+        subWallet={subWallet}
+        account={account}
+        type={editType}
+        index={editIndex}
+      />
+    </>
+  )
+}
+
 export const SafeSettings = ({
   network,
   wallet,
@@ -44,6 +121,56 @@ export const SafeSettings = ({
   wallet: IWallet
   subWallet: ISubWallet
   account: IChainAccount
+}) => {
+  const [editType, setEditType] = useState<SafeEditType>('changeThreshold')
+  const [editIndex, setEditIndex] = useState<number>()
+
+  const {
+    isOpen: isSafeEditOpen,
+    onOpen: onSafeEditOpen,
+    onClose: onSafeEditClose
+  } = useDisclosure()
+
+  return (
+    <>
+      <SafeSettingsDisplay
+        network={network}
+        wallet={wallet}
+        subWallet={subWallet}
+        account={account}
+        onEdit={(type, index) => {
+          setEditType(type)
+          setEditIndex(index)
+          onSafeEditOpen()
+        }}
+      />
+
+      <SafeEditModal
+        isOpen={isSafeEditOpen}
+        onClose={onSafeEditClose}
+        network={network}
+        wallet={wallet}
+        subWallet={subWallet}
+        account={account}
+        type={editType}
+        index={editIndex}
+      />
+    </>
+  )
+}
+
+const SafeSettingsDisplay = ({
+  network,
+  wallet,
+  subWallet,
+  account,
+  onEdit
+}: {
+  network: INetwork
+  wallet: IWallet
+  subWallet: ISubWallet
+  account: IChainAccount
+  onEdit: (type: SafeEditType, index?: number) => void
 }) => {
   const safeInfo = account.info.safe || subWallet.info.safe
 
@@ -167,12 +294,6 @@ export const SafeSettings = ({
     }
   }, [safeInfo])
 
-  const {
-    isOpen: isChangeThresholdOpen,
-    onOpen: onChangeThresholdOpen,
-    onClose: onChangeThresholdClose
-  } = useDisclosure()
-
   if (!isMultisigWallet(wallet.type) || !safeInfo) {
     return <></>
   }
@@ -192,9 +313,9 @@ export const SafeSettings = ({
                   owner={owner}
                   isNotOnlyOne={owners.length > 1}
                   isLast={index === owners.length - 1}
-                  changeOwner={() => {}}
-                  addOwner={() => {}}
-                  removeOwner={() => {}}
+                  changeOwner={() => onEdit('changeOwner', index)}
+                  addOwner={() => onEdit('addOwner')}
+                  removeOwner={() => onEdit('removeOwner', index)}
                 />
               )
             })}
@@ -217,7 +338,7 @@ export const SafeSettings = ({
               size="xs"
               aria-label="Change threshold"
               icon={<EditIcon />}
-              onClick={onChangeThresholdOpen}
+              onClick={() => onEdit('changeThreshold')}
             />
           </HStack>
         }

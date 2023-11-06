@@ -15,38 +15,64 @@ import {
 } from '@chakra-ui/react'
 import { useState } from 'react'
 
+import { IChainAccount, INetwork, ISubWallet, IWallet } from '~lib/schema'
 import { SafeInfo } from '~lib/wallet'
 
+export type SafeEditType =
+  | 'changeThreshold'
+  | 'changeOwner'
+  | 'addOwner'
+  | 'removeOwner'
+
 export const SafeEditModal = ({
-  type,
-  info,
-  index,
   isOpen,
-  onClose
+  onClose,
+  network,
+  wallet,
+  subWallet,
+  account,
+  type,
+  index
 }: {
-  type: 'changeThreshold' | 'changeOwner' | 'addOwner' | 'removeOwner'
-  info: SafeInfo
-  index?: number
   isOpen: boolean
   onClose: () => void
+  network: INetwork
+  wallet: IWallet
+  subWallet: ISubWallet
+  account: IChainAccount
+  type: SafeEditType
+  index?: number
 }) => {
+  const info = account.info.safe || subWallet.info.safe
+
+  if (!info) {
+    return <></>
+  }
+
   return (
-    <Modal isOpen={isOpen} onClose={onClose} isCentered size="sm">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      isCentered
+      motionPreset="slideInBottom"
+      scrollBehavior="inside"
+      size="lg">
       <ModalOverlay />
       <ModalContent my={0}>
         <ModalCloseButton />
         <ModalBody p={0}>
-          {type === 'changeThreshold' ? (
-            <SafeEditChangeThreshold {...info} />
-          ) : type === 'changeOwner' ? (
-            <SafeEditChangeOwner {...info} index={index!} />
-          ) : type === 'addOwner' ? (
-            <SafeEditAddOwner {...info} />
-          ) : (
-            type === 'removeOwner' && (
-              <SafeEditRemoveOwner {...info} index={index!} />
-            )
-          )}
+          {isOpen &&
+            (type === 'changeThreshold' ? (
+              <SafeEditChangeThreshold {...info} />
+            ) : type === 'changeOwner' ? (
+              <SafeEditChangeOwner {...info} index={index!} />
+            ) : type === 'addOwner' ? (
+              <SafeEditAddOwner {...info} />
+            ) : (
+              type === 'removeOwner' && (
+                <SafeEditRemoveOwner {...info} index={index!} />
+              )
+            ))}
         </ModalBody>
       </ModalContent>
     </Modal>
