@@ -40,7 +40,7 @@ import {
 
 import { SafeEditModal, SafeEditType } from './SafeEditModal'
 
-export { SafeConfirmTx } from './SafeConfirmTx'
+export * from './SafeConfirmTx'
 
 export const SafeSettingsModal = ({
   isOpen,
@@ -201,17 +201,25 @@ const SafeSettingsDisplay = ({
     const provider = await EvmClient.from(network)
     let safeAccount
     if (account.address) {
-      safeAccount = await getSafeAccount(provider, account.address)
+      safeAccount = await getSafeAccount(
+        provider,
+        account.address,
+        safeInfo.isL1SafeMasterCopy
+      )
     } else {
-      safeAccount = await getSafeAccount(provider, {
-        safeAccountConfig: {
-          owners: safeInfo.owners.map((owner) => owner.address),
-          threshold: safeInfo.threshold
+      safeAccount = await getSafeAccount(
+        provider,
+        {
+          safeAccountConfig: {
+            owners: safeInfo.owners.map((owner) => owner.address),
+            threshold: safeInfo.threshold
+          },
+          safeDeploymentConfig: {
+            saltNonce: safeInfo.saltNonce
+          }
         },
-        safeDeploymentConfig: {
-          saltNonce: safeInfo.saltNonce
-        }
-      })
+        safeInfo.isL1SafeMasterCopy
+      )
     }
 
     const _address = await safeAccount.getAddress()

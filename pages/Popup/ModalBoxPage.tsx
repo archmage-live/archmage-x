@@ -2,6 +2,7 @@ import { Box, useColorModeValue } from '@chakra-ui/react'
 import { motion } from 'framer-motion'
 
 import { ModalBox, useIsOpenModalBox } from '~components/ModalBox'
+import { SafeConfirmTx, useSafeConfirmTxModal } from '~components/Safe'
 import Consent, { useConsentModal } from '~pages/Popup/Consent'
 import { NftDetail, useNftDetailModal } from '~pages/Popup/Nfts/NftDetail'
 import { SendNft, useSendNftModal } from '~pages/Popup/Nfts/SendNft'
@@ -21,6 +22,8 @@ export const ModalBoxPage = () => {
     useTokenDetailModal()
   const { isOpen: isNftDetailOpen, onClose: onNftDetailClose } =
     useNftDetailModal()
+  const { isOpen: isSafeConfirmTxOpen, onClose: onSafeConfirmTxClose } =
+    useSafeConfirmTxModal()
   const { isOpen: isConsentOpen, onClose: onConsentClose } = useConsentModal()
 
   const animate = !isOpen ? 'hidden' : 'visible'
@@ -68,6 +71,12 @@ export const ModalBoxPage = () => {
           isOpen={isDepositOpen}
           onClose={onDepositClose}
           child={Deposit}
+        />
+
+        <ModalBox
+          isOpen={isSafeConfirmTxOpen}
+          onClose={onSafeConfirmTxClose}
+          child={SafeConfirmTx}
         />
 
         <ModalBox

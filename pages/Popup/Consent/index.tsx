@@ -19,11 +19,18 @@ import {
   useDisclosure
 } from '@chakra-ui/react'
 import { atom } from 'jotai'
-import { ReactNode, useCallback, useEffect, useMemo, useState } from 'react'
-import * as React from 'react'
+import {
+  ReactNode,
+  memo,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState
+} from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { useModalBox } from '~components/ModalBox'
+import { useSafeConfirmTxModal } from '~components/Safe'
 import { useIsPopupWindow } from '~lib/hooks/useIsPopupWindow'
 import { useCheckUnlocked } from '~lib/password'
 import {
@@ -49,7 +56,7 @@ export function useConsentModal() {
   return useModalBox(isOpenAtom)
 }
 
-export default function Consent({
+const Consent = memo(function Consent({
   isOpen,
   onClose
 }: {
@@ -60,6 +67,7 @@ export default function Consent({
 
   const { onClose: onSendClose } = useSendModal()
   const { onClose: onSendNftClose } = useSendNftModal()
+  const { onClose: onSafeConfirmTxClose } = useSafeConfirmTxModal()
 
   const navigate = useNavigate()
 
@@ -95,7 +103,14 @@ export default function Consent({
     onClose?.()
     onSendClose()
     onSendNftClose()
-  }, [isPopupWindow, onClose, onSendClose, onSendNftClose])
+    onSafeConfirmTxClose()
+  }, [
+    isPopupWindow,
+    onClose,
+    onSendClose,
+    onSendNftClose,
+    onSafeConfirmTxClose
+  ])
 
   const {
     isOpen: isRejectOpen,
@@ -224,9 +239,11 @@ export default function Consent({
       )}
     </Stack>
   )
-}
+})
 
-const ConsentByType = ({
+export default Consent
+
+const ConsentByType = memo(function ConsentByType({
   request,
   onComplete,
   rejectAllButton
@@ -234,7 +251,7 @@ const ConsentByType = ({
   request: ConsentRequest
   onComplete: () => Promise<void>
   rejectAllButton: ReactNode
-}) => {
+}) {
   const { isUnlocked } = useCheckUnlocked()
 
   switch (request.type) {
@@ -305,7 +322,7 @@ const ConsentByType = ({
   }
 
   return <></>
-}
+})
 
 function useFilterRequests(requests?: ConsentRequest[]) {
   return useMemo(() => {

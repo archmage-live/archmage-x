@@ -320,9 +320,8 @@ export interface SafeInfo {
   safeVersion: SafeVersion
   threshold: number
   owners: SafeOwner[]
-  // the following fields may be not found for imported Safe Account
-  setupConfig?: Omit<SafeAccountConfig, 'threshold' | 'owners'>
-  saltNonce?: string // uint256 string or its hex string
+  setupConfig: Omit<SafeAccountConfig, 'threshold' | 'owners'>
+  saltNonce?: string // uint256 string or its hex string; may be not found for imported Safe Account
   isL1SafeMasterCopy?: boolean
 }
 

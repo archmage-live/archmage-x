@@ -145,7 +145,7 @@ export async function getSafeAccountAddress(
 }
 
 export function isSafeInfoComplete(safe: SafeInfo) {
-  return !!(safe.saltNonce && safe.setupConfig)
+  return !!safe.saltNonce
 }
 
 export async function makeSafeAccount(

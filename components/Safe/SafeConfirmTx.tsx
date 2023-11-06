@@ -1,5 +1,5 @@
 import { Nft } from '@archmagelive/alchemy-sdk'
-import { ExternalLinkIcon } from '@chakra-ui/icons'
+import { ChevronLeftIcon, EditIcon, ExternalLinkIcon } from '@chakra-ui/icons'
 import {
   Accordion,
   AccordionButton,
@@ -15,6 +15,17 @@ import {
   Icon,
   IconButton,
   Image,
+  Modal,
+  ModalBody,
+  ModalCloseButton,
+  ModalContent,
+  ModalHeader,
+  ModalOverlay,
+  NumberDecrementStepper,
+  NumberIncrementStepper,
+  NumberInput,
+  NumberInputField,
+  NumberInputStepper,
   Stack,
   Text,
   Tooltip,
@@ -37,8 +48,9 @@ import {
 } from '@safe-global/safe-core-sdk-types'
 import assert from 'assert'
 import Decimal from 'decimal.js'
-import { atom } from 'jotai'
+import { atom, useAtom } from 'jotai'
 import { ReactNode, useState } from 'react'
+import * as React from 'react'
 import { useAsyncRetry, useInterval } from 'react-use'
 import browser from 'webextension-polyfill'
 
@@ -58,25 +70,20 @@ import { TOKEN_SERVICE, getTokenBrief } from '~lib/services/token'
 import { SafeInfo } from '~lib/wallet'
 
 const isOpenAtom = atom<boolean>(false)
+const paramsAtom = atom<
+  | {
+      network: INetwork
+      account: IChainAccount
+      info: SafeInfo
+      tx: SafeTransaction
+      params: SafeTxParams
+    }
+  | undefined
+>(undefined)
 
 export function useSafeConfirmTxModal() {
-  return useModalBox(isOpenAtom)
-}
-
-export const SafeConfirmTx = ({
-  network,
-  account,
-  info,
-  tx,
-  params
-}: {
-  network: INetwork
-  account: IChainAccount
-  info: SafeInfo
-  tx: SafeTransaction
-  params: SafeTxParams
-}) => {
-  const data = tx.data
+  const modal = useModalBox(isOpenAtom)
+  const [confirmTxParams, setConfirmTxParams] = useAtom(paramsAtom)
 
   const {
     value: descriptors,
@@ -84,10 +91,126 @@ export const SafeConfirmTx = ({
     error,
     retry
   } = useAsyncRetry(async () => {
+    if (!modal.isOpen || !confirmTxParams) {
+      return
+    }
+    const { network, account, info, tx, params } = confirmTxParams
     return buildSafeTxDescriptors(network, account, info, tx, params)
-  }, [network, account, info, tx, params])
+  }, [modal.isOpen, confirmTxParams])
 
   useInterval(retry, !loading && error ? 30000 : null)
+
+  return {
+    ...modal,
+    confirmTxParams,
+    setConfirmTxParams,
+    descriptors
+  }
+}
+
+export const SafeConfirmTx = ({
+  isOpen,
+  onClose
+}: {
+  isOpen?: boolean
+  onClose?: () => void
+}) => {
+  const { confirmTxParams, descriptors } = useSafeConfirmTxModal()
+
+  if (!confirmTxParams || !descriptors) {
+    return <></>
+  }
+
+  return (
+    <Stack h="full" overflowY="auto" px={6} pt={2} pb={4} spacing={6}>
+      <HStack justify="space-between" minH={16}>
+        <IconButton
+          icon={<ChevronLeftIcon fontSize="2xl" />}
+          aria-label="Close"
+          variant="ghost"
+          borderRadius="full"
+          size="sm"
+          onClick={onClose}
+        />
+
+        <Text fontSize="3xl" fontWeight="medium">
+          {descriptors.title}
+        </Text>
+
+        <Box w={10}></Box>
+      </HStack>
+
+      <SafeConfirmTxContent
+        isOpen={isOpen}
+        onClose={onClose}
+        {...confirmTxParams}
+        descriptors={descriptors}
+      />
+    </Stack>
+  )
+}
+
+export const SafeConfirmTxModal = ({
+  isOpen,
+  onClose
+}: {
+  isOpen: boolean
+  onClose: () => void
+}) => {
+  const { confirmTxParams, descriptors } = useSafeConfirmTxModal()
+
+  if (!confirmTxParams || !descriptors) {
+    return <></>
+  }
+
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      isCentered
+      motionPreset="slideInBottom"
+      scrollBehavior="inside"
+      size="lg">
+      <ModalOverlay />
+      <ModalContent>
+        <ModalHeader>{descriptors.title}</ModalHeader>
+        <ModalCloseButton />
+        <ModalBody>
+          <SafeConfirmTxContent
+            isOpen={isOpen}
+            onClose={onClose}
+            {...confirmTxParams}
+            descriptors={descriptors}
+          />
+        </ModalBody>
+      </ModalContent>
+    </Modal>
+  )
+}
+
+const SafeConfirmTxContent = ({
+  isOpen,
+  onClose,
+  network,
+  account,
+  info,
+  tx,
+  params,
+  descriptors
+}: {
+  isOpen?: boolean
+  onClose?: () => void
+  network: INetwork
+  account: IChainAccount
+  info: SafeInfo
+  tx: SafeTransaction
+  params: SafeTxParams
+  descriptors?: SafeTxDescriptors
+}) => {
+  const data = tx.data
+
+  const [nonce, setNonce] = useState(data.nonce)
+  const [editNonce, setEditNonce] = useState(false)
 
   const [expandedIndex, setExpandedIndex] = useState<number[]>([])
 
@@ -97,16 +220,6 @@ export const SafeConfirmTx = ({
 
   return (
     <Stack spacing={4}>
-      <HStack justify="space-between">
-        <Text fontSize="lg" fontWeight="medium">
-          {descriptors.title}
-        </Text>
-
-        <Text>
-          Nonce <chakra.span fontWeight="medium">#{data.nonce}</chakra.span>
-        </Text>
-      </HStack>
-
       <Divider />
 
       <Stack spacing={4}>
@@ -248,6 +361,38 @@ export const SafeConfirmTx = ({
             </AccordionPanel>
           </AccordionItem>
         </Accordion>
+
+        <HStack justify="space-between">
+          <Text>Nonce</Text>
+
+          {!editNonce ? (
+            <HStack>
+              <Text>{nonce}</Text>
+              <Button
+                variant="link"
+                size="sm"
+                minW={0}
+                onClick={() => setEditNonce(true)}>
+                <EditIcon />
+              </Button>
+            </HStack>
+          ) : (
+            <NumberInput
+              min={0}
+              step={1}
+              keepWithinRange
+              allowMouseWheel
+              precision={0}
+              value={nonce}
+              onChange={(_, val) => setNonce(val)}>
+              <NumberInputField />
+              <NumberInputStepper>
+                <NumberIncrementStepper />
+                <NumberDecrementStepper />
+              </NumberInputStepper>
+            </NumberInput>
+          )}
+        </HStack>
       </Stack>
 
       <HStack justify="space-between">
@@ -410,13 +555,7 @@ const ArgumentDisplay = ({
   )
 }
 
-async function buildSafeTxDescriptors(
-  network: INetwork,
-  account: IChainAccount,
-  info: SafeInfo,
-  tx: SafeTransaction,
-  params: SafeTxParams
-): Promise<{
+type SafeTxDescriptors = {
   title: string
   description?: ReactNode
   detail?: ReactNode
@@ -424,7 +563,15 @@ async function buildSafeTxDescriptors(
     action: MetaTransactionData
     abi?: Interface
   }[]
-}> {
+}
+
+async function buildSafeTxDescriptors(
+  network: INetwork,
+  account: IChainAccount,
+  info: SafeInfo,
+  tx: SafeTransaction,
+  params: SafeTxParams
+): Promise<SafeTxDescriptors> {
   switch (params.type) {
     case SafeTxType.EnableFallbackHandler:
       return {

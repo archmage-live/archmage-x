@@ -1,4 +1,5 @@
 import {
+  Button,
   FormControl,
   FormHelperText,
   FormLabel,
@@ -7,16 +8,24 @@ import {
   ModalBody,
   ModalCloseButton,
   ModalContent,
+  ModalFooter,
+  ModalHeader,
   ModalOverlay,
   Select,
   Stack,
   Text,
-  chakra
+  chakra,
+  useDisclosure
 } from '@chakra-ui/react'
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
+import { useAsyncRetry, useInterval } from 'react-use'
 
+import { getSafeAccount } from '~lib/safe'
 import { IChainAccount, INetwork, ISubWallet, IWallet } from '~lib/schema'
+import { EvmClient } from '~lib/services/provider/evm'
 import { SafeInfo } from '~lib/wallet'
+
+import { SafeConfirmTxModal, useSafeConfirmTxModal } from './SafeConfirmTx'
 
 export type SafeEditType =
   | 'changeThreshold'
@@ -45,43 +54,150 @@ export const SafeEditModal = ({
 }) => {
   const info = account.info.safe || subWallet.info.safe
 
+  const [threshold, setThreshold] = useState(info?.threshold || 0)
+  const [newOwner, setNewOwner] = useState('')
+
+  const { setConfirmTxParams } = useSafeConfirmTxModal()
+
+  const {
+    isOpen: isSafeConfirmTxOpen,
+    onOpen: onSafeConfirmTxOpen,
+    onClose: onSafeConfirmTxClose
+  } = useDisclosure()
+
+  const {
+    value: safe,
+    loading,
+    error,
+    retry
+  } = useAsyncRetry(async () => {
+    if (!isOpen || !account.address || !info) {
+      return
+    }
+    const provider = await EvmClient.from(network)
+    return await getSafeAccount(
+      provider,
+      account.address,
+      info.isL1SafeMasterCopy
+    )
+  }, [isOpen, network, account, info])
+
+  useInterval(retry, !loading && error ? 10000 : null)
+
+  const onNext = useCallback(async () => {
+    if (!info || !safe) {
+      return
+    }
+
+    let tx
+    switch (type) {
+      case 'changeThreshold':
+        tx = await safe.createChangeThresholdTx(threshold)
+        break
+      case 'changeOwner':
+        tx = await safe.createSwapOwnerTx({
+          oldOwnerAddress: info.owners[index!].address,
+          newOwnerAddress: newOwner
+        })
+        break
+      case 'addOwner':
+        tx = await safe.createAddOwnerTx({
+          ownerAddress: newOwner,
+          threshold
+        })
+        break
+      case 'removeOwner':
+        tx = await safe.createRemoveOwnerTx({
+          ownerAddress: info.owners[index!].address,
+          threshold
+        })
+        break
+    }
+
+    onSafeConfirmTxOpen()
+    onClose()
+  }, [
+    info,
+    safe,
+    type,
+    onSafeConfirmTxOpen,
+    onClose,
+    threshold,
+    index,
+    newOwner
+  ])
+
   if (!info) {
     return <></>
   }
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      isCentered
-      motionPreset="slideInBottom"
-      scrollBehavior="inside"
-      size="lg">
-      <ModalOverlay />
-      <ModalContent my={0}>
-        <ModalCloseButton />
-        <ModalBody p={0}>
-          {isOpen &&
-            (type === 'changeThreshold' ? (
-              <SafeEditChangeThreshold {...info} />
-            ) : type === 'changeOwner' ? (
-              <SafeEditChangeOwner {...info} index={index!} />
-            ) : type === 'addOwner' ? (
-              <SafeEditAddOwner {...info} />
-            ) : (
-              type === 'removeOwner' && (
-                <SafeEditRemoveOwner {...info} index={index!} />
-              )
-            ))}
-        </ModalBody>
-      </ModalContent>
-    </Modal>
+    <>
+      <Modal
+        isOpen={isOpen}
+        onClose={onClose}
+        isCentered
+        motionPreset="slideInBottom"
+        scrollBehavior="inside"
+        size="lg">
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>
+            {type === 'changeThreshold'
+              ? 'Change Threshold'
+              : type === 'changeOwner'
+              ? 'Change Owner'
+              : type === 'addOwner'
+              ? 'Add Owner'
+              : type === 'removeOwner' && 'Remove Owner'}
+          </ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            {isOpen &&
+              (type === 'changeThreshold' ? (
+                <SafeEditChangeThreshold
+                  info={info}
+                  threshold={threshold}
+                  setThreshold={setThreshold}
+                />
+              ) : type === 'changeOwner' ? (
+                <SafeEditChangeOwner {...info} index={index!} />
+              ) : type === 'addOwner' ? (
+                <SafeEditAddOwner {...info} />
+              ) : (
+                type === 'removeOwner' && (
+                  <SafeEditRemoveOwner {...info} index={index!} />
+                )
+              ))}
+          </ModalBody>
+          <ModalFooter>
+            <Button mr={3} onClick={onClose}>
+              Cancel
+            </Button>
+            <Button colorScheme="purple" onClick={onNext}>
+              Continue
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      <SafeConfirmTxModal
+        isOpen={isSafeConfirmTxOpen}
+        onClose={onSafeConfirmTxClose}
+      />
+    </>
   )
 }
 
-const SafeEditChangeThreshold = ({ threshold, owners }: SafeInfo) => {
-  const [_threshold, _setThreshold] = useState(threshold)
-
+const SafeEditChangeThreshold = ({
+  info,
+  threshold,
+  setThreshold
+}: {
+  info: SafeInfo
+  threshold: number
+  setThreshold: (threshold: number) => void
+}) => {
   return (
     <FormControl>
       <FormLabel>Threshold</FormLabel>
@@ -89,9 +205,9 @@ const SafeEditChangeThreshold = ({ threshold, owners }: SafeInfo) => {
         <Select
           size="lg"
           w={48}
-          value={_threshold}
-          onChange={(e) => _setThreshold(Number(e.target.value))}>
-          {[...Array(owners.length).keys()].map((index) => {
+          value={threshold}
+          onChange={(e) => setThreshold(Number(e.target.value))}>
+          {[...Array(info.owners.length).keys()].map((index) => {
             return (
               <option key={index} value={index + 1}>
                 {index + 1}
@@ -99,11 +215,11 @@ const SafeEditChangeThreshold = ({ threshold, owners }: SafeInfo) => {
             )
           })}
         </Select>
-        <Text>out of {owners.length} owner(s)</Text>
+        <Text>out of {info.owners.length} owner(s)</Text>
       </HStack>
       <FormHelperText>
-        <chakra.span color="gray.500">
-          Current threshold is {threshold}.
+        <chakra.span fontWeight="medium">
+          Current threshold is {info.threshold}.
         </chakra.span>
         &nbsp;Recommend using a threshold higher than one to prevent losing
         access to the Safe account in case an owner key is lost or compromised.
