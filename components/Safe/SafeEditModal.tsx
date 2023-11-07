@@ -17,13 +17,27 @@ import {
   chakra,
   useDisclosure
 } from '@chakra-ui/react'
-import { useCallback, useState } from 'react'
-import { useAsyncRetry, useInterval } from 'react-use'
+import { useCallback, useEffect, useState } from 'react'
+import { useAsync, useAsyncRetry, useInterval } from 'react-use'
 
+import { AccountAvatar } from '~components/AccountAvatar'
+import { SafeOwnerInput } from '~components/Safe/SafeOwnerInput'
+import { ScanQRModal } from '~components/ScanQrModal'
+import { SelectAccountModal } from '~components/SelectAccountModal'
+import { TextLink } from '~components/TextLink'
 import { getSafeAccount } from '~lib/safe'
-import { IChainAccount, INetwork, ISubWallet, IWallet } from '~lib/schema'
+import {
+  CompositeAccount,
+  IChainAccount,
+  INetwork,
+  ISubWallet,
+  IWallet,
+  accountName
+} from '~lib/schema'
+import { getAccountUrl } from '~lib/services/network'
 import { EvmClient } from '~lib/services/provider/evm'
-import { SafeInfo } from '~lib/wallet'
+import { WALLET_SERVICE, useChainAccounts } from '~lib/services/wallet'
+import { SafeInfo, SafeOwner, checkAddress } from '~lib/wallet'
 
 import { SafeConfirmTxModal, useSafeConfirmTxModal } from './SafeConfirmTx'
 
@@ -55,7 +69,10 @@ export const SafeEditModal = ({
   const info = account.info.safe || subWallet.info.safe
 
   const [threshold, setThreshold] = useState(info?.threshold || 0)
-  const [newOwner, setNewOwner] = useState('')
+  const [newOwner, setNewOwner] = useState<SafeOwner>({
+    name: '',
+    address: ''
+  })
 
   const { setConfirmTxParams } = useSafeConfirmTxModal()
 
@@ -97,12 +114,12 @@ export const SafeEditModal = ({
       case 'changeOwner':
         tx = await safe.createSwapOwnerTx({
           oldOwnerAddress: info.owners[index!].address,
-          newOwnerAddress: newOwner
+          newOwnerAddress: newOwner.address
         })
         break
       case 'addOwner':
         tx = await safe.createAddOwnerTx({
-          ownerAddress: newOwner,
+          ownerAddress: newOwner.address,
           threshold
         })
         break
@@ -126,6 +143,18 @@ export const SafeEditModal = ({
     index,
     newOwner
   ])
+
+  const {
+    isOpen: isSelectAccountOpen,
+    onOpen: onSelectAccountOpen,
+    onClose: onSelectAccountClose
+  } = useDisclosure()
+
+  const {
+    isOpen: isScanAddressOpen,
+    onOpen: onScanAddressOpen,
+    onClose: onScanAddressClose
+  } = useDisclosure()
 
   if (!info) {
     return <></>
@@ -161,12 +190,35 @@ export const SafeEditModal = ({
                   setThreshold={setThreshold}
                 />
               ) : type === 'changeOwner' ? (
-                <SafeEditChangeOwner {...info} index={index!} />
+                <SafeEditChangeOwner
+                  network={network}
+                  info={info}
+                  index={index!}
+                  owner={newOwner}
+                  setOwner={setNewOwner}
+                  onSelectAccountOpen={onSelectAccountOpen}
+                  onScanAddressOpen={onScanAddressOpen}
+                />
               ) : type === 'addOwner' ? (
-                <SafeEditAddOwner {...info} />
+                <SafeEditAddOwner
+                  network={network}
+                  info={info}
+                  threshold={threshold}
+                  setThreshold={setThreshold}
+                  owner={newOwner}
+                  setOwner={setNewOwner}
+                  onSelectAccountOpen={onSelectAccountOpen}
+                  onScanAddressOpen={onScanAddressOpen}
+                />
               ) : (
                 type === 'removeOwner' && (
-                  <SafeEditRemoveOwner {...info} index={index!} />
+                  <SafeEditRemoveOwner
+                    network={network}
+                    info={info}
+                    threshold={threshold}
+                    setThreshold={setThreshold}
+                    index={index!}
+                  />
                 )
               ))}
           </ModalBody>
@@ -180,6 +232,16 @@ export const SafeEditModal = ({
           </ModalFooter>
         </ModalContent>
       </Modal>
+
+      <SafeSelectOwnerModal
+        network={network}
+        owner={newOwner}
+        setOwner={setNewOwner}
+        isSelectAccountOpen={isSelectAccountOpen}
+        onSelectAccountClose={onSelectAccountClose}
+        isScanAddressOpen={isScanAddressOpen}
+        onScanAddressClose={onScanAddressClose}
+      />
 
       <SafeConfirmTxModal
         isOpen={isSafeConfirmTxOpen}
@@ -229,34 +291,292 @@ const SafeEditChangeThreshold = ({
 }
 
 const SafeEditChangeOwner = ({
-  owners,
-  index
-}: SafeInfo & {
+  network,
+  info,
+  index,
+  owner,
+  setOwner,
+  onSelectAccountOpen,
+  onScanAddressOpen
+}: {
+  network: INetwork
+  info: SafeInfo
   index: number
+  owner: SafeOwner
+  setOwner: (owner: SafeOwner) => void
+  onSelectAccountOpen: () => void
+  onScanAddressOpen: () => void
 }) => {
+  const oldOwner = info.owners[index]
+
   return (
-    <Stack>
+    <Stack spacing={4}>
       <FormControl>
-        <FormLabel>Change Owner</FormLabel>
         <FormHelperText>
           Review the owner you want to replace in the Safe Account, then specify
           the new owner you want to replace it with.
+        </FormHelperText>
+      </FormControl>
+
+      <FormControl>
+        <FormLabel>Current owner</FormLabel>
+        <HStack align="center">
+          <AccountAvatar text={oldOwner.address} scale={0.8} />
+
+          <Stack spacing={1}>
+            <Text noOfLines={1}>{oldOwner.name}</Text>
+            <TextLink
+              text={oldOwner.address}
+              name="Address"
+              url={getAccountUrl(network, oldOwner.address)}
+              urlLabel="View on explorer"
+              prefixChars={40}
+            />
+          </Stack>
+        </HStack>
+      </FormControl>
+
+      <FormControl>
+        <FormLabel>New owner</FormLabel>
+        <SafeOwnerInput
+          name={owner.name}
+          setName={(name) => setOwner({ ...owner, name })}
+          address={owner.address}
+          setAddress={(address) => setOwner({ ...owner, address })}
+          onScanAddressOpen={onScanAddressOpen}
+          onSelectAccountOpen={onSelectAccountOpen}
+          networkKind={network.kind}
+        />
+      </FormControl>
+    </Stack>
+  )
+}
+
+const SafeEditAddOwner = ({
+  network,
+  info,
+  threshold,
+  setThreshold,
+  owner,
+  setOwner,
+  onSelectAccountOpen,
+  onScanAddressOpen
+}: {
+  network: INetwork
+  info: SafeInfo
+  threshold: number
+  setThreshold: (threshold: number) => void
+  owner: SafeOwner
+  setOwner: (owner: SafeOwner) => void
+  onSelectAccountOpen: () => void
+  onScanAddressOpen: () => void
+}) => {
+  return (
+    <Stack spacing={4}>
+      <FormControl>
+        <FormLabel>New owner</FormLabel>
+        <SafeOwnerInput
+          name={owner.name}
+          setName={(name) => setOwner({ ...owner, name })}
+          address={owner.address}
+          setAddress={(address) => setOwner({ ...owner, address })}
+          onScanAddressOpen={onScanAddressOpen}
+          onSelectAccountOpen={onSelectAccountOpen}
+          networkKind={network.kind}
+        />
+      </FormControl>
+
+      <FormControl>
+        <FormLabel>Threshold</FormLabel>
+        <HStack>
+          <Select
+            size="lg"
+            w={48}
+            value={threshold}
+            onChange={(e) => setThreshold(Number(e.target.value))}>
+            {[...Array(info.owners.length + 1).keys()].map((index) => {
+              return (
+                <option key={index} value={index + 1}>
+                  {index + 1}
+                </option>
+              )
+            })}
+          </Select>
+          <Text>out of {info.owners.length + 1} owner(s)</Text>
+        </HStack>
+        <FormHelperText>
+          <chakra.span fontWeight="medium">
+            Current threshold is {info.threshold}.
+          </chakra.span>
         </FormHelperText>
       </FormControl>
     </Stack>
   )
 }
 
-const SafeEditAddOwner = ({ threshold, owners }: SafeInfo) => {
-  return <></>
-}
-
 const SafeEditRemoveOwner = ({
+  network,
+  info,
   threshold,
-  owners,
+  setThreshold,
   index
-}: SafeInfo & {
+}: {
+  network: INetwork
+  info: SafeInfo
+  threshold: number
+  setThreshold: (threshold: number) => void
   index: number
 }) => {
-  return <></>
+  useEffect(() => {
+    if (threshold > info.owners.length - 1) {
+      setThreshold(info.owners.length - 1)
+    }
+  }, [info, threshold, setThreshold])
+
+  const oldOwner = info.owners[index]
+
+  return (
+    <Stack spacing={4}>
+      <FormControl>
+        <FormLabel>Remove owner</FormLabel>
+        <HStack align="center">
+          <AccountAvatar text={oldOwner.address} scale={0.8} />
+
+          <Stack spacing={1}>
+            <Text noOfLines={1}>{oldOwner.name}</Text>
+            <TextLink
+              text={oldOwner.address}
+              name="Address"
+              url={getAccountUrl(network, oldOwner.address)}
+              urlLabel="View on explorer"
+              prefixChars={40}
+            />
+          </Stack>
+        </HStack>
+        <FormHelperText>
+          Review the owner you want to remove from the active Safe Account.
+        </FormHelperText>
+      </FormControl>
+
+      <FormControl>
+        <FormLabel>Threshold</FormLabel>
+        <HStack>
+          <Select
+            size="lg"
+            w={48}
+            value={threshold}
+            onChange={(e) => setThreshold(Number(e.target.value))}>
+            {[...Array(info.owners.length - 1).keys()].map((index) => {
+              return (
+                <option key={index} value={index + 1}>
+                  {index + 1}
+                </option>
+              )
+            })}
+          </Select>
+          <Text>out of {info.owners.length - 1} owner(s)</Text>
+        </HStack>
+        <FormHelperText>
+          <chakra.span fontWeight="medium">
+            Current threshold is {info.threshold}.
+          </chakra.span>
+        </FormHelperText>
+      </FormControl>
+    </Stack>
+  )
+}
+
+const SafeSelectOwnerModal = ({
+  network,
+  owner,
+  setOwner,
+  isSelectAccountOpen,
+  onSelectAccountClose,
+  isScanAddressOpen,
+  onScanAddressClose
+}: {
+  network: INetwork
+  owner: SafeOwner
+  setOwner: (owner: SafeOwner) => void
+  isSelectAccountOpen: boolean
+  onSelectAccountClose: () => void
+  isScanAddressOpen: boolean
+  onScanAddressClose: () => void
+}) => {
+  const [selectedAccount, setSelectedAccount] = useState<CompositeAccount>()
+
+  const allAccounts = useChainAccounts({
+    networkKind: network.kind,
+    chainId: network.chainId
+  })
+
+  const onSelectAccount = useCallback(
+    async (account: CompositeAccount) => {
+      setOwner({
+        name: owner.name.trim() ? owner.name : accountName(account),
+        address: account.account.address!
+      })
+    },
+    [owner, setOwner]
+  )
+
+  const onScanAddress = useCallback(
+    async (text: string) => {
+      const address = checkAddress(network.kind, text)
+      if (!address) {
+        return
+      }
+      setOwner({
+        ...owner,
+        address
+      })
+    },
+    [network, owner, setOwner]
+  )
+
+  useAsync(async () => {
+    if (!isSelectAccountOpen) {
+      setSelectedAccount(undefined)
+      return
+    }
+
+    const address = checkAddress(network.kind, owner.address)
+    const account = allAccounts?.find((a) => a.address === address)
+    let wallet, subWallet
+    if (account) {
+      wallet = await WALLET_SERVICE.getWallet(account.masterId)
+      subWallet = await WALLET_SERVICE.getSubWallet({
+        masterId: account.masterId,
+        index: account.index
+      })
+    }
+
+    setSelectedAccount(
+      wallet && subWallet && account
+        ? {
+            wallet,
+            subWallet,
+            account
+          }
+        : undefined
+    )
+  }, [allAccounts, network, owner, isSelectAccountOpen])
+
+  return (
+    <>
+      <ScanQRModal
+        isOpen={isScanAddressOpen}
+        onClose={onScanAddressClose}
+        onScan={onScanAddress}
+      />
+
+      <SelectAccountModal
+        network={network}
+        account={selectedAccount}
+        setAccount={onSelectAccount}
+        isOpen={isSelectAccountOpen}
+        onClose={onSelectAccountClose}
+      />
+    </>
+  )
 }

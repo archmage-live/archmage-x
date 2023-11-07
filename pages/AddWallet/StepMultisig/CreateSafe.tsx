@@ -94,11 +94,11 @@ export const CreateSafe = ({
 
   const [selectedIndex, setSelectedIndex] = useState<number>()
 
-  const [selectedAccount, _setSelectedAccount] = useState<CompositeAccount>()
+  const [selectedAccount, setSelectedAccount] = useState<CompositeAccount>()
 
   const allAccounts = useChainAccounts({
     networkKind: network.kind,
-    chainId: network?.chainId
+    chainId: network.chainId
   })
 
   const onSelectAccount = useCallback(
@@ -154,7 +154,7 @@ export const CreateSafe = ({
       }
 
       setSelectedIndex(index)
-      _setSelectedAccount(
+      setSelectedAccount(
         wallet && subWallet && account
           ? {
               wallet,

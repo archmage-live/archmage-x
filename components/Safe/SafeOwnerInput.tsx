@@ -14,7 +14,7 @@ import { NetworkKind } from '~lib/network'
 import { IChainAccount, ISubWallet, IWallet } from '~lib/schema'
 import { checkAddress } from '~lib/wallet'
 
-export const SafeOwner = ({
+export const SafeOwnerInput = ({
   index,
   isNotOnlyOne,
   isLast,
@@ -29,15 +29,15 @@ export const SafeOwner = ({
   networkKind,
   wallet
 }: {
-  index: number
-  isNotOnlyOne: boolean
-  isLast: boolean
+  index?: number
+  isNotOnlyOne?: boolean
+  isLast?: boolean
   name: string
   setName: (name: string) => void
   address: string
   setAddress: (address: string) => void
-  addOwner: () => void
-  removeOwner: () => void
+  addOwner?: () => void
+  removeOwner?: () => void
   onScanAddressOpen: () => void
   onSelectAccountOpen: () => void
   networkKind: NetworkKind
@@ -47,12 +47,14 @@ export const SafeOwner = ({
     account: IChainAccount
   }
 }) => {
+  const indexPlaceholder = index !== undefined ? ` ${index + 1}` : ''
+
   return (
     <HStack>
       <Input
         size="lg"
         w={40}
-        placeholder={`Owner ${index + 1}`}
+        placeholder={`Owner${indexPlaceholder}`}
         maxLength={64}
         value={name}
         onChange={(e) => setName(e.target.value.trim())}
@@ -61,7 +63,7 @@ export const SafeOwner = ({
       <InputGroup size="lg">
         <Input
           sx={{ paddingInlineEnd: '63px' }}
-          placeholder={`Address ${index + 1}`}
+          placeholder={`Address${indexPlaceholder}`}
           errorBorderColor="red.500"
           isInvalid={!!address && !checkAddress(networkKind, address)}
           value={address}
@@ -83,21 +85,25 @@ export const SafeOwner = ({
         </InputRightElement>
       </InputGroup>
 
-      <IconButton
-        size="xs"
-        aria-label="Add owner"
-        icon={<AddIcon />}
-        visibility={isLast ? 'visible' : 'hidden'}
-        onClick={addOwner}
-      />
+      {addOwner && (
+        <IconButton
+          size="xs"
+          aria-label="Add owner"
+          icon={<AddIcon />}
+          visibility={isLast ? 'visible' : 'hidden'}
+          onClick={addOwner}
+        />
+      )}
 
-      <IconButton
-        size="xs"
-        aria-label="Remove owner"
-        icon={<MinusIcon />}
-        visibility={isNotOnlyOne ? 'visible' : 'hidden'}
-        onClick={removeOwner}
-      />
+      {removeOwner && (
+        <IconButton
+          size="xs"
+          aria-label="Remove owner"
+          icon={<MinusIcon />}
+          visibility={isNotOnlyOne ? 'visible' : 'hidden'}
+          onClick={removeOwner}
+        />
+      )}
     </HStack>
   )
 }

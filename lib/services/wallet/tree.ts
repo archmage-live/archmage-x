@@ -1,6 +1,5 @@
 import assert from 'assert'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { atom, useAtom } from 'jotai'
 import { useCallback, useEffect, useState } from 'react'
 import stableHash from 'stable-hash'
 
@@ -20,13 +19,6 @@ export interface SubWalletEntry {
   account: IChainAccount
   isSelected: boolean
   isChecked: boolean
-}
-
-const walletEntriesAtom = atom<WalletEntry[] | undefined>(undefined)
-
-export function useReadonlyWalletTree() {
-  const [walletEntries] = useAtom(walletEntriesAtom)
-  return walletEntries
 }
 
 export interface SelectedWalletId {
@@ -164,7 +156,9 @@ export function useWalletTree<
   filter?: (entries: WalletEntry[]) => WalletEntry[],
   activeAsSelected = false
 ) {
-  const [walletEntries, setWalletEntries] = useAtom(walletEntriesAtom)
+  const [walletEntries, setWalletEntries] = useState<WalletEntry[] | undefined>(
+    undefined
+  )
 
   const [filtered, setFiltered] = useState<WalletEntry[] | undefined>()
 

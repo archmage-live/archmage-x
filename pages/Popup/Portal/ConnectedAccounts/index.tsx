@@ -27,7 +27,7 @@ import {
   isSameAccount,
   isSameSubWallet,
   isSameWallet,
-  useReadonlyWalletTree
+  useWalletTree
 } from '~lib/services/wallet/tree'
 import { useCurrentSiteUrl, useSiteIconUrl } from '~lib/tab'
 
@@ -52,7 +52,7 @@ export const ConnectedAccountsModal = ({
     network
   )
 
-  const entries = useReadonlyWalletTree()
+  const { wallets: entries } = useWalletTree(network)
 
   const { wallets, toggleOpen, notConnectedWallet, setNotConnectedWallet } =
     useWalletTreeByConns(entries, accounts, activeAccount)

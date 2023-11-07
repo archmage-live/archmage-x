@@ -12,7 +12,7 @@ import {
   Stack
 } from '@chakra-ui/react'
 import { FiSearch } from '@react-icons/all-files/fi/FiSearch'
-import { useCallback, useEffect, useState } from 'react'
+import { memo, useCallback, useEffect, useState } from 'react'
 import { useDebounce } from 'react-use'
 
 import { WalletId } from '~lib/active'
@@ -27,7 +27,7 @@ import {
 
 import { WalletList } from './WalletList'
 
-export const SelectAccountModal = ({
+export const SelectAccountModal = memo(function SelectAccountModal({
   network,
   account,
   setAccount,
@@ -41,7 +41,7 @@ export const SelectAccountModal = ({
   allowNullAddress?: boolean
   isOpen: boolean
   onClose: () => void
-}) => {
+}) {
   const [search, setSearch] = useState('')
 
   const filter = useCallback(
@@ -163,4 +163,4 @@ export const SelectAccountModal = ({
       </ModalContent>
     </Modal>
   )
-}
+})
