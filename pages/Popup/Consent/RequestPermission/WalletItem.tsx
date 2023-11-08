@@ -42,7 +42,7 @@ export const WalletItem = ({
     measure()
   }, [isOpen, measure])
 
-  const subWallet = !isWalletGroup(wallet.type) ? subWallets[0] : undefined
+  const subWallet = !isWalletGroup(wallet) ? subWallets[0] : undefined
   const account = subWallet?.account
 
   const balance = useBalance(network, account)
@@ -51,7 +51,7 @@ export const WalletItem = ({
   const [isIndeterminate, setIsIndeterminate] = useState<boolean>()
 
   useEffect(() => {
-    if (!isWalletGroup(wallet.type)) {
+    if (!isWalletGroup(wallet)) {
       setIsChecked(subWallet?.isChecked)
       return
     }
@@ -76,7 +76,7 @@ export const WalletItem = ({
         px={4}
         justifyContent="start"
         onClick={() => {
-          if (isWalletGroup(wallet.type)) {
+          if (isWalletGroup(wallet)) {
             onToggleOpen(wallet.id)
           } else {
             onChecked(wallet.id, !isChecked)
@@ -116,7 +116,7 @@ export const WalletItem = ({
                   </Text>
                 )}
 
-                {isWalletGroup(wallet.type) && (
+                {isWalletGroup(wallet) && (
                   <Text fontSize="sm" color="gray.500">
                     {subWallets.length} accounts
                   </Text>
@@ -155,7 +155,7 @@ export const WalletItem = ({
         </Box>
       </Button>
 
-      {isOpen && network && isWalletGroup(wallet.type) && (
+      {isOpen && network && isWalletGroup(wallet) && (
         <SubWalletList
           network={network}
           subWallets={subWallets}

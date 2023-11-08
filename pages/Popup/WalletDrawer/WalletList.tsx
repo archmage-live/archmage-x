@@ -54,7 +54,7 @@ export const WalletList = ({
     getScrollElement: () => parentRef.current,
     estimateSize: (index) => {
       const wallet = wallets[index]
-      if (!openState[wallet.wallet.id] || !isWalletGroup(wallet.wallet.type)) {
+      if (!openState[wallet.wallet.id] || !isWalletGroup(wallet.wallet)) {
         return itemSize
       } else {
         return (
@@ -92,9 +92,7 @@ export const WalletList = ({
             const walletEntry = wallets[item.index]!
             const { wallet, subWallets } = walletEntry
 
-            const subWallet = !isWalletGroup(wallet.type)
-              ? subWallets[0]
-              : undefined
+            const subWallet = !isWalletGroup(wallet) ? subWallets[0] : undefined
 
             return (
               <Box

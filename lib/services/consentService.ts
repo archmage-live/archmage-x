@@ -280,7 +280,7 @@ class ConsentService extends ConsentServicePartial {
         assert(account)
         const wallet = await WALLET_SERVICE.getWallet(account.masterId)
         assert(wallet)
-        if (!canWalletSign(wallet.type)) {
+        if (!canWalletSign(wallet)) {
           throw ethErrors.provider.userRejectedRequest()
         }
         break

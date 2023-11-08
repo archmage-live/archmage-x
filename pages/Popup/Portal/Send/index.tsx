@@ -525,7 +525,7 @@ export const Send = ({
 
             <AlertBox>{amountAlert}</AlertBox>
 
-            {wallet && !canWalletSign(wallet.type) && (
+            {wallet && !canWalletSign(wallet) && (
               <AlertBox level="error">
                 You can&apos;t send tokens using the watch-only wallet.
               </AlertBox>
@@ -542,7 +542,7 @@ export const Send = ({
           colorScheme="purple"
           size="lg"
           flex={1}
-          isDisabled={!nextEnabled || (wallet && !canWalletSign(wallet.type))}
+          isDisabled={!nextEnabled || (wallet && !canWalletSign(wallet))}
           isLoading={isLoading}
           onClick={onNext}>
           Next

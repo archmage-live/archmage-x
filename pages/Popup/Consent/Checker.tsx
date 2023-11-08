@@ -42,7 +42,7 @@ export const SignableChecker = ({
     return <></>
   }
 
-  if (isKeylessWallet(wallet.type)) {
+  if (isKeylessWallet(wallet)) {
     return (
       <AlertBox level="warning" nowrap>
         <Stack>

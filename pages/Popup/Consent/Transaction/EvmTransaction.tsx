@@ -361,7 +361,7 @@ export const EvmTransaction = ({
       setSpinning(false)
     }
 
-    if (isWalletConnectProtocol(wallet.type)) {
+    if (isWalletConnectProtocol(wallet)) {
       setWcPayload({ tx })
       onWcSignedRef.current = ({ signedTx, txHash }) => {
         console.log(signedTx, txHash)
@@ -710,7 +710,7 @@ export const EvmTransaction = ({
             </AlertBox>
           )}
 
-          {isHardwareWallet(wallet.type) && (
+          {isHardwareWallet(wallet) && (
             <AlertBox level="info">
               Prior to clicking confirm, you should plug in your hardware wallet
               device and select the Ethereum app.
@@ -792,7 +792,7 @@ export const EvmTransaction = ({
         <></>
       )}
 
-      {isWalletConnectProtocol(wallet.type) && (
+      {isWalletConnectProtocol(wallet) && (
         <WalletConnectSigningModel
           isOpen={isWcOpen}
           onClose={onWcClose}

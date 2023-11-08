@@ -119,7 +119,7 @@ export async function getSafeAccountAddress(
   subWallet: ISubWallet
 ) {
   assert(network.kind === NetworkKind.EVM)
-  assert(isMultisigWallet(wallet.type))
+  assert(isMultisigWallet(wallet))
   const safe = subWallet.info.safe
   assert(safe)
 
@@ -153,7 +153,7 @@ export async function makeSafeAccount(
   wallet: IWallet,
   subWallet: ISubWallet
 ) {
-  assert(isMultisigWallet(wallet.type))
+  assert(isMultisigWallet(wallet))
   assert(network.kind === NetworkKind.EVM)
   const safe = subWallet.info.safe
   assert(safe)

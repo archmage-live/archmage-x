@@ -17,7 +17,8 @@ import {
   chakra,
   useDisclosure
 } from '@chakra-ui/react'
-import { useCallback, useEffect, useState } from 'react'
+import { SafeTransaction } from '@safe-global/safe-core-sdk-types'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useAsync, useAsyncRetry, useInterval } from 'react-use'
 
 import { AccountAvatar } from '~components/AccountAvatar'
@@ -25,7 +26,7 @@ import { SafeOwnerInput } from '~components/Safe/SafeOwnerInput'
 import { ScanQRModal } from '~components/ScanQrModal'
 import { SelectAccountModal } from '~components/SelectAccountModal'
 import { TextLink } from '~components/TextLink'
-import { getSafeAccount } from '~lib/safe'
+import { SafeTxParams, SafeTxType, getSafeAccount } from '~lib/safe'
 import {
   CompositeAccount,
   IChainAccount,
@@ -74,13 +75,13 @@ export const SafeEditModal = ({
     address: ''
   })
 
-  const { setConfirmTxParams } = useSafeConfirmTxModal()
-
-  const {
-    isOpen: isSafeConfirmTxOpen,
-    onOpen: onSafeConfirmTxOpen,
-    onClose: onSafeConfirmTxClose
-  } = useDisclosure()
+  useEffect(() => {
+    setThreshold(info?.threshold || 0)
+    setNewOwner({
+      name: '',
+      address: ''
+    })
+  }, [isOpen, info])
 
   const {
     value: safe,
@@ -101,47 +102,89 @@ export const SafeEditModal = ({
 
   useInterval(retry, !loading && error ? 10000 : null)
 
+  const { setConfirmTxParams } = useSafeConfirmTxModal()
+
+  const {
+    isOpen: isSafeConfirmTxOpen,
+    onOpen: onSafeConfirmTxOpen,
+    onClose: onSafeConfirmTxClose
+  } = useDisclosure()
+
+  const isDisabled = useMemo(() => {
+    return (
+      (type === 'changeOwner' || type === 'addOwner') &&
+      !checkAddress(network.kind, newOwner.address)
+    )
+  }, [network, type, newOwner])
+
   const onNext = useCallback(async () => {
     if (!info || !safe) {
       return
     }
 
-    let tx
+    let params: SafeTxParams, tx: SafeTransaction
     switch (type) {
       case 'changeThreshold':
+        params = {
+          type: SafeTxType.ChangeThreshold,
+          threshold
+        }
         tx = await safe.createChangeThresholdTx(threshold)
         break
       case 'changeOwner':
-        tx = await safe.createSwapOwnerTx({
-          oldOwnerAddress: info.owners[index!].address,
-          newOwnerAddress: newOwner.address
-        })
+        params = {
+          type: SafeTxType.SwapOwner,
+          params: {
+            oldOwnerAddress: info.owners[index!].address,
+            newOwnerAddress: newOwner.address
+          }
+        }
+        tx = await safe.createSwapOwnerTx(params.params)
         break
       case 'addOwner':
-        tx = await safe.createAddOwnerTx({
-          ownerAddress: newOwner.address,
-          threshold
-        })
+        params = {
+          type: SafeTxType.AddOwner,
+          params: {
+            ownerAddress: newOwner.address,
+            threshold
+          }
+        }
+        tx = await safe.createAddOwnerTx(params.params)
         break
       case 'removeOwner':
-        tx = await safe.createRemoveOwnerTx({
-          ownerAddress: info.owners[index!].address,
-          threshold
-        })
+        params = {
+          type: SafeTxType.RemoveOwner,
+          params: {
+            ownerAddress: info.owners[index!].address,
+            threshold
+          }
+        }
+        tx = await safe.createRemoveOwnerTx(params.params)
         break
     }
+
+    setConfirmTxParams({
+      network,
+      account,
+      info,
+      tx,
+      params
+    })
 
     onSafeConfirmTxOpen()
     onClose()
   }, [
+    onClose,
+    network,
+    account,
+    type,
+    index,
     info,
     safe,
-    type,
-    onSafeConfirmTxOpen,
-    onClose,
     threshold,
-    index,
-    newOwner
+    newOwner,
+    setConfirmTxParams,
+    onSafeConfirmTxOpen
   ])
 
   const {
@@ -182,51 +225,53 @@ export const SafeEditModal = ({
           </ModalHeader>
           <ModalCloseButton />
           <ModalBody>
-            {isOpen &&
-              (type === 'changeThreshold' ? (
-                <SafeEditChangeThreshold
+            {type === 'changeThreshold' ? (
+              <SafeEditChangeThreshold
+                info={info}
+                threshold={threshold}
+                setThreshold={setThreshold}
+              />
+            ) : type === 'changeOwner' ? (
+              <SafeEditChangeOwner
+                network={network}
+                info={info}
+                index={index!}
+                owner={newOwner}
+                setOwner={setNewOwner}
+                onSelectAccountOpen={onSelectAccountOpen}
+                onScanAddressOpen={onScanAddressOpen}
+              />
+            ) : type === 'addOwner' ? (
+              <SafeEditAddOwner
+                network={network}
+                info={info}
+                threshold={threshold}
+                setThreshold={setThreshold}
+                owner={newOwner}
+                setOwner={setNewOwner}
+                onSelectAccountOpen={onSelectAccountOpen}
+                onScanAddressOpen={onScanAddressOpen}
+              />
+            ) : (
+              type === 'removeOwner' && (
+                <SafeEditRemoveOwner
+                  network={network}
                   info={info}
                   threshold={threshold}
                   setThreshold={setThreshold}
-                />
-              ) : type === 'changeOwner' ? (
-                <SafeEditChangeOwner
-                  network={network}
-                  info={info}
                   index={index!}
-                  owner={newOwner}
-                  setOwner={setNewOwner}
-                  onSelectAccountOpen={onSelectAccountOpen}
-                  onScanAddressOpen={onScanAddressOpen}
                 />
-              ) : type === 'addOwner' ? (
-                <SafeEditAddOwner
-                  network={network}
-                  info={info}
-                  threshold={threshold}
-                  setThreshold={setThreshold}
-                  owner={newOwner}
-                  setOwner={setNewOwner}
-                  onSelectAccountOpen={onSelectAccountOpen}
-                  onScanAddressOpen={onScanAddressOpen}
-                />
-              ) : (
-                type === 'removeOwner' && (
-                  <SafeEditRemoveOwner
-                    network={network}
-                    info={info}
-                    threshold={threshold}
-                    setThreshold={setThreshold}
-                    index={index!}
-                  />
-                )
-              ))}
+              )
+            )}
           </ModalBody>
           <ModalFooter>
             <Button mr={3} onClick={onClose}>
               Cancel
             </Button>
-            <Button colorScheme="purple" onClick={onNext}>
+            <Button
+              colorScheme="purple"
+              isDisabled={isDisabled}
+              onClick={onNext}>
               Continue
             </Button>
           </ModalFooter>
@@ -310,7 +355,7 @@ const SafeEditChangeOwner = ({
   const oldOwner = info.owners[index]
 
   return (
-    <Stack spacing={4}>
+    <Stack spacing={6}>
       <FormControl>
         <FormHelperText>
           Review the owner you want to replace in the Safe Account, then specify
@@ -372,7 +417,7 @@ const SafeEditAddOwner = ({
   onScanAddressOpen: () => void
 }) => {
   return (
-    <Stack spacing={4}>
+    <Stack spacing={6}>
       <FormControl>
         <FormLabel>New owner</FormLabel>
         <SafeOwnerInput
@@ -436,7 +481,7 @@ const SafeEditRemoveOwner = ({
   const oldOwner = info.owners[index]
 
   return (
-    <Stack spacing={4}>
+    <Stack spacing={6}>
       <FormControl>
         <FormLabel>Remove owner</FormLabel>
         <HStack align="center">

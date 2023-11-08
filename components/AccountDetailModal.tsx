@@ -236,7 +236,7 @@ export const AccountDetailModal = () => {
                   </Button>
                 )}
 
-                {hasWalletKeystore(wallet.type) && (
+                {hasWalletKeystore(wallet) && (
                   <Button
                     colorScheme="gray"
                     onClick={() => {

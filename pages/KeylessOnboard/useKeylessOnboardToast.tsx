@@ -16,7 +16,7 @@ export function useKeylessOnboardToast(
   useAsync(async () => {
     const id = 'keyless-onboard-toast'
 
-    if (!wallet || !subWallet || !network || !isKeylessWallet(wallet.type)) {
+    if (!wallet || !subWallet || !network || !isKeylessWallet(wallet)) {
       toast.close(id)
       return
     }

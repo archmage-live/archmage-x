@@ -5,6 +5,7 @@ import { DB } from '~lib/db'
 import { NetworkKind } from '~lib/network'
 import { makeSafeAccount } from '~lib/safe'
 import {
+  ChainAccountInfo,
   ChainId,
   IChainAccount,
   IHdPath,
@@ -23,6 +24,7 @@ import {
   isAccountAbstractionWallet,
   isHdWallet,
   isKeylessWallet,
+  isMultisigWallet,
   isWalletGroup
 } from '~lib/wallet'
 
@@ -33,7 +35,7 @@ export async function ensureChainAccounts(
   networkKind: NetworkKind,
   chainId: ChainId
 ) {
-  if (!isWalletGroup(wallet.type)) {
+  if (!isWalletGroup(wallet)) {
     await ensureChainAccount(wallet, PSEUDO_INDEX, networkKind, chainId)
     return
   }
@@ -54,7 +56,7 @@ export async function ensureChainAccounts(
     .count()
   if (
     chainAccountsNum === subWalletsNum &&
-    !(isKeylessWallet(wallet.type) || isAccountAbstractionWallet(wallet))
+    !(isKeylessWallet(wallet) || isAccountAbstractionWallet(wallet))
   ) {
     return
   }
@@ -72,7 +74,7 @@ export async function ensureChainAccounts(
 
   let signingHdWallet: KeystoreSigningWallet | undefined
   let hdPath: IHdPath | undefined
-  if (isHdWallet(wallet.type)) {
+  if (isHdWallet(wallet)) {
     signingHdWallet = await getStructuralSigningWallet(
       wallet,
       undefined,
@@ -101,7 +103,8 @@ export async function ensureChainAccounts(
     if (!acc) {
       queue
         .add(async () => {
-          let address
+          let address,
+            info: ChainAccountInfo = {}
           switch (wallet.type) {
             case WalletType.HD:
             // pass through
@@ -127,6 +130,30 @@ export async function ensureChainAccounts(
               address = signingWallet?.address
               break
             }
+            case WalletType.MULTI_SIG_GROUP: {
+              const network = await NETWORK_SERVICE.getNetwork({
+                kind: networkKind,
+                chainId
+              })
+              if (!network) {
+                return
+              }
+              switch (wallet.info.multisigType) {
+                case MultisigWalletType.SAFE: {
+                  const { address: addr, safe } = await makeSafeAccount(
+                    network,
+                    wallet,
+                    subWallet
+                  )
+                  if (addr && safe) {
+                    address = addr
+                    info.safe = safe
+                  }
+                  break
+                }
+              }
+              break
+            }
             case WalletType.WATCH_GROUP:
             // pass through
             case WalletType.WALLET_CONNECT_GROUP:
@@ -148,13 +175,14 @@ export async function ensureChainAccounts(
             index: subWallet.index,
             networkKind,
             chainId,
-            address
+            address,
+            info
           } as IChainAccount)
         })
         .then()
     } else if (
       !acc.address &&
-      (isKeylessWallet(wallet.type) || isAccountAbstractionWallet(wallet))
+      (isKeylessWallet(wallet) || isAccountAbstractionWallet(wallet))
     ) {
       queue
         .add(async () => {
@@ -290,8 +318,12 @@ export async function ensureChainAccount(
   const existing = await getChainAccount(wallet, index, networkKind, chainId)
   if (
     existing &&
-    (!(isKeylessWallet(wallet.type) || isAccountAbstractionWallet(wallet)) ||
-      existing.address)
+    (existing.address ||
+      !(
+        isKeylessWallet(wallet) ||
+        isAccountAbstractionWallet(wallet) ||
+        isMultisigWallet(wallet)
+      ))
   ) {
     return existing
   }
@@ -373,11 +405,10 @@ export async function ensureChainAccount(
             wallet,
             subWallet
           )
-          if (!addr || !safe) {
-            return
+          if (addr && safe) {
+            address = addr
+            info.safe = safe
           }
-          address = addr
-          info.safe = safe
           break
         }
       }
@@ -461,9 +492,7 @@ export async function getChainAccount(
   chainId: number | string
 ): Promise<IChainAccount | undefined> {
   assert(
-    index !== PSEUDO_INDEX
-      ? isWalletGroup(wallet.type)
-      : !isWalletGroup(wallet.type)
+    index !== PSEUDO_INDEX ? isWalletGroup(wallet) : !isWalletGroup(wallet)
   )
 
   return DB.chainAccounts

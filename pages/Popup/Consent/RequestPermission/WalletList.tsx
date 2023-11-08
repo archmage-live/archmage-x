@@ -36,7 +36,7 @@ export const WalletList = ({
     getScrollElement: () => parentRef.current,
     estimateSize: (index) => {
       const wallet = wallets[index]
-      if (!wallet.isOpen || !isWalletGroup(wallet.wallet.type)) {
+      if (!wallet.isOpen || !isWalletGroup(wallet.wallet)) {
         return itemSize
       } else {
         return (

@@ -43,8 +43,8 @@ export enum WalletType {
   KEYLESS_GROUP = 'keyless_group' // ditto, but in group
 }
 
-export function isWalletGroup(type: WalletType) {
-  switch (type) {
+export function isWalletGroup(wallet: IWallet) {
+  switch (wallet.type) {
     case WalletType.HD:
     // pass through
     case WalletType.PRIVATE_KEY_GROUP:
@@ -66,12 +66,12 @@ export function isWalletGroup(type: WalletType) {
   }
 }
 
-export function hasWalletKeystore(type: WalletType) {
-  return hasMasterKeystore(type) || hasSubKeystore(type)
+export function hasWalletKeystore(wallet: IWallet) {
+  return hasMasterKeystore(wallet) || hasSubKeystore(wallet)
 }
 
-export function hasMasterKeystore(type: WalletType) {
-  switch (type) {
+export function hasMasterKeystore(wallet: IWallet) {
+  switch (wallet.type) {
     case WalletType.HD:
     // pass through
     case WalletType.PRIVATE_KEY:
@@ -81,8 +81,8 @@ export function hasMasterKeystore(type: WalletType) {
   }
 }
 
-export function hasSubKeystore(type: WalletType) {
-  switch (type) {
+export function hasSubKeystore(wallet: IWallet) {
+  switch (wallet.type) {
     case WalletType.PRIVATE_KEY_GROUP:
       return true
     default:
@@ -90,8 +90,8 @@ export function hasSubKeystore(type: WalletType) {
   }
 }
 
-export function isHdWallet(type: WalletType) {
-  switch (type) {
+export function isHdWallet(wallet: IWallet) {
+  switch (wallet.type) {
     case WalletType.HD:
     // pass through
     case WalletType.KEYLESS_HD:
@@ -101,8 +101,8 @@ export function isHdWallet(type: WalletType) {
   }
 }
 
-export function isWatchWallet(type: WalletType) {
-  switch (type) {
+export function isWatchWallet(wallet: IWallet) {
+  switch (wallet.type) {
     case WalletType.WATCH:
     // pass through
     case WalletType.WATCH_GROUP:
@@ -112,8 +112,8 @@ export function isWatchWallet(type: WalletType) {
   }
 }
 
-export function isMultisigWallet(type: WalletType) {
-  switch (type) {
+export function isMultisigWallet(wallet: IWallet) {
+  switch (wallet.type) {
     case WalletType.MULTI_SIG:
     case WalletType.MULTI_SIG_GROUP:
       return true
@@ -122,8 +122,8 @@ export function isMultisigWallet(type: WalletType) {
   }
 }
 
-export function isKeylessWallet(type: WalletType) {
-  switch (type) {
+export function isKeylessWallet(wallet: IWallet) {
+  switch (wallet.type) {
     case WalletType.KEYLESS_HD:
     case WalletType.KEYLESS:
     case WalletType.KEYLESS_GROUP:
@@ -137,8 +137,8 @@ export function isAccountAbstractionWallet(wallet: IWallet) {
   return !!wallet.info.accountAbstraction
 }
 
-export function isHardwareWallet(type: WalletType) {
-  switch (type) {
+export function isHardwareWallet(wallet: IWallet) {
+  switch (wallet.type) {
     case WalletType.HW:
     // pass through
     case WalletType.HW_GROUP:
@@ -148,8 +148,8 @@ export function isHardwareWallet(type: WalletType) {
   }
 }
 
-export function isWalletConnectProtocol(type: WalletType) {
-  switch (type) {
+export function isWalletConnectProtocol(wallet: IWallet) {
+  switch (wallet.type) {
     case WalletType.WALLET_CONNECT:
     // pass through
     case WalletType.WALLET_CONNECT_GROUP:
@@ -159,12 +159,12 @@ export function isWalletConnectProtocol(type: WalletType) {
   }
 }
 
-export function canWalletSign(type: WalletType) {
+export function canWalletSign(wallet: IWallet) {
   return (
-    hasWalletKeystore(type) ||
-    isKeylessWallet(type) ||
-    isHardwareWallet(type) ||
-    isWalletConnectProtocol(type)
+    hasWalletKeystore(wallet) ||
+    isKeylessWallet(wallet) ||
+    isHardwareWallet(wallet) ||
+    isWalletConnectProtocol(wallet)
   )
 }
 

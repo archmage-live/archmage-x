@@ -223,9 +223,7 @@ export class CosmPermissionedProvider extends BasePermissionedProvider {
 
     const signer = await getSigningWallet(this.account)
 
-    const hwType = isHardwareWallet(wallet.type)
-      ? wallet.info.hwType
-      : undefined
+    const hwType = isHardwareWallet(wallet) ? wallet.info.hwType : undefined
 
     return {
       name:
@@ -252,7 +250,7 @@ export class CosmPermissionedProvider extends BasePermissionedProvider {
     assert(wallet)
 
     // TODO: WalletConnect?
-    return hasWalletKeystore(wallet.type)
+    return hasWalletKeystore(wallet)
   }
 
   async signTx(

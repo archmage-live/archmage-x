@@ -38,7 +38,7 @@ import {
   isWatchWallet
 } from '~lib/wallet'
 
-import { SafeEditModal, SafeEditType } from './SafeEditModal'
+import { SafeEditModal, SafeEditType } from './SafeEdit'
 
 export * from './SafeConfirmTx'
 
@@ -275,7 +275,7 @@ const SafeSettingsDisplay = ({
             })
             assert(wallet && subWallet)
 
-            if (!associated || !isWatchWallet(wallet.type)) {
+            if (!associated || !isWatchWallet(wallet)) {
               associated = {
                 masterId: account.masterId,
                 index: account.index
@@ -283,7 +283,7 @@ const SafeSettingsDisplay = ({
 
               name = accountName({ wallet, subWallet })
 
-              if (!isWatchWallet(wallet.type)) {
+              if (!isWatchWallet(wallet)) {
                 // prefer non-watch account
                 break
               }
@@ -302,7 +302,7 @@ const SafeSettingsDisplay = ({
     }
   }, [safeInfo])
 
-  if (!isMultisigWallet(wallet.type) || !safeInfo) {
+  if (!isMultisigWallet(wallet) || !safeInfo) {
     return <></>
   }
 

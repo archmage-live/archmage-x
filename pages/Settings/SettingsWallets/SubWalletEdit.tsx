@@ -69,7 +69,7 @@ export const SubWalletEdit = ({
 
   return (
     <Stack spacing="12" fontSize="md">
-      {isWalletGroup(wallet.type) ? (
+      {isWalletGroup(wallet) ? (
         <>
           <SubWalletNameEdit wallet={wallet} subWallet={subWallet} />
 
@@ -120,7 +120,7 @@ export const SubWalletEdit = ({
         </FormControl>
       )}
 
-      {isMultisigWallet(wallet.type) && account && (
+      {isMultisigWallet(wallet) && account && (
         <Stack spacing={6}>
           <Divider />
 
@@ -153,7 +153,7 @@ export const SubWalletEdit = ({
           </Button>
         )}
 
-        {hasWalletKeystore(wallet.type) && (
+        {hasWalletKeystore(wallet) && (
           <Button variant="outline" colorScheme="purple" onClick={onExportOpen}>
             Export Private Key
           </Button>
@@ -164,7 +164,7 @@ export const SubWalletEdit = ({
           onClick={() => {
             onOpenDeleteWallet({ subWallet })
           }}>
-          Delete {isWalletGroup(wallet.type) ? 'Account' : 'Wallet'}
+          Delete {isWalletGroup(wallet) ? 'Account' : 'Wallet'}
         </Button>
       </HStack>
 

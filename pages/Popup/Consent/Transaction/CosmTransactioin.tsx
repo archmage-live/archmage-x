@@ -425,7 +425,7 @@ export const CosmTransaction = ({
 
           <Divider />
 
-          {isHardwareWallet(wallet.type) && (
+          {isHardwareWallet(wallet) && (
             <AlertBox level="info">
               Prior to clicking confirm, you should plug in your hardware wallet
               device and select the Cosmos app.

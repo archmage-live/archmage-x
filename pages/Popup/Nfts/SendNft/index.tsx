@@ -267,7 +267,7 @@ export const SendNft = ({
 
           <AlertBox>{feeAlert}</AlertBox>
 
-          {wallet && !canWalletSign(wallet.type) && (
+          {wallet && !canWalletSign(wallet) && (
             <AlertBox level="error">
               You can&apos;t send NFT using the watch-only wallet.
             </AlertBox>
@@ -283,7 +283,7 @@ export const SendNft = ({
           colorScheme="purple"
           size="lg"
           flex={1}
-          isDisabled={!nextEnabled || (wallet && !canWalletSign(wallet.type))}
+          isDisabled={!nextEnabled || (wallet && !canWalletSign(wallet))}
           isLoading={isLoading}
           onClick={onNext}>
           Next

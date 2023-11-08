@@ -74,7 +74,7 @@ export const WalletItem = ({
   }, [isOpen, measure])
 
   // only for single wallet
-  const subWallet = !isWalletGroup(wallet.type) ? subWallets[0] : undefined
+  const subWallet = !isWalletGroup(wallet) ? subWallets[0] : undefined
   const account = subWallet?.account
 
   const { onOpen: onDetailOpen } = useAccountDetailModal()
@@ -94,7 +94,7 @@ export const WalletItem = ({
         px={4}
         justifyContent="start"
         onClick={() => {
-          if (isWalletGroup(wallet.type)) {
+          if (isWalletGroup(wallet)) {
             onToggleOpen(wallet.id)
           } else {
             if (account) {
@@ -130,7 +130,7 @@ export const WalletItem = ({
                   </Text>
                 )}
 
-                {isWalletGroup(wallet.type) && (
+                {isWalletGroup(wallet) && (
                   <Text fontSize="sm" color="gray.500">
                     {subWallets.length} accounts
                   </Text>
@@ -217,7 +217,7 @@ export const WalletItem = ({
               </Box>
             </HStack>
 
-            {isWalletGroup(wallet.type) &&
+            {isWalletGroup(wallet) &&
               (isOpen ? (
                 <ChevronDownIcon color="gray.500" />
               ) : (
@@ -227,7 +227,7 @@ export const WalletItem = ({
         </Box>
       </Button>
 
-      {isOpen && network && isWalletGroup(wallet.type) && (
+      {isOpen && network && isWalletGroup(wallet) && (
         <SubWalletList
           network={network}
           wallet={wallet}

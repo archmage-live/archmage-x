@@ -146,15 +146,15 @@ export async function getStructuralSigningWallet(
   chainId: number | string,
   waitForUnlock: boolean = false
 ): Promise<KeystoreSigningWallet | undefined> {
-  if (!hasWalletKeystore(wallet.type) && !isKeylessWallet(wallet.type)) {
+  if (!hasWalletKeystore(wallet) && !isKeylessWallet(wallet)) {
     return undefined
   }
 
   let keystore
-  if (hasWalletKeystore(wallet.type)) {
+  if (hasWalletKeystore(wallet)) {
     keystore = await KEYSTORE.get(
       wallet.id,
-      hasSubKeystore(wallet.type) ? subWallet!.index : undefined,
+      hasSubKeystore(wallet) ? subWallet!.index : undefined,
       waitForUnlock
     )
   } else {
@@ -236,7 +236,7 @@ export async function getHardwareSigningWallet(
   subWallet: ISubWallet,
   account: IChainAccount
 ): Promise<SigningWallet | undefined> {
-  assert(isHardwareWallet(wallet.type))
+  assert(isHardwareWallet(wallet))
 
   const network = await NETWORK_SERVICE.getNetwork({
     kind: account.networkKind,
@@ -304,7 +304,7 @@ export async function getSigningWallet(
   })
   assert(wallet && subWallet)
 
-  if (hasWalletKeystore(wallet.type) || isKeylessWallet(wallet.type)) {
+  if (hasWalletKeystore(wallet) || isKeylessWallet(wallet)) {
     let signingWallet = await getStructuralSigningWallet(
       wallet,
       subWallet,
@@ -316,7 +316,7 @@ export async function getSigningWallet(
       return undefined
     }
 
-    if (isHdWallet(wallet.type)) {
+    if (isHdWallet(wallet)) {
       const hdPath = await WALLET_SERVICE.getHdPath(
         account.masterId,
         account.networkKind
@@ -333,7 +333,7 @@ export async function getSigningWallet(
 
     assert(signingWallet.address === account.address)
     return signingWallet
-  } else if (isHardwareWallet(wallet.type)) {
+  } else if (isHardwareWallet(wallet)) {
     return getHardwareSigningWallet(wallet, subWallet, account)
   }
 }

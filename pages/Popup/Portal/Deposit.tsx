@@ -82,7 +82,7 @@ export const Deposit = ({ onClose }: { onClose: () => void }) => {
                 props={{ w: 64 }}
               />
 
-              {wallet && !canWalletSign(wallet.type) ? (
+              {wallet && !canWalletSign(wallet) ? (
                 <AlertBox level="error">
                   Don&apos;t use this watch-only wallet to receive tokens.
                   Otherwise you may lose your assets.

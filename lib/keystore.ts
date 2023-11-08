@@ -99,7 +99,7 @@ export class Keystore {
         for (let j = i; j < i + concurrent && j < wallets.length; j++) {
           const wallet = wallets[j]
 
-          if (!hasWalletKeystore(wallet.type)) {
+          if (!hasWalletKeystore(wallet)) {
             continue
           }
 
@@ -184,7 +184,7 @@ export class Keystore {
   }
 
   async persist(wallet: IWallet, index: Index) {
-    if (!hasWalletKeystore(wallet.type)) {
+    if (!hasWalletKeystore(wallet)) {
       return
     }
 

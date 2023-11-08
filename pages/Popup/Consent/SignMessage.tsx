@@ -82,7 +82,7 @@ export const SignMessage = ({
       setIsLoading(false)
     }
 
-    if (wallet && isWalletConnectProtocol(wallet.type)) {
+    if (wallet && isWalletConnectProtocol(wallet)) {
       setWcPayload({ message: payload.message })
       onWcSignedRef.current = ({ signature }) => {
         console.log(signature)
@@ -194,7 +194,7 @@ export const SignMessage = ({
         </Stack>
       </Stack>
 
-      {network && wallet && account && isWalletConnectProtocol(wallet.type) && (
+      {network && wallet && account && isWalletConnectProtocol(wallet) && (
         <WalletConnectSigningModel
           isOpen={isWcOpen}
           onClose={onWcClose}

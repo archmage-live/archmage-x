@@ -29,7 +29,7 @@ export function usePaginatedBalances(
     if (isWalletEntries(wallets)) {
       return wallets
         .slice(start, end)
-        .filter(({ wallet }) => !isWalletGroup(wallet.type))
+        .filter(({ wallet }) => !isWalletGroup(wallet))
         .map(({ subWallets }) => subWallets[0].account)
     } else {
       return wallets?.slice(start, end).map((subWallet) => subWallet.account)

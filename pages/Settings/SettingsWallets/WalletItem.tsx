@@ -52,7 +52,7 @@ export const WalletItem = ({
     measure()
   }, [isOpen, measure])
 
-  const subWallet = !isWalletGroup(wallet.type) ? subWallets[0] : undefined
+  const subWallet = !isWalletGroup(wallet) ? subWallets[0] : undefined
   const account = subWallet?.account
 
   const infoVisibility = infoVisible
@@ -95,7 +95,7 @@ export const WalletItem = ({
             })
           }}
           onDoubleClick={() => {
-            if (isWalletGroup(wallet.type)) {
+            if (isWalletGroup(wallet)) {
               onToggleOpen?.(wallet.id)
             }
           }}
@@ -136,7 +136,7 @@ export const WalletItem = ({
                 </Text>
               )}
 
-              {isWalletGroup(wallet.type) && (
+              {isWalletGroup(wallet) && (
                 <Text>{subWallets.length} accounts</Text>
               )}
 
@@ -152,7 +152,7 @@ export const WalletItem = ({
         </HStack>
       </Box>
 
-      {isOpen && isWalletGroup(wallet.type) && (
+      {isOpen && isWalletGroup(wallet) && (
         <SubWalletList
           subWallets={subWallets}
           onSelectedId={(selected) => onSelected?.(selected)}

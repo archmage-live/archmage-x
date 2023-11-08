@@ -458,7 +458,7 @@ class WalletServicePartial implements IWalletService {
   ): Promise<IChainAccount | undefined> {
     // fast path
     const account = await getChainAccount(wallet, index, networkKind, chainId)
-    if (account && (!isKeylessWallet(wallet.type) || account.address)) {
+    if (account && (!isKeylessWallet(wallet) || account.address)) {
       return account
     }
     // slow path
@@ -1112,7 +1112,7 @@ class WalletService extends WalletServicePartial {
       if (!wallet) {
         return
       }
-      assert(isHdWallet(wallet.type))
+      assert(isHdWallet(wallet))
       const unlock = useLock && (await this._ensureLock(masterId))
       try {
         hdPath = await DB.hdPaths.where({ masterId, networkKind }).first()

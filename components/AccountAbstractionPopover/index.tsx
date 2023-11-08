@@ -63,7 +63,7 @@ export const AccountAbstractionPopover = ({
     if (!network || !wallet || !subWallet || !account?.address) {
       return
     }
-    if (!canWalletSign(wallet.type)) {
+    if (!canWalletSign(wallet)) {
       return
     }
 
