@@ -172,7 +172,7 @@ const SafeSettingsDisplay = ({
   account: IChainAccount
   onEdit: (type: SafeEditType, index?: number) => void
 }) => {
-  const safeInfo = account.info.safe || subWallet.info.safe
+  const safeInfo = account.info.safe
 
   const [address, setAddress] = useState<string>()
   const [owners, setOwners] = useState<SafeOwner[]>([])

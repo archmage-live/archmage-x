@@ -84,6 +84,12 @@ export const SubWalletEdit = ({
           <WalletNameEdit wallet={wallet} />
 
           <Text fontWeight="medium">Type: {getWalletTypeTitle(wallet)}</Text>
+
+          {isMultisigWallet(wallet) && (
+            <Text fontWeight="medium">
+              MultiSig Type: {getMultisigTypeTitle(wallet)}
+            </Text>
+          )}
         </>
       )}
 
@@ -120,22 +126,19 @@ export const SubWalletEdit = ({
         </FormControl>
       )}
 
-      {isMultisigWallet(wallet) && account && (
+      {isMultisigWallet(wallet) && account?.address && (
         <Stack spacing={6}>
           <Divider />
 
-          <Text fontWeight="medium">
-            MultiSig Type: {getMultisigTypeTitle(wallet)}
-          </Text>
-
-          {wallet.info.multisigType === MultisigWalletType.SAFE && (
-            <SafeSettings
-              network={network}
-              wallet={wallet}
-              subWallet={subWallet}
-              account={account}
-            />
-          )}
+          {wallet.info.multisigType === MultisigWalletType.SAFE &&
+            account.info.safe && (
+              <SafeSettings
+                network={network}
+                wallet={wallet}
+                subWallet={subWallet}
+                account={account}
+              />
+            )}
 
           <Divider />
         </Stack>

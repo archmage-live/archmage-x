@@ -67,7 +67,7 @@ export const SafeEditModal = ({
   type: SafeEditType
   index?: number
 }) => {
-  const info = account.info.safe || subWallet.info.safe
+  const info = account.info.safe
 
   const [threshold, setThreshold] = useState(info?.threshold || 0)
   const [newOwner, setNewOwner] = useState<SafeOwner>({
@@ -102,13 +102,12 @@ export const SafeEditModal = ({
 
   useInterval(retry, !loading && error ? 10000 : null)
 
-  const { setConfirmTxParams } = useSafeConfirmTxModal()
-
   const {
     isOpen: isSafeConfirmTxOpen,
     onOpen: onSafeConfirmTxOpen,
-    onClose: onSafeConfirmTxClose
-  } = useDisclosure()
+    onClose: onSafeConfirmTxClose,
+    setConfirmTxParams
+  } = useSafeConfirmTxModal()
 
   const isDisabled = useMemo(() => {
     return (
@@ -117,10 +116,14 @@ export const SafeEditModal = ({
     )
   }, [network, type, newOwner])
 
+  const [isLoading, setIsLoading] = useState(false)
+
   const onNext = useCallback(async () => {
     if (!info || !safe) {
       return
     }
+
+    setIsLoading(true)
 
     let params: SafeTxParams, tx: SafeTransaction
     switch (type) {
@@ -162,6 +165,8 @@ export const SafeEditModal = ({
         tx = await safe.createRemoveOwnerTx(params.params)
         break
     }
+
+    setIsLoading(false)
 
     setConfirmTxParams({
       network,
@@ -271,6 +276,7 @@ export const SafeEditModal = ({
             <Button
               colorScheme="purple"
               isDisabled={isDisabled}
+              isLoading={isLoading}
               onClick={onNext}>
               Continue
             </Button>

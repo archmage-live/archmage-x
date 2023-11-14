@@ -27,6 +27,14 @@ import {
   NumberInputField,
   NumberInputStepper,
   Stack,
+  Step,
+  StepDescription,
+  StepIcon,
+  StepIndicator,
+  StepNumber,
+  StepStatus,
+  StepTitle,
+  Stepper,
   Text,
   Tooltip,
   chakra
@@ -219,10 +227,10 @@ const SafeConfirmTxContent = ({
   }
 
   return (
-    <Stack spacing={4}>
+    <Stack spacing={8}>
       <Divider />
 
-      <Stack spacing={4}>
+      <Stack spacing={8}>
         {descriptors.description}
 
         {descriptors.actions?.length && (
@@ -261,7 +269,7 @@ const SafeConfirmTxContent = ({
           </Stack>
         )}
 
-        <Accordion allowMultiple allowToggle>
+        <Accordion allowMultiple>
           <AccordionItem>
             <h4>
               <AccordionButton>
@@ -395,12 +403,12 @@ const SafeConfirmTxContent = ({
         </HStack>
       </Stack>
 
-      <HStack justify="space-between">
-        <Button variant="outline" size="lg">
+      <HStack justify="space-between" spacing={4} mb={4}>
+        <Button variant="outline" size="lg" onClick={onClose}>
           Cancel
         </Button>
 
-        <HStack spacing={4}>
+        <HStack spacing={2}>
           <Button variant="outline" size="lg">
             ➕ Add to batch
           </Button>
@@ -444,7 +452,7 @@ const SafeActionsDisplay = ({
   useInterval(retry, !loading && error ? 30000 : null)
 
   return (
-    <Accordion allowMultiple allowToggle {...props}>
+    <Accordion allowMultiple {...props}>
       {_abis?.map((abi, index) => {
         const action = actions[index]
         const txDesc = abi?.parseTransaction({ data: action.data })
@@ -1049,9 +1057,58 @@ async function buildSafeTxDescriptors(
               be created to replace the original one.
             </Text>
 
-            <Text>Transaction nonce: {params.nonce}</Text>
+            <Text>
+              Transaction nonce:&nbsp;
+              <chakra.span fontWeight="medium">{params.nonce}</chakra.span>
+            </Text>
           </Stack>
         )
       }
   }
+}
+
+const SafeTxStatus = ({ network }: { network: INetwork }) => {
+  const steps = [
+    { title: 'Transaction created', description: undefined },
+    {
+      title: (
+        <>
+          Confirmations <chakra.span color="gray.500">(2 of 2)</chakra.span>
+        </>
+      ),
+      description: <Stack></Stack>
+    },
+    {
+      title: 'Executed',
+      description: (
+        <TextLink
+          text={''}
+          name="Signer"
+          url={getAccountUrl(network, '')}
+          urlLabel="View on explorer"
+        />
+      )
+    }
+  ]
+
+  return (
+    <Stepper index={1} orientation="vertical" gap={2}>
+      {steps.map((step, index) => (
+        <Step key={index}>
+          <StepIndicator>
+            <StepStatus
+              complete={<StepIcon />}
+              incomplete={<StepNumber />}
+              active={<StepNumber />}
+            />
+          </StepIndicator>
+
+          <Box flexShrink="0">
+            <StepTitle>{step.title}</StepTitle>
+            <StepDescription>{step.description}</StepDescription>
+          </Box>
+        </Step>
+      ))}
+    </Stepper>
+  )
 }
