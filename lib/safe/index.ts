@@ -1,12 +1,21 @@
 import { Provider } from '@ethersproject/abstract-provider'
 import { Signer } from '@ethersproject/abstract-signer'
-import SafeApiKit from '@safe-global/api-kit'
+import _SafeApiKit, {
+  AllTransactionsListResponse,
+  AllTransactionsOptions,
+  EthereumTxWithTransfersResponse,
+  SafeApiKitConfig,
+  SafeModuleTransactionWithTransfersResponse,
+  SafeMultisigTransactionListResponse,
+  SafeMultisigTransactionWithTransfersResponse
+} from '@safe-global/api-kit'
 import Safe, {
   EthersAdapter,
   PredictedSafeProps,
   SafeAccountConfig,
   SafeFactory
 } from '@safe-global/protocol-kit'
+import { EthAdapter } from '@safe-global/safe-core-sdk-types'
 import assert from 'assert'
 import { ethers } from 'ethers'
 
@@ -176,4 +185,164 @@ export async function makeSafeAccount(
     address,
     safe
   }
+}
+
+export type SafeTransactionResponse =
+  | SafeModuleTransactionWithTransfersResponse
+  | SafeMultisigTransactionWithTransfersResponse
+  | EthereumTxWithTransfersResponse
+
+export function getSafeTxHash(tx: SafeTransactionResponse) {
+  switch (tx.txType) {
+    case 'MULTISIG_TRANSACTION':
+      return tx.transactionHash
+    case 'MODULE_TRANSACTION':
+      return tx.transactionHash
+    case 'ETHEREUM_TRANSACTION':
+      return tx.txHash
+    default:
+      // should not happen
+      return undefined
+  }
+}
+
+export class SafeApiKit extends _SafeApiKit {
+  #txServiceBaseUrl: string
+  #ethAdapter: EthAdapter
+
+  constructor({ txServiceUrl, ethAdapter }: SafeApiKitConfig) {
+    super({ txServiceUrl, ethAdapter })
+    this.#txServiceBaseUrl = getTxServiceBaseUrl(txServiceUrl)
+    this.#ethAdapter = ethAdapter
+  }
+
+  async getPendingTransactions(
+    safeAddress: string,
+    currentNonce?: number,
+    options?: { limit?: number; offset?: number }
+  ): Promise<SafeMultisigTransactionListResponse> {
+    if (safeAddress === '') {
+      throw new Error('Invalid Safe address')
+    }
+    const { address } = await this.#ethAdapter.getEip3770Address(safeAddress)
+    const nonce = currentNonce
+      ? currentNonce
+      : (await this.getSafeInfo(address)).nonce
+
+    const url = new URL(
+      `${
+        this.#txServiceBaseUrl
+      }/v1/safes/${address}/multisig-transactions/?executed=false&nonce__gte=${nonce}`
+    )
+
+    if (typeof options?.limit === 'number') {
+      url.searchParams.set('limit', options.limit.toString())
+    }
+
+    if (typeof options?.offset === 'number') {
+      url.searchParams.set('offset', options.offset.toString())
+    }
+
+    return sendRequest({
+      url: url.toString(),
+      method: HttpMethod.Get
+    })
+  }
+
+  async getAllTransactions(
+    safeAddress: string,
+    options?: AllTransactionsOptions & { limit?: number; offset?: number }
+  ): Promise<AllTransactionsListResponse> {
+    if (safeAddress === '') {
+      throw new Error('Invalid Safe address')
+    }
+    const { address } = await this.#ethAdapter.getEip3770Address(safeAddress)
+    const url = new URL(
+      `${this.#txServiceBaseUrl}/v1/safes/${address}/all-transactions/`
+    )
+
+    const trusted = options?.trusted?.toString() || 'true'
+    url.searchParams.set('trusted', trusted)
+
+    const queued = options?.queued?.toString() || 'true'
+    url.searchParams.set('queued', queued)
+
+    const executed = options?.executed?.toString() || 'false'
+    url.searchParams.set('executed', executed)
+
+    if (typeof options?.limit === 'number') {
+      url.searchParams.set('limit', options.limit.toString())
+    }
+
+    if (typeof options?.offset === 'number') {
+      url.searchParams.set('offset', options.offset.toString())
+    }
+
+    return sendRequest({
+      url: url.toString(),
+      method: HttpMethod.Get
+    })
+  }
+}
+
+function getTxServiceBaseUrl(txServiceUrl: string): string {
+  return `${txServiceUrl}/api`
+}
+
+enum HttpMethod {
+  Get = 'get',
+  Post = 'post',
+  Delete = 'delete'
+}
+
+interface HttpRequest {
+  url: string
+  method: HttpMethod
+  body?: any
+}
+
+async function sendRequest<T>({ url, method, body }: HttpRequest): Promise<T> {
+  const response = await fetch(url, {
+    method,
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(body)
+  })
+
+  let jsonResponse: any
+  try {
+    jsonResponse = await response.json()
+  } catch (error) {
+    if (!response.ok) {
+      throw new Error(response.statusText)
+    }
+  }
+
+  if (response.ok) {
+    return jsonResponse as T
+  }
+  if (jsonResponse.data) {
+    throw new Error(jsonResponse.data)
+  }
+  if (jsonResponse.detail) {
+    throw new Error(jsonResponse.detail)
+  }
+  if (jsonResponse.message) {
+    throw new Error(jsonResponse.message)
+  }
+  if (jsonResponse.nonFieldErrors) {
+    throw new Error(jsonResponse.nonFieldErrors)
+  }
+  if (jsonResponse.delegate) {
+    throw new Error(jsonResponse.delegate)
+  }
+  if (jsonResponse.safe) {
+    throw new Error(jsonResponse.safe)
+  }
+  if (jsonResponse.delegator) {
+    throw new Error(jsonResponse.delegator)
+  }
+  throw new Error(response.statusText)
 }

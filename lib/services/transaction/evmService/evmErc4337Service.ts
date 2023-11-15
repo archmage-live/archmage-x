@@ -33,7 +33,7 @@ export class EvmErc4337TransactionService extends EvmBasicTransactionService {
     replace?: boolean
   ): Promise<IPendingTx> {
     // TODO: implement replacement tx for erc4337
-    throw new Error('not implemented.')
+    throw new Error('not implemented')
   }
 
   async addPendingTx(
@@ -188,7 +188,7 @@ export class EvmErc4337TransactionService extends EvmBasicTransactionService {
         )
         .anyOf(txQuery)
         .toArray()
-      const existingTxsSet = new Map(
+      const existingTxsMap = new Map(
         existingTxs.map((tx) => [tx.index2 as string, tx])
       ) // userOpHash -> tx
 
@@ -207,7 +207,7 @@ export class EvmErc4337TransactionService extends EvmBasicTransactionService {
           }
         }
 
-        const existing = existingTxsSet.get(tx.hash)
+        const existing = existingTxsMap.get(tx.hash)
         if (!existing) {
           const decoded = tx.decodedCallData?.at(0)
           let functionSig

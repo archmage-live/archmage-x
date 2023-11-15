@@ -88,7 +88,7 @@ if (
           )
           return true
         default:
-          throw Error('Not implemented')
+          throw Error('not implemented')
       }
     },
 

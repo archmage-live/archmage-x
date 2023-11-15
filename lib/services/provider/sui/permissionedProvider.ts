@@ -79,7 +79,7 @@ export class SuiPermissionedProvider extends BasePermissionedProvider {
         case 'stake':
           return await this.stake(ctx, params[0])
         default:
-          throw Error('Not implemented')
+          throw Error('not implemented')
       }
     } catch (err) {
       console.error(err)

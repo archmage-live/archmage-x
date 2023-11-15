@@ -156,7 +156,7 @@ export class StarknetPermissionedProvider extends BasePermissionedProvider {
         case 'wallet_watchAsset':
           return await this.watchAsset(ctx, params[0])
         default:
-          throw Error('Not implemented')
+          throw Error('not implemented')
       }
     } catch (err) {
       console.error(err)

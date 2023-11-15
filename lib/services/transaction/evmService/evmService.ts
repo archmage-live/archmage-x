@@ -10,11 +10,16 @@ import {
   TransactionReceipt,
   TransactionRequest
 } from '@ethersproject/providers'
+import {
+  SafeMultisigTransactionResponse,
+  SafeTransactionData
+} from '@safe-global/safe-core-sdk-types'
 import assert from 'assert'
 
 import { DB } from '~lib/db'
 import { isErc4337Account } from '~lib/erc4337'
 import { NetworkKind } from '~lib/network'
+import { SafeTransactionResponse, getSafeTxHash } from '~lib/safe'
 import { IChainAccount, IPendingTx, ITransaction } from '~lib/schema'
 import {
   ETHERSCAN_API,
@@ -86,16 +91,22 @@ export type ReducedTransactionReceipt = Omit<
 >
 
 export interface EvmPendingTxInfo {
-  tx: ReducedTransactionResponse | UserOperationResponse
+  tx:
+    | ReducedTransactionResponse
+    | UserOperationResponse
+    | SafeMultisigTransactionResponse
 
-  request: TransactionRequest
+  request: TransactionRequest | SafeTransactionData
   origin: string
   functionSig?: FunctionFragment
   startBlockNumber?: number
 }
 
 export interface EvmTransactionInfo {
-  tx: ReducedTransactionResponse | UserOperationResponse
+  tx:
+    | ReducedTransactionResponse
+    | UserOperationResponse
+    | SafeTransactionResponse
 
   receipt?: ReducedTransactionReceipt | UserOperationReceipt // only exists for confirmed transaction, but may absent for Etherscan API available transaction
 
@@ -123,15 +134,30 @@ export function isEvmTransactionInfo(
 }
 
 export function isEvmTransactionResponse(
-  tx: ReducedTransactionResponse | UserOperationResponse
+  tx:
+    | ReducedTransactionResponse
+    | UserOperationResponse
+    | SafeTransactionResponse
 ): tx is ReducedTransactionResponse {
   return !!(tx as ReducedTransactionResponse).from
 }
 
 export function isEvmUserOperationResponse(
-  tx: ReducedTransactionResponse | UserOperationResponse
+  tx:
+    | ReducedTransactionResponse
+    | UserOperationResponse
+    | SafeTransactionResponse
 ): tx is UserOperationResponse {
-  return !isEvmTransactionResponse(tx)
+  return !!(tx as UserOperationResponse).preVerificationGas
+}
+
+export function isEvmSafeTransactionResponse(
+  tx:
+    | ReducedTransactionResponse
+    | UserOperationResponse
+    | SafeTransactionResponse
+): tx is SafeTransactionResponse {
+  return !isEvmTransactionResponse(tx) && !isEvmUserOperationResponse(tx)
 }
 
 export function isEvmTransactionReceipt(
@@ -176,7 +202,7 @@ function getEvmTransactionInfoFromResponse(
       success: receipt ? receipt.status === 1 : undefined,
       timestamp: tx.timestamp
     }
-  } else {
+  } else if (isEvmUserOperationResponse(tx)) {
     assert(!receipt || isEvmUserOperationReceipt(receipt))
 
     return {
@@ -190,6 +216,38 @@ function getEvmTransactionInfoFromResponse(
         ? receipt.success && receipt.receipt.status !== 0
         : undefined,
       timestamp: tx.timestamp || receipt?.timestamp
+    }
+  } else {
+    let from, nonce, success
+    switch (tx.txType) {
+      case 'MULTISIG_TRANSACTION':
+        from = transaction.address
+        nonce = tx.nonce
+        success = tx.isSuccessful
+        break
+      case 'MODULE_TRANSACTION':
+        from = tx.module
+        nonce = 0 // TODO
+        success = tx.isSuccessful
+        break
+      case 'ETHEREUM_TRANSACTION':
+        from = tx.from
+        nonce = 0 // TODO
+        success = true
+        break
+      default:
+        throw new Error('unknown safe tx type')
+    }
+
+    return {
+      hash: getSafeTxHash(tx)!,
+      from,
+      to: tx.to,
+      value: (tx as any).value,
+      data: tx.data,
+      nonce: nonce,
+      success,
+      timestamp: Math.floor(Number(new Date(tx.executionDate)) / 1000)
     }
   }
 }
@@ -305,13 +363,13 @@ export class EvmTransactionServicePartial
 export class EvmBasicTransactionService extends EvmTransactionServicePartial {
   protected normalizeTx<T extends ITransaction | IPendingTx>(
     transaction: T,
-    tx: TransactionResponse | UserOperationResponse
+    tx: TransactionResponse | UserOperationResponse | SafeTransactionResponse
   ) {
     if (isEvmTransactionResponse(tx)) {
       delete (tx as any).wait
       delete (tx as any).raw
       delete (tx as any).confirmations
-    } else {
+    } else if (isEvmUserOperationResponse(tx)) {
       delete (tx as any).wait
       tx = stringifyBigNumberish(tx)
     }
@@ -321,7 +379,7 @@ export class EvmBasicTransactionService extends EvmTransactionServicePartial {
 
   protected normalizeTxAndReceipt(
     transaction: ITransaction,
-    tx: TransactionResponse | UserOperationResponse,
+    tx: TransactionResponse | UserOperationResponse | SafeTransactionResponse,
     receipt?: TransactionReceipt | UserOperationReceipt
   ) {
     transaction = this.normalizeTx(transaction, tx)
@@ -391,7 +449,7 @@ export class EvmBasicTransactionService extends EvmTransactionServicePartial {
   }: {
     account: IChainAccount
     type: string
-    tx: TransactionResponse | UserOperationResponse
+    tx: TransactionResponse | UserOperationResponse | SafeTransactionResponse
     etherscanTx?: EtherscanTxResponse
     jiffyscanUserOp?: UserOp
     receipt?: TransactionReceipt | UserOperationReceipt
@@ -399,7 +457,12 @@ export class EvmBasicTransactionService extends EvmTransactionServicePartial {
     origin?: string
     functionSig?: FunctionFragment
   }) {
-    assert(etherscanTx || jiffyscanUserOp || receipt)
+    assert(
+      etherscanTx ||
+        jiffyscanUserOp ||
+        isEvmSafeTransactionResponse(tx) ||
+        receipt
+    )
 
     let index1, index2
     if (receipt) {
@@ -412,9 +475,12 @@ export class EvmBasicTransactionService extends EvmTransactionServicePartial {
     } else if (etherscanTx) {
       index1 = etherscanTx.blockNumber
       index2 = etherscanTx.transactionIndex
-    } else {
-      index1 = Number(jiffyscanUserOp!.blockNumber || 0)
-      index2 = jiffyscanUserOp!.userOpHash
+    } else if (jiffyscanUserOp) {
+      index1 = Number(jiffyscanUserOp.blockNumber || 0)
+      index2 = jiffyscanUserOp.userOpHash
+    } else if (isEvmSafeTransactionResponse(tx)) {
+      index1 = tx.blockNumber!
+      index2 = getSafeTxHash(tx)!
     }
 
     let transaction = {
