@@ -19,7 +19,7 @@ import * as React from 'react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { useActiveAccount } from '~lib/active'
-import { INetwork, IPendingTx, ITransaction } from '~lib/schema'
+import { INetwork, IPendingTx } from '~lib/schema'
 import { useCryptoComparePrice } from '~lib/services/datasource/cryptocompare'
 import { getNetworkInfo } from '~lib/services/network'
 import { useEstimateGas, useEstimateGasPrice } from '~lib/services/provider'
@@ -36,8 +36,10 @@ import {
 } from '~lib/services/provider/evm'
 import {
   EVM_TRANSACTION_SERVICE,
+  EvmErc4337PendingTxInfo,
   EvmPendingTxInfo,
-  isEvmTransactionResponse
+  isEvmTransactionResponse,
+  isEvmUserOperationResponse
 } from '~lib/services/transaction/evmService'
 import { EvmAdvancedGasFeeModal } from '~pages/Popup/Consent/Transaction/EvmAdvancedGasFeeModal'
 import {
@@ -58,23 +60,25 @@ export const EvmSpeedUpOrCancelModal = ({
   isOpen: boolean
   onClose: () => void
   network: INetwork
-  tx: IPendingTx | ITransaction
+  tx: IPendingTx
   isSpeedUp: boolean
 }) => {
   const account = useActiveAccount()
   const networkInfo = getNetworkInfo(network)
 
-  const info = tx.info as EvmPendingTxInfo
+  const info = tx.info as EvmPendingTxInfo | EvmErc4337PendingTxInfo
 
   const price = useCryptoComparePrice(networkInfo.currencySymbol)
 
   const [gasLimit, setGasLimit] = useState(
     isEvmTransactionResponse(info.tx)
       ? BigNumber.from(info.tx.gasLimit).toNumber()
-      : BigNumber.from(info.tx.callGasLimit)
+      : isEvmUserOperationResponse(info.tx)
+      ? BigNumber.from(info.tx.callGasLimit)
           .add(info.tx.verificationGasLimit)
           .add(info.tx.preVerificationGas)
           .toNumber()
+      : 0
   )
 
   const { gasPrice: gasFeeEstimation } = useEstimateGasPrice(

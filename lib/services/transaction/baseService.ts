@@ -93,8 +93,8 @@ export abstract class BaseTransactionService {
     account: IChainAccount,
     type: string,
     limit: number = 100,
-    lastIndex1?: number,
-    lastIndex2?: number
+    lastIndex1?: number | string,
+    lastIndex2?: number | string
   ): Promise<ITransaction[]> {
     if (!account.address) {
       return []

@@ -28,7 +28,8 @@ import {
   IWallet
 } from '~lib/schema'
 import { EvmClient } from '~lib/services/provider/evm'
-import { SafeInfo, isMultisigWallet } from '~lib/wallet'
+import { WALLET_SERVICE } from '~lib/services/wallet'
+import { AccountAbstractionType, SafeInfo, isMultisigWallet } from '~lib/wallet'
 
 export type { SafeVersion } from '@safe-global/safe-core-sdk-types'
 export type { SafeAccountConfig }
@@ -345,4 +346,13 @@ async function sendRequest<T>({ url, method, body }: HttpRequest): Promise<T> {
     throw new Error(jsonResponse.delegator)
   }
   throw new Error(response.statusText)
+}
+
+export async function isSafeAccount(account: IChainAccount) {
+  const wallet = await WALLET_SERVICE.getWallet(account.masterId)
+  if (!wallet) {
+    return false
+  }
+
+  return wallet.info.accountAbstraction?.type === AccountAbstractionType.SAFE
 }

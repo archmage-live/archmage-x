@@ -3,6 +3,7 @@ import { useVirtualizer } from '@tanstack/react-virtual'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
 import { useActive } from '~lib/active'
+import { isSafeAccount } from '~lib/safe'
 import { isPendingTx } from '~lib/services/transaction'
 import { EvmTxType } from '~lib/services/transaction/evmService'
 import { useTransactionsMixed } from '~lib/services/transaction/hooks'
@@ -199,15 +200,19 @@ export default function Activity() {
         />
       )}
 
-      {network && tx && isPendingTx(tx) && (
-        <EvmSpeedUpOrCancelModal
-          isOpen={isSpeedUpOpen}
-          onClose={onSpeedUpClose}
-          network={network}
-          tx={tx}
-          isSpeedUp={isSpeedUp}
-        />
-      )}
+      {network &&
+        tx &&
+        isPendingTx(tx) &&
+        account &&
+        !isSafeAccount(account) && (
+          <EvmSpeedUpOrCancelModal
+            isOpen={isSpeedUpOpen}
+            onClose={onSpeedUpClose}
+            network={network}
+            tx={tx}
+            isSpeedUp={isSpeedUp}
+          />
+        )}
     </Box>
   )
 }

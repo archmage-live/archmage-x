@@ -14,13 +14,15 @@ import { getTransactionInfo } from '~lib/services/transaction'
 import {
   EvmPendingTxInfo,
   EvmTransactionInfo,
-  isEvmTransactionResponse
+  isEvmTransactionResponse,
+  isEvmUserOperationResponse
 } from '~lib/services/transaction/evmService'
 
 import { AptosActivityDetail } from './aptos'
 import { CosmActivityDetail } from './cosm'
 import { EvmActivityDetail } from './evm'
 import { EvmErc4337ActivityDetail } from './evmErc4337'
+import { EvmSafeActivityDetail } from './evmSafe'
 
 export const ActivityDetail = ({
   network,
@@ -36,8 +38,10 @@ export const ActivityDetail = ({
       const info = tx.info as EvmPendingTxInfo | EvmTransactionInfo
       if (isEvmTransactionResponse(info.tx)) {
         return <EvmActivityDetail network={network} tx={tx} />
-      } else {
+      } else if (isEvmUserOperationResponse(info.tx)) {
         return <EvmErc4337ActivityDetail network={network} tx={tx} />
+      } else {
+        return <EvmSafeActivityDetail network={network} tx={tx} />
       }
     }
     case NetworkKind.COSM:

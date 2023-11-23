@@ -13,7 +13,7 @@ import {
 } from './cosmService'
 import {
   EVM_TRANSACTION_SERVICE,
-  getEvmTransactionInfo,
+  getEvmGeneralTransactionInfo,
   getEvmTransactionTypes
 } from './evmService'
 import { SUI_TRANSACTION_SERVICE, getSuiTransactionInfo } from './suiService'
@@ -98,7 +98,7 @@ export function getTransactionInfo(
 ): TransactionInfo {
   switch (tx.networkKind) {
     case NetworkKind.EVM:
-      return getEvmTransactionInfo(tx)
+      return getEvmGeneralTransactionInfo(tx)
     case NetworkKind.COSM:
       return getCosmTransactionInfo(tx, network)
     case NetworkKind.APTOS:
