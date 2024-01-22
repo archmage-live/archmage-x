@@ -14,6 +14,7 @@ import { AptosChainInfo } from '~lib/network/aptos'
 import { BtcChainInfo } from '~lib/network/btc'
 import { CosmAppChainInfo } from '~lib/network/cosm'
 import { EvmChainInfo } from '~lib/network/evm'
+import { SolChainInfo } from '~lib/network/sol'
 import { StarknetChainInfo } from '~lib/network/starknet'
 import { SuiChainInfo } from '~lib/network/sui'
 import { ChainId, IChainAccount, INetwork, IToken } from '~lib/schema'
@@ -31,13 +32,14 @@ import {
   useCryptoComparePrice
 } from '~lib/services/datasource/cryptocompare'
 import { JIFFYSCAN_NETWORKS } from '~lib/services/datasource/jiffyscan'
-import { AleoNetworkService } from '~lib/services/network/aleoService'
 import { CosmTokenInfo } from '~lib/services/token/cosm'
 
+import { AleoNetworkService } from './aleoService'
 import { AptosNetworkService } from './aptosService'
 import { BtcNetworkService } from './btcService'
 import { CosmNetworkService } from './cosmService'
 import { EvmNetworkService } from './evmService'
+import { SolNetworkService } from './solService'
 import { StarknetNetworkService } from './starknetService'
 import { SuiNetworkService } from './suiService'
 
@@ -83,6 +85,20 @@ export function getNetworkInfo(network: INetwork): NetworkInfo {
         decimals: info.nativeCurrency.decimals,
         rpcUrl: info.rpc.at(0),
         explorerUrl: info.explorers.at(0)?.url
+      }
+    }
+    case NetworkKind.SOL: {
+      const info = network.info as SolChainInfo
+      return {
+        name: info.name,
+        description: info.name,
+        chainId: info.chainId,
+        isTestnet: info.isTestnet,
+        currencyName: info.currency.name,
+        currencySymbol: info.currency.symbol,
+        decimals: info.currency.decimals,
+        rpcUrl: info.rpc.at(0),
+        explorerUrl: info.explorers.at(0)
       }
     }
     case NetworkKind.COSM: {
@@ -194,6 +210,9 @@ export function getAccountUrl(
       case NetworkKind.EVM:
         pathPrefix = 'address'
         break
+      case NetworkKind.SOL:
+        pathPrefix = 'account' // or 'address'
+        break
       case NetworkKind.COSM:
         pathPrefix = subDirPathPrefix(network, url, 'account')
         break
@@ -253,6 +272,9 @@ export function getTransactionUrl(
         pathPrefix = 'tx'
         break
       case NetworkKind.EVM:
+        pathPrefix = 'tx'
+        break
+      case NetworkKind.SOL:
         pathPrefix = 'tx'
         break
       case NetworkKind.COSM:
@@ -317,6 +339,9 @@ export function getTokenUrl(
       case NetworkKind.EVM:
         pathPrefix = 'token'
         break
+      case NetworkKind.SOL:
+        pathPrefix = 'account' // odd!
+        break
       case NetworkKind.COSM:
         pathPrefix = subDirPathPrefix(network, url, 'assets')
         const info = (token.info as CosmTokenInfo).info
@@ -348,6 +373,10 @@ export function getTokenUrl(
 
 export function getFaucetUrl(network: INetwork): string | undefined {
   switch (network.kind) {
+    case NetworkKind.SOL: {
+      const info = network.info as SolChainInfo
+      return info.faucets?.at(0)
+    }
     case NetworkKind.STARKNET: {
       const info = network.info as StarknetChainInfo
       return info.faucets?.at(0)
@@ -381,6 +410,7 @@ export class NetworkService {
     if (isBackgroundWorker()) {
       await BtcNetworkService.init()
       await EvmNetworkService.init()
+      await SolNetworkService.init()
       await CosmNetworkService.init()
       await StarknetNetworkService.init()
       await AptosNetworkService.init()
@@ -419,6 +449,9 @@ export class NetworkService {
         break
       case NetworkKind.EVM:
         network = EvmNetworkService.buildNetwork(chainId, info)
+        break
+      case NetworkKind.SOL:
+        network = SolNetworkService.buildNetwork(chainId, info)
         break
       case NetworkKind.COSM:
         network = CosmNetworkService.buildNetwork(chainId, info)

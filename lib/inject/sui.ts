@@ -60,10 +60,10 @@ export class SuiWallet implements Wallet {
   #events: Emitter<Record<EventType, any>> = mitt()
 
   constructor(private service: ISuiProviderService) {
-    this.init().finally()
+    this.#init().finally()
   }
 
-  async init() {
+  async #init() {
     this.#chains = await this.service.request(
       {
         method: 'chains'
@@ -73,6 +73,10 @@ export class SuiWallet implements Wallet {
 
     this.service.on('networkChanged', ({ network }: { network: string }) => {
       this.#activeChain = network as IdentifierString
+      this.#accounts = this.#accounts.map((account) => ({
+        ...account,
+        chains: this.#activeChain ? [this.#activeChain] : []
+      }))
     })
 
     this.service.on('accountsChanged', async () => {

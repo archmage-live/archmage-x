@@ -1,8 +1,17 @@
-import { Keypair } from '@solana/web3.js'
+import { arrayify } from '@ethersproject/bytes'
+import {
+  CompilableTransaction,
+  IFullySignedTransaction,
+  SignatureBytes,
+  createPrivateKeyFromBytes,
+  signBytes,
+  signTransaction,
+  verifySignature
+} from '@solana/web3.js'
+import { Keypair } from '@solana/web3.js-legacy-sham'
 import assert from 'assert'
 import bs58 from 'bs58'
-import { arrayify } from 'ethers/lib/utils'
-import { sign } from 'tweetnacl'
+import { getPublicKey } from 'ed25519-hd-key'
 
 import { HDNode, HardenedBit } from '~lib/crypto/ed25519'
 import { DerivePosition } from '~lib/schema'
@@ -36,10 +45,10 @@ export class SolWallet implements KeystoreSigningWallet {
           path = SolWallet.defaultPath
         }
         const node = HDNode.fromMnemonic(mnemonic.phrase).derivePath(path)
-        wallet = Keypair.fromSeed(arrayify(node.privateKey))
+        wallet = fromPrivateKey(node.privateKey)
       } else {
         assert(!path)
-        wallet = Keypair.fromSeed(arrayify(keystore.privateKey))
+        wallet = fromPrivateKey(keystore.privateKey)
       }
     }
     assert(wallet)
@@ -56,7 +65,7 @@ export class SolWallet implements KeystoreSigningWallet {
     assert(this.wallet instanceof HDNode)
     const path = generatePath(pathTemplate, index, derivePosition)
     const wallet = this.wallet.derivePath(path)
-    return new SolWallet(wallet)
+    return new SolWallet(fromPrivateKey(wallet.privateKey))
   }
 
   get address(): string {
@@ -64,60 +73,81 @@ export class SolWallet implements KeystoreSigningWallet {
   }
 
   get privateKey(): string {
-    // TODO
-    throw new Error('not implemented')
+    return this.secretKeyBase58()
   }
 
   get publicKey(): string {
-    // TODO
-    throw new Error('not implemented')
+    return this.publicKeyBase58()
   }
 
   publicKeyBase58(): string {
-    if (this.wallet instanceof HDNode) {
-      return bs58.encode(arrayify(this.wallet.publicKey))
-    } else {
-      return this.wallet.publicKey.toBase58()
-    }
+    assert(this.wallet instanceof Keypair)
+    return this.wallet.publicKey.toBase58()
   }
 
   secretKeyBase58(): string {
-    return bs58.encode(arrayify(this.wallet.secretKey!))
+    assert(this.wallet instanceof Keypair)
+    return bs58.encode(arrayify(this.wallet.secretKey))
   }
 
-  // https://github.com/solana-labs/solana-web3.js/blob/master/src/transaction.ts
-  sign(msg: Uint8Array): Uint8Array {
-    return sign.detached(msg, arrayify(this.wallet.secretKey!))
+  async verify(msg: string | Uint8Array, sig: Uint8Array): Promise<boolean> {
+    assert(this.wallet instanceof Keypair)
+    const keypair = await fromLegacyKeypair(this.wallet)
+    return verifySignature(
+      keypair.publicKey,
+      sig as SignatureBytes,
+      arrayify(msg)
+    )
   }
 
-  signHex(msg: string): Uint8Array {
-    return this.sign(arrayify(msg))
+  async signTransaction<TTransaction extends CompilableTransaction>(
+    transaction: TTransaction
+  ): Promise<TTransaction & IFullySignedTransaction> {
+    assert(this.wallet instanceof Keypair)
+    const keypair = await fromLegacyKeypair(this.wallet)
+    return await signTransaction([keypair], transaction)
   }
 
-  verify(msg: Uint8Array, sig: Uint8Array): boolean {
-    const publicKey =
-      this.wallet instanceof HDNode
-        ? arrayify(this.wallet.publicKey)
-        : this.wallet.publicKey.toBytes()
-    return sign.detached.verify(msg, sig, publicKey)
-  }
-
-  verifyHex(msg: string, sig: Uint8Array): boolean {
-    return this.verify(arrayify(msg), sig)
-  }
-
-  async signTransaction(transaction: any): Promise<string> {
-    // TODO
-    throw new Error('not implemented')
-  }
-
-  async signMessage(message: any): Promise<string> {
-    // TODO
-    throw new Error('not implemented')
+  async signMessage(message: any): Promise<SignatureBytes> {
+    assert(this.wallet instanceof Keypair)
+    const keypair = await fromLegacyKeypair(this.wallet)
+    return await signBytes(keypair.privateKey, arrayify(message))
   }
 
   async signTypedData(typedData: any): Promise<string> {
-    // TODO
     throw new Error('not implemented')
   }
+}
+
+function fromPrivateKey(privateKey: string | Uint8Array): Keypair {
+  const privateKeyBytes = arrayify(privateKey)
+  const publicKey = getPublicKey(Buffer.from(privateKeyBytes))
+  const secretKey = new Uint8Array(64)
+  secretKey.set(privateKeyBytes)
+  secretKey.set(publicKey, 32)
+
+  return new Keypair({
+    publicKey,
+    secretKey
+  })
+}
+
+async function fromLegacyKeypair(
+  keypair: Keypair,
+  extractable?: boolean
+): Promise<CryptoKeyPair> {
+  const [publicKey, privateKey] = await Promise.all([
+    crypto.subtle.importKey(
+      'raw',
+      keypair.publicKey.toBytes(),
+      'Ed25519',
+      true,
+      ['verify']
+    ),
+    createPrivateKeyFromBytes(keypair.secretKey.slice(0, 32), extractable)
+  ])
+  return {
+    privateKey,
+    publicKey
+  } as CryptoKeyPair
 }
