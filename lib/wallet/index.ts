@@ -35,7 +35,7 @@ import { EvmWallet } from './evm'
 import { EvmErc4337Wallet, EvmErc4337WalletOpts } from './evmErc4337'
 import { EvmHwWallet } from './evmHw'
 import { EvmHwErc4337Wallet } from './evmHwErc4337'
-import { SolWallet } from './sol'
+import { SolWallet } from './solana'
 import { StarknetWallet } from './starknet'
 import { SuiWallet } from './sui'
 
@@ -46,7 +46,7 @@ export * from './cosm'
 export * from './aptos'
 export * from './sui'
 export * from './aleo'
-export * from './sol'
+export * from './solana'
 export * from './starknet'
 
 export function isUseEd25519Curve(networkKind: NetworkKind): boolean {

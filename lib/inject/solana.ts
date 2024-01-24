@@ -19,7 +19,7 @@ import {
   SolanaSignMessage,
   SolanaSignTransaction
 } from '@solana/wallet-standard-features'
-import { PublicKey } from '@solana/web3.js-legacy-sham'
+import { PublicKey } from '@solana/web3.js'
 import type {
   IdentifierString,
   Wallet,
@@ -183,6 +183,7 @@ export class SolWallet implements Wallet {
         this.chains.includes(input.chain),
         'Chain must be supported by the wallet'
       )
+      // signature is also the transaction id
       const signature = await this.service.request(
         {
           method: 'signAndSendTransaction',

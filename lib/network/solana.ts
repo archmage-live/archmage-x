@@ -2,7 +2,7 @@ import type { IdentifierString } from '@wallet-standard/base'
 
 import { NativeCurrency } from './evm'
 
-export interface SolChainInfo {
+export interface SolanaChainInfo {
   name: string
   isTestnet?: boolean
   chainId: IdentifierString
@@ -12,7 +12,7 @@ export interface SolChainInfo {
   faucets?: string[]
 }
 
-export const SOL_NETWORKS_PRESET: SolChainInfo[] = [
+export const SOLANA_NETWORKS_PRESET: SolanaChainInfo[] = [
   {
     name: 'Solana Mainnet',
     chainId: 'solana:mainnet',

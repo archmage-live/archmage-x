@@ -253,16 +253,13 @@ dependencies:
     version: 1.0.0
   '@solana/spl-token':
     specifier: ^0.3.11
-    version: 0.3.11(@solana/web3.js@2.0.0-experimental.dbe6a73)(fastestsmallesttextencoderdecoder@1.0.22)
+    version: 0.3.11(@solana/web3.js@1.89.1)(fastestsmallesttextencoderdecoder@1.0.22)
   '@solana/wallet-standard-features':
     specifier: ^1.2.0
     version: 1.2.0
   '@solana/web3.js':
-    specifier: 2.0.0-experimental.dbe6a73
-    version: 2.0.0-experimental.dbe6a73(fastestsmallesttextencoderdecoder@1.0.22)(ws@8.16.0)
-  '@solana/web3.js-legacy-sham':
-    specifier: 1.0.0-experimental.dbe6a73
-    version: 1.0.0-experimental.dbe6a73(fastestsmallesttextencoderdecoder@1.0.22)
+    specifier: ^1.89.1
+    version: 1.89.1
   '@tanstack/query-core':
     specifier: ^4.13.4
     version: 4.13.4
@@ -325,7 +322,7 @@ dependencies:
     version: 6.1.1(@babel/runtime@7.23.8)
   '@web3auth/modal':
     specifier: ^6.1.1
-    version: 6.1.1(@babel/runtime@7.23.8)(@solana/web3.js@2.0.0-experimental.dbe6a73)(@walletconnect/sign-client@2.9.2)(@walletconnect/types@1.8.0)(@walletconnect/utils@2.11.0)(react-dom@18.2.0)(react@18.2.0)
+    version: 6.1.1(@babel/runtime@7.23.8)(@solana/web3.js@1.89.1)(@walletconnect/sign-client@2.9.2)(@walletconnect/types@1.8.0)(@walletconnect/utils@2.11.0)(react-dom@18.2.0)(react@18.2.0)
   '@web3auth/mpc-core-kit':
     specifier: ^0.1.0
     version: 0.1.0(@babel/runtime@7.23.8)(@toruslabs/metadata-helpers@4.0.1)
@@ -334,7 +331,7 @@ dependencies:
     version: 6.1.1(@babel/runtime@7.23.8)
   '@web3auth/openlogin-adapter':
     specifier: ^6.1.1
-    version: 6.1.1(@babel/runtime@7.23.8)(@solana/web3.js@2.0.0-experimental.dbe6a73)
+    version: 6.1.1(@babel/runtime@7.23.8)(@solana/web3.js@1.89.1)
   '@web3auth/ui':
     specifier: ^6.1.1
     version: 6.1.1(@babel/runtime@7.23.8)(react-dom@18.2.0)(react@18.2.0)
@@ -4950,10 +4947,6 @@ packages:
       '@noble/hashes': 1.3.0(patch_hash=p57cu5k2ejg4mbyj6m55whljoy)
     dev: false
 
-  /@noble/ed25519@2.0.0:
-    resolution: {integrity: sha512-/extjhkwFupyopDrt80OMWKdLgP429qLZj+z6sYJz90rF2Iz0gjZh2ArMKPImUl13Kx+0EXI2hN9T/KJV0/Zng==}
-    dev: false
-
   /@noble/hashes@1.3.0(patch_hash=p57cu5k2ejg4mbyj6m55whljoy):
     resolution: {integrity: sha512-ilHEACi9DwqJB0pw7kv+Apvh50jiiSyR/cQ3y4W7lOR5mhvn/50FLUfsnfJz0BDZtl/RR16kXvptiv6q1msYZg==}
     dev: false
@@ -6521,40 +6514,12 @@ packages:
     resolution: {integrity: sha512-+9jVqKhRSpsc591z5vX+X5Yyw+he/HCB4iQ/RYxw35CEPaY1gnsNE43nf9n9AaYjAQrTiI/mOwKUKdUs9vf7Xg==}
     dev: false
 
-  /@solana/accounts@2.0.0-experimental.dbe6a73(fastestsmallesttextencoderdecoder@1.0.22)(ws@8.16.0):
-    resolution: {integrity: sha512-zJ1Dszkn1zOKhjn2lgvR+o3huS2UI/Wcc//Gox/n5OM+INrDSGk4Q81zdVwKaPdHqwVp7kFW4avUDxuyQuGy2A==}
-    dependencies:
-      '@solana/addresses': 2.0.0-experimental.dbe6a73(fastestsmallesttextencoderdecoder@1.0.22)
-      '@solana/codecs-core': 2.0.0-experimental.dbe6a73
-      '@solana/codecs-strings': 2.0.0-experimental.dbe6a73(fastestsmallesttextencoderdecoder@1.0.22)
-      '@solana/rpc-core': 2.0.0-experimental.dbe6a73
-      '@solana/rpc-transport': 2.0.0-experimental.dbe6a73(ws@8.16.0)
-      '@solana/rpc-types': 2.0.0-experimental.dbe6a73
-    transitivePeerDependencies:
-      - fastestsmallesttextencoderdecoder
-      - ws
-    dev: false
-
-  /@solana/addresses@2.0.0-experimental.dbe6a73(fastestsmallesttextencoderdecoder@1.0.22):
-    resolution: {integrity: sha512-hnRgyp03psy6owCumQd6VWYKxkQf25/PKT7DYqTw2PkQZn/uuL5HcJwlhPplDo5v/C5nqqze4SPW4DdNDbIhhw==}
-    dependencies:
-      '@solana/assertions': 2.0.0-experimental.dbe6a73
-      '@solana/codecs-core': 2.0.0-experimental.dbe6a73
-      '@solana/codecs-strings': 2.0.0-experimental.dbe6a73(fastestsmallesttextencoderdecoder@1.0.22)
-    transitivePeerDependencies:
-      - fastestsmallesttextencoderdecoder
-    dev: false
-
-  /@solana/assertions@2.0.0-experimental.dbe6a73:
-    resolution: {integrity: sha512-y3SaWr1judZaVaTW3B91UuR8anFlre8pXUrmo0vvTXtCm5pGTN2x1F1xiTOIS5ou2sDPQCqkPgTd0ygZw/FPBg==}
-    dev: false
-
   /@solana/buffer-layout-utils@0.2.0:
     resolution: {integrity: sha512-szG4sxgJGktbuZYDg2FfNmkMi0DYQoVjN2h7ta1W1hPrwzarcFLBq9UpX1UjNXsNpT9dn+chgprtWGioUAr4/g==}
     engines: {node: '>= 10'}
     dependencies:
       '@solana/buffer-layout': 4.0.1
-      '@solana/web3.js': 1.89.0
+      '@solana/web3.js': 1.89.1
       bigint-buffer: 1.1.5
       bignumber.js: 9.1.2
     transitivePeerDependencies:
@@ -6574,10 +6539,6 @@ packages:
     resolution: {integrity: sha512-JCz7mKjVKtfZxkuDtwMAUgA7YvJcA2BwpZaA1NOLcted4OMC4Prwa3DUe3f3181ixPYaRyptbF0Ikq2MbDkYEA==}
     dev: false
 
-  /@solana/codecs-core@2.0.0-experimental.dbe6a73:
-    resolution: {integrity: sha512-LqM0lG355hFOFfb9UKjejUgeA2OYhaPJ4E5Gvh9MeGmZnhC4Q3KCqkzrC6MoZF2V8PgpK0UZu/N8ExIwHUnhpA==}
-    dev: false
-
   /@solana/codecs-data-structures@2.0.0-experimental.8618508:
     resolution: {integrity: sha512-sLpjL9sqzaDdkloBPV61Rht1tgaKq98BCtIKRuyscIrmVPu3wu0Bavk2n/QekmUzaTsj7K1pVSniM0YqCdnEBw==}
     dependencies:
@@ -6585,23 +6546,10 @@ packages:
       '@solana/codecs-numbers': 2.0.0-experimental.8618508
     dev: false
 
-  /@solana/codecs-data-structures@2.0.0-experimental.dbe6a73:
-    resolution: {integrity: sha512-GqDDKa+F7OdTo4IhRn2QtpcdCF07JEk9//aOwU+yUFwKbKQ2h0TrhcZS46eD+V74jS7aP5HFNTdvUXVtpgJPnw==}
-    dependencies:
-      '@solana/codecs-core': 2.0.0-experimental.dbe6a73
-      '@solana/codecs-numbers': 2.0.0-experimental.dbe6a73
-    dev: false
-
   /@solana/codecs-numbers@2.0.0-experimental.8618508:
     resolution: {integrity: sha512-EXQKfzFr3CkKKNzKSZPOOOzchXsFe90TVONWsSnVkonO9z+nGKALE0/L9uBmIFGgdzhhU9QQVFvxBMclIDJo2Q==}
     dependencies:
       '@solana/codecs-core': 2.0.0-experimental.8618508
-    dev: false
-
-  /@solana/codecs-numbers@2.0.0-experimental.dbe6a73:
-    resolution: {integrity: sha512-a1Gf/2DbL5JAiftCOR7S8AentIitBkZRUdsBud/ljBTj+VkcFOggII6EQjPHAeQTfaxJu1RbPkdV70BaN3rYQQ==}
-    dependencies:
-      '@solana/codecs-core': 2.0.0-experimental.dbe6a73
     dev: false
 
   /@solana/codecs-strings@2.0.0-experimental.8618508(fastestsmallesttextencoderdecoder@1.0.22):
@@ -6614,34 +6562,6 @@ packages:
       fastestsmallesttextencoderdecoder: 1.0.22
     dev: false
 
-  /@solana/codecs-strings@2.0.0-experimental.dbe6a73(fastestsmallesttextencoderdecoder@1.0.22):
-    resolution: {integrity: sha512-1GXq53Hg4Vdl7VqRJ98jbEaltVo0OFI7wlxU2rcLU0Mhp5VUGTRELMqrl4DuoB8acKqF5dk7GiK0wcP+YqGgQA==}
-    peerDependencies:
-      fastestsmallesttextencoderdecoder: ^1.0.22
-    dependencies:
-      '@solana/codecs-core': 2.0.0-experimental.dbe6a73
-      '@solana/codecs-numbers': 2.0.0-experimental.dbe6a73
-      fastestsmallesttextencoderdecoder: 1.0.22
-    dev: false
-
-  /@solana/functional@2.0.0-experimental.dbe6a73:
-    resolution: {integrity: sha512-i7192CkvmvyAQLDmaWXOTPaoim+c/rzZOBaNXqOqCqoRUrEmJCS9Gy12JRM95gHxr5J92ZskwBDTFSq/DNFftQ==}
-    dev: false
-
-  /@solana/instructions@2.0.0-experimental.dbe6a73:
-    resolution: {integrity: sha512-U/+vA/0nVtmij4Jige0+4MGyyYjerhu7igmIS5CfQgA9SMNVNbfGHUPk/7VJ18GEujz561S2VpxLGahOEB+Qag==}
-    dev: false
-
-  /@solana/keys@2.0.0-experimental.dbe6a73(fastestsmallesttextencoderdecoder@1.0.22):
-    resolution: {integrity: sha512-5fV2dJrOxrs5AKv/5WihkNENrXTWdhq+pG1Oy5ZB7O0z8exrjwWFbBPOnLJ08kV6dZomdJxn0Nihd4GTyKJftg==}
-    dependencies:
-      '@solana/assertions': 2.0.0-experimental.dbe6a73
-      '@solana/codecs-core': 2.0.0-experimental.dbe6a73
-      '@solana/codecs-strings': 2.0.0-experimental.dbe6a73(fastestsmallesttextencoderdecoder@1.0.22)
-    transitivePeerDependencies:
-      - fastestsmallesttextencoderdecoder
-    dev: false
-
   /@solana/options@2.0.0-experimental.8618508:
     resolution: {integrity: sha512-fy/nIRAMC3QHvnKi63KEd86Xr/zFBVxNW4nEpVEU2OT0gCEKwHY4Z55YHf7XujhyuM3PNpiBKg/YYw5QlRU4vg==}
     dependencies:
@@ -6649,23 +6569,7 @@ packages:
       '@solana/codecs-numbers': 2.0.0-experimental.8618508
     dev: false
 
-  /@solana/rpc-core@2.0.0-experimental.dbe6a73:
-    resolution: {integrity: sha512-y+j9Ku5gKRdYXjMs22zSGL9SBwoEBIV6PrVcB9DE8bAFiN6N6zoh1HS2HrQ7fAGy16AyE+xHcaHY2McC/y5UNw==}
-    dev: false
-
-  /@solana/rpc-transport@2.0.0-experimental.dbe6a73(ws@8.16.0):
-    resolution: {integrity: sha512-QGu5oXvxRTeFrxzu7tIVnLbffO3rBvvN3TIuj9VdugsvhjReqlzC9PYHl5Qa9u9ivk0gRbZqm9jhx5UeRA+cRQ==}
-    peerDependencies:
-      ws: ^8.14.0
-    dependencies:
-      ws: 8.16.0(bufferutil@4.0.8)(utf-8-validate@5.0.10)
-    dev: false
-
-  /@solana/rpc-types@2.0.0-experimental.dbe6a73:
-    resolution: {integrity: sha512-keZ3DWXE6plnqZp8ZFjL3l/NnDF45MVPhHdYffTxZHCdD+CtkLx9C9kEAOKoxlPxDDxBds84olpax802WZnrpw==}
-    dev: false
-
-  /@solana/spl-token-metadata@0.1.2(@solana/web3.js@2.0.0-experimental.dbe6a73)(fastestsmallesttextencoderdecoder@1.0.22):
+  /@solana/spl-token-metadata@0.1.2(@solana/web3.js@1.89.1)(fastestsmallesttextencoderdecoder@1.0.22):
     resolution: {integrity: sha512-hJYnAJNkDrtkE2Q41YZhCpeOGU/0JgRFXbtrtOuGGeKc3pkEUHB9DDoxZAxx+XRno13GozUleyBi0qypz4c3bw==}
     engines: {node: '>=16'}
     peerDependencies:
@@ -6677,12 +6581,12 @@ packages:
       '@solana/codecs-strings': 2.0.0-experimental.8618508(fastestsmallesttextencoderdecoder@1.0.22)
       '@solana/options': 2.0.0-experimental.8618508
       '@solana/spl-type-length-value': 0.1.0
-      '@solana/web3.js': 2.0.0-experimental.dbe6a73(fastestsmallesttextencoderdecoder@1.0.22)(ws@8.16.0)
+      '@solana/web3.js': 1.89.1
     transitivePeerDependencies:
       - fastestsmallesttextencoderdecoder
     dev: false
 
-  /@solana/spl-token@0.3.11(@solana/web3.js@2.0.0-experimental.dbe6a73)(fastestsmallesttextencoderdecoder@1.0.22):
+  /@solana/spl-token@0.3.11(@solana/web3.js@1.89.1)(fastestsmallesttextencoderdecoder@1.0.22):
     resolution: {integrity: sha512-bvohO3rIMSVL24Pb+I4EYTJ6cL82eFpInEXD/I8K8upOGjpqHsKUoAempR/RnUlI1qSFNyFlWJfu6MNUgfbCQQ==}
     engines: {node: '>=16'}
     peerDependencies:
@@ -6690,8 +6594,8 @@ packages:
     dependencies:
       '@solana/buffer-layout': 4.0.1
       '@solana/buffer-layout-utils': 0.2.0
-      '@solana/spl-token-metadata': 0.1.2(@solana/web3.js@2.0.0-experimental.dbe6a73)(fastestsmallesttextencoderdecoder@1.0.22)
-      '@solana/web3.js': 2.0.0-experimental.dbe6a73(fastestsmallesttextencoderdecoder@1.0.22)(ws@8.16.0)
+      '@solana/spl-token-metadata': 0.1.2(@solana/web3.js@1.89.1)(fastestsmallesttextencoderdecoder@1.0.22)
+      '@solana/web3.js': 1.89.1
       buffer: 6.0.3
     transitivePeerDependencies:
       - bufferutil
@@ -6707,20 +6611,6 @@ packages:
       buffer: 6.0.3
     dev: false
 
-  /@solana/transactions@2.0.0-experimental.dbe6a73(fastestsmallesttextencoderdecoder@1.0.22):
-    resolution: {integrity: sha512-t9/uFRgfUHM+l1C8qnOCFGIUpyDjSNuCrhvozb2lqu9UrniLXIGRp2vtC/iCbRlV966738D/6U+JN0PHmMu5/A==}
-    dependencies:
-      '@solana/addresses': 2.0.0-experimental.dbe6a73(fastestsmallesttextencoderdecoder@1.0.22)
-      '@solana/codecs-core': 2.0.0-experimental.dbe6a73
-      '@solana/codecs-data-structures': 2.0.0-experimental.dbe6a73
-      '@solana/codecs-numbers': 2.0.0-experimental.dbe6a73
-      '@solana/codecs-strings': 2.0.0-experimental.dbe6a73(fastestsmallesttextencoderdecoder@1.0.22)
-      '@solana/functional': 2.0.0-experimental.dbe6a73
-      '@solana/keys': 2.0.0-experimental.dbe6a73(fastestsmallesttextencoderdecoder@1.0.22)
-    transitivePeerDependencies:
-      - fastestsmallesttextencoderdecoder
-    dev: false
-
   /@solana/wallet-standard-features@1.2.0:
     resolution: {integrity: sha512-tUd9srDLkRpe1BYg7we+c4UhRQkq+XQWswsr/L1xfGmoRDF47BPSXf4zE7ZU2GRBGvxtGt7lwJVAufQyQYhxTQ==}
     engines: {node: '>=16'}
@@ -6729,19 +6619,8 @@ packages:
       '@wallet-standard/features': 1.0.3
     dev: false
 
-  /@solana/web3.js-legacy-sham@1.0.0-experimental.dbe6a73(fastestsmallesttextencoderdecoder@1.0.22):
-    resolution: {integrity: sha512-4xc/m3+hSOCzF3Zw1MB3uNy+cul2rHTHKFretoKKqkcH1/vHYIiw1pmIkQ3OjufcZkLrGWMs+cb0/QJoQwLgeA==}
-    dependencies:
-      '@noble/ed25519': 2.0.0
-      '@noble/hashes': 1.3.0(patch_hash=p57cu5k2ejg4mbyj6m55whljoy)
-      '@solana/addresses': 2.0.0-experimental.dbe6a73(fastestsmallesttextencoderdecoder@1.0.22)
-      '@solana/transactions': 2.0.0-experimental.dbe6a73(fastestsmallesttextencoderdecoder@1.0.22)
-    transitivePeerDependencies:
-      - fastestsmallesttextencoderdecoder
-    dev: false
-
-  /@solana/web3.js@1.89.0:
-    resolution: {integrity: sha512-b6PJxNL/DX+J2zccj3kzxZ6HyUF92tc8L9CjMlnTYKCdotAk163ygQ/jbHDT0yYs7pGeXAszyLuaqUXJ8bxwpA==}
+  /@solana/web3.js@1.89.1:
+    resolution: {integrity: sha512-t9TTLtPQxtQB3SAf/5E8xPXfVDsC6WGOsgKY02l2cbe0HLymT7ynE8Hu48Lk5qynHCquj6nhISfEHcjMkYpu/A==}
     dependencies:
       '@babel/runtime': 7.23.8
       '@noble/curves': 1.3.0
@@ -6762,25 +6641,6 @@ packages:
       - bufferutil
       - encoding
       - utf-8-validate
-    dev: false
-
-  /@solana/web3.js@2.0.0-experimental.dbe6a73(fastestsmallesttextencoderdecoder@1.0.22)(ws@8.16.0):
-    resolution: {integrity: sha512-URcE0iVHAjaGeRflg/h8ZuQRGU5tB5RpVAuNaAtKmJjZ1ZWUgrA8PxK9BPUcZdfy0E23BD2aREM81Oh6SBXuNQ==}
-    dependencies:
-      '@solana/accounts': 2.0.0-experimental.dbe6a73(fastestsmallesttextencoderdecoder@1.0.22)(ws@8.16.0)
-      '@solana/addresses': 2.0.0-experimental.dbe6a73(fastestsmallesttextencoderdecoder@1.0.22)
-      '@solana/codecs-strings': 2.0.0-experimental.dbe6a73(fastestsmallesttextencoderdecoder@1.0.22)
-      '@solana/functional': 2.0.0-experimental.dbe6a73
-      '@solana/instructions': 2.0.0-experimental.dbe6a73
-      '@solana/keys': 2.0.0-experimental.dbe6a73(fastestsmallesttextencoderdecoder@1.0.22)
-      '@solana/rpc-core': 2.0.0-experimental.dbe6a73
-      '@solana/rpc-transport': 2.0.0-experimental.dbe6a73(ws@8.16.0)
-      '@solana/rpc-types': 2.0.0-experimental.dbe6a73
-      '@solana/transactions': 2.0.0-experimental.dbe6a73(fastestsmallesttextencoderdecoder@1.0.22)
-      fast-stable-stringify: 1.0.0
-    transitivePeerDependencies:
-      - fastestsmallesttextencoderdecoder
-      - ws
     dev: false
 
   /@stablelib/aead@1.0.1:
@@ -7691,7 +7551,7 @@ packages:
       '@babel/runtime': 7.x
     dependencies:
       '@babel/runtime': 7.23.8
-      '@solana/web3.js': 1.89.0
+      '@solana/web3.js': 1.89.1
       '@toruslabs/base-controllers': 3.1.0(@babel/runtime@7.23.8)
       '@toruslabs/http-helpers': 4.0.0(@babel/runtime@7.23.8)
       '@toruslabs/openlogin-jrpc': 4.6.0(@babel/runtime@7.23.8)
@@ -9301,7 +9161,7 @@ packages:
       - utf-8-validate
     dev: false
 
-  /@web3auth/modal@6.1.1(@babel/runtime@7.23.8)(@solana/web3.js@2.0.0-experimental.dbe6a73)(@walletconnect/sign-client@2.9.2)(@walletconnect/types@1.8.0)(@walletconnect/utils@2.11.0)(react-dom@18.2.0)(react@18.2.0):
+  /@web3auth/modal@6.1.1(@babel/runtime@7.23.8)(@solana/web3.js@1.89.1)(@walletconnect/sign-client@2.9.2)(@walletconnect/types@1.8.0)(@walletconnect/utils@2.11.0)(react-dom@18.2.0)(react@18.2.0):
     resolution: {integrity: sha512-FXOptc+z06RCczSnVP8t3cDsrNU3lSV/iFMtkDVcQGE9Ogit0jr6D9xnkNFeekSS4WrMa6J+68RQNl/2j1N8Hw==}
     engines: {node: '>=16.18.1', npm: '>=8.x'}
     peerDependencies:
@@ -9309,17 +9169,17 @@ packages:
       '@solana/web3.js': ^1.x
     dependencies:
       '@babel/runtime': 7.23.8
-      '@solana/web3.js': 2.0.0-experimental.dbe6a73(fastestsmallesttextencoderdecoder@1.0.22)(ws@8.16.0)
+      '@solana/web3.js': 1.89.1
       '@web3auth/base': 6.1.1(@babel/runtime@7.23.8)
       '@web3auth/base-provider': 6.1.1(@babel/runtime@7.23.8)
       '@web3auth/ethereum-provider': 6.1.1(@babel/runtime@7.23.8)
       '@web3auth/metamask-adapter': 6.1.1(@babel/runtime@7.23.8)
       '@web3auth/no-modal': 6.1.1(@babel/runtime@7.23.8)
-      '@web3auth/openlogin-adapter': 6.1.1(@babel/runtime@7.23.8)(@solana/web3.js@2.0.0-experimental.dbe6a73)
-      '@web3auth/phantom-adapter': 6.1.1(@babel/runtime@7.23.8)(@solana/web3.js@2.0.0-experimental.dbe6a73)
-      '@web3auth/solana-provider': 6.1.1(@babel/runtime@7.23.8)(@solana/web3.js@2.0.0-experimental.dbe6a73)
+      '@web3auth/openlogin-adapter': 6.1.1(@babel/runtime@7.23.8)(@solana/web3.js@1.89.1)
+      '@web3auth/phantom-adapter': 6.1.1(@babel/runtime@7.23.8)(@solana/web3.js@1.89.1)
+      '@web3auth/solana-provider': 6.1.1(@babel/runtime@7.23.8)(@solana/web3.js@1.89.1)
       '@web3auth/torus-evm-adapter': 6.1.1(@babel/runtime@7.23.8)
-      '@web3auth/torus-solana-adapter': 6.1.1(@babel/runtime@7.23.8)(@solana/web3.js@2.0.0-experimental.dbe6a73)
+      '@web3auth/torus-solana-adapter': 6.1.1(@babel/runtime@7.23.8)(@solana/web3.js@1.89.1)
       '@web3auth/ui': 6.1.1(@babel/runtime@7.23.8)(react-dom@18.2.0)(react@18.2.0)
       '@web3auth/wallet-connect-v2-adapter': 6.1.1(@babel/runtime@7.23.8)(@walletconnect/sign-client@2.9.2)(@walletconnect/types@1.8.0)(@walletconnect/utils@2.11.0)
     transitivePeerDependencies:
@@ -9398,7 +9258,7 @@ packages:
       - utf-8-validate
     dev: false
 
-  /@web3auth/openlogin-adapter@6.1.1(@babel/runtime@7.23.8)(@solana/web3.js@2.0.0-experimental.dbe6a73):
+  /@web3auth/openlogin-adapter@6.1.1(@babel/runtime@7.23.8)(@solana/web3.js@1.89.1):
     resolution: {integrity: sha512-vYlD4bdo30FTqx99lnALALKBq58mdLNB1R20cLx/jNonOlz6Qx8loWn9qR8VhRuu2yXZs89xk0rzSGt/o2E2Ow==}
     engines: {node: '>=16.18.1', npm: '>=8.x'}
     peerDependencies:
@@ -9406,7 +9266,7 @@ packages:
       '@solana/web3.js': ^1.x
     dependencies:
       '@babel/runtime': 7.23.8
-      '@solana/web3.js': 2.0.0-experimental.dbe6a73(fastestsmallesttextencoderdecoder@1.0.22)(ws@8.16.0)
+      '@solana/web3.js': 1.89.1
       '@toruslabs/openlogin': 4.5.4(@babel/runtime@7.23.8)
       '@toruslabs/openlogin-utils': 4.5.1(@babel/runtime@7.23.8)
       '@web3auth/base': 6.1.1(@babel/runtime@7.23.8)
@@ -9420,7 +9280,7 @@ packages:
       - utf-8-validate
     dev: false
 
-  /@web3auth/phantom-adapter@6.1.1(@babel/runtime@7.23.8)(@solana/web3.js@2.0.0-experimental.dbe6a73):
+  /@web3auth/phantom-adapter@6.1.1(@babel/runtime@7.23.8)(@solana/web3.js@1.89.1):
     resolution: {integrity: sha512-ODVeEBDAgXpkLTeiQA/8Z2Wed4I8txEbdQ1BuZYdtPz9UZC7FaFt+did5HNX1RByCsyNjyIUdtoMTVNHS1xQqg==}
     engines: {node: '>=16.18.1', npm: '>=8.x'}
     peerDependencies:
@@ -9428,11 +9288,11 @@ packages:
       '@solana/web3.js': ^1.x
     dependencies:
       '@babel/runtime': 7.23.8
-      '@solana/web3.js': 2.0.0-experimental.dbe6a73(fastestsmallesttextencoderdecoder@1.0.22)(ws@8.16.0)
+      '@solana/web3.js': 1.89.1
       '@web3auth/base': 6.1.1(@babel/runtime@7.23.8)
       '@web3auth/base-provider': 6.1.1(@babel/runtime@7.23.8)
       '@web3auth/base-solana-adapter': 6.1.1(@babel/runtime@7.23.8)
-      '@web3auth/solana-provider': 6.1.1(@babel/runtime@7.23.8)(@solana/web3.js@2.0.0-experimental.dbe6a73)
+      '@web3auth/solana-provider': 6.1.1(@babel/runtime@7.23.8)(@solana/web3.js@1.89.1)
       bn.js: 5.2.1
     transitivePeerDependencies:
       - '@sentry/types'
@@ -9442,7 +9302,7 @@ packages:
       - utf-8-validate
     dev: false
 
-  /@web3auth/solana-provider@6.1.1(@babel/runtime@7.23.8)(@solana/web3.js@2.0.0-experimental.dbe6a73):
+  /@web3auth/solana-provider@6.1.1(@babel/runtime@7.23.8)(@solana/web3.js@1.89.1):
     resolution: {integrity: sha512-dBqLelhj4Ptxeke+AanyFIMe8PUgkZcB6Rp63nHyvCyOhYTwkk15zISgOPfVfFFbaqEHBIKju15GWLlOkvOM7g==}
     engines: {node: '>=16.18.1', npm: '>=8.x'}
     peerDependencies:
@@ -9450,7 +9310,7 @@ packages:
       '@solana/web3.js': ^1.x
     dependencies:
       '@babel/runtime': 7.23.8
-      '@solana/web3.js': 2.0.0-experimental.dbe6a73(fastestsmallesttextencoderdecoder@1.0.22)(ws@8.16.0)
+      '@solana/web3.js': 1.89.1
       '@toruslabs/base-controllers': 3.1.0(@babel/runtime@7.23.8)
       '@toruslabs/openlogin-ed25519': 4.2.0(@babel/runtime@7.23.8)
       '@toruslabs/openlogin-jrpc': 4.6.0(@babel/runtime@7.23.8)
@@ -9487,7 +9347,7 @@ packages:
       - utf-8-validate
     dev: false
 
-  /@web3auth/torus-solana-adapter@6.1.1(@babel/runtime@7.23.8)(@solana/web3.js@2.0.0-experimental.dbe6a73):
+  /@web3auth/torus-solana-adapter@6.1.1(@babel/runtime@7.23.8)(@solana/web3.js@1.89.1):
     resolution: {integrity: sha512-igiPNBxJSLAsGX30UwIjVAYrhQT8DiazGQI0Ys6oIMQ9BRjGTbiC23FjshQItgNYDUmaA8JpdNWEYwXNQHq1aw==}
     engines: {node: '>=16.18.1', npm: '>=8.x'}
     peerDependencies:
@@ -9495,12 +9355,12 @@ packages:
       '@solana/web3.js': ^1.x
     dependencies:
       '@babel/runtime': 7.23.8
-      '@solana/web3.js': 2.0.0-experimental.dbe6a73(fastestsmallesttextencoderdecoder@1.0.22)(ws@8.16.0)
+      '@solana/web3.js': 1.89.1
       '@toruslabs/solana-embed': 1.0.0(@babel/runtime@7.23.8)
       '@web3auth/base': 6.1.1(@babel/runtime@7.23.8)
       '@web3auth/base-provider': 6.1.1(@babel/runtime@7.23.8)
       '@web3auth/base-solana-adapter': 6.1.1(@babel/runtime@7.23.8)
-      '@web3auth/solana-provider': 6.1.1(@babel/runtime@7.23.8)(@solana/web3.js@2.0.0-experimental.dbe6a73)
+      '@web3auth/solana-provider': 6.1.1(@babel/runtime@7.23.8)(@solana/web3.js@1.89.1)
     transitivePeerDependencies:
       - '@sentry/types'
       - bufferutil

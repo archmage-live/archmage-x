@@ -14,7 +14,7 @@ import { AptosChainInfo } from '~lib/network/aptos'
 import { BtcChainInfo } from '~lib/network/btc'
 import { CosmAppChainInfo } from '~lib/network/cosm'
 import { EvmChainInfo } from '~lib/network/evm'
-import { SolChainInfo } from '~lib/network/sol'
+import { SolanaChainInfo } from '~lib/network/solana'
 import { StarknetChainInfo } from '~lib/network/starknet'
 import { SuiChainInfo } from '~lib/network/sui'
 import { ChainId, IChainAccount, INetwork, IToken } from '~lib/schema'
@@ -39,7 +39,7 @@ import { AptosNetworkService } from './aptosService'
 import { BtcNetworkService } from './btcService'
 import { CosmNetworkService } from './cosmService'
 import { EvmNetworkService } from './evmService'
-import { SolNetworkService } from './solService'
+import { SolanaNetworkService } from './solanaService'
 import { StarknetNetworkService } from './starknetService'
 import { SuiNetworkService } from './suiService'
 
@@ -88,7 +88,7 @@ export function getNetworkInfo(network: INetwork): NetworkInfo {
       }
     }
     case NetworkKind.SOL: {
-      const info = network.info as SolChainInfo
+      const info = network.info as SolanaChainInfo
       return {
         name: info.name,
         description: info.name,
@@ -374,7 +374,7 @@ export function getTokenUrl(
 export function getFaucetUrl(network: INetwork): string | undefined {
   switch (network.kind) {
     case NetworkKind.SOL: {
-      const info = network.info as SolChainInfo
+      const info = network.info as SolanaChainInfo
       return info.faucets?.at(0)
     }
     case NetworkKind.STARKNET: {
@@ -410,7 +410,7 @@ export class NetworkService {
     if (isBackgroundWorker()) {
       await BtcNetworkService.init()
       await EvmNetworkService.init()
-      await SolNetworkService.init()
+      await SolanaNetworkService.init()
       await CosmNetworkService.init()
       await StarknetNetworkService.init()
       await AptosNetworkService.init()
@@ -451,7 +451,7 @@ export class NetworkService {
         network = EvmNetworkService.buildNetwork(chainId, info)
         break
       case NetworkKind.SOL:
-        network = SolNetworkService.buildNetwork(chainId, info)
+        network = SolanaNetworkService.buildNetwork(chainId, info)
         break
       case NetworkKind.COSM:
         network = CosmNetworkService.buildNetwork(chainId, info)
