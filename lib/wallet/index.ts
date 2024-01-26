@@ -53,7 +53,7 @@ export function isUseEd25519Curve(networkKind: NetworkKind): boolean {
   switch (networkKind) {
     case NetworkKind.APTOS:
     // pass through
-    case NetworkKind.SOL:
+    case NetworkKind.SOLANA:
       return true
     default:
       return false
@@ -74,7 +74,7 @@ export function getDefaultPath(networkKind: NetworkKind): string {
       return AptosWallet.defaultPath
     case NetworkKind.SUI:
       return SuiWallet.defaultPath
-    case NetworkKind.SOL:
+    case NetworkKind.SOLANA:
       return SolWallet.defaultPath
     case NetworkKind.ALEO:
       return AleoWallet.defaultPath
@@ -224,7 +224,7 @@ export async function getStructuralSigningWallet(
       return AptosWallet.from(opts)
     case NetworkKind.SUI:
       return SuiWallet.from(opts)
-    case NetworkKind.SOL:
+    case NetworkKind.SOLANA:
       return SolWallet.from(opts)
     case NetworkKind.ALEO:
       return AleoWallet.from(opts)

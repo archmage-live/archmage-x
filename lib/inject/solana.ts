@@ -54,16 +54,16 @@ import {
   context
 } from '~lib/inject/client'
 
-export const SOL_PROVIDER_NAME = 'solProvider'
+export const SOLANA_PROVIDER_NAME = 'solProvider'
 
-export interface ISolProviderService extends EventEmitter {
+export interface ISolanaProviderService extends EventEmitter {
   request(
     args: { method: string; params?: Array<any> },
     ctx?: Context
   ): Promise<any>
 }
 
-export class SolWallet implements Wallet {
+export class SolanaWallet implements Wallet {
   version = '1.0.0' as const
   name = 'Archmage'
   icon = archmageLogo as WalletIcon
@@ -82,7 +82,7 @@ export class SolWallet implements Wallet {
     return this.#accounts
   }
 
-  constructor(private service: ISolProviderService) {
+  constructor(private service: ISolanaProviderService) {
     this.#init().finally()
   }
 
@@ -298,7 +298,7 @@ export class SolWallet implements Wallet {
       const input = inputs[0]
       const output: SolanaSignInOutput = await this.service.request(
         {
-          method: 'signMessage',
+          method: 'signIn',
           params: [input]
         },
         context()
@@ -366,18 +366,20 @@ export class SolWallet implements Wallet {
 if (
   !isBackgroundWorker() &&
   process.env.PLASMO_PUBLIC_ENABLE_SOLANA &&
-  !globalThis.archmage.sol
+  !globalThis.archmage.solana
 ) {
   const service =
-    RpcClientInjected.instance().service<ISolProviderService>(SOL_PROVIDER_NAME)
+    RpcClientInjected.instance().service<ISolanaProviderService>(
+      SOLANA_PROVIDER_NAME
+    )
 
-  const sol = new SolWallet(service)
+  const solana = new SolanaWallet(service)
 
-  registerWallet(sol)
+  registerWallet(solana)
 
-  globalThis.archmage.sol = sol
+  globalThis.archmage.solana = solana
 }
 
-export interface SolWindow extends ArchmageWindow {}
+export interface SolanaWindow extends ArchmageWindow {}
 
-declare const globalThis: SolWindow
+declare const globalThis: SolanaWindow

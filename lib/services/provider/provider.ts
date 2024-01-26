@@ -76,7 +76,7 @@ export async function getProvider(network: INetwork): Promise<Provider> {
       return await AptosProvider.from(network)
     case NetworkKind.SUI:
       return await SuiProvider.from(network)
-    case NetworkKind.SOL:
+    case NetworkKind.SOLANA:
       break
   }
   throw new Error(`provider for network ${network.kind} is not implemented`)

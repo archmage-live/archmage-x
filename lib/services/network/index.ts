@@ -87,7 +87,7 @@ export function getNetworkInfo(network: INetwork): NetworkInfo {
         explorerUrl: info.explorers.at(0)?.url
       }
     }
-    case NetworkKind.SOL: {
+    case NetworkKind.SOLANA: {
       const info = network.info as SolanaChainInfo
       return {
         name: info.name,
@@ -210,7 +210,7 @@ export function getAccountUrl(
       case NetworkKind.EVM:
         pathPrefix = 'address'
         break
-      case NetworkKind.SOL:
+      case NetworkKind.SOLANA:
         pathPrefix = 'account' // or 'address'
         break
       case NetworkKind.COSM:
@@ -274,7 +274,7 @@ export function getTransactionUrl(
       case NetworkKind.EVM:
         pathPrefix = 'tx'
         break
-      case NetworkKind.SOL:
+      case NetworkKind.SOLANA:
         pathPrefix = 'tx'
         break
       case NetworkKind.COSM:
@@ -339,7 +339,7 @@ export function getTokenUrl(
       case NetworkKind.EVM:
         pathPrefix = 'token'
         break
-      case NetworkKind.SOL:
+      case NetworkKind.SOLANA:
         pathPrefix = 'account' // odd!
         break
       case NetworkKind.COSM:
@@ -373,7 +373,7 @@ export function getTokenUrl(
 
 export function getFaucetUrl(network: INetwork): string | undefined {
   switch (network.kind) {
-    case NetworkKind.SOL: {
+    case NetworkKind.SOLANA: {
       const info = network.info as SolanaChainInfo
       return info.faucets?.at(0)
     }
@@ -450,7 +450,7 @@ export class NetworkService {
       case NetworkKind.EVM:
         network = EvmNetworkService.buildNetwork(chainId, info)
         break
-      case NetworkKind.SOL:
+      case NetworkKind.SOLANA:
         network = SolanaNetworkService.buildNetwork(chainId, info)
         break
       case NetworkKind.COSM:

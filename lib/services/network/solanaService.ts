@@ -11,7 +11,7 @@ export class SolanaNetworkService {
       return
     }
 
-    if (await checkNetworkKindInitialized(NetworkKind.SOL)) {
+    if (await checkNetworkKindInitialized(NetworkKind.SOLANA)) {
       return
     }
 
@@ -29,7 +29,7 @@ export class SolanaNetworkService {
   static buildNetwork(chainId: ChainId, info: SolanaChainInfo): INetwork {
     assert(chainId === info.chainId)
     return {
-      kind: NetworkKind.SOL,
+      kind: NetworkKind.SOLANA,
       chainId: info.chainId,
       info: info,
       search: createSearchString(info.name, info.chainId)

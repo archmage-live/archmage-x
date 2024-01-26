@@ -7,7 +7,7 @@ export enum NetworkKind {
   STARKNET = 'starknet',
   APTOS = 'aptos',
   SUI = 'sui',
-  SOL = 'sol',
+  SOLANA = 'solana',
   ALEO = 'aleo'
 }
 
@@ -49,7 +49,7 @@ const NETWORK_KINDS: {
   StarkNet: NetworkKind.STARKNET,
   Aptos: NetworkKind.APTOS,
   Sui: NetworkKind.SUI,
-  Solana: NetworkKind.SOL,
+  Solana: NetworkKind.SOLANA,
   Aleo: NetworkKind.ALEO
 }
 
@@ -71,7 +71,7 @@ export function getNetworkScope(kind?: NetworkKind): NetworkScope {
       return 'Aptos'
     case NetworkKind.SUI:
       return 'Sui'
-    case NetworkKind.SOL:
+    case NetworkKind.SOLANA:
       return 'Solana'
     case NetworkKind.ALEO:
       return 'Aleo'

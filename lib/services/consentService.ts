@@ -60,6 +60,12 @@ export type SignTypedDataPayload = {
   signature?: any
 }
 
+export type SignInPayload = {
+  input: any
+  signedMessage: any // constructed message to be signed
+  signature?: any
+}
+
 export enum ConsentType {
   UNLOCK = 'unlock',
   REQUEST_PERMISSION = 'requestPermission',
@@ -67,6 +73,7 @@ export enum ConsentType {
   SIGN_TRANSACTION = 'signTransaction', // only sign tx
   SIGN_MSG = 'signMessage',
   SIGN_TYPED_DATA = 'signTypedData',
+  SIGN_IN = 'signIn',
   WATCH_ASSET = 'watchAsset',
   ADD_NETWORK = 'addNetwork',
   SWITCH_NETWORK = 'switchNetwork'
