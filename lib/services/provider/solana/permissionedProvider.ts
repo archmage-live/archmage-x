@@ -21,6 +21,7 @@ import {
 } from '~lib/services/consentService'
 import { NETWORK_SERVICE } from '~lib/services/network'
 import { TransactionPayload } from '~lib/services/provider'
+import { SolanaTransactionPayload } from '~lib/services/provider/solana/types'
 import { getSigningWallet } from '~lib/wallet'
 
 import { BasePermissionedProvider } from '../base'
@@ -160,8 +161,8 @@ export class SolanaPermissionedProvider extends BasePermissionedProvider {
         type: ConsentType.TRANSACTION,
         origin: this.origin,
         payload: {
-          txParams: transaction
-        } as TransactionPayload
+          txParams: [transaction]
+        } as SolanaTransactionPayload
       },
       ctx
     )
@@ -179,8 +180,8 @@ export class SolanaPermissionedProvider extends BasePermissionedProvider {
         type: ConsentType.SIGN_TRANSACTION,
         origin: this.origin,
         payload: {
-          txParams: transaction
-        } as TransactionPayload
+          txParams: [transaction]
+        } as SolanaTransactionPayload
       },
       ctx
     )

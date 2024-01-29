@@ -9,6 +9,10 @@ import { CosmProvider } from '~lib/services/provider/cosm/provider'
 import { formatCosmTxPayload } from '~lib/services/provider/cosm/types'
 import { EvmProvider } from '~lib/services/provider/evm/provider'
 import { formatEvmTxPayload } from '~lib/services/provider/evm/types'
+import {
+  compactSolanaTxPayload,
+  formatSolanaTxPayload
+} from '~lib/services/provider/solana/types'
 import { StarknetProvider } from '~lib/services/provider/starknet/provider'
 import { formatStarknetTxPayload } from '~lib/services/provider/starknet/types'
 import { SuiProvider } from '~lib/services/provider/sui/provider'
@@ -94,6 +98,8 @@ export function formatTxPayload(
   switch (network.kind) {
     case NetworkKind.EVM:
       return formatEvmTxPayload(payload)
+    case NetworkKind.SOLANA:
+      return formatSolanaTxPayload(payload)
     case NetworkKind.STARKNET:
       return formatStarknetTxPayload(payload)
     case NetworkKind.COSM:
@@ -111,6 +117,8 @@ export function compactTxPayload(
   payload: TransactionPayload
 ): TransactionPayload {
   switch (network.kind) {
+    case NetworkKind.SOLANA:
+      return compactSolanaTxPayload(payload)
     case NetworkKind.APTOS:
       return compactAptosTxPayload(payload)
     case NetworkKind.SUI:

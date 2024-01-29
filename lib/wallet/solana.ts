@@ -1,5 +1,5 @@
 import { arrayify, hexlify } from '@ethersproject/bytes'
-import { Keypair, Transaction } from '@solana/web3.js'
+import { Keypair, Transaction, VersionedTransaction } from '@solana/web3.js'
 import assert from 'assert'
 import bs58 from 'bs58'
 import { sign } from 'tweetnacl'
@@ -91,12 +91,18 @@ export class SolWallet implements KeystoreSigningWallet {
     return sign.detached.verify(arrayify(msg), sig, publicKey)
   }
 
-  async signTransaction(transaction: Transaction): Promise<Transaction> {
+  async signTransaction(
+    transaction: VersionedTransaction | Transaction
+  ): Promise<VersionedTransaction | Transaction> {
     const keypair =
       this.wallet instanceof HDNode
         ? Keypair.fromSecretKey(arrayify(this.wallet.secretKey!))
         : this.wallet
-    transaction.sign(keypair)
+    if (transaction instanceof VersionedTransaction) {
+      transaction.sign([keypair])
+    } else {
+      transaction.sign(keypair)
+    }
     return transaction
   }
 
