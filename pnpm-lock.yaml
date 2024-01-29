@@ -425,6 +425,9 @@ dependencies:
   eth-balance-checker:
     specifier: ^0.2.0
     version: 0.2.0(ethers@5.6.9)(web3@1.10.3)
+  eth-phishing-detect:
+    specifier: ^1.2.0
+    version: 1.2.0
   eth-rpc-errors:
     specifier: ^4.0.3
     version: 4.0.3
@@ -572,6 +575,9 @@ dependencies:
   wif:
     specifier: ^2.0.6
     version: 2.0.6
+  yaml:
+    specifier: ^2.3.4
+    version: 2.3.4
   zksync-web3:
     specifier: ^0.14.3
     version: 0.14.3(ethers@5.6.9)
@@ -12580,6 +12586,12 @@ packages:
       xhr-request-promise: 0.1.3
     dev: false
 
+  /eth-phishing-detect@1.2.0:
+    resolution: {integrity: sha512-+M7D4dhu5tkSA9b5eiBwDeJCjwy+7Lv49nuTEw8fNZIZUAVZC3d2XHatBq1MOW7J8kxNGbBdgBuIf65opI7Tkg==}
+    dependencies:
+      fast-levenshtein: 2.0.6
+    dev: false
+
   /eth-query@2.1.2:
     resolution: {integrity: sha512-srES0ZcvwkR/wd5OQBRA1bIJMww1skfGS0s8wlwK3/oNP4+wnds60krvu5R1QbpRQjMmpG5OMIWro5s7gvDPsA==}
     dependencies:
@@ -21238,6 +21250,11 @@ packages:
   /yaml@1.10.2:
     resolution: {integrity: sha512-r3vXyErRCYJ7wg28yvBY5VSoAF8ZvlcW9/BwUzEtUsjvX/DKs24dIkuwjtuprwJJHsbyUbLApepYTR1BN4uHrg==}
     engines: {node: '>= 6'}
+
+  /yaml@2.3.4:
+    resolution: {integrity: sha512-8aAvwVUSHpfEqTQ4w/KMlf3HcRdt50E5ODIQJBw1fQ5RL34xabzxtUlzTXVqc4rkZsPbvrXKWnABCD7kWSmocA==}
+    engines: {node: '>= 14'}
+    dev: false
 
   /yargs-parser@13.1.2:
     resolution: {integrity: sha512-3lbsNRf/j+A4QuSZfDRA7HRSfWrzO0YjqTJd5kjAq37Zep1CEgaYmrH9Q3GwPiB9cHyd1Y1UwggGhJGoxipbzg==}

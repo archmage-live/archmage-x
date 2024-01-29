@@ -6,7 +6,8 @@
   "include": [
     ".plasmo/**/*",
     "./**/*.ts",
-    "./**/*.tsx"
+    "./**/*.tsx",
+    "./types.d.ts"
   ],
   "compilerOptions": {
     "strict": true,
