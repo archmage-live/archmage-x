@@ -13,6 +13,7 @@ class PhishingDetectApi {
     }
     this.isInitialized = true
 
+    // https://github.com/MetaMask/eth-phishing-detect
     try {
       const metamaskEthPhishingDetectUrl =
         'https://raw.githubusercontent.com/MetaMask/eth-phishing-detect/main/src/config.json'
@@ -29,6 +30,7 @@ class PhishingDetectApi {
       console.error(err)
     }
 
+    // https://github.com/chainapsis/phishing-block-list
     try {
       const keplrPhishingBlockListUrl =
         'https://github.com/chainapsis/phishing-block-list/raw/main/block-list.txt'
@@ -48,6 +50,7 @@ class PhishingDetectApi {
       console.error(err)
     }
 
+    // https://github.com/phantom/blocklist
     try {
       const phantomBlockListUrl =
         'https://github.com/phantom/blocklist/raw/master/blocklist.yaml'

@@ -16,6 +16,7 @@ import {
   getEvmGeneralTransactionInfo,
   getEvmTransactionTypes
 } from './evmService'
+import { SOLANA_TRANSACTION_SERVICE } from './solanaService'
 import { SUI_TRANSACTION_SERVICE, getSuiTransactionInfo } from './suiService'
 
 export interface ITransactionService {
@@ -72,6 +73,8 @@ export function getTransactionService(
       return EVM_TRANSACTION_SERVICE
     case NetworkKind.COSM:
       return COSM_TRANSACTION_SERVICE
+    case NetworkKind.SOLANA:
+      return SOLANA_TRANSACTION_SERVICE
     case NetworkKind.APTOS:
       return APTOS_TRANSACTION_SERVICE
     case NetworkKind.SUI:

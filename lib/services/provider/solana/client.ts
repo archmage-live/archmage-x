@@ -11,6 +11,7 @@ export function getSolanaClient(network: INetwork): SolanaClient {
   let client = SOLANA_CLIENTS.get(network.id)
   if (!client) {
     const info = network.info as SolanaChainInfo
+    // https://solana.com/docs/core/transactions/confirmation#transaction-confirmation-tips
     client = new Connection(info.rpc[0], {
       commitment: 'confirmed'
     })
