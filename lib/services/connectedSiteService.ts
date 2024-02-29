@@ -21,13 +21,15 @@ interface IConnectedSiteService {
   connectSite(
     accounts: IChainAccount,
     href: string,
-    iconUrl?: string
+    iconUrl?: string,
+    permissions?: any
   ): Promise<IConnectedSite>
 
   connectSiteWithReplace(
     accounts: IChainAccount[],
     href: string,
     iconUrl?: string,
+    permissions?: any,
     connected?: boolean
   ): Promise<IConnectedSite[]>
 
@@ -109,7 +111,8 @@ class ConnectedSiteService extends ConnectedSiteServicePartial {
   async connectSite(
     account: IChainAccount,
     href: string,
-    iconUrl?: string
+    iconUrl?: string,
+    permissions?: any
   ): Promise<IConnectedSite> {
     const origin = new URL(href).origin
 
@@ -120,15 +123,21 @@ class ConnectedSiteService extends ConnectedSiteServicePartial {
       }
     }
 
+    const info: any = {
+      connectedAt: Date.now()
+    }
+
+    if (permissions) {
+      info.permissions = permissions
+    }
+
     const conn = {
       masterId: account.masterId,
       index: account.index,
       origin,
       iconUrl,
       connected: booleanToNumber(true),
-      info: {
-        connectedAt: Date.now()
-      }
+      info
     } as IConnectedSite
 
     conn.id = await DB.connectedSites.add(conn)
@@ -139,7 +148,9 @@ class ConnectedSiteService extends ConnectedSiteServicePartial {
   async connectSiteWithReplace(
     accounts: IChainAccount[],
     href: string,
-    iconUrl?: string
+    iconUrl?: string,
+    permissions?: any,
+    connected?: boolean
   ): Promise<IConnectedSite[]> {
     assert(accounts.length)
     const accountsMap = new Map(
@@ -174,21 +185,28 @@ class ConnectedSiteService extends ConnectedSiteServicePartial {
         existing.iconUrl = iconUrl || existing.iconUrl
         existing.connected = booleanToNumber(true)
         existing.info.connectedAt = Date.now()
+        if (permissions) {
+          existing.info.permissions = permissions
+        }
         bulkPut.push(existing)
       }
     }
 
     for (const account of accounts) {
       if (!existingMap.has(`${account.masterId}-${account.index}`)) {
+        const info: any = {
+          connectedAt: Date.now()
+        }
+        if (permissions) {
+          info.permissions = permissions
+        }
         const add = {
           masterId: account.masterId,
           index: account.index,
           origin,
           iconUrl,
           connected: booleanToNumber(true),
-          info: {
-            connectedAt: Date.now()
-          }
+          info
         } as IConnectedSite
         bulkPut.push(add)
       }

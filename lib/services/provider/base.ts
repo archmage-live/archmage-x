@@ -54,7 +54,7 @@ export class BasePermissionedProvider {
   }
 
   // https://eips.ethereum.org/EIPS/eip-1102
-  async requestAccounts(ctx: Context) {
+  async requestAccounts(ctx: Context, data?: any) {
     if (await PASSWORD_SERVICE.isLocked()) {
       await CONSENT_SERVICE.requestConsent(
         {
@@ -71,7 +71,9 @@ export class BasePermissionedProvider {
     await this.fetchConnectedAccounts()
 
     if (!this.accounts.length) {
-      await this.requestPermissions(ctx, [{ eth_accounts: {} }])
+      await this._requestPermissions(ctx, [
+        { permission: Permission.ACCOUNT, data }
+      ])
     }
   }
 
@@ -98,15 +100,10 @@ export class BasePermissionedProvider {
   }
 
   // https://eips.ethereum.org/EIPS/eip-2255
-  async requestPermissions(
+  async _requestPermissions(
     ctx: Context,
-    [{ eth_accounts, ...restPermissions }]: Array<any>
+    permissions: { permission: Permission; data?: any }[]
   ) {
-    if (!eth_accounts || Object.keys(restPermissions).length) {
-      // now only support `eth_accounts`
-      throw ethErrors.rpc.invalidParams()
-    }
-
     await CONSENT_SERVICE.requestConsent(
       {
         networkId: this.network.id!,
@@ -114,7 +111,7 @@ export class BasePermissionedProvider {
         type: ConsentType.REQUEST_PERMISSION,
         origin: this.origin,
         payload: {
-          permissions: [{ permission: Permission.ACCOUNT }]
+          permissions
         } as RequestPermissionPayload
       },
       ctx

@@ -15,6 +15,7 @@ import {
   CONSENT_SERVICE,
   ConsentRequest,
   ConsentType,
+  Permission,
   SignMsgPayload,
   SignTypedDataPayload,
   WatchAssetPayload
@@ -127,6 +128,21 @@ export class EvmPermissionedProvider extends BasePermissionedProvider {
         throw err
       }
     }
+  }
+
+  // https://eips.ethereum.org/EIPS/eip-2255
+  async requestPermissions(
+    ctx: Context,
+    [{ eth_accounts, ...restPermissions }]: Array<any>
+  ) {
+    if (!eth_accounts || Object.keys(restPermissions).length) {
+      // now only support `eth_accounts`
+      throw ethErrors.rpc.invalidParams()
+    }
+
+    await this._requestPermissions(ctx, [
+      { permission: Permission.ACCOUNT, data: eth_accounts }
+    ])
   }
 
   async sendTransaction(ctx: Context, [params]: Array<any>) {

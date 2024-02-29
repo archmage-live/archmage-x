@@ -100,6 +100,7 @@ export class AleoWallet implements KeystoreSigningWallet {
   }
 
   async signMessage(message: any): Promise<string> {
+    // The returned signature is bech32m encoded string
     return this.account.sign(arrayify(message)).to_string()
   }
 

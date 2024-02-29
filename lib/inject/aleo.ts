@@ -9,13 +9,15 @@ import type {
   LeoWallet,
   LeoWalletEvents
 } from '@demox-labs/aleo-wallet-adapter-leo'
+import { arrayify, hexlify } from '@ethersproject/bytes'
 
 import { isBackgroundWorker } from '~lib/detect'
 import {
   ArchmageWindow,
   Context,
   EventEmitter,
-  RpcClientInjected
+  RpcClientInjected,
+  context
 } from '~lib/inject/client'
 
 export const ALEO_PROVIDER_NAME = 'aleoProvider'
@@ -31,27 +33,111 @@ export class AleoWallet
   extends AleoEventEmitter<LeoWalletEvents>
   implements LeoWallet
 {
+  publicKey?: string // address
+  #network?: string // once connected, it won't change; except for disconnected, then it's undefined
+
   constructor(private service: IAleoProviderService) {
     super()
+
+    this.#init().finally()
   }
 
-  connect(
+  async #init() {
+    this.service.on(
+      'networkChanged',
+      async ({ network }: { network: string }) => {
+        if (this.#network && network !== this.#network) {
+          // disconnect if network changed; DApp should connect again
+          await this.disconnect()
+        }
+      }
+    )
+
+    this.service.on('accountsChanged', async () => {
+      const accounts = await this.service.request(
+        { method: 'accounts' },
+        context()
+      )
+
+      if (!this.#network) {
+        // not connected
+        return
+      }
+
+      this.publicKey = accounts[0].address
+
+      this.emit('accountChange', this.publicKey)
+    })
+  }
+
+  async connect(
     decryptPermission: DecryptPermission,
     network: WalletAdapterNetwork,
     programs?: string[]
   ): Promise<void> {
-    return Promise.resolve(undefined)
+    switch (decryptPermission) {
+      case DecryptPermission.NoDecrypt:
+      case DecryptPermission.UponRequest:
+      case DecryptPermission.AutoDecrypt:
+      case DecryptPermission.OnChainHistory:
+        break
+      default:
+        throw new Error(`Unsupported decryptPermission: ${decryptPermission}`)
+    }
+
+    if (programs?.some((program) => !program.endsWith('.aleo'))) {
+      throw new Error('Invalid programs')
+    }
+
+    const { accounts } = await this.service.request(
+      {
+        method: 'connect',
+        params: [decryptPermission, network, programs]
+      },
+      context()
+    )
+
+    this.publicKey = accounts[0].address
+    this.#network = network
+
+    this.emit('connect', network)
   }
 
-  disconnect(): Promise<void> {
-    return Promise.resolve(undefined)
+  async disconnect(): Promise<void> {
+    await this.service.request(
+      {
+        method: 'disconnect'
+      },
+      context()
+    )
+
+    this.publicKey = undefined
+    this.#network = undefined
+
+    this.emit('disconnect')
   }
 
-  signMessage(message: Uint8Array): Promise<{ signature: Uint8Array }> {
-    return Promise.resolve({ signature: new Uint8Array() })
+  async isAvailable(): Promise<boolean> {
+    // Archmage is always available
+    return true
   }
 
-  decrypt(
+  async signMessage(message: Uint8Array): Promise<{ signature: Uint8Array }> {
+    // The signature is bech32m encoded string
+    const signature = await this.service.request(
+      {
+        method: 'signMessage',
+        params: [hexlify(message)]
+      },
+      context()
+    )
+
+    return {
+      signature: new TextEncoder().encode(signature)
+    }
+  }
+
+  async decrypt(
     cipherText: string,
     tpk?: string,
     programId?: string,
@@ -60,51 +146,113 @@ export class AleoWallet
   ): Promise<{
     text: string
   }> {
-    return Promise.resolve({ text: '' })
+    return await this.service.request(
+      {
+        method: 'decrypt',
+        params: [cipherText, tpk, programId, functionName, index]
+      },
+      context()
+    )
   }
 
-  requestRecords(program: string): Promise<{ records: any[] }> {
-    return Promise.resolve({ records: [] })
+  async requestRecords(program: string): Promise<{ records: any[] }> {
+    return await this.service.request(
+      {
+        method: 'requestRecords',
+        params: [program]
+      },
+      context()
+    )
   }
 
-  requestTransaction(
+  async requestTransaction(
     transaction: AleoTransaction
   ): Promise<{ transactionId?: string }> {
-    return Promise.resolve({})
+    return await this.service.request(
+      {
+        method: 'requestTransaction',
+        params: [transaction]
+      },
+      context()
+    )
   }
 
-  requestExecution(
+  async requestExecution(
     transaction: AleoTransaction
   ): Promise<{ transactionId?: string }> {
-    return Promise.resolve({})
+    return await this.service.request(
+      {
+        method: 'requestExecution',
+        params: [transaction]
+      },
+      context()
+    )
   }
 
-  requestBulkTransactions(
+  async requestBulkTransactions(
     transactions: AleoTransaction[]
   ): Promise<{ transactionIds?: string[] }> {
-    return Promise.resolve({})
+    return await this.service.request(
+      {
+        method: 'requestBulkTransactions',
+        params: [transactions]
+      },
+      context()
+    )
   }
 
-  requestDeploy(
+  async requestDeploy(
     deployment: AleoDeployment
   ): Promise<{ transactionId?: string }> {
-    return Promise.resolve({})
+    return await this.service.request(
+      {
+        method: 'requestDeploy',
+        params: [deployment]
+      },
+      context()
+    )
   }
 
-  transactionStatus(transactionId: string): Promise<{ status: string }> {
-    return Promise.resolve({ status: '' })
+  async transactionStatus(transactionId: string): Promise<{ status: string }> {
+    return await this.service.request(
+      {
+        method: 'transactionStatus',
+        params: [transactionId]
+      },
+      context()
+    )
   }
 
-  getExecution(transactionId: string): Promise<{ execution: string }> {
-    return Promise.resolve({ execution: '' })
+  async getExecution(transactionId: string): Promise<{ execution: string }> {
+    return await this.service.request(
+      {
+        method: 'getExecution',
+        params: [transactionId]
+      },
+      context()
+    )
   }
 
-  requestRecordPlaintexts(program: string): Promise<{ records: any[] }> {
-    return Promise.resolve({ records: [] })
+  async requestRecordPlaintexts(program: string): Promise<{ records: any[] }> {
+    return await this.service.request(
+      {
+        method: 'requestRecordPlaintexts',
+        params: [program]
+      },
+      context()
+    )
   }
 
-  requestTransactionHistory(program: string): Promise<{ transactions: any[] }> {
-    return Promise.resolve({ transactions: [] })
+  async requestTransactionHistory(
+    program: string
+  ): Promise<{ transactions: any[] }> {
+    return await this.service.request(
+      {
+        method: 'requestTransactionHistory',
+        params: [program]
+      },
+      context()
+    )
   }
 }
 
@@ -120,12 +268,14 @@ if (
 
   const aleo = new AleoWallet(service)
 
-  globalThis.archmage.sui = aleo
+  globalThis.archmage.aleo = aleo
   globalThis.leoWallet = aleo
+  globalThis.leo = aleo
 }
 
 export interface AleoWindow extends ArchmageWindow {
   leoWallet?: AleoWallet
+  leo?: AleoWallet
 }
 
 declare const globalThis: AleoWindow

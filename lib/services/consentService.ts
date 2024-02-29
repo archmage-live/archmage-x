@@ -572,10 +572,15 @@ class ConsentService extends ConsentServicePartial {
     origin: string,
     payload: RequestPermissionPayload
   ): Promise<any> {
-    for (const { permission } of payload.permissions) {
+    for (const { permission, data } of payload.permissions) {
       switch (permission) {
         case Permission.ACCOUNT:
-          await CONNECTED_SITE_SERVICE.connectSiteWithReplace(accounts, origin)
+          await CONNECTED_SITE_SERVICE.connectSiteWithReplace(
+            accounts,
+            origin,
+            undefined,
+            data
+          )
       }
     }
   }
