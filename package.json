@@ -20,8 +20,8 @@
     "@alchemy/aa-alchemy": "0.1.0-alpha.12",
     "@alchemy/aa-core": "0.1.0-alpha.11",
     "@alchemy/aa-ethers": "0.1.0-alpha.11",
-    "@aleohq/sdk": "^0.6.1",
-    "@aleohq/wasm": "^0.6.3",
+    "@aleohq/sdk": "^0.6.9",
+    "@aleohq/wasm": "^0.6.9",
     "@archmagelive/alchemy-sdk": "^2.10.1",
     "@archmagelive/plasmo": "0.56.0",
     "@bitcoinerlab/secp256k1": "^1.0.2",
@@ -282,8 +282,9 @@
     },
     "patchedDependencies": {
       "@cosmjs/crypto@0.29.5": "patches/@cosmjs__crypto@0.29.5.patch",
-      "@aleohq/wasm@0.6.3": "patches/@aleohq__wasm@0.6.3.patch",
-      "@noble/hashes@1.3.0": "patches/@noble__hashes@1.3.0.patch"
+      "@noble/hashes@1.3.0": "patches/@noble__hashes@1.3.0.patch",
+      "@aleohq/wasm@0.6.9": "patches/@aleohq__wasm@0.6.9.patch",
+      "@aleohq/sdk@0.6.9": "patches/@aleohq__sdk@0.6.9.patch"
     }
   },
   "alias": {
