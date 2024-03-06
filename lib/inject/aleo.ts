@@ -138,7 +138,7 @@ export class AleoWallet
   }
 
   async decrypt(
-    cipherText: string,
+    ciphertext: string,
     tpk?: string,
     programId?: string,
     functionName?: string,
@@ -146,13 +146,16 @@ export class AleoWallet
   ): Promise<{
     text: string
   }> {
-    return await this.service.request(
+    const plaintext = await this.service.request(
       {
         method: 'decrypt',
-        params: [cipherText, tpk, programId, functionName, index]
+        params: [ciphertext, tpk, programId, functionName, index]
       },
       context()
     )
+    return {
+      text: plaintext
+    }
   }
 
   async requestRecords(program: string): Promise<{ records: any[] }> {

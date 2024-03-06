@@ -569,6 +569,9 @@ dependencies:
   userop:
     specifier: ^0.2.0
     version: 0.2.0
+  uuid:
+    specifier: ^9.0.1
+    version: 9.0.1
   viem:
     specifier: ^1.2.1
     version: 1.2.1(typescript@4.7.4)
@@ -20168,11 +20171,6 @@ packages:
     hasBin: true
     dev: false
 
-  /uuid@9.0.0:
-    resolution: {integrity: sha512-MXcSTerfPa4uqyzStbRoTgt5XIe3x5+42+q1sDuy3R5MDk66URdLMOZe5aPX/SQd+kuYAh0FdP/pO28IkQyTeg==}
-    hasBin: true
-    dev: false
-
   /uuid@9.0.1:
     resolution: {integrity: sha512-b+1eJOlsR9K8HJpow9Ok3fiWOWSIcIzXodvv0rQjVoOVNpWMpxf1wZNpt4y9h10odCNrqnYp1OBzRktckBe3sA==}
     hasBin: true
@@ -20463,7 +20461,7 @@ packages:
       eth-lib: 0.2.8
       ethereumjs-util: 7.1.5
       scrypt-js: 3.0.1
-      uuid: 9.0.0
+      uuid: 9.0.1
       web3-core: 1.10.0
       web3-core-helpers: 1.10.0
       web3-core-method: 1.10.0

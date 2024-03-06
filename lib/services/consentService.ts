@@ -66,6 +66,12 @@ export type SignInPayload = {
   signature?: any
 }
 
+export type DecryptPayload = {
+  type: string
+  args: any[]
+  result?: any
+}
+
 export enum ConsentType {
   UNLOCK = 'unlock',
   REQUEST_PERMISSION = 'requestPermission',
@@ -74,6 +80,7 @@ export enum ConsentType {
   SIGN_MSG = 'signMessage',
   SIGN_TYPED_DATA = 'signTypedData',
   SIGN_IN = 'signIn',
+  DECRYPT = 'decrypt',
   WATCH_ASSET = 'watchAsset',
   ADD_NETWORK = 'addNetwork',
   SWITCH_NETWORK = 'switchNetwork'

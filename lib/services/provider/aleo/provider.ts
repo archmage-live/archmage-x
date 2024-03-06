@@ -1,4 +1,4 @@
-import { Block, WasmTransaction } from '@aleohq/sdk'
+import { Block, Transaction } from '@aleohq/sdk'
 import { ethErrors } from 'eth-rpc-errors'
 import PQueue from 'p-queue'
 
@@ -87,7 +87,7 @@ export class AleoProvider implements Provider {
 
   async sendTransaction(
     account: IChainAccount,
-    transaction: WasmTransaction | string
+    transaction: Transaction | string
   ) {
     return (await this.client.sendTransaction(transaction)) as string
   }

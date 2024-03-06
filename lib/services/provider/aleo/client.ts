@@ -3,11 +3,13 @@ import {
   PrivateKey,
   RecordCiphertext,
   RecordPlaintext,
-  WasmTransaction,
+  Transaction,
+  TransactionModel,
   AleoNetworkClient as _AleoNetworkClient
 } from '@aleohq/sdk'
 import assert from 'assert'
 
+import { fetchJson } from '~lib/fetch'
 import { INetwork } from '~lib/schema'
 
 export class AleoNetworkClient extends _AleoNetworkClient {
@@ -18,20 +20,19 @@ export class AleoNetworkClient extends _AleoNetworkClient {
   }
 
   override async submitTransaction(
-    transaction: WasmTransaction | string
+    transaction: Transaction | string
   ): Promise<string> {
-    return transaction instanceof WasmTransaction
+    return transaction instanceof Transaction
       ? transaction.toString()
       : transaction
   }
 
-  async sendTransaction(
-    transaction: WasmTransaction | string
-  ): Promise<string> {
+  async sendTransaction(transaction: Transaction | string): Promise<string> {
     return (await super.submitTransaction(transaction)) as string
   }
 
   async findAllUnspentRecords(
+    program: string,
     startHeight: number,
     endHeight?: number,
     privateKey?: string | PrivateKey,
@@ -89,6 +90,11 @@ export class AleoNetworkClient extends _AleoNetworkClient {
             }
 
             for (const transition of transaction.execution.transitions) {
+              // Only search for unspent records in specific program
+              if (transition.program !== program) {
+                continue
+              }
+
               if (!transition.outputs) {
                 continue
               }
@@ -138,5 +144,43 @@ export class AleoNetworkClient extends _AleoNetworkClient {
     }
 
     return records
+  }
+
+  async getPublicTransactionsForAddress(
+    address: string,
+    startHeight: number, // >=
+    endHeight: number, // <
+    page: number, // from 0
+    limit: number = 100000
+  ): Promise<TransactionModel[]> {
+    const rep = (await fetchJson(
+      'https://testnet3.aleorpc.com',
+      JSON.stringify({
+        jsonrpc: '2.0',
+        id: 0,
+        method: 'getPublicTransactionsForAddress',
+        params: {
+          address,
+          start: startHeight,
+          end: endHeight,
+          page,
+          transactionsPerRequest: limit
+        }
+      })
+    )) as {
+      jsonrpc: '2.0'
+      id: 0
+      result: { transaction_id: string }[]
+    }
+
+    const transactions = []
+    for (const txId of rep.result) {
+      const tx = (await this.getTransaction(
+        txId.transaction_id
+      )) as TransactionModel
+      transactions.push(tx)
+    }
+
+    return transactions
   }
 }
