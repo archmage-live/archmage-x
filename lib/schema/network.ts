@@ -7,6 +7,7 @@ export interface INetwork {
   chainId: ChainId
   info: any
   search: string
+  hidden?: boolean
 }
 
 export const networkSchemaV1 = '++id, sortId, &[kind+chainId], search'

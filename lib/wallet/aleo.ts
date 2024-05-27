@@ -96,6 +96,7 @@ export class AleoWallet implements KeystoreSigningWallet {
   }
 
   async signTransaction(transaction: any): Promise<any> {
+    // We don't have a way to sign transactions primitively in Aleo
     throw new Error('not implemented')
   }
 
@@ -115,4 +116,7 @@ export class AleoWallet implements KeystoreSigningWallet {
       return false
     }
   }
+}
+
+export interface AleoInfo {
 }

@@ -419,11 +419,17 @@ export class NetworkService {
     }
   }
 
-  async getNetworks(kind?: NetworkKind) {
+  async getNetworks(kind?: NetworkKind, includesHidden?: boolean) {
+    let networks
     if (!kind) {
-      return DB.networks.orderBy('sortId').toArray()
+      networks = await DB.networks.orderBy('sortId').toArray()
     } else {
-      return DB.networks.where('kind').equals(kind).sortBy('sortId')
+      networks = await DB.networks.where('kind').equals(kind).sortBy('sortId')
+    }
+    if (includesHidden) {
+      return networks
+    } else {
+      return networks.filter(network => !network.hidden)
     }
   }
 
@@ -506,14 +512,10 @@ export class NetworkService {
 
 export const NETWORK_SERVICE = new NetworkService()
 
-export function useNetworks(kind?: NetworkKind) {
+export function useNetworks(kind?: NetworkKind, includesHidden?: boolean) {
   return useLiveQuery(() => {
-    if (kind) {
-      return DB.networks.where('kind').equals(kind).sortBy('sortId')
-    } else {
-      return DB.networks.orderBy('sortId').toArray()
-    }
-  }, [kind])
+    return NETWORK_SERVICE.getNetworks(kind, includesHidden)
+  }, [kind, includesHidden])
 }
 
 export function useNetworksInfo(networks?: INetwork[]) {

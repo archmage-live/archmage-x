@@ -20,7 +20,7 @@ export const ALEO_NETWORKS_PRESET: AleoNetworkInfo[] = [
       decimals: 6
     },
     rpc: ['https://vm.aleo.org/api'],
-    explorers: ['https://explorer.aleo.org'],
+    explorers: ['https://explorer.hamp.app', 'https://aleo123.io', 'https://explorer.aleo.org'],
     faucets: ['https://faucet.aleo.org']
   }
 ]
