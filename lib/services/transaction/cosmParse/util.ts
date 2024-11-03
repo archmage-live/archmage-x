@@ -1,5 +1,5 @@
-import { Coin } from '~lib/network/cosm/coin'
-import { Dec } from '~lib/network/cosm/number'
+import { Coin } from '~archmage/network/cosm/coin'
+import { Dec } from '~archmage/network/cosm/number'
 import { TokenInfo } from '~lib/services/datasource/cosmostation'
 
 export function extractEventAttributes(

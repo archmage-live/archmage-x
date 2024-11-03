@@ -1,4 +1,4 @@
-import { ethErrors } from 'eth-rpc-errors'
+import { rpcErrors } from '@metamask/rpc-errors'
 
 import {
   getActiveNetworkByKind,
@@ -6,7 +6,7 @@ import {
   watchActiveWalletChange
 } from '~lib/active'
 import { Context, EventType, Listener } from '~lib/inject/client'
-import { NetworkKind } from '~lib/network'
+import { NetworkKind } from '@/archmage/network'
 import { watchPasswordUnlocked } from '~lib/password'
 import { ChainId, IChainAccount, INetwork } from '~lib/schema'
 import {
@@ -149,7 +149,7 @@ export class BasePermissionedProvider {
       chainId
     })
     if (!network) {
-      throw ethErrors.rpc.invalidRequest(
+      throw rpcErrors.invalidRequest(
         'Chain with the specified chainId is not found'
       )
     }

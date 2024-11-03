@@ -20,7 +20,7 @@ import { useWizard } from 'react-use-wizard'
 import { AlertBox } from '~components/AlertBox'
 import { NetworkSelect } from '~components/NetworkSelect'
 import { SafeLogo } from '~components/SafeLogo'
-import { NetworkKind, getNetworkScope } from '~lib/network'
+import { NetworkKind, getNetworkScope } from '@/archmage/network'
 import { isSafeSupported } from '~lib/safe'
 import { INetwork, PSEUDO_INDEX } from '~lib/schema'
 import { getNetworkInfo } from '~lib/services/network'
@@ -33,7 +33,7 @@ import {
   MultisigWalletType,
   SafeInfo,
   WalletType
-} from '~lib/wallet'
+} from '~archmage/wallet'
 
 import { NameInput } from '../NameInput'
 import {

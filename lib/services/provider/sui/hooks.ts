@@ -1,5 +1,5 @@
-import { DryRunTransactionBlockResponse } from '@mysten/sui.js/client'
-import { TransactionBlock } from '@mysten/sui.js/transactions'
+import { DryRunTransactionBlockResponse } from '@mysten/sui/client'
+import { Transaction } from '@mysten/sui/transactions'
 import { useEffect, useState } from 'react'
 import { useAsyncRetry, useInterval } from 'react-use'
 import stableHash from 'stable-hash'
@@ -10,7 +10,7 @@ import { getSuiClient } from '~lib/services/provider/sui/client'
 export function useSuiTransaction(
   network?: INetwork,
   account?: IChainAccount,
-  tx?: TransactionBlock
+  tx?: Transaction
 ): DryRunTransactionBlockResponse | false | undefined {
   const { value, loading, error, retry } = useAsyncRetry(async () => {
     if (!network || !account?.address || !tx) {

@@ -4,7 +4,7 @@
 import { TokenList } from '@uniswap/token-lists'
 
 import { fetchJsonWithCache } from '~lib/fetch'
-import { ETHEREUM_MAINNET_CHAINID } from '~lib/network/evm'
+import { ETHEREUM_MAINNET_CHAINID } from '~archmage/network/evm'
 import { IPFS_GATEWAY_API } from '~lib/services/datasource/ipfsGateway'
 import { DEFAULT_EVM_TOKEN_LIST_URLS } from '~lib/services/datasource/tokenlists/defaultTokenLists'
 import { EvmClient } from '~lib/services/provider/evm/client'

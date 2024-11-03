@@ -27,20 +27,20 @@ import { useCallback, useState } from 'react'
 import { useAsyncRetry, useInterval } from 'react-use'
 import { CallData, hash } from 'starknet'
 
-import { NetworkKind } from '~lib/network'
+import { NetworkKind } from '@/archmage/network'
 import { IChainAccount, INetwork, ISubWallet, IWallet } from '~lib/schema'
 import { getStarknetClient } from '~lib/services/provider/starknet/client'
 import { StarknetPermissionedProvider } from '~lib/services/provider/starknet/permissionedProvider'
 import { StarknetProvider } from '~lib/services/provider/starknet/provider'
 import {
   StarknetAccountType,
-  canWalletSign,
+  isSignableWallet,
   getSigningWallet
-} from '~lib/wallet'
+} from '~archmage/wallet'
 import {
   ARGENT_ACCOUNT_CONTRACT_CLASS_HASHES,
   ARGENT_PROXY_CONTRACT_CLASS_HASHES
-} from '~lib/wallet'
+} from '~archmage/wallet'
 import { useConsentModal } from '~pages/Popup/Consent'
 
 export const AccountAbstractionPopover = ({
@@ -63,7 +63,7 @@ export const AccountAbstractionPopover = ({
     if (!network || !wallet || !subWallet || !account?.address) {
       return
     }
-    if (!canWalletSign(wallet)) {
+    if (!isSignableWallet(wallet)) {
       return
     }
 

@@ -27,7 +27,7 @@ import {
   useWallet
 } from '~lib/services/wallet'
 import { useSiteIconUrl } from '~lib/tab'
-import { isWalletConnectProtocol } from '~lib/wallet'
+import { isReownWallet } from '~archmage/wallet'
 
 import { SignableChecker, useSignableChecker } from './Checker'
 import {
@@ -82,7 +82,7 @@ export const SignMessage = ({
       setIsLoading(false)
     }
 
-    if (wallet && isWalletConnectProtocol(wallet)) {
+    if (wallet && isReownWallet(wallet)) {
       setWcPayload({ message: payload.message })
       onWcSignedRef.current = ({ signature }) => {
         console.log(signature)
@@ -194,7 +194,7 @@ export const SignMessage = ({
         </Stack>
       </Stack>
 
-      {network && wallet && account && isWalletConnectProtocol(wallet) && (
+      {network && wallet && account && isReownWallet(wallet) && (
         <WalletConnectSigningModel
           isOpen={isWcOpen}
           onClose={onWcClose}

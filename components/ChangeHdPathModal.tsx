@@ -15,14 +15,14 @@ import { useEffect, useState } from 'react'
 
 import { AlertBox } from '~components/AlertBox'
 import { HdPathInput } from '~components/HdPathInput'
-import { getNetworkScope } from '~lib/network'
+import { getNetworkScope } from '@/archmage/network'
 import { DerivePosition, INetwork, IWallet } from '~lib/schema'
 import { WALLET_SERVICE, useHdPath } from '~lib/services/wallet'
 import {
   getDefaultDerivePosition,
   getDefaultPath,
   isUseEd25519Curve
-} from '~lib/wallet'
+} from '~archmage/wallet'
 
 export const ChangeHdPathModal = ({
   isOpen,

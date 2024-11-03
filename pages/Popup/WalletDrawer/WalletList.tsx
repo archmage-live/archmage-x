@@ -7,7 +7,7 @@ import { usePaginatedBalances } from '~lib/hooks/usePaginatedBalances'
 import { useInitialWalletTreeState } from '~lib/hooks/useWalletTreeState'
 import { INetwork } from '~lib/schema'
 import { WalletEntry } from '~lib/services/wallet/tree'
-import { isWalletGroup } from '~lib/wallet'
+import { isGroupWallet } from '~archmage/wallet'
 
 import { WalletItem } from './WalletItem'
 
@@ -54,7 +54,7 @@ export const WalletList = ({
     getScrollElement: () => parentRef.current,
     estimateSize: (index) => {
       const wallet = wallets[index]
-      if (!openState[wallet.wallet.id] || !isWalletGroup(wallet.wallet)) {
+      if (!openState[wallet.wallet.id] || !isGroupWallet(wallet.wallet)) {
         return itemSize
       } else {
         return (
@@ -92,7 +92,7 @@ export const WalletList = ({
             const walletEntry = wallets[item.index]!
             const { wallet, subWallets } = walletEntry
 
-            const subWallet = !isWalletGroup(wallet) ? subWallets[0] : undefined
+            const subWallet = !isGroupWallet(wallet) ? subWallets[0] : undefined
 
             return (
               <Box

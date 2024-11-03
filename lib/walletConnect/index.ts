@@ -5,11 +5,11 @@ import assert from 'assert'
 import { useCallback, useMemo, useState } from 'react'
 import { useAsyncRetry } from 'react-use'
 
-import { NetworkKind } from '~lib/network'
+import { NetworkKind } from '@/archmage/network'
 import { INetwork } from '~lib/schema'
 import { getNetworkInfo } from '~lib/services/network'
 import { stall } from '~lib/utils'
-import { checkAddressMayThrow } from '~lib/wallet'
+import { checkAddressMayThrow } from '~archmage/wallet'
 
 const metadata: IClientMeta = {
   name: 'Archmage',

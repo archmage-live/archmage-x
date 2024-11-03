@@ -2,7 +2,7 @@ import assert from 'assert'
 import Dexie from 'dexie'
 import stableHash from 'stable-hash'
 
-import { NetworkKind } from '~lib/network'
+import { NetworkKind } from '@/archmage/network'
 import { IChainAccount, INetwork, ISubWallet, IWallet } from '~lib/schema'
 import { NETWORK_SERVICE } from '~lib/services/network'
 import { WALLET_SERVICE } from '~lib/services/wallet'

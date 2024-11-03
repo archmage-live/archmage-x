@@ -1,8 +1,8 @@
 import assert from 'assert'
 
 import { DB, getNextField } from '~lib/db'
-import { NetworkKind, checkNetworkKindInitialized } from '~lib/network'
-import { APTOS_NETWORKS_PRESET, AptosChainInfo } from '~lib/network/aptos'
+import { NetworkKind, checkNetworkKindInitialized } from '@/archmage/network'
+import { APTOS_NETWORKS_PRESET, AptosChainInfo } from '~archmage/network/aptos'
 import { ChainId, INetwork, createSearchString } from '~lib/schema'
 
 export const AptosAddressZero =

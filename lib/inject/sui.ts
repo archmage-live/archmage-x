@@ -1,25 +1,28 @@
 // https://github.com/MystenLabs/sui/blob/main/apps/wallet/src/dapp-interface/WalletStandardInterface.ts
-import { hexlify } from '@ethersproject/bytes'
 import { fromB64 } from '@mysten/bcs'
-import { isTransactionBlock } from '@mysten/sui.js/transactions'
-import { normalizeSuiAddress } from '@mysten/sui.js/utils'
-import { registerWallet } from '@mysten/wallet-standard'
+import { normalizeSuiAddress } from '@mysten/sui/utils'
+import {
+  SuiSignAndExecuteTransactionMethod,
+  SuiSignTransactionMethod,
+  registerWallet
+} from '@mysten/wallet-standard'
 import type {
   IdentifierString,
   StandardConnectFeature,
   StandardConnectMethod,
   StandardEventsFeature,
   SuiFeatures,
-  SuiSignAndExecuteTransactionBlockMethod,
   SuiSignMessageMethod,
   SuiSignPersonalMessageMethod,
-  SuiSignTransactionBlockMethod,
   Wallet,
   WalletAccount,
   WalletIcon
 } from '@mysten/wallet-standard'
+import { StandardConnect } from '@wallet-standard/features'
+import { StandardEvents } from '@wallet-standard/features/src/events'
 import assert from 'assert'
 import archmageLogo from 'data-base64:~assets/archmage.svg'
+import { hexlify } from 'ethers'
 import mitt, { Emitter } from 'mitt'
 
 import { isBackgroundWorker } from '~lib/detect'
@@ -139,21 +142,21 @@ export class SuiWallet implements Wallet {
     SuiFeatures &
     SuiWalletStakeFeature {
     return {
-      'standard:connect': {
+      [StandardConnect]: {
         version: '1.0.0',
         connect: this.#connect
       },
-      'standard:events': {
+      [StandardEvents]: {
         version: '1.0.0',
         on: this.#on
       },
-      'sui:signTransactionBlock': {
-        version: '1.0.0',
-        signTransactionBlock: this.#signTransactionBlock
+      'sui:signTransaction': {
+        version: '2.0.0',
+        signTransaction: this.#signTransaction
       },
-      'sui:signAndExecuteTransactionBlock': {
-        version: '1.0.0',
-        signAndExecuteTransactionBlock: this.#signAndExecuteTransactionBlock
+      'sui:signAndExecuteTransaction': {
+        version: '2.0.0',
+        signAndExecuteTransaction: this.#signAndExecuteTransaction
       },
       'suiWallet:stake': {
         version: '0.0.1',
@@ -170,49 +173,50 @@ export class SuiWallet implements Wallet {
     }
   }
 
-  #signTransactionBlock: SuiSignTransactionBlockMethod = async (input) => {
+  #signTransaction: SuiSignTransactionMethod = async (input) => {
     assert(
       !input.account ||
         normalizeSuiAddress(input.account.address) ===
           normalizeSuiAddress(this.accounts[0]?.address),
       'Account must match the current account'
     )
-    if (!isTransactionBlock(input.transactionBlock)) {
+    if (typeof input.transaction.toJSON !== 'function') {
       throw new Error(
         'Unexpect transaction format found. Ensure that you are using the `Transaction` class.'
       )
     }
     return await this.service.request(
       {
-        method: 'signTransactionBlock',
-        params: [input.transactionBlock.serialize()]
+        method: 'signTransaction',
+        params: [await input.transaction.toJSON()]
       },
       context()
     )
   }
 
-  #signAndExecuteTransactionBlock: SuiSignAndExecuteTransactionBlockMethod =
-    async (input) => {
-      assert(
-        !input.account ||
-          normalizeSuiAddress(input.account.address) ===
-            normalizeSuiAddress(this.accounts[0]?.address),
-        'Account must match the current account'
-      )
-      if (!isTransactionBlock(input.transactionBlock)) {
-        throw new Error(
-          'Unexpect transaction format found. Ensure that you are using the `Transaction` class.'
-        )
-      }
-
-      return await this.service.request(
-        {
-          method: 'signAndExecuteTransactionBlock',
-          params: [input.transactionBlock.serialize(), input.options]
-        },
-        context()
+  #signAndExecuteTransaction: SuiSignAndExecuteTransactionMethod = async (
+    input
+  ) => {
+    assert(
+      !input.account ||
+        normalizeSuiAddress(input.account.address) ===
+          normalizeSuiAddress(this.accounts[0]?.address),
+      'Account must match the current account'
+    )
+    if (typeof input.transaction.toJSON !== 'function') {
+      throw new Error(
+        'Unexpect transaction format found. Ensure that you are using the `Transaction` class.'
       )
     }
+
+    return await this.service.request(
+      {
+        method: 'signAndExecuteTransaction',
+        params: [await input.transaction.toJSON()]
+      },
+      context()
+    )
+  }
 
   #stake = async (input: StakeInput) => {
     return await this.service.request(

@@ -1,14 +1,13 @@
-import { entropyToMnemonic } from '@ethersproject/hdnode'
-import { KeystoreAccount } from '@ethersproject/json-wallets/lib.esm/keystore'
-import { randomBytes } from '@ethersproject/random'
 import assert from 'assert'
 import Dexie from 'dexie'
-import { ethers } from 'ethers'
+import { KeystoreAccount, Mnemonic, Wallet, randomBytes } from 'ethers'
 
+import { getWordlist } from '~archmage/crypto/mnemonic'
+import { HDNodeWallet, hdNodeFromPhrase } from '~archmage/crypto/secp256k1'
 import { DB, getNextField } from '~lib/db'
 import { isBackgroundWorker } from '~lib/detect'
 import { KEYSTORE } from '~lib/keystore'
-import { NetworkKind } from '~lib/network'
+import { NetworkKind } from '@/archmage/network'
 import { SERVICE_WORKER_CLIENT, SERVICE_WORKER_SERVER } from '~lib/rpc'
 import {
   ChainAccountIndex,
@@ -44,9 +43,8 @@ import {
   checkAddressMayThrow,
   getDefaultPath,
   isHdWallet,
-  isKeylessWallet,
-  isWalletGroup
-} from '~lib/wallet'
+  isKeylessWallet
+} from '~archmage/wallet'
 
 import {
   ensureChainAccount,
@@ -223,7 +221,7 @@ export interface IWalletService {
 class WalletServicePartial implements IWalletService {
   async generateMnemonic(opts?: { locale?: string }) {
     let entropy: Uint8Array = randomBytes(16)
-    return entropyToMnemonic(entropy, opts?.locale)
+    return Mnemonic.fromEntropy(entropy, null, getWordlist(opts?.locale)).phrase
   }
 
   async existsName(name: string) {
@@ -539,14 +537,17 @@ class WalletService extends WalletServicePartial {
         assert(mnemonic && !path)
         assert(addressType)
         info.erc4337 = erc4337
-        const acc = ethers.utils.HDNode.fromMnemonic(mnemonic)
+        const acc = hdNodeFromPhrase(mnemonic)
         decryptedKeystores.push({
           index: PSEUDO_INDEX,
           account: {
             address: acc.address,
             privateKey: acc.privateKey,
-            mnemonic: acc.mnemonic,
-            _isKeystoreAccount: true
+            mnemonic: {
+              path: acc.path!,
+              locale: acc.mnemonic!.wordlist.locale,
+              entropy: acc.mnemonic!.entropy
+            }
           }
         })
         break
@@ -568,32 +569,38 @@ class WalletService extends WalletServicePartial {
           let acc
           if (!privateKey) {
             assert(mnemonic && path)
-            acc = ethers.Wallet.fromMnemonic(mnemonic, path)
+            acc = hdNodeFromPhrase(mnemonic, path)
           } else {
             assert(!mnemonic && !path)
-            acc = new ethers.Wallet(privateKey)
+            acc = new Wallet(privateKey)
           }
           decryptedKeystores.push({
             index,
             account: {
               address: acc.address,
               privateKey: acc.privateKey,
-              mnemonic: acc.mnemonic,
-              _isKeystoreAccount: true
+              mnemonic:
+                acc instanceof HDNodeWallet
+                  ? {
+                      path: acc.path!,
+                      locale: acc.mnemonic!.wordlist.locale,
+                      entropy: acc.mnemonic!.entropy
+                    }
+                  : undefined
             }
           })
         }
         break
       case WalletType.WATCH:
       // pass through
-      case WalletType.WALLET_CONNECT: {
+      case WalletType.REOWN: {
         assert(accounts && accounts.length === 1)
         accounts = checkAccounts(accounts)
         break
       }
       case WalletType.WATCH_GROUP:
       // pass through
-      case WalletType.WALLET_CONNECT_GROUP: {
+      case WalletType.REOWN_GROUP: {
         assert(accounts && accounts.length >= 1)
         accounts = checkAccounts(accounts)
         break
@@ -726,7 +733,7 @@ class WalletService extends WalletServicePartial {
           }
           case WalletType.WATCH:
           // pass through
-          case WalletType.WALLET_CONNECT: {
+          case WalletType.REOWN: {
             assert(
               accounts &&
                 accounts.length === 1 &&
@@ -748,7 +755,7 @@ class WalletService extends WalletServicePartial {
           }
           case WalletType.WATCH_GROUP:
           // pass through
-          case WalletType.WALLET_CONNECT_GROUP: {
+          case WalletType.REOWN_GROUP: {
             assert(accounts && accounts.length >= 1)
             accounts = checkAccounts(accounts)
             assert(accounts.every(({ index }, i) => index === i))
@@ -849,7 +856,7 @@ class WalletService extends WalletServicePartial {
 
     if (decryptedKeystores) {
       for (const { index, account } of decryptedKeystores) {
-        await KEYSTORE.set(wallet.id, index, new KeystoreAccount(account))
+        await KEYSTORE.set(wallet.id, index, account)
         KEYSTORE.persist(wallet, index).then(() => {
           // time-consuming, so do not wait for it
         })
@@ -872,7 +879,7 @@ class WalletService extends WalletServicePartial {
           // pass through
           case WalletType.HW_GROUP:
           // pass through
-          case WalletType.WALLET_CONNECT_GROUP:
+          case WalletType.REOWN_GROUP:
           // pass through
           case WalletType.MULTI_SIG_GROUP:
             break
@@ -893,25 +900,31 @@ class WalletService extends WalletServicePartial {
           let acc
           if (!privateKey) {
             assert(mnemonic && path)
-            acc = ethers.Wallet.fromMnemonic(mnemonic, path)
+            acc = hdNodeFromPhrase(mnemonic, path)
           } else {
             assert(!mnemonic && !path)
-            acc = new ethers.Wallet(privateKey)
+            acc = new Wallet(privateKey)
           }
           decryptedKeystores.push({
             index,
             account: {
               address: acc.address,
               privateKey: acc.privateKey,
-              mnemonic: acc.mnemonic,
-              _isKeystoreAccount: true
+              mnemonic:
+                acc instanceof HDNodeWallet
+                  ? {
+                      path: acc.path!,
+                      locale: acc.mnemonic!.wordlist.locale,
+                      entropy: acc.mnemonic!.entropy
+                    }
+                  : undefined
             }
           })
         }
 
         if (decryptedKeystores) {
           for (const { index, account } of decryptedKeystores) {
-            await KEYSTORE.set(wallet.id, index, new KeystoreAccount(account))
+            await KEYSTORE.set(wallet.id, index, account)
             KEYSTORE.persist(wallet, index).then(() => {
               // time-consuming, so do not wait for it
             })

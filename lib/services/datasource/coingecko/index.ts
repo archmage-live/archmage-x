@@ -1,9 +1,9 @@
 import { useQuery } from '@tanstack/react-query'
-import { ethers } from 'ethers'
+import { getAddress } from 'ethers'
 import { useMemo } from 'react'
 
 import { fetchJsonWithCache } from '~lib/fetch'
-import { NetworkKind } from '~lib/network'
+import { NetworkKind } from '@/archmage/network'
 import { QueryService } from '~lib/query'
 import { useQuoteCurrency } from '~lib/quoteCurrency'
 import { INetwork, IToken } from '~lib/schema'
@@ -1084,7 +1084,7 @@ export function useCoinGeckoTokensPrice(
         Object.entries(prices).map(([addr, price]) => {
           addr =
             network.kind === NetworkKind.EVM
-              ? ethers.utils.getAddress(addr) // format returned evm address
+              ? getAddress(addr) // format returned evm address
               : addr
           return [addr, price]
         })

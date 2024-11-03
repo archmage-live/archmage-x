@@ -4,7 +4,7 @@ import { INetwork } from '~lib/schema'
 import { useBalances } from '~lib/services/provider'
 import { Amount } from '~lib/services/token'
 import { SubWalletEntry, WalletEntry } from '~lib/services/wallet/tree'
-import { isWalletGroup } from '~lib/wallet'
+import { isGroupWallet } from '~archmage/wallet'
 
 export function usePaginatedBalances(
   network?: INetwork,
@@ -29,7 +29,7 @@ export function usePaginatedBalances(
     if (isWalletEntries(wallets)) {
       return wallets
         .slice(start, end)
-        .filter(({ wallet }) => !isWalletGroup(wallet))
+        .filter(({ wallet }) => !isGroupWallet(wallet))
         .map(({ subWallets }) => subWallets[0].account)
     } else {
       return wallets?.slice(start, end).map((subWallet) => subWallet.account)

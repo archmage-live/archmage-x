@@ -29,7 +29,7 @@ import { SpinningOverlay } from '~components/SpinningOverlay'
 import { IChainAccount, INetwork, ISubWallet, IWallet } from '~lib/schema'
 import { CONSENT_SERVICE, ConsentRequest } from '~lib/services/consentService'
 import { NetworkInfo } from '~lib/services/network'
-import { formatTxPayload } from '~lib/services/provider'
+import { deserializeTxPayload } from '~lib/services/provider'
 import { useSuiTransaction } from '~lib/services/provider/sui/hooks'
 import { Amount } from '~lib/services/token'
 import { useSuiTokenInfos } from '~lib/services/token/sui'
@@ -62,7 +62,7 @@ export const SuiTransaction = ({
   suffix?: ReactNode
   onComplete: () => void
 }) => {
-  const payload = formatTxPayload(network, request.payload)
+  const payload = deserializeTxPayload(network, request.payload)
   const txParams = payload.txParams as TransactionBlock
 
   const gas = useMemo(() => txParams.blockData.gasConfig, [txParams])

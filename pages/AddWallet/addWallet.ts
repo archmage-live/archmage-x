@@ -18,7 +18,7 @@ import {
   SafeOwner,
   WalletAccount,
   WalletType
-} from '~lib/wallet'
+} from '~archmage/wallet'
 
 export enum AddWalletKind {
   NEW_HD,
@@ -300,12 +300,12 @@ export function useAddWallet() {
         opts.addressType = addressType
         break
       case AddWalletKind.WALLET_CONNECT:
-        opts.type = WalletType.WALLET_CONNECT
+        opts.type = WalletType.REOWN
         opts.accounts = accounts
         opts.addressType = addressType
         break
       case AddWalletKind.WALLET_CONNECT_GROUP:
-        opts.type = WalletType.WALLET_CONNECT_GROUP
+        opts.type = WalletType.REOWN_GROUP
         opts.accounts = accounts
         opts.addressType = addressType
         break

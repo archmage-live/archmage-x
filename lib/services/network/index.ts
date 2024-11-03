@@ -1,22 +1,18 @@
-import { useColorModeValue } from '@chakra-ui/react'
 import assert from 'assert'
-import aleoDarkLogo from 'data-base64:~assets/thirdparty/aleo-dark.svg'
-import aleoLightLogo from 'data-base64:~assets/thirdparty/aleo.svg'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useMemo, useState } from 'react'
 import { useAsyncRetry, useInterval } from 'react-use'
 
 import { DB, getNextField } from '~lib/db'
 import { isBackgroundWorker } from '~lib/detect'
-import { NetworkKind } from '~lib/network'
-import { AleoNetworkInfo } from '~lib/network/aleo'
-import { AptosChainInfo } from '~lib/network/aptos'
-import { BtcChainInfo } from '~lib/network/btc'
-import { CosmAppChainInfo } from '~lib/network/cosm'
-import { EvmChainInfo } from '~lib/network/evm'
-import { SolanaChainInfo } from '~lib/network/solana'
-import { StarknetChainInfo } from '~lib/network/starknet'
-import { SuiChainInfo } from '~lib/network/sui'
+import { NetworkKind } from '@/archmage/network'
+import { AptosChainInfo } from '~archmage/network/aptos'
+import { BtcChainInfo } from '~archmage/network/btc'
+import { CosmAppChainInfo } from '~archmage/network/cosm'
+import { EthereumChainInfo } from '~archmage/network/evm'
+import { SolanaChainInfo } from '~archmage/network/solana'
+import { StarknetChainInfo } from '~archmage/network/starknet'
+import { SuiChainInfo } from '~archmage/network/sui'
 import { ChainId, IChainAccount, INetwork, IToken } from '~lib/schema'
 import {
   CHAINLIST_API,
@@ -34,7 +30,6 @@ import {
 import { JIFFYSCAN_NETWORKS } from '~lib/services/datasource/jiffyscan'
 import { CosmTokenInfo } from '~lib/services/token/cosm'
 
-import { AleoNetworkService } from './aleoService'
 import { AptosNetworkService } from './aptosService'
 import { BtcNetworkService } from './btcService'
 import { CosmNetworkService } from './cosmService'
@@ -74,7 +69,7 @@ export function getNetworkInfo(network: INetwork): NetworkInfo {
       }
     }
     case NetworkKind.EVM: {
-      const info = network.info as EvmChainInfo
+      const info = network.info as EthereumChainInfo
       return {
         name: info.name,
         description: info.title || info.name,
@@ -149,20 +144,6 @@ export function getNetworkInfo(network: INetwork): NetworkInfo {
         name: info.name,
         description: info.name,
         chainId: info.chainId,
-        isTestnet: info.isTestnet,
-        currencyName: info.currency.name,
-        currencySymbol: info.currency.symbol,
-        decimals: info.currency.decimals,
-        rpcUrl: info.rpc.at(0),
-        explorerUrl: info.explorers.at(0)
-      }
-    }
-    case NetworkKind.ALEO: {
-      const info = network.info as AleoNetworkInfo
-      return {
-        name: info.name,
-        description: info.name,
-        chainId: info.networkId,
         isTestnet: info.isTestnet,
         currencyName: info.currency.name,
         currencySymbol: info.currency.symbol,
@@ -289,9 +270,6 @@ export function getTransactionUrl(
       case NetworkKind.SUI:
         pathPrefix = 'txblock'
         break
-      case NetworkKind.ALEO:
-        pathPrefix = 'transaction'
-        break
       default:
         return undefined
     }
@@ -385,10 +363,6 @@ export function getFaucetUrl(network: INetwork): string | undefined {
       const info = network.info as SuiChainInfo
       return info.faucets?.at(0)
     }
-    case NetworkKind.ALEO: {
-      const info = network.info as AleoNetworkInfo
-      return info.faucets?.at(0)
-    }
     default:
       return undefined
   }
@@ -415,7 +389,6 @@ export class NetworkService {
       await StarknetNetworkService.init()
       await AptosNetworkService.init()
       await SuiNetworkService.init()
-      await AleoNetworkService.init()
     }
   }
 
@@ -429,7 +402,7 @@ export class NetworkService {
     if (includesHidden) {
       return networks
     } else {
-      return networks.filter(network => !network.hidden)
+      return networks.filter((network) => !network.hidden)
     }
   }
 
@@ -470,9 +443,6 @@ export class NetworkService {
         break
       case NetworkKind.SUI:
         network = SuiNetworkService.buildNetwork(chainId, info)
-        break
-      case NetworkKind.ALEO:
-        network = AleoNetworkService.buildNetwork(chainId, info)
         break
       default:
         throw new Error(`network ${kind} is not implemented`)
@@ -547,8 +517,6 @@ export function useNetworkLogos(): Record<number, string> {
   const networks = useNetworks()
   const [logos, setLogos] = useState<Record<number, string>>({})
 
-  const aleoLogo = useColorModeValue(aleoLightLogo, aleoDarkLogo)
-
   const { loading, error, retry } = useAsyncRetry(async () => {
     if (!networks) {
       return
@@ -567,10 +535,6 @@ export function useNetworkLogos(): Record<number, string> {
           logo = await COSMOS_CHAIN_REGISTRY_API.getLogoUrl(
             network.chainId as string
           )
-          break
-        }
-        case NetworkKind.ALEO: {
-          logo = aleoLogo
           break
         }
         default: {
@@ -593,7 +557,7 @@ export function useNetworkLogos(): Record<number, string> {
         }
       })
     }
-  }, [networks, aleoLogo])
+  }, [networks])
 
   useInterval(retry, !loading && error ? 5000 : null)
 
@@ -612,22 +576,16 @@ export function useNetworkLogoUrl(network?: INetwork) {
   )
 
   const result = useCryptoComparePrice(
-    network?.kind !== NetworkKind.EVM &&
-      network?.kind !== NetworkKind.COSM &&
-      network?.kind !== NetworkKind.ALEO
+    network?.kind !== NetworkKind.EVM && network?.kind !== NetworkKind.COSM
       ? info?.currencySymbol
       : undefined
   )
-
-  const aleoLogo = useColorModeValue(aleoLightLogo, aleoDarkLogo)
 
   switch (network?.kind) {
     case NetworkKind.EVM:
       return evmChainLogoUrl
     case NetworkKind.COSM:
       return cosmChainLogoUrl
-    case NetworkKind.ALEO:
-      return aleoLogo
     default:
       return result?.imageUrl
   }

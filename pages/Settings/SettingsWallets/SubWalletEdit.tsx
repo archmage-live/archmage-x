@@ -29,10 +29,10 @@ import {
   MultisigWalletType,
   getMultisigTypeTitle,
   getWalletTypeTitle,
-  hasWalletKeystore,
+  isKeystoreWallet,
   isMultisigWallet,
-  isWalletGroup
-} from '~lib/wallet'
+  isGroupWallet
+} from '~archmage/wallet'
 
 interface SubWalletEditProps {
   network: INetwork
@@ -69,7 +69,7 @@ export const SubWalletEdit = ({
 
   return (
     <Stack spacing="12" fontSize="md">
-      {isWalletGroup(wallet) ? (
+      {isGroupWallet(wallet) ? (
         <>
           <SubWalletNameEdit wallet={wallet} subWallet={subWallet} />
 
@@ -156,7 +156,7 @@ export const SubWalletEdit = ({
           </Button>
         )}
 
-        {hasWalletKeystore(wallet) && (
+        {isKeystoreWallet(wallet) && (
           <Button variant="outline" colorScheme="purple" onClick={onExportOpen}>
             Export Private Key
           </Button>
@@ -167,7 +167,7 @@ export const SubWalletEdit = ({
           onClick={() => {
             onOpenDeleteWallet({ subWallet })
           }}>
-          Delete {isWalletGroup(wallet) ? 'Account' : 'Wallet'}
+          Delete {isGroupWallet(wallet) ? 'Account' : 'Wallet'}
         </Button>
       </HStack>
 

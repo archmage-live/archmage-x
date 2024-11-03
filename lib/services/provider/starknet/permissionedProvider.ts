@@ -1,6 +1,6 @@
 import { arrayify, hexlify, isHexString } from '@ethersproject/bytes'
+import { providerErrors, rpcErrors } from '@metamask/rpc-errors'
 import assert from 'assert'
-import { ethErrors } from 'eth-rpc-errors'
 import {
   AddStarknetChainParameters,
   SwitchStarknetChainParameter,
@@ -42,8 +42,8 @@ import {
 
 import { getActiveNetwork, getActiveNetworkByKind } from '~lib/active'
 import { Context } from '~lib/inject/client'
-import { NetworkKind } from '~lib/network'
-import { StarknetChainInfo } from '~lib/network/starknet'
+import { NetworkKind } from '@/archmage/network'
+import { StarknetChainInfo } from '~archmage/network/starknet'
 import { IChainAccount, INetwork } from '~lib/schema'
 import {
   CONSENT_SERVICE,
@@ -52,12 +52,12 @@ import {
   SignTypedDataPayload
 } from '~lib/services/consentService'
 import { NETWORK_SERVICE } from '~lib/services/network'
-import { formatTxPayload, getNonce } from '~lib/services/provider'
+import { deserializeTxPayload, getNonce } from '~lib/services/provider'
 import {
   StarknetClient,
   getStarknetClient
 } from '~lib/services/provider/starknet/client'
-import { checkAddress, getSigningWallet } from '~lib/wallet'
+import { checkAddress, getSigningWallet } from '~archmage/wallet'
 
 import { BasePermissionedProvider } from '../base'
 import { StarknetProvider, StarknetVoidSigner } from './provider'
@@ -84,7 +84,7 @@ export class StarknetPermissionedProvider extends BasePermissionedProvider {
     const provider = await StarknetPermissionedProvider.from(fromUrl)
     if (!provider) {
       // no active network
-      throw ethErrors.provider.disconnected()
+      throw providerErrors.disconnected()
     }
     return provider
   }
@@ -183,12 +183,12 @@ export class StarknetPermissionedProvider extends BasePermissionedProvider {
 
   async getPubKey(): Promise<string> {
     if (!this.account?.address) {
-      throw ethErrors.provider.unauthorized()
+      throw providerErrors.unauthorized()
     }
 
     const signer = await getSigningWallet(this.account)
     if (!signer?.publicKey) {
-      throw ethErrors.provider.unauthorized()
+      throw providerErrors.unauthorized()
     }
 
     return signer.publicKey
@@ -204,7 +204,7 @@ export class StarknetPermissionedProvider extends BasePermissionedProvider {
       this.account.address !==
         checkAddress(NetworkKind.STARKNET, accountAddress)
     ) {
-      throw ethErrors.provider.unauthorized()
+      throw providerErrors.unauthorized()
     }
 
     const { chainId, name, version, verifyingContract } = typedData.domain
@@ -213,7 +213,7 @@ export class StarknetPermissionedProvider extends BasePermissionedProvider {
       !chainId ||
       chainId !== (this.network.info as StarknetChainInfo).shortName
     ) {
-      throw ethErrors.rpc.invalidParams('Mismatched chainId')
+      throw rpcErrors.invalidParams('Mismatched chainId')
     }
 
     return await CONSENT_SERVICE.requestConsent(
@@ -242,7 +242,7 @@ export class StarknetPermissionedProvider extends BasePermissionedProvider {
     waitCompleted?: boolean
   ): Promise<any> {
     if (!this.account?.address) {
-      throw ethErrors.provider.unauthorized()
+      throw providerErrors.unauthorized()
     }
 
     return await CONSENT_SERVICE.requestConsent(
@@ -251,7 +251,7 @@ export class StarknetPermissionedProvider extends BasePermissionedProvider {
         accountId: this.account.id,
         type,
         origin: this.origin,
-        payload: formatTxPayload(this.network, payload)
+        payload: deserializeTxPayload(this.network, payload)
       },
       ctx,
       waitCompleted
@@ -329,7 +329,7 @@ export class StarknetPermissionedProvider extends BasePermissionedProvider {
     transactionsDetail?: InvocationsDetails
   ): Promise<InvokeFunctionResponse> {
     if (!this.account?.address) {
-      throw ethErrors.provider.unauthorized()
+      throw providerErrors.unauthorized()
     }
 
     transactionsDetail = transactionsDetail ?? {}
@@ -377,7 +377,7 @@ export class StarknetPermissionedProvider extends BasePermissionedProvider {
     transactionsDetail?: InvocationsDetails
   ): Promise<DeclareContractResponse> {
     if (!this.account?.address) {
-      throw ethErrors.provider.unauthorized()
+      throw providerErrors.unauthorized()
     }
 
     transactionsDetail = transactionsDetail ?? {}
@@ -464,7 +464,7 @@ export class StarknetPermissionedProvider extends BasePermissionedProvider {
     waitCompleted?: boolean
   ): Promise<DeployContractResponse> {
     if (!this.account?.address) {
-      throw ethErrors.provider.unauthorized()
+      throw providerErrors.unauthorized()
     }
 
     contractPayload.addressSalt = contractPayload.addressSalt ?? 0
@@ -560,11 +560,11 @@ export class StarknetPermissionedProvider extends BasePermissionedProvider {
         new URL(url).toString()
       )
     } catch (e: any) {
-      throw ethErrors.rpc.invalidParams(e.toString())
+      throw rpcErrors.invalidParams(e.toString())
     }
 
     if (!params.chainName.length) {
-      throw ethErrors.rpc.invalidParams('Invalid chainName')
+      throw rpcErrors.invalidParams('Invalid chainName')
     }
 
     if (params.nativeCurrency) {
@@ -576,7 +576,7 @@ export class StarknetPermissionedProvider extends BasePermissionedProvider {
         typeof decimals !== 'number' ||
         decimals <= 0
       ) {
-        throw ethErrors.rpc.invalidParams('Invalid nativeCurrency')
+        throw rpcErrors.invalidParams('Invalid nativeCurrency')
       }
     }
 
@@ -601,7 +601,7 @@ export class StarknetPermissionedProvider extends BasePermissionedProvider {
       chainId: info.chainId as constants.StarknetChainId
     })
     if (params.chainId !== (await client.getChainId())) {
-      throw ethErrors.rpc.invalidParams('Mismatched chainId')
+      throw rpcErrors.invalidParams('Mismatched chainId')
     }
 
     await this._addChain(ctx, NetworkKind.STARKNET, chainId, info)
@@ -615,14 +615,14 @@ export class StarknetPermissionedProvider extends BasePermissionedProvider {
 
   private checkChainId(chainId: string) {
     if (!isHexString(chainId)) {
-      throw ethErrors.rpc.invalidParams('Invalid chainId')
+      throw rpcErrors.invalidParams('Invalid chainId')
     }
     return hexlify(arrayify(chainId))
   }
 
   async watchAsset(ctx: Context, params: WatchAssetParameters) {
     if (!this.account?.address) {
-      throw ethErrors.provider.unauthorized()
+      throw providerErrors.unauthorized()
     }
 
     // TODO

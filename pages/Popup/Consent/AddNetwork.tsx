@@ -13,14 +13,14 @@ import { atom, useAtom } from 'jotai'
 import { ReactNode, useEffect, useState } from 'react'
 
 import { AlertBox } from '~components/AlertBox'
-import { NetworkKind } from '~lib/network'
-import { EvmChainInfo } from '~lib/network/evm'
+import { NetworkKind } from '@/archmage/network'
+import { EthereumChainInfo } from '~archmage/network/evm'
 import {
   AddNetworkPayload,
   CONSENT_SERVICE,
   ConsentRequest
 } from '~lib/services/consentService'
-import { getEvmBlockNumber } from '~lib/services/provider/evm'
+import { getEthBlockNumber } from '~lib/services/provider/ethereum/client'
 import { useSiteIconUrl } from '~lib/tab'
 import {
   ExplorerUrlInputGroup,
@@ -131,7 +131,7 @@ const NetworkContent = ({ request }: { request: ConsentRequest }) => {
   return <></>
 }
 
-const EvmNetworkContent = ({ info }: { info: EvmChainInfo }) => {
+const EvmNetworkContent = ({ info }: { info: EthereumChainInfo }) => {
   const [, setInfo] = useAtom(infoAtom)
   const [rpcUrls, setRpcUrls] = useState<string[]>([])
   const [explorerUrls, setExplorerUrls] = useState<string[]>([])
@@ -151,7 +151,7 @@ const EvmNetworkContent = ({ info }: { info: EvmChainInfo }) => {
         url,
         standard: 'EIP3091'
       }))
-    } as EvmChainInfo)
+    } as EthereumChainInfo)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [info, rpcUrls, explorerUrls])
 
@@ -179,7 +179,7 @@ const EvmNetworkContent = ({ info }: { info: EvmChainInfo }) => {
         setUrls={setRpcUrls}
         noAdd
         noEdit
-        testUrl={getEvmBlockNumber}
+        testUrl={getEthBlockNumber}
       />
 
       <ExplorerUrlInputGroup

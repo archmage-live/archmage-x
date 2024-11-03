@@ -1,9 +1,9 @@
+import { rpcErrors } from '@metamask/rpc-errors'
 import { PublicKey, Transaction } from '@solana/web3.js'
-import { ethErrors } from 'eth-rpc-errors'
 
 import { IChainAccount, INetwork } from '~lib/schema'
 import { Provider, TransactionPayload } from '~lib/services/provider'
-import { getSigningWallet } from '~lib/wallet'
+import { getSigningWallet } from '~archmage/wallet'
 
 import { SolanaClient, getSolanaClient } from './client'
 
@@ -107,7 +107,7 @@ export class SolanaProvider implements Provider {
   ): Promise<Transaction> {
     const signer = await getSigningWallet(account)
     if (!signer) {
-      throw ethErrors.rpc.internal()
+      throw rpcErrors.internal()
     }
 
     return signer.signTransaction(txParams)
@@ -123,7 +123,7 @@ export class SolanaProvider implements Provider {
   async signMessage(account: IChainAccount, message: any): Promise<any> {
     const signer = await getSigningWallet(account)
     if (!signer) {
-      throw ethErrors.rpc.internal()
+      throw rpcErrors.internal()
     }
     return signer.signMessage(message)
   }

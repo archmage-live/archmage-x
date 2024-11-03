@@ -19,7 +19,7 @@ import { useAsync } from 'react-use'
 import { CopyArea } from '~components/CopyIcon'
 import { ValidatedAction } from '~components/ValidatedAction'
 import { IChainAccount } from '~lib/schema'
-import { getSigningWallet } from '~lib/wallet'
+import { getSigningWallet } from '~archmage/wallet'
 
 interface ExportPrivateKeyProps {
   account: IChainAccount

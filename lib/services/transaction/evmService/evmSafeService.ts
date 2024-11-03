@@ -11,7 +11,7 @@ import assert from 'assert'
 import stableHash from 'stable-hash'
 
 import { DB } from '~lib/db'
-import { NetworkKind } from '~lib/network'
+import { NetworkKind } from '@/archmage/network'
 import {
   SafeTransactionResponse,
   getSafeAccount,

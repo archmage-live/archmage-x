@@ -43,7 +43,7 @@ import {
 } from '~lib/services/wallet/reorder'
 import { SubWalletEntry, WalletEntry } from '~lib/services/wallet/tree'
 import { shortenString } from '~lib/utils'
-import { WalletType, getWalletTypeIdentifier, isWalletGroup } from '~lib/wallet'
+import { WalletType, getWalletTypeIdentifier, isGroupWallet } from '~archmage/wallet'
 
 import { MenuBtn } from './SubWalletItem'
 import { SubWalletList } from './SubWalletList'
@@ -91,7 +91,7 @@ export const WalletItem = ({
   }, [isOpen, measure])
 
   // only for single wallet
-  const subWallet = !isWalletGroup(wallet) ? subWallets[0] : undefined
+  const subWallet = !isGroupWallet(wallet) ? subWallets[0] : undefined
   const account = subWallet?.account
 
   const { onOpen: onDetailOpen } = useAccountDetailModal()
@@ -173,7 +173,7 @@ export const WalletItem = ({
         px={4}
         justifyContent="start"
         onClick={() => {
-          if (isWalletGroup(wallet)) {
+          if (isGroupWallet(wallet)) {
             onToggleOpen(wallet.id)
           } else {
             if (account) {
@@ -209,7 +209,7 @@ export const WalletItem = ({
                   </Text>
                 )}
 
-                {isWalletGroup(wallet) && (
+                {isGroupWallet(wallet) && (
                   <Text fontSize="sm" color="gray.500">
                     {subWallets.length} accounts
                   </Text>
@@ -339,7 +339,7 @@ export const WalletItem = ({
               </Box>
             </HStack>
 
-            {isWalletGroup(wallet) &&
+            {isGroupWallet(wallet) &&
               (isOpen ? (
                 <ChevronDownIcon color="gray.500" />
               ) : (
@@ -349,7 +349,7 @@ export const WalletItem = ({
         </Box>
       </Button>
 
-      {isOpen && network && isWalletGroup(wallet) && (
+      {isOpen && network && isGroupWallet(wallet) && (
         <SubWalletList
           network={network}
           wallet={wallet}

@@ -1,11 +1,11 @@
 import { arrayify, hexlify } from '@ethersproject/bytes'
-import { TransactionBlock } from '@mysten/sui.js/transactions'
+import { providerErrors } from '@metamask/rpc-errors'
+import { Transaction } from '@mysten/sui/transactions'
 import assert from 'assert'
-import { ethErrors } from 'eth-rpc-errors'
 
 import { getActiveNetworkByKind } from '~lib/active'
 import { Context } from '~lib/inject/client'
-import { NetworkKind } from '~lib/network'
+import { NetworkKind } from '@/archmage/network'
 import { INetwork } from '~lib/schema'
 import {
   CONSENT_SERVICE,
@@ -13,7 +13,7 @@ import {
   SignMsgPayload
 } from '~lib/services/consentService'
 import { NETWORK_SERVICE } from '~lib/services/network'
-import { getSigningWallet } from '~lib/wallet'
+import { getSigningWallet } from '~archmage/wallet'
 
 import { BasePermissionedProvider } from '../base'
 import { SuiClient, getSuiClient } from './client'
@@ -33,7 +33,7 @@ export class SuiPermissionedProvider extends BasePermissionedProvider {
     const provider = await SuiPermissionedProvider.from(fromUrl)
     if (!provider) {
       // no active network
-      throw ethErrors.provider.disconnected()
+      throw providerErrors.disconnected()
     }
     return provider
   }
@@ -70,10 +70,10 @@ export class SuiPermissionedProvider extends BasePermissionedProvider {
           return await this.connect(ctx, params[0])
         case 'accounts':
           return await this.getAccounts()
-        case 'signTransactionBlock':
-          return await this.signTransactionBlock(ctx, params[0])
-        case 'signAndExecuteTransactionBlock':
-          return await this.signAndExecuteTransactionBlock(ctx, params[0])
+        case 'signTransaction':
+          return await this.signTransaction(ctx, params[0])
+        case 'signAndExecuteTransaction':
+          return await this.signAndExecuteTransaction(ctx, params[0])
         case 'signMessage':
           return await this.signMessage(ctx, params[0])
         case 'stake':
@@ -116,12 +116,12 @@ export class SuiPermissionedProvider extends BasePermissionedProvider {
     ]
   }
 
-  async signTransactionBlock(ctx: Context, transaction: string) {
+  async signTransaction(ctx: Context, transaction: string) {
     if (!this.account?.address) {
-      throw ethErrors.provider.unauthorized()
+      throw providerErrors.unauthorized()
     }
 
-    const tx = TransactionBlock.from(transaction)
+    const tx = Transaction.from(transaction)
     tx.setSender(this.account.address)
 
     // call build to check and fill parameters
@@ -141,12 +141,12 @@ export class SuiPermissionedProvider extends BasePermissionedProvider {
     )
   }
 
-  async signAndExecuteTransactionBlock(ctx: Context, transaction: string) {
+  async signAndExecuteTransaction(ctx: Context, transaction: string) {
     if (!this.account?.address) {
-      throw ethErrors.provider.unauthorized()
+      throw providerErrors.unauthorized()
     }
 
-    const tx = TransactionBlock.from(transaction)
+    const tx = Transaction.from(transaction)
     tx.setSender(this.account.address)
 
     // call build to check and fill parameters
@@ -168,7 +168,7 @@ export class SuiPermissionedProvider extends BasePermissionedProvider {
 
   async signMessage(ctx: Context, message: string) {
     if (!this.account?.address) {
-      throw ethErrors.provider.unauthorized()
+      throw providerErrors.unauthorized()
     }
 
     message = hexlify(arrayify(message))

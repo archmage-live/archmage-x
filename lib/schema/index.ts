@@ -1,7 +1,7 @@
 import { fromBech32, toBech32 } from '@cosmjs/encoding'
 
-import { NetworkKind } from '~lib/network'
-import { CosmAppChainInfo } from '~lib/network/cosm'
+import { NetworkKind } from '@/archmage/network'
+import { CosmAppChainInfo } from '~archmage/network/cosm'
 
 import { IChainAccount } from './chainAccount'
 import { INetwork } from './network'

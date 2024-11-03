@@ -14,7 +14,7 @@ import * as React from 'react'
 import { useWizard } from 'react-use-wizard'
 
 import { AlertBox } from '~components/AlertBox'
-import { KeylessWalletInfo, isMnemonic } from '~lib/wallet'
+import { KeylessWalletInfo, isMnemonic } from '~archmage/wallet'
 import { NameInput } from '~pages/AddWallet/NameInput'
 import {
   AddWalletKind,

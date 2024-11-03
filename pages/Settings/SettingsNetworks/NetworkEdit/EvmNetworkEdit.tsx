@@ -11,10 +11,13 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { SaveInput } from '~components/SaveInput'
 import { DB } from '~lib/db'
-import { NetworkKind } from '~lib/network'
-import { EvmChainInfo } from '~lib/network/evm'
+import { NetworkKind } from '@/archmage/network'
+import { EthereumChainInfo } from '~archmage/network/evm'
 import { INetwork } from '~lib/schema'
-import { getEvmBlockNumber, getEvmChainId } from '~lib/services/provider/evm'
+import {
+  getEthBlockNumber,
+  getEthChainId
+} from '~lib/services/provider/ethereum/client'
 import { DeleteNetworkModal } from '~pages/Settings/SettingsNetworks/DeleteNetworkModal'
 import {
   ExplorerUrlInputGroup,
@@ -28,7 +31,7 @@ export const EvmNetworkEdit = ({
   onDelete
 }: {
   network: INetwork
-  info: EvmChainInfo
+  info: EthereumChainInfo
   setLoading: (loading: boolean) => void
   onDelete: () => void
 }) => {
@@ -184,9 +187,9 @@ export const EvmNetworkEdit = ({
       <RpcUrlInputGroup
         urls={rpcUrls}
         setUrls={setRpcUrls}
-        testUrl={getEvmBlockNumber}
+        testUrl={getEthBlockNumber}
         chainId={network.chainId}
-        getChainId={getEvmChainId}
+        getChainId={getEthChainId}
         checkUrls={checkRpcUrls}
         allowInvalidRpcUrl={allowInvalidRpcUrl}
         setAllowInvalidRpcUrl={setAllowInvalidRpcUrl}

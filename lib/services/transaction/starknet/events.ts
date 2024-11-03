@@ -13,11 +13,11 @@ import {
   uint256
 } from 'starknet'
 
-import erc20Abi from '~lib/network/starknet/abi/ERC20.json'
+import erc20Abi from '~archmage/network/starknet/abi/ERC20.json'
 import { INetwork } from '~lib/schema'
 import { getStarknetClient } from '~lib/services/provider/starknet/client'
 import { Amount } from '~lib/services/token'
-import { checkAddress } from '~lib/wallet'
+import { checkAddress } from '~archmage/wallet'
 
 export interface TransactionSimulationApproval {
   tokenAddress: string

@@ -1,10 +1,10 @@
-import type { SuiTransactionBlockResponse } from '@mysten/sui.js/client'
-import type { TransactionBlock } from '@mysten/sui.js/transactions'
-import { ethErrors } from 'eth-rpc-errors'
+import { rpcErrors } from '@metamask/rpc-errors'
+import type { SuiTransactionBlockResponse } from '@mysten/sui/client'
+import type { Transaction } from '@mysten/sui/transactions'
 import PQueue from 'p-queue'
 
 import { IChainAccount, INetwork } from '~lib/schema'
-import { SignatureWithBytes, getSigningWallet } from '~lib/wallet'
+import { SignatureWithBytes, getSigningWallet } from '~archmage/wallet'
 
 import { Provider, TransactionPayload } from '../provider'
 import { SuiClient, getSuiClient } from './client'
@@ -40,11 +40,11 @@ export class SuiProvider implements Provider {
 
   async estimateGasFee(
     account: IChainAccount,
-    tx: TransactionBlock
+    tx: Transaction
   ): Promise<string> {
     // build should have been called before
     // await tx.build({ client: this.client })
-    return tx.blockData.gasConfig.budget!
+    return tx.blockData.gasConfig.budget!.toString()
   }
 
   async getBalance(
@@ -95,11 +95,11 @@ export class SuiProvider implements Provider {
 
   async signTransaction(
     account: IChainAccount,
-    txParams: TransactionBlock
+    txParams: Transaction
   ): Promise<SignatureWithBytes> {
     const signer = await getSigningWallet(account)
     if (!signer) {
-      throw ethErrors.rpc.internal()
+      throw rpcErrors.internal()
     }
 
     return signer.signTransaction(await txParams.build({ client: this.client }))
@@ -127,7 +127,7 @@ export class SuiProvider implements Provider {
   async signMessage(account: IChainAccount, message: any): Promise<any> {
     const signer = await getSigningWallet(account)
     if (!signer) {
-      throw ethErrors.rpc.internal()
+      throw rpcErrors.internal()
     }
     return signer.signMessage(message)
   }

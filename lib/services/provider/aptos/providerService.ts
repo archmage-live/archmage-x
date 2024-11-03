@@ -1,16 +1,16 @@
+import { rpcErrors } from '@metamask/rpc-errors'
 import { AptosClient } from 'aptos'
-import { ethErrors } from 'eth-rpc-errors'
 
 import { APTOS_PROVIDER_NAME, IAptosProviderService } from '~lib/inject/aptos'
 import { Context } from '~lib/inject/client'
-import { NetworkKind } from '~lib/network'
+import { NetworkKind } from '@/archmage/network'
 import { SERVICE_WORKER_SERVER } from '~lib/rpc'
 import { INetwork } from '~lib/schema'
 import { getNetworkInfo } from '~lib/services/network'
 import { getAptosClient } from '~lib/services/provider/aptos/client'
 import { AptosPermissionedProvider } from '~lib/services/provider/aptos/permissionedProvider'
 import { BaseProviderService } from '~lib/services/provider/base'
-import { checkAddress } from '~lib/wallet'
+import { checkAddress } from '~archmage/wallet'
 
 class AptosProviderService
   extends BaseProviderService
@@ -49,7 +49,7 @@ class AptosProviderService
   private _checkAddress(address: string) {
     const addr = checkAddress(NetworkKind.APTOS, address)
     if (!addr) {
-      throw ethErrors.rpc.invalidParams('invalid address')
+      throw rpcErrors.invalidParams('invalid address')
     }
     return addr
   }

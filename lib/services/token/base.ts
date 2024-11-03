@@ -1,7 +1,7 @@
 import Dexie from 'dexie'
 
 import { DB, getNextField } from '~lib/db'
-import { NetworkKind } from '~lib/network'
+import { NetworkKind } from '@/archmage/network'
 import { IChainAccount, IToken, ITokenList, TokenVisibility } from '~lib/schema'
 import { formatTokenIdentifier } from '~lib/services/token'
 import { LOCAL_STORE, StoreKey } from '~lib/store'

@@ -3,8 +3,8 @@ import {
   ISolanaProviderService,
   SOLANA_PROVIDER_NAME
 } from '~lib/inject/solana'
-import { NetworkKind } from '~lib/network'
-import { SolanaChainInfo } from '~lib/network/solana'
+import { NetworkKind } from '@/archmage/network'
+import { SolanaChainInfo } from '~archmage/network/solana'
 import { SERVICE_WORKER_SERVER } from '~lib/rpc'
 import { INetwork } from '~lib/schema'
 import { BaseProviderService } from '~lib/services/provider/base'

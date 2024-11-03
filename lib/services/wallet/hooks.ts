@@ -6,9 +6,9 @@ import { useAsync } from 'react-use'
 import stableHash from 'stable-hash'
 
 import { DB, getNextField } from '~lib/db'
-import { NetworkKind } from '~lib/network'
+import { NetworkKind } from '@/archmage/network'
 import { ChainId, DerivePosition, IWallet, Index, SubIndex } from '~lib/schema'
-import { WalletType, generatePath, getDerivePosition } from '~lib/wallet'
+import { WalletType, generatePath, getDerivePosition } from '~archmage/wallet'
 
 import { WALLET_SERVICE } from '.'
 
@@ -221,7 +221,7 @@ export function useExistingGroupWallets(
       case WalletType.PRIVATE_KEY_GROUP:
       case WalletType.WATCH_GROUP:
       case WalletType.HW_GROUP: // hw group not used here
-      case WalletType.WALLET_CONNECT_GROUP:
+      case WalletType.REOWN_GROUP:
       case WalletType.KEYLESS_GROUP:
       case WalletType.MULTI_SIG_GROUP:
         break

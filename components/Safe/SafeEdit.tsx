@@ -38,7 +38,7 @@ import {
 import { getAccountUrl } from '~lib/services/network'
 import { EvmClient } from '~lib/services/provider/evm'
 import { WALLET_SERVICE, useChainAccounts } from '~lib/services/wallet'
-import { SafeInfo, SafeOwner, checkAddress } from '~lib/wallet'
+import { SafeInfo, SafeOwner, checkAddress } from '~archmage/wallet'
 
 import { SafeConfirmTxModal, useSafeConfirmTxModal } from './SafeConfirmTx'
 

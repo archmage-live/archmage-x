@@ -1,4 +1,4 @@
-import { ERC20__factory } from '~lib/network/evm/abi'
+import { ERC20__factory } from '~archmage/network/evm/abi'
 import { IChainAccount, IToken } from '~lib/schema'
 import { Provider } from '~lib/services/provider'
 import { EvmProvider, EvmTxParams } from '~lib/services/provider/evm'

@@ -13,19 +13,19 @@ import {
 } from 'cosmjs-types/cosmos/tx/v1beta1/tx'
 import { useAsync, useAsyncRetry, useInterval } from 'react-use'
 
-import { CosmAppChainInfo } from '~lib/network/cosm'
-import { encodeEthSecp256k1Pubkey } from '~lib/network/cosm/amino'
-import { createDefaultAminoTypes } from '~lib/network/cosm/modules/amino'
-import { createDefaultRegistry } from '~lib/network/cosm/modules/registry'
-import { Dec } from '~lib/network/cosm/number'
-import { getOsmosisQueryClient } from '~lib/network/cosm/osmosis/client'
-import { computeOsmosisTxFeeAmount } from '~lib/network/cosm/osmosis/txfees'
-import { encodePubkey } from '~lib/network/cosm/proto-signing'
+import { CosmAppChainInfo } from '~archmage/network/cosm'
+import { encodeEthSecp256k1Pubkey } from '~archmage/network/cosm/amino'
+import { createDefaultAminoTypes } from '~archmage/network/cosm/modules/amino'
+import { createDefaultRegistry } from '~archmage/network/cosm/modules/registry'
+import { Dec } from '~archmage/network/cosm/number'
+import { getOsmosisQueryClient } from '~archmage/network/cosm/osmosis/client'
+import { computeOsmosisTxFeeAmount } from '~archmage/network/cosm/osmosis/txfees'
+import { encodePubkey } from '~archmage/network/cosm/proto-signing'
 import { IChainAccount, INetwork } from '~lib/schema'
 import { COSMOS_CHAIN_REGISTRY_API } from '~lib/services/datasource/cosmos'
 import { getCosmClient } from '~lib/services/provider/cosm/client'
 import { Amount } from '~lib/services/token'
-import { getSigningWallet, isStdSignDoc } from '~lib/wallet'
+import { getSigningWallet, isStdSignDoc } from '~archmage/wallet'
 
 export function useCosmTransaction(
   network?: INetwork,

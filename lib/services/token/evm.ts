@@ -1,13 +1,12 @@
-import { shallowCopy } from '@ethersproject/properties'
 import { TokenInfo, TokenList } from '@uniswap/token-lists'
 import assert from 'assert'
 import Decimal from 'decimal.js'
-import { ethers } from 'ethers'
+import { getAddress } from 'ethers'
 import stableHash from 'stable-hash'
 
 import { DB, getNextField } from '~lib/db'
-import { NetworkKind } from '~lib/network'
-import { ERC20__factory } from '~lib/network/evm/abi'
+import { NetworkKind } from '@/archmage/network'
+import { ERC20__factory } from '~archmage/network/evm/abi'
 import {
   ChainId,
   IChainAccount,
@@ -64,7 +63,7 @@ export function getEvmTokenListBrief(
 }
 
 export function formatEvmTokenIdentifier(token: string) {
-  return ethers.utils.getAddress(token)
+  return getAddress(token)
 }
 
 export class EvmTokenService extends BaseTokenService {
@@ -114,13 +113,13 @@ export class EvmTokenService extends BaseTokenService {
       if (!existing) {
         continue
       }
-      const info = shallowCopy(tokenList) as any
+      const info = Object.assign({}, tokenList) as any
       delete info.tokens
       if (
         stableHash(existing.info) !== stableHash(info) ||
         stableHash(existing.tokens) !== stableHash(tokenList.tokens)
       ) {
-        const item = shallowCopy(existing)
+        const item = Object.assign({}, existing)
         item.info = info
         item.tokens = tokenList.tokens
         updated.push(item)
@@ -133,7 +132,7 @@ export class EvmTokenService extends BaseTokenService {
   }
 
   private _makeTokenList(url: string, tokenList: TokenList, enabled = false) {
-    const info = shallowCopy(tokenList) as any
+    const info = Object.assign({}, tokenList) as any
     delete info.tokens
 
     return {
@@ -162,7 +161,7 @@ export class EvmTokenService extends BaseTokenService {
     account: IChainAccount,
     token: string
   ): Promise<SearchedTokenFromTokenLists | undefined> {
-    token = ethers.utils.getAddress(token)
+    token = getAddress(token)
     let foundToken: IToken | undefined
     const tokenLists = await this.getTokenLists(account.networkKind)
     const tokenList = tokenLists.find((tokenList) => {
@@ -172,7 +171,7 @@ export class EvmTokenService extends BaseTokenService {
       return (tokenList.tokens as TokenInfo[]).find((info) => {
         if (
           info.chainId === account.chainId &&
-          ethers.utils.getAddress(info.address) === token
+          getAddress(info.address) === token
         ) {
           foundToken = {
             masterId: account.masterId,
@@ -211,7 +210,7 @@ export class EvmTokenService extends BaseTokenService {
   async searchToken(account: IChainAccount, token: string) {
     assert(account.address)
 
-    token = ethers.utils.getAddress(token)
+    token = getAddress(token)
 
     const network = await NETWORK_SERVICE.getNetwork({
       kind: NetworkKind.EVM,
@@ -267,7 +266,7 @@ export class EvmTokenService extends BaseTokenService {
     // deduplicate
     return new Map<string, TokenInfo>(
       tokens.map((token) => {
-        ;(token as any).address = ethers.utils.getAddress(token.address)
+        ;(token as any).address = getAddress(token.address)
         return [token.address, token]
       })
     )
@@ -294,7 +293,7 @@ export class EvmTokenService extends BaseTokenService {
     )
     const tokenBalances = balances
       ? Object.entries(balances).map(([token, balance]) => [
-          ethers.utils.getAddress(token),
+          getAddress(token),
           balance
         ])
       : []

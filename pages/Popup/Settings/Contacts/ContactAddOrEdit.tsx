@@ -17,8 +17,8 @@ import { useCallback, useEffect, useState } from 'react'
 
 import { AlertBox } from '~components/AlertBox'
 import { NetworkKindSelect, NetworkSelect } from '~components/NetworkSelect'
-import { NetworkKind } from '~lib/network'
-import { CosmAppChainInfo } from '~lib/network/cosm'
+import { NetworkKind } from '@/archmage/network'
+import { CosmAppChainInfo } from '~archmage/network/cosm'
 import {
   IContact,
   INetwork,
@@ -27,7 +27,7 @@ import {
 } from '~lib/schema'
 import { CONTACT_SERVICE } from '~lib/services/contactService'
 import { useNetwork2 } from '~lib/services/network'
-import { checkAddress } from '~lib/wallet'
+import { checkAddress } from '~archmage/wallet'
 
 export const ContactAddOrEditModal = ({
   contact,

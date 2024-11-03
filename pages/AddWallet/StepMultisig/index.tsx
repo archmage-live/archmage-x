@@ -11,7 +11,7 @@ import safeLogo from 'data-base64:~assets/thirdparty/Safe_Logos_H-Lockup_Black.s
 import { useCallback } from 'react'
 import { useWizard } from 'react-use-wizard'
 
-import { MultisigWalletType } from '~lib/wallet'
+import { MultisigWalletType } from '~archmage/wallet'
 
 import { useMultisigType } from '../addWallet'
 import { StepMultisigSafe } from './StepMultisigSafe'

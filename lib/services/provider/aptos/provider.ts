@@ -1,4 +1,5 @@
 import { arrayify, hexlify } from '@ethersproject/bytes'
+import { providerErrors, rpcErrors } from '@metamask/rpc-errors'
 import {
   ApiError,
   AptosAccount,
@@ -9,12 +10,11 @@ import {
   Types
 } from 'aptos'
 import assert from 'assert'
-import { ethErrors } from 'eth-rpc-errors'
 import PQueue from 'p-queue'
 
 import { IChainAccount, INetwork } from '~lib/schema'
 import { Provider, TransactionPayload, getNonce } from '~lib/services/provider'
-import { getSigningWallet } from '~lib/wallet'
+import { getSigningWallet } from '~archmage/wallet'
 
 import { getAptosClient } from './client'
 import { SignMessageResponse, isAptosEntryFunctionPayload } from './types'
@@ -123,7 +123,7 @@ export class AptosProvider implements Provider {
   ): Promise<Types.UserTransaction[]> {
     const signingWallet = await getSigningWallet(account)
     if (!signingWallet?.publicKey) {
-      throw ethErrors.provider.unauthorized()
+      throw providerErrors.unauthorized()
     }
     return this.client.simulateTransaction(
       new TxnBuilderTypes.Ed25519PublicKey(
@@ -181,7 +181,7 @@ export class AptosProvider implements Provider {
   ): Promise<string> {
     const signer = await getSigningWallet(account)
     if (!signer) {
-      throw ethErrors.rpc.internal()
+      throw rpcErrors.internal()
     }
     return hexlify(await signer.signTransaction(transaction))
   }
@@ -211,7 +211,7 @@ export class AptosProvider implements Provider {
   ): Promise<SignMessageResponse> {
     const signer = await getSigningWallet(account)
     if (!signer) {
-      throw ethErrors.rpc.internal()
+      throw rpcErrors.internal()
     }
     typedData.signature = (
       await signer.signTypedData(typedData.fullMessage)

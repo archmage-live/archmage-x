@@ -1,11 +1,11 @@
+import { providerErrors, rpcErrors } from '@metamask/rpc-errors'
 import assert from 'assert'
-import { ethErrors } from 'eth-rpc-errors'
 import browser from 'webextension-polyfill'
 
 import { setActiveNetwork } from '~lib/active'
 import { isBackgroundWorker } from '~lib/detect'
 import { EXTENSION } from '~lib/extension'
-import { NetworkKind } from '~lib/network'
+import { NetworkKind } from '@/archmage/network'
 import { Context, SERVICE_WORKER_CLIENT, SERVICE_WORKER_SERVER } from '~lib/rpc'
 import { ChainId, IChainAccount, INetwork, TokenVisibility } from '~lib/schema'
 import { CONNECTED_SITE_SERVICE } from '~lib/services/connectedSiteService'
@@ -14,8 +14,8 @@ import { PASSWORD_SERVICE } from '~lib/services/passwordService'
 import { EvmProvider } from '~lib/services/provider/evm'
 import {
   Provider,
-  compactTxPayload,
-  formatTxPayload,
+  serializeTxPayload,
+  deserializeTxPayload,
   getProvider
 } from '~lib/services/provider/provider'
 import { TOKEN_SERVICE } from '~lib/services/token'
@@ -26,7 +26,7 @@ import { SUI_TRANSACTION_SERVICE } from '~lib/services/transaction/suiService'
 import { WALLET_SERVICE } from '~lib/services/wallet'
 import { SESSION_STORE, StoreKey, useSessionStorage } from '~lib/store'
 import { createWindow } from '~lib/tab'
-import { canWalletSign } from '~lib/wallet'
+import { isSignableWallet } from '~archmage/wallet'
 
 export enum Permission {
   ACCOUNT = 'account'
@@ -117,7 +117,7 @@ class ConsentServicePartial implements IConsentService {
     let resolveData, rejectData
     try {
       if (!approve) {
-        throw ethErrors.provider.userRejectedRequest()
+        throw providerErrors.userRejectedRequest()
       }
 
       const { signedTx, txHash } =
@@ -176,7 +176,7 @@ class ConsentServicePartial implements IConsentService {
       account = accounts[0]
     }
 
-    const payload = formatTxPayload(network!, req.payload)
+    const payload = deserializeTxPayload(network!, req.payload)
 
     let { signedTx, txHash } = payload as any
     if (signedTx || txHash) {
@@ -244,7 +244,7 @@ class ConsentService extends ConsentServicePartial {
     )
     for (const [id, [_, reject]] of this.waits) {
       if (removedSet.has(id)) {
-        reject(ethErrors.provider.userRejectedRequest())
+        reject(providerErrors.userRejectedRequest())
         this.waits.delete(id)
       }
     }
@@ -294,8 +294,8 @@ class ConsentService extends ConsentServicePartial {
         assert(account)
         const wallet = await WALLET_SERVICE.getWallet(account.masterId)
         assert(wallet)
-        if (!canWalletSign(wallet)) {
-          throw ethErrors.provider.userRejectedRequest()
+        if (!isSignableWallet(wallet)) {
+          throw providerErrors.userRejectedRequest()
         }
         break
       }
@@ -421,7 +421,7 @@ class ConsentService extends ConsentServicePartial {
         })
         if (existing) {
           if (existing.visible === TokenVisibility.SHOW) {
-            throw ethErrors.rpc.invalidRequest('Token already exists')
+            throw rpcErrors.invalidRequest('Token already exists')
           }
           await TOKEN_SERVICE.setTokenVisibility(
             existing.id,
@@ -457,7 +457,7 @@ class ConsentService extends ConsentServicePartial {
     signedTx?: any,
     txHash?: string
   ) {
-    let payload = formatTxPayload(network, req.payload)
+    let payload = deserializeTxPayload(network, req.payload)
 
     let txResponse
     if (signedTx) {
@@ -489,7 +489,7 @@ class ConsentService extends ConsentServicePartial {
       }
     }
 
-    payload = compactTxPayload(network, payload)
+    payload = await serializeTxPayload(network, payload)
 
     switch (network.kind) {
       case NetworkKind.EVM:

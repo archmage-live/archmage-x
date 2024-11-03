@@ -1,7 +1,4 @@
-import { decryptKeystore, encryptKeystore } from '@ethersproject/json-wallets'
-import type { KeystoreAccount } from '@ethersproject/json-wallets/lib/keystore'
-
-import { Storage } from '@plasmohq/storage'
+import {decryptKeystoreJson, encryptKeystoreJson, KeystoreAccount} from 'ethers'
 
 import { DB } from '~lib/db'
 import { isBackgroundWorker } from '~lib/detect'
@@ -11,11 +8,10 @@ import { IWallet } from '~lib/schema/wallet'
 import { WALLET_SERVICE } from '~lib/services/wallet'
 import {
   SESSION_STORE,
-  StoreArea,
   StoreKey,
-  clearSessionStorage
-} from '~lib/store'
-import { WalletType, hasWalletKeystore } from '~lib/wallet'
+  clearSessionStorage, SECURE_SESSION_STORE
+} from "~lib/store";
+import { WalletType, isKeystoreWallet } from '~archmage/wallet'
 
 function keystoreKey(id: number, index: Index): string {
   return index === PSEUDO_INDEX
@@ -34,10 +30,7 @@ class Accounts {
     const key = keystoreKey(id, index)
     this.accounts.set(key, account)
 
-    await new Storage({
-      area: StoreArea.SESSION,
-      secretKeyList: [key]
-    }).set(key, account)
+    await SECURE_SESSION_STORE.set(key, account)
   }
 
   async get(id: number, index: Index): Promise<KeystoreAccount | undefined> {
@@ -99,7 +92,7 @@ export class Keystore {
         for (let j = i; j < i + concurrent && j < wallets.length; j++) {
           const wallet = wallets[j]
 
-          if (!hasWalletKeystore(wallet)) {
+          if (!isKeystoreWallet(wallet)) {
             continue
           }
 
@@ -184,7 +177,7 @@ export class Keystore {
   }
 
   async persist(wallet: IWallet, index: Index) {
-    if (!hasWalletKeystore(wallet)) {
+    if (!isKeystoreWallet(wallet)) {
       return
     }
 
@@ -215,7 +208,7 @@ export class Keystore {
     }
 
     // time-consuming encrypting
-    const keystore = await encryptKeystore(account, password, {
+    const keystore = await encryptKeystoreJson(account, password, {
       scrypt: {
         N: undefined
         // N: 1 << 14 // fast
@@ -271,7 +264,7 @@ export class Keystore {
       }
 
       // time-consuming decrypting
-      const keystore = await decryptKeystore(encrypt.keystore, password)
+      const keystore = await decryptKeystoreJson(encrypt.keystore, password)
       await this.accounts.set(id, index, keystore)
 
       if (await PASSWORD.isLocked()) {

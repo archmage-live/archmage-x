@@ -4,14 +4,14 @@ import { _TypedDataEncoder } from '@ethersproject/hash'
 import { Logger } from '@ethersproject/logger'
 import { shallowCopy } from '@ethersproject/properties'
 import { BaseProvider } from '@ethersproject/providers'
-import { ethErrors } from 'eth-rpc-errors'
+import { rpcErrors } from '@metamask/rpc-errors'
 import PQueue from 'p-queue'
 
 import { IChainAccount } from '~lib/schema'
 import { ETH_BALANCE_CHECKER_API } from '~lib/services/datasource/ethBalanceChecker'
 import { getNonce } from '~lib/services/provider/hooks'
 import { Provider, TransactionPayload } from '~lib/services/provider/provider'
-import { getSigningWallet } from '~lib/wallet'
+import { getSigningWallet } from '~archmage/wallet'
 
 import { logger } from '../client'
 import { fetchGasFeeEstimates } from '../gasFee'
@@ -356,7 +356,7 @@ export class EvmBasicProvider implements Provider {
   ): Promise<any> {
     const signer = await getSigningWallet(account)
     if (!signer) {
-      throw ethErrors.rpc.internal()
+      throw rpcErrors.internal()
     }
     return signer.signTransaction(transaction)
   }
@@ -371,7 +371,7 @@ export class EvmBasicProvider implements Provider {
   async signMessage(account: IChainAccount, message: any): Promise<any> {
     const signer = await getSigningWallet(account)
     if (!signer) {
-      throw ethErrors.rpc.internal()
+      throw rpcErrors.internal()
     }
     return signer.signMessage(message)
   }
@@ -392,9 +392,10 @@ export class EvmBasicProvider implements Provider {
       types,
       populated.value
     )
+    // TODO: why?
     delete typedData.types.EIP712Domain
     if (primaryType != null && primaryType !== typedData.primaryType) {
-      throw ethErrors.rpc.invalidParams('Invalid primaryType')
+      throw rpcErrors.invalidParams('Invalid primaryType')
     }
     return typedData
   }
@@ -402,7 +403,7 @@ export class EvmBasicProvider implements Provider {
   async signTypedData(account: IChainAccount, typedData: any): Promise<any> {
     const signer = await getSigningWallet(account)
     if (!signer) {
-      throw ethErrors.rpc.internal()
+      throw rpcErrors.internal()
     }
     return signer.signTypedData(typedData)
   }

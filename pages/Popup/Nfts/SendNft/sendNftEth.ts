@@ -1,6 +1,6 @@
 import { NftTokenType } from '@archmagelive/alchemy-sdk'
 
-import { ERC721__factory, ERC1155__factory } from '~lib/network/evm/abi'
+import { ERC721__factory, ERC1155__factory } from '~archmage/network/evm/abi'
 import { IChainAccount, INft } from '~lib/schema'
 import { EvmNftInfo } from '~lib/services/nft/evm'
 import { Provider } from '~lib/services/provider'

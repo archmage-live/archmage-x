@@ -16,13 +16,13 @@ import { useCallback, useEffect, useState } from 'react'
 import { useWizard } from 'react-use-wizard'
 
 import { AlertBox } from '~components/AlertBox'
-import { NETWORK_SCOPES, NetworkKind, getNetworkKind } from '~lib/network'
+import { NETWORK_SCOPES, NetworkKind, getNetworkKind } from '@/archmage/network'
 import { PSEUDO_INDEX, formatAddressForNetwork } from '~lib/schema'
 import {
   ExistingGroupWallet,
   useNextSubWalletIndex
 } from '~lib/services/wallet'
-import { WalletType, checkAddress } from '~lib/wallet'
+import { WalletType, checkAddress } from '~archmage/wallet'
 
 import { NameInput } from '../NameInput'
 import {

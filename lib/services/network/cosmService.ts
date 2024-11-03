@@ -1,8 +1,8 @@
 import assert from 'assert'
 
 import { DB, getNextField } from '~lib/db'
-import { NetworkKind, checkNetworkKindInitialized } from '~lib/network'
-import { COSM_NETWORKS_PRESET, CosmAppChainInfo } from '~lib/network/cosm'
+import { NetworkKind, checkNetworkKindInitialized } from '@/archmage/network'
+import { COSM_NETWORKS_PRESET, CosmAppChainInfo } from '~archmage/network/cosm'
 import { ChainId, INetwork, createSearchString } from '~lib/schema/network'
 
 export class CosmNetworkService {

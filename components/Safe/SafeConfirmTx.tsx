@@ -66,7 +66,7 @@ import { ImageWithFallback } from '~components/ImageWithFallback'
 import { JsonDisplay } from '~components/JsonDisplay'
 import { useModalBox } from '~components/ModalBox'
 import { TextLink } from '~components/TextLink'
-import { ERC721__factory, ERC1155__factory } from '~lib/network/evm/abi'
+import { ERC721__factory, ERC1155__factory } from '~archmage/network/evm/abi'
 import { SafeTxParams, SafeTxType } from '~lib/safe'
 import { IChainAccount, INetwork } from '~lib/schema'
 import { ALCHEMY_API } from '~lib/services/datasource/alchemy'
@@ -75,7 +75,7 @@ import { CRYPTO_COMPARE_SERVICE } from '~lib/services/datasource/cryptocompare'
 import { ETHERSCAN_API } from '~lib/services/datasource/etherscan'
 import { getAccountUrl, getNetworkInfo } from '~lib/services/network'
 import { TOKEN_SERVICE, getTokenBrief } from '~lib/services/token'
-import { SafeInfo } from '~lib/wallet'
+import { SafeInfo } from '~archmage/wallet'
 
 const isOpenAtom = atom<boolean>(false)
 const paramsAtom = atom<

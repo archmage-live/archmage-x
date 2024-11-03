@@ -2,7 +2,7 @@ import { useAsync } from 'react-use'
 import stableHash from 'stable-hash'
 
 import { fetchJsonWithCache } from '~lib/fetch'
-import { CosmAppChainInfo } from '~lib/network/cosm'
+import { CosmAppChainInfo } from '~archmage/network/cosm'
 
 import { DENOM_TO_SUBDIRECTORY, validateTokenInfo } from './helpers'
 

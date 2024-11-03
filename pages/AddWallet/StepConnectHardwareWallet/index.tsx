@@ -16,7 +16,7 @@ import { useWizard } from 'react-use-wizard'
 
 import { AlertBox } from '~components/AlertBox'
 import { clearLedgerTransport, getLedgerTransport } from '~lib/hardware/ledger'
-import { HardwareWalletType } from '~lib/wallet'
+import { HardwareWalletType } from '~archmage/wallet'
 
 import {
   HardwareWalletTransports,

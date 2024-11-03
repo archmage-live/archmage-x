@@ -1,7 +1,7 @@
 import { Button, HStack, Stack, Text } from '@chakra-ui/react'
 
 import { AccountAvatar } from '~components/AccountAvatar'
-import { getNetworkScope } from '~lib/network'
+import { getNetworkScope } from '@/archmage/network'
 import { IContact } from '~lib/schema'
 import { getNetworkInfo, useNetwork2 } from '~lib/services/network'
 import { shortenString } from '~lib/utils'

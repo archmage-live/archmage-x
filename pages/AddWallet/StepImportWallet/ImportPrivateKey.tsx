@@ -18,7 +18,7 @@ import {
   ExistingGroupWallet,
   useNextSubWalletIndex
 } from '~lib/services/wallet'
-import { WalletType, checkPrivateKey } from '~lib/wallet'
+import { WalletType, checkPrivateKey } from '~archmage/wallet'
 import {
   SelectExistingWalletModal,
   WalletItemButton

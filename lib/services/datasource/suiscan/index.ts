@@ -1,5 +1,8 @@
-import { normalizeStructTag } from '@mysten/sui.js/src/utils/sui-types'
-import { normalizeSuiAddress, normalizeSuiObjectId } from '@mysten/sui.js/utils'
+import {
+  normalizeStructTag,
+  normalizeSuiAddress,
+  normalizeSuiObjectId
+} from '@mysten/sui/utils'
 import {
   SUI_DEVNET_CHAIN,
   SUI_MAINNET_CHAIN,

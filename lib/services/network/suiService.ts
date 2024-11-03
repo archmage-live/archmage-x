@@ -1,8 +1,8 @@
 import assert from 'assert'
 
 import { DB, getNextField } from '~lib/db'
-import { NetworkKind, checkNetworkKindInitialized } from '~lib/network'
-import { SUI_NETWORKS_PRESET, SuiChainInfo } from '~lib/network/sui'
+import { NetworkKind, checkNetworkKindInitialized } from '@/archmage/network'
+import { SUI_NETWORKS_PRESET, SuiChainInfo } from '~archmage/network/sui'
 import { ChainId, INetwork, createSearchString } from '~lib/schema'
 
 export const SuiAddressZero =

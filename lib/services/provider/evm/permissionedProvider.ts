@@ -1,14 +1,22 @@
-import { TransactionResponse } from '@ethersproject/abstract-provider'
-import { arrayify, hexlify } from '@ethersproject/bytes'
+import { providerErrors, rpcErrors } from '@metamask/rpc-errors'
 import { TokenInfo } from '@uniswap/token-lists'
 import assert from 'assert'
-import { ethErrors } from 'eth-rpc-errors'
-import { ethers } from 'ethers'
+import {
+  TransactionResponse,
+  getAddress,
+  isHexString,
+  stripZerosLeft
+} from 'ethers'
+import { getBytes, hexlify } from 'ethers'
 
 import { getActiveNetwork, getActiveNetworkByKind } from '~lib/active'
-import { NetworkKind } from '~lib/network'
-import { EvmChainInfo, EvmExplorer, NativeCurrency } from '~lib/network/evm'
-import { ERC20__factory } from '~lib/network/evm/abi'
+import { NetworkKind } from '@/archmage/network'
+import {
+  EthereumChainInfo,
+  EvmExplorer,
+  NativeCurrency
+} from '~archmage/network/evm'
+import { ERC20__factory } from '~archmage/network/evm/abi'
 import { Context } from '~lib/rpc'
 import { INetwork, TokenVisibility } from '~lib/schema'
 import {
@@ -22,10 +30,11 @@ import {
 } from '~lib/services/consentService'
 import { NETWORK_SERVICE } from '~lib/services/network'
 import { BasePermissionedProvider } from '~lib/services/provider/base'
+import { getEthChainId } from '~lib/services/provider/ethereum/client'
 import { TOKEN_SERVICE } from '~lib/services/token'
-import { checkAddress } from '~lib/wallet'
+import { checkAddress } from '~archmage/wallet'
 
-import { EvmProvider, getEvmChainId } from '.'
+import { EvmProvider } from '.'
 
 export class EvmPermissionedProvider extends BasePermissionedProvider {
   private constructor(
@@ -41,7 +50,7 @@ export class EvmPermissionedProvider extends BasePermissionedProvider {
     const provider = await EvmPermissionedProvider.from(fromUrl)
     if (!provider) {
       // no active network
-      throw ethErrors.provider.disconnected()
+      throw providerErrors.disconnected()
     }
     return provider
   }
@@ -102,7 +111,7 @@ export class EvmPermissionedProvider extends BasePermissionedProvider {
         case 'eth_signTypedData_v1':
         // fallthrough
         case 'eth_signTypedData_v3':
-          throw ethErrors.provider.unsupportedMethod(
+          throw providerErrors.unsupportedMethod(
             'Please use eth_signTypedData_v4 instead.'
           )
         case 'eth_signTypedData_v4':
@@ -137,7 +146,7 @@ export class EvmPermissionedProvider extends BasePermissionedProvider {
   ) {
     if (!eth_accounts || Object.keys(restPermissions).length) {
       // now only support `eth_accounts`
-      throw ethErrors.rpc.invalidParams()
+      throw rpcErrors.invalidParams()
     }
 
     await this._requestPermissions(ctx, [
@@ -147,7 +156,7 @@ export class EvmPermissionedProvider extends BasePermissionedProvider {
 
   async sendTransaction(ctx: Context, [params]: Array<any>) {
     if (!this.account?.address) {
-      throw ethErrors.provider.unauthorized()
+      throw providerErrors.unauthorized()
     }
 
     const txPayload = await this.provider.populateTransaction(
@@ -182,10 +191,10 @@ export class EvmPermissionedProvider extends BasePermissionedProvider {
       !this.account?.address ||
       this.account.address !== checkAddress(NetworkKind.EVM, from)
     ) {
-      throw ethErrors.provider.unauthorized()
+      throw providerErrors.unauthorized()
     }
 
-    message = hexlify(arrayify(message))
+    message = hexlify(getBytes(message))
 
     return await CONSENT_SERVICE.requestConsent(
       {
@@ -206,7 +215,7 @@ export class EvmPermissionedProvider extends BasePermissionedProvider {
       !this.account?.address ||
       this.account.address !== checkAddress(NetworkKind.EVM, from)
     ) {
-      throw ethErrors.provider.unauthorized()
+      throw providerErrors.unauthorized()
     }
 
     const originalTypedData = JSON.parse(typedData)
@@ -215,7 +224,7 @@ export class EvmPermissionedProvider extends BasePermissionedProvider {
     const { chainId, name, version, verifyingContract } = typedData.domain
 
     if (!chainId || +chainId !== this.network.chainId) {
-      throw ethErrors.rpc.invalidParams('Mismatched chainId')
+      throw rpcErrors.invalidParams('Mismatched chainId')
     }
 
     return await CONSENT_SERVICE.requestConsent(
@@ -269,15 +278,15 @@ export class EvmPermissionedProvider extends BasePermissionedProvider {
         return { name: '', url, standard: 'none' } as EvmExplorer
       })
     } catch (e: any) {
-      throw ethErrors.rpc.invalidParams(e.toString())
+      throw rpcErrors.invalidParams(e.toString())
     }
 
     if (!rpcUrls.length) {
-      throw ethErrors.rpc.invalidParams('Missing rpcUrls')
+      throw rpcErrors.invalidParams('Missing rpcUrls')
     }
 
     if (!params.chainName?.length) {
-      throw ethErrors.rpc.invalidParams('Invalid chainName')
+      throw rpcErrors.invalidParams('Invalid chainName')
     }
 
     const { name, symbol, decimals } = params.nativeCurrency
@@ -287,7 +296,7 @@ export class EvmPermissionedProvider extends BasePermissionedProvider {
       typeof decimals !== 'number' ||
       decimals <= 0
     ) {
-      throw ethErrors.rpc.invalidParams('Invalid nativeCurrency')
+      throw rpcErrors.invalidParams('Invalid nativeCurrency')
     }
 
     const info = {
@@ -300,10 +309,10 @@ export class EvmPermissionedProvider extends BasePermissionedProvider {
       explorers: explorerUrls,
       infoURL: '',
       nativeCurrency: params.nativeCurrency
-    } as EvmChainInfo
+    } as EthereumChainInfo
 
-    if (chainId !== (await getEvmChainId(rpcUrls[0]))) {
-      throw ethErrors.rpc.invalidParams('Mismatched chainId')
+    if (chainId !== (await getEthChainId(rpcUrls[0]))) {
+      throw rpcErrors.invalidParams('Mismatched chainId')
     }
 
     await this._addChain(ctx, NetworkKind.EVM, chainId, info)
@@ -324,13 +333,11 @@ export class EvmPermissionedProvider extends BasePermissionedProvider {
   // https://eips.ethereum.org/EIPS/eip-747
   async watchAsset(ctx: Context, params: WatchAssetParameters) {
     if (!this.account?.address) {
-      throw ethErrors.provider.unauthorized()
+      throw providerErrors.unauthorized()
     }
 
     if (params.type !== 'ERC20') {
-      throw ethErrors.rpc.invalidRequest(
-        'Currently only ERC20 token is supported'
-      )
+      throw rpcErrors.invalidRequest('Currently only ERC20 token is supported')
     }
 
     const {
@@ -340,7 +347,7 @@ export class EvmPermissionedProvider extends BasePermissionedProvider {
       image
     } = params.options
 
-    const token = ethers.utils.getAddress(address)
+    const token = getAddress(address)
     const tokenContract = ERC20__factory.connect(token, this.provider.provider)
     const name = await tokenContract.name()
     const symbol = await tokenContract.symbol()
@@ -350,12 +357,10 @@ export class EvmPermissionedProvider extends BasePermissionedProvider {
     ).toString()
 
     if (symbolMayEmpty != null && symbolMayEmpty !== symbol) {
-      throw ethErrors.rpc.invalidParams(
-        'Symbol is different form on-chain symbol'
-      )
+      throw rpcErrors.invalidParams('Symbol is different form on-chain symbol')
     }
     if (decimalsMayEmpty != null && +decimalsMayEmpty !== decimals) {
-      throw ethErrors.rpc.invalidParams(
+      throw rpcErrors.invalidParams(
         'Decimals is different form on-chain decimals'
       )
     }
@@ -395,10 +400,10 @@ export class EvmPermissionedProvider extends BasePermissionedProvider {
     const chainIdNumber = +chainId
     if (
       isNaN(chainIdNumber) ||
-      !ethers.utils.isHexString(chainId) ||
-      ethers.utils.hexStripZeros(chainId) !== chainId
+      !isHexString(chainId) ||
+      stripZerosLeft(chainId) !== chainId
     ) {
-      throw ethErrors.rpc.invalidParams('Invalid chainId')
+      throw rpcErrors.invalidParams('Invalid chainId')
     }
     return chainIdNumber
   }

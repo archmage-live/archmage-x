@@ -1,31 +1,31 @@
-import { TransactionBlock } from '@mysten/sui.js/transactions'
+import { Transaction } from '@mysten/sui/transactions'
 
 import { TransactionPayload } from '~lib/services/provider'
 
 export interface SuiTransactionPayload extends TransactionPayload {
-  txParams: TransactionBlock | string
+  txParams: Transaction | string
   populatedParams: undefined
 }
 
-export function formatSuiTxPayload(
+export function deserializeSuiTxPayload(
   payload: SuiTransactionPayload
 ): SuiTransactionPayload {
   const { txParams } = payload
 
   if (typeof txParams === 'string') {
-    payload.txParams = TransactionBlock.from(txParams)
+    payload.txParams = Transaction.from(txParams)
   }
 
   return payload
 }
 
-export function compactSuiTxPayload(
+export async function serializeSuiTxPayload(
   payload: SuiTransactionPayload
-): SuiTransactionPayload {
+): Promise<SuiTransactionPayload> {
   const { txParams } = payload
 
-  if (txParams instanceof TransactionBlock) {
-    payload.txParams = txParams.serialize()
+  if (txParams instanceof Transaction) {
+    payload.txParams = await txParams.toJSON()
   }
 
   return payload

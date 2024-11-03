@@ -1,17 +1,9 @@
 import browser from 'webextension-polyfill'
 
-import { useStorage } from '@plasmohq/storage'
-
-import { LOCAL_STORE, StoreArea, StoreKey } from '~lib/store'
+import { LOCAL_STORE, StoreKey, useLocalStorage } from '~lib/store'
 
 export function useLockTime() {
-  return useStorage(
-    {
-      key: StoreKey.AUTO_LOCK_TIME,
-      area: StoreArea.LOCAL
-    },
-    0
-  )
+  return useLocalStorage(StoreKey.AUTO_LOCK_TIME, 0)
 }
 
 export function checkLockTime(lock: () => Promise<void>) {

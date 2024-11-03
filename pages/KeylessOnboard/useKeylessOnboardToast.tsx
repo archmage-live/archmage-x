@@ -4,7 +4,7 @@ import { useAsync } from 'react-use'
 import { INetwork, ISubWallet, IWallet } from '~lib/schema'
 import { WALLET_SERVICE } from '~lib/services/wallet'
 import { createTab } from '~lib/tab'
-import { isKeylessWallet } from '~lib/wallet'
+import { isKeylessWallet } from '~archmage/wallet'
 
 export function useKeylessOnboardToast(
   wallet?: IWallet,

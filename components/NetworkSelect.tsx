@@ -7,7 +7,7 @@ import {
   NetworkScope,
   getNetworkKind,
   getNetworkScope
-} from '~lib/network'
+} from '@/archmage/network'
 import { INetwork } from '~lib/schema'
 import { getNetworkInfo, useNetwork, useNetworks } from '~lib/services/network'
 

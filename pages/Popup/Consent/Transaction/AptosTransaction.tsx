@@ -39,7 +39,7 @@ import { useCryptoComparePrice } from '~lib/services/datasource/cryptocompare'
 import { NetworkInfo } from '~lib/services/network'
 import {
   TransactionPayload,
-  formatTxPayload,
+  deserializeTxPayload,
   useNonce
 } from '~lib/services/provider'
 import { useAptosTransaction } from '~lib/services/provider/aptos/hooks'
@@ -86,7 +86,7 @@ export const AptosTransaction = ({
   suffix?: ReactNode
   onComplete: () => void
 }) => {
-  const payload = formatTxPayload(network, request.payload)
+  const payload = deserializeTxPayload(network, request.payload)
   const { txParams, populatedParams } = payload as {
     txParams: TxnBuilderTypes.RawTransaction
     populatedParams: Types.UserTransaction

@@ -1,9 +1,9 @@
-import { SuiClient } from '@mysten/sui.js/client'
+import { SuiClient } from '@mysten/sui/client'
 
-import { SuiChainInfo } from '~lib/network/sui'
+import { SuiChainInfo } from '~archmage/network/sui'
 import { ChainId, INetwork } from '~lib/schema'
 
-export { SuiClient } from '@mysten/sui.js/client'
+export { SuiClient } from '@mysten/sui/client'
 
 const SUI_CLIENTS = new Map<ChainId, SuiClient>()
 

@@ -1,5 +1,5 @@
-import { normalizeSuiAddress, normalizeSuiObjectId } from '@mysten/sui.js/utils'
-import { normalizeStructTag } from '@mysten/sui.js/utils'
+import { normalizeSuiAddress, normalizeSuiObjectId } from '@mysten/sui/utils'
+import { normalizeStructTag } from '@mysten/sui/utils'
 import { SUI_MAINNET_CHAIN, SUI_TESTNET_CHAIN } from '@mysten/wallet-standard'
 import suiVisionLogo from 'data-base64:~assets/thirdparty/sui-vision.svg'
 

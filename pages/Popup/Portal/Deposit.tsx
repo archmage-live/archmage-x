@@ -22,7 +22,7 @@ import {
   getFaucetUrl,
   getNetworkInfo
 } from '~lib/services/network'
-import { canWalletSign } from '~lib/wallet'
+import { isSignableWallet } from '~archmage/wallet'
 
 const isOpenAtom = atom<boolean>(false)
 
@@ -82,7 +82,7 @@ export const Deposit = ({ onClose }: { onClose: () => void }) => {
                 props={{ w: 64 }}
               />
 
-              {wallet && !canWalletSign(wallet) ? (
+              {wallet && !isSignableWallet(wallet) ? (
                 <AlertBox level="error">
                   Don&apos;t use this watch-only wallet to receive tokens.
                   Otherwise you may lose your assets.

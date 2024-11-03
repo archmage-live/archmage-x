@@ -3,14 +3,14 @@ import {
   SuiArgument,
   SuiTransactionBlockResponse,
   TransactionFilter
-} from '@mysten/sui.js/client'
-import { normalizeStructTag, normalizeSuiAddress } from '@mysten/sui.js/utils'
+} from '@mysten/sui/client'
+import { normalizeStructTag, normalizeSuiAddress } from '@mysten/sui/utils'
 import assert from 'assert'
 import Decimal from 'decimal.js'
 
 import { DB } from '~lib/db'
 import { isBackgroundWorker } from '~lib/detect'
-import { NetworkKind } from '~lib/network'
+import { NetworkKind } from '@/archmage/network'
 import { SERVICE_WORKER_CLIENT, SERVICE_WORKER_SERVER } from '~lib/rpc'
 import { IChainAccount, IPendingTx, ITransaction } from '~lib/schema'
 import { NETWORK_SERVICE } from '~lib/services/network'
@@ -240,7 +240,7 @@ export class SuiTransactionService extends SuiTransactionServicePartial {
           showObjectChanges: true
         }
       })
-      if (txResponse.checkpoint) {
+      if (txResponse?.checkpoint) {
         break
       }
       // TODO

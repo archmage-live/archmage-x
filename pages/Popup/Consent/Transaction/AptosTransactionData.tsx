@@ -13,6 +13,7 @@ import ReactJson from 'react-json-view'
 import { CopyArea } from '~components/CopyIcon'
 import {
   isAptosEntryFunctionPayload,
+  isAptosModuleBundlePayload,
   isAptosScriptPayload
 } from '~lib/services/provider/aptos/types'
 import { extractAptosIdentifier } from '~lib/services/transaction/aptosParse'
@@ -160,7 +161,7 @@ export const AptosTransactionPayload = ({
         </Stack>
       </Stack>
     )
-  } else {
+  } else if (isAptosModuleBundlePayload(payload)) {
     return (
       <Stack spacing={6}>
         <Stack spacing={2}>
@@ -189,6 +190,9 @@ export const AptosTransactionPayload = ({
         </Stack>
       </Stack>
     )
+  } else {
+    // TODO: isAptosScriptPayload
+    return <></>
   }
 }
 

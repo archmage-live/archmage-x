@@ -11,7 +11,7 @@ import stableHash from 'stable-hash'
 
 import { DB } from '~lib/db'
 import { Erc4337CallDataDecoder } from '~lib/erc4337/callData'
-import { NetworkKind } from '~lib/network'
+import { NetworkKind } from '@/archmage/network'
 import { IChainAccount, IPendingTx, ITransaction } from '~lib/schema'
 import { getEvmSignatureFrom4Bytes } from '~lib/services/datasource/4byte'
 import { JIFFYSCAN_API, UserOp } from '~lib/services/datasource/jiffyscan'

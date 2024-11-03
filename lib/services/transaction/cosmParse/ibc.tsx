@@ -6,7 +6,7 @@ import { DenomTrace } from 'cosmjs-types/ibc/applications/transfer/v1/transfer'
 import { ReactNode } from 'react'
 
 import { FromTo } from '~components/FromTo'
-import { CosmAppChainInfo } from '~lib/network/cosm'
+import { CosmAppChainInfo } from '~archmage/network/cosm'
 import { TokenInfo } from '~lib/services/datasource/cosmostation'
 import { TransactionType } from '~lib/services/transaction'
 import { shortenString } from '~lib/utils'

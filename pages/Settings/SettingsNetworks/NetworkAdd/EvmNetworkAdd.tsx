@@ -14,11 +14,14 @@ import {
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { AlertBox } from '~components/AlertBox'
-import { NetworkKind } from '~lib/network'
-import { EvmChainInfo } from '~lib/network/evm'
+import { NetworkKind } from '@/archmage/network'
+import { EthereumChainInfo } from '~archmage/network/evm'
 import { ChainId } from '~lib/schema'
 import { NETWORK_SERVICE } from '~lib/services/network'
-import { getEvmBlockNumber, getEvmChainId } from '~lib/services/provider/evm'
+import {
+  getEthBlockNumber,
+  getEthChainId
+} from '~lib/services/provider/ethereum/client'
 import { stall } from '~lib/utils'
 
 import { ExplorerUrlInputGroup, RpcUrlInputGroup } from './UrlInputGroup'
@@ -117,7 +120,7 @@ export const EvmNetworkAdd = ({
           symbol: currencySymbol,
           decimals: 18 // TODO
         }
-      } as EvmChainInfo
+      } as EthereumChainInfo
 
       await onConfirm(NetworkKind.EVM, chainId, info)
     }
@@ -179,9 +182,9 @@ export const EvmNetworkAdd = ({
       <RpcUrlInputGroup
         urls={rpcUrls}
         setUrls={setRpcUrls}
-        testUrl={getEvmBlockNumber}
+        testUrl={getEthBlockNumber}
         chainId={chainIdStr ? +chainIdStr : undefined}
-        getChainId={getEvmChainId}
+        getChainId={getEthChainId}
         checkUrls={checkRpcUrls}
         allowInvalidRpcUrl={allowInvalidRpcUrl}
         setAllowInvalidRpcUrl={setAllowInvalidRpcUrl}

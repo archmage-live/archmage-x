@@ -10,7 +10,7 @@ import {
   KeylessWalletInfo,
   MultisigWalletType,
   WalletType
-} from '~lib/wallet'
+} from '~archmage/wallet'
 
 export interface IWallet {
   id: number

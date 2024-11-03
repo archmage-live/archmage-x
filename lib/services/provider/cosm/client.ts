@@ -14,11 +14,11 @@ import {
 } from '@cosmjs/stargate'
 import { Tendermint34Client } from '@cosmjs/tendermint-rpc'
 
-import { CosmAppChainInfo } from '~lib/network/cosm'
+import { CosmAppChainInfo } from '~archmage/network/cosm'
 import {
   TxExtension,
   setupTxExtension
-} from '~lib/network/cosm/modules/tx/queries'
+} from '~archmage/network/cosm/modules/tx/queries'
 import { ChainId, INetwork } from '~lib/schema'
 import { SingleSynchronizer } from '~lib/utils/synchronizer'
 

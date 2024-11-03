@@ -4,7 +4,7 @@ import assert from 'assert'
 import stableHash from 'stable-hash'
 
 import { DB, getNextField } from '~lib/db'
-import { NetworkKind } from '~lib/network'
+import { NetworkKind } from '@/archmage/network'
 import { IChainAccount, INft, NftVisibility } from '~lib/schema'
 import { ALCHEMY_API, AlchemyNft } from '~lib/services/datasource/alchemy'
 

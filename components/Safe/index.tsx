@@ -18,7 +18,7 @@ import { useAsync } from 'react-use'
 import { AccountAvatar } from '~components/AccountAvatar'
 import { SettingItem } from '~components/SettingItem'
 import { TextLink } from '~components/TextLink'
-import { ETHEREUM_MAINNET_CHAINID } from '~lib/network/evm'
+import { ETHEREUM_MAINNET_CHAINID } from '~archmage/network/evm'
 import { getSafeAccount } from '~lib/safe'
 import {
   IChainAccount,
@@ -36,7 +36,7 @@ import {
   checkAddress,
   isMultisigWallet,
   isWatchWallet
-} from '~lib/wallet'
+} from '~archmage/wallet'
 
 import { SafeEditModal, SafeEditType } from './SafeEdit'
 

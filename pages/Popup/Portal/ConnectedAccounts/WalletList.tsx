@@ -3,7 +3,7 @@ import { useVirtualizer } from '@tanstack/react-virtual'
 import { useRef } from 'react'
 
 import { INetwork } from '~lib/schema'
-import { isWalletGroup } from '~lib/wallet'
+import { isGroupWallet } from '~archmage/wallet'
 
 import { Entry } from '.'
 import { WalletItem } from './WalletItem'
@@ -30,7 +30,7 @@ export const WalletList = ({
     getScrollElement: () => parentRef.current,
     estimateSize: (index) => {
       const wallet = wallets[index]
-      if (!wallet.isOpen || !isWalletGroup(wallet.wallet)) {
+      if (!wallet.isOpen || !isGroupWallet(wallet.wallet)) {
         return selfItemSize
       } else {
         return (

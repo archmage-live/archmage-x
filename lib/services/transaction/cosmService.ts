@@ -17,17 +17,17 @@ import { useMemo } from 'react'
 
 import { DB } from '~lib/db'
 import { isBackgroundWorker } from '~lib/detect'
-import { NetworkKind } from '~lib/network'
-import { CosmAppChainInfo } from '~lib/network/cosm'
-import { pubkeyToAddress } from '~lib/network/cosm/amino'
-import { Events } from '~lib/network/cosm/modules/tx/queries'
-import { decodePubkey } from '~lib/network/cosm/proto-signing'
+import { NetworkKind } from '@/archmage/network'
+import { CosmAppChainInfo } from '~archmage/network/cosm'
+import { pubkeyToAddress } from '~archmage/network/cosm/amino'
+import { Events } from '~archmage/network/cosm/modules/tx/queries'
+import { decodePubkey } from '~archmage/network/cosm/proto-signing'
 import { SERVICE_WORKER_CLIENT, SERVICE_WORKER_SERVER } from '~lib/rpc'
 import { IChainAccount, INetwork, IPendingTx, ITransaction } from '~lib/schema'
 import { NETWORK_SERVICE } from '~lib/services/network'
 import { getCosmClient } from '~lib/services/provider/cosm/client'
 import { stall } from '~lib/utils'
-import { isStdSignDoc } from '~lib/wallet'
+import { isStdSignDoc } from '~archmage/wallet'
 
 import {
   ITransactionService,

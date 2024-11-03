@@ -5,10 +5,10 @@ import TransportWebBLE from '@ledgerhq/hw-transport-web-ble'
 import TransportWebHID from '@ledgerhq/hw-transport-webhid'
 import { listen } from '@ledgerhq/logs'
 
-import { NetworkKind } from '~lib/network'
+import { NetworkKind } from '@/archmage/network'
 import { DerivePosition } from '~lib/schema'
 import { stall } from '~lib/utils'
-import { BtcAddressType, WalletPathSchema } from '~lib/wallet'
+import { BtcAddressType, WalletPathSchema } from '~archmage/wallet'
 
 let transportHID: any, transportBLE: any
 let unsubscribe: any

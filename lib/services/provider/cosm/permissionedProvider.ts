@@ -10,9 +10,9 @@ import { fromBase64, fromBech32, toBech32 } from '@cosmjs/encoding'
 import { DirectSignResponse } from '@cosmjs/proto-signing'
 import { arrayify, hexlify } from '@ethersproject/bytes'
 import type { ChainInfo as CosmChainInfo } from '@keplr-wallet/types'
+import { providerErrors, rpcErrors } from '@metamask/rpc-errors'
 import assert from 'assert'
 import { SignDoc } from 'cosmjs-types/cosmos/tx/v1beta1/tx'
-import { ethErrors } from 'eth-rpc-errors'
 import Long from 'long'
 
 import { getActiveNetwork, getActiveNetworkByKind } from '~lib/active'
@@ -23,11 +23,11 @@ import {
   isCosmSignDoc,
   toSignDoc
 } from '~lib/inject/cosm'
-import { NetworkKind } from '~lib/network'
-import { COSM_NETWORKS_PRESET, CosmAppChainInfo } from '~lib/network/cosm'
-import { pubkeyToAddress } from '~lib/network/cosm/amino'
-import { decodePubkey } from '~lib/network/cosm/proto-signing'
-import { validateCosmChainInfo } from '~lib/network/cosm/validate'
+import { NetworkKind } from '@/archmage/network'
+import { COSM_NETWORKS_PRESET, CosmAppChainInfo } from '~archmage/network/cosm'
+import { pubkeyToAddress } from '~archmage/network/cosm/amino'
+import { decodePubkey } from '~archmage/network/cosm/proto-signing'
+import { validateCosmChainInfo } from '~archmage/network/cosm/validate'
 import { IChainAccount, INetwork, PSEUDO_INDEX } from '~lib/schema'
 import { CONSENT_SERVICE, ConsentType } from '~lib/services/consentService'
 import { NETWORK_SERVICE } from '~lib/services/network'
@@ -40,9 +40,9 @@ import { WALLET_SERVICE } from '~lib/services/wallet'
 import {
   HardwareWalletType,
   getSigningWallet,
-  hasWalletKeystore,
+  isKeystoreWallet,
   isHardwareWallet
-} from '~lib/wallet'
+} from '~archmage/wallet'
 
 import { CosmClient, getCosmClient } from './client'
 import { CosmProvider, makeADR36AminoSignDoc } from './provider'
@@ -63,7 +63,7 @@ export class CosmPermissionedProvider extends BasePermissionedProvider {
     const provider = await CosmPermissionedProvider.from(fromUrl)
     if (!provider) {
       // no active network
-      throw ethErrors.provider.disconnected()
+      throw providerErrors.disconnected()
     }
     return provider
   }
@@ -121,7 +121,7 @@ export class CosmPermissionedProvider extends BasePermissionedProvider {
           return await this.signArbitrary(ctx, params[0], params[1], params[2])
       }
 
-      throw ethErrors.rpc.methodNotSupported()
+      throw rpcErrors.methodNotSupported()
     } catch (err: any) {
       if (err.toString().includes('User rejected the request')) {
         throw 'Request rejected'
@@ -152,7 +152,7 @@ export class CosmPermissionedProvider extends BasePermissionedProvider {
   async addChain(ctx: Context, chainInfo: CosmChainInfo) {
     const chainId = chainInfo.chainId
     if (typeof chainId !== 'string') {
-      throw ethErrors.rpc.invalidParams('Invalid chainId')
+      throw rpcErrors.invalidParams('Invalid chainId')
     }
 
     const existing = await NETWORK_SERVICE.getNetwork({
@@ -178,7 +178,7 @@ export class CosmPermissionedProvider extends BasePermissionedProvider {
 
   async switchChain(ctx: Context, chainId: any) {
     if (typeof chainId !== 'string') {
-      throw ethErrors.rpc.invalidParams('Invalid chainId')
+      throw rpcErrors.invalidParams('Invalid chainId')
     }
     await this._switchChain(ctx, NetworkKind.COSM, chainId)
   }
@@ -196,7 +196,7 @@ export class CosmPermissionedProvider extends BasePermissionedProvider {
     isKeystone: boolean
   }> {
     if (!this.account?.address) {
-      throw ethErrors.provider.unauthorized()
+      throw providerErrors.unauthorized()
     }
 
     await this.switchChain(ctx, chainId)
@@ -206,7 +206,7 @@ export class CosmPermissionedProvider extends BasePermissionedProvider {
       chainId
     })
     if (!network) {
-      throw ethErrors.rpc.invalidRequest(`Chain ${chainId} not supported`)
+      throw rpcErrors.invalidRequest(`Chain ${chainId} not supported`)
     }
 
     const data = fromBech32(this.account.address).data
@@ -244,13 +244,13 @@ export class CosmPermissionedProvider extends BasePermissionedProvider {
 
   async isProtobufSignerSupported(ctx: Context): Promise<boolean> {
     if (!this.account?.address) {
-      throw ethErrors.provider.unauthorized()
+      throw providerErrors.unauthorized()
     }
     const wallet = await WALLET_SERVICE.getWallet(this.account.masterId)
     assert(wallet)
 
     // TODO: WalletConnect?
-    return hasWalletKeystore(wallet)
+    return isKeystoreWallet(wallet)
   }
 
   async signTx(
@@ -262,7 +262,7 @@ export class CosmPermissionedProvider extends BasePermissionedProvider {
     await this.switchChain(ctx, chainId)
 
     if (!this.account?.address || signer !== this.account.address) {
-      throw ethErrors.provider.unauthorized()
+      throw providerErrors.unauthorized()
     }
 
     const provider = new CosmProvider(this.client, this.network)
@@ -295,7 +295,7 @@ export class CosmPermissionedProvider extends BasePermissionedProvider {
     await this.switchChain(ctx, chainId)
 
     if (!this.account?.address) {
-      throw ethErrors.provider.unauthorized()
+      throw providerErrors.unauthorized()
     }
 
     const provider = new CosmProvider(this.client, this.network)
@@ -334,7 +334,7 @@ export class CosmPermissionedProvider extends BasePermissionedProvider {
     await this.switchChain(ctx, chainId)
 
     if (!this.account?.address || signer !== this.account.address) {
-      throw ethErrors.provider.unauthorized()
+      throw providerErrors.unauthorized()
     }
 
     const signDoc = makeADR36AminoSignDoc(
@@ -363,7 +363,7 @@ export class CosmPermissionedProvider extends BasePermissionedProvider {
     if (
       !Buffer.from(signerAddress).equals(pubkeyToRawAddress(signature.pub_key))
     ) {
-      throw ethErrors.rpc.invalidRequest('Unmatched signer')
+      throw rpcErrors.invalidRequest('Unmatched signer')
     }
 
     return await Secp256k1.verifySignature(

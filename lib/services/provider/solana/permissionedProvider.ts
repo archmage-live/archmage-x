@@ -1,4 +1,5 @@
 import { arrayify, hexlify } from '@ethersproject/bytes'
+import { providerErrors, rpcErrors } from '@metamask/rpc-errors'
 import type {
   SolanaSignAndSendTransactionOptions,
   SolanaSignInInput
@@ -7,11 +8,10 @@ import { createSignInMessageText } from '@solana/wallet-standard-util'
 import type { SolanaSignInInputWithRequiredFields } from '@solana/wallet-standard-util'
 import { VersionedTransaction } from '@solana/web3.js'
 import assert from 'assert'
-import { ethErrors } from 'eth-rpc-errors'
 
 import { getActiveNetworkByKind } from '~lib/active'
 import { Context } from '~lib/inject/client'
-import { NetworkKind } from '~lib/network'
+import { NetworkKind } from '@/archmage/network'
 import { INetwork } from '~lib/schema'
 import {
   CONSENT_SERVICE,
@@ -22,7 +22,7 @@ import {
 import { NETWORK_SERVICE } from '~lib/services/network'
 import { TransactionPayload } from '~lib/services/provider'
 import { SolanaTransactionPayload } from '~lib/services/provider/solana/types'
-import { getSigningWallet } from '~lib/wallet'
+import { getSigningWallet } from '~archmage/wallet'
 
 import { BasePermissionedProvider } from '../base'
 import { SolanaClient, getSolanaClient } from './client'
@@ -43,7 +43,7 @@ export class SolanaPermissionedProvider extends BasePermissionedProvider {
     const provider = await SolanaPermissionedProvider.from(fromUrl)
     if (!provider) {
       // no active network
-      throw ethErrors.provider.disconnected()
+      throw providerErrors.disconnected()
     }
     return provider
   }
@@ -146,10 +146,10 @@ export class SolanaPermissionedProvider extends BasePermissionedProvider {
     options?: SolanaSignAndSendTransactionOptions
   ) {
     if (!this.account?.address) {
-      throw ethErrors.provider.unauthorized()
+      throw providerErrors.unauthorized()
     }
     if (chainId !== this.network.chainId) {
-      throw ethErrors.rpc.invalidParams('Mismatched chainId')
+      throw rpcErrors.invalidParams('Mismatched chainId')
     }
 
     VersionedTransaction.deserialize(arrayify(transaction))
@@ -170,7 +170,7 @@ export class SolanaPermissionedProvider extends BasePermissionedProvider {
 
   async signTransaction(ctx: Context, transaction: string) {
     if (!this.account?.address) {
-      throw ethErrors.provider.unauthorized()
+      throw providerErrors.unauthorized()
     }
 
     return await CONSENT_SERVICE.requestConsent(
@@ -189,7 +189,7 @@ export class SolanaPermissionedProvider extends BasePermissionedProvider {
 
   async signAllTransactions(ctx: Context, transactions: string[]) {
     if (!this.account?.address) {
-      throw ethErrors.provider.unauthorized()
+      throw providerErrors.unauthorized()
     }
 
     return await CONSENT_SERVICE.requestConsent(
@@ -208,7 +208,7 @@ export class SolanaPermissionedProvider extends BasePermissionedProvider {
 
   async signMessage(ctx: Context, message: string) {
     if (!this.account?.address) {
-      throw ethErrors.provider.unauthorized()
+      throw providerErrors.unauthorized()
     }
 
     message = hexlify(arrayify(message))
@@ -231,7 +231,7 @@ export class SolanaPermissionedProvider extends BasePermissionedProvider {
   // https://phantom.app/learn/developers/sign-in-with-solana
   async signIn(ctx: Context, input: SolanaSignInInput) {
     if (!this.account?.address) {
-      throw ethErrors.provider.unauthorized()
+      throw providerErrors.unauthorized()
     }
 
     const url = new URL(ctx.fromUrl!)
@@ -297,7 +297,7 @@ export class SolanaPermissionedProvider extends BasePermissionedProvider {
       }
 
       if (errors.length) {
-        throw ethErrors.rpc.invalidParams(errors.join('; '))
+        throw rpcErrors.invalidParams(errors.join('; '))
       }
     }
 

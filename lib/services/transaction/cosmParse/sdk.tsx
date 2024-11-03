@@ -2,8 +2,8 @@ import { HStack, Text } from '@chakra-ui/react'
 import { ReactNode } from 'react'
 
 import { FromTo } from '~components/FromTo'
-import { CosmAppChainInfo } from '~lib/network/cosm'
-import { Coin } from '~lib/network/cosm/coin'
+import { CosmAppChainInfo } from '~archmage/network/cosm'
+import { Coin } from '~archmage/network/cosm/coin'
 import { TokenInfo } from '~lib/services/datasource/cosmostation'
 import { TransactionType } from '~lib/services/transaction'
 

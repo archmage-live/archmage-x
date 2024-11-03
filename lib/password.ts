@@ -3,21 +3,28 @@ import { useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useAsync } from 'react-use'
 
-import { StorageCallbackMap, useStorage } from '@plasmohq/storage'
+import { StorageCallbackMap } from '@plasmohq/storage'
 
 import { isBackgroundWorker } from '~lib/detect'
 import { useSubWalletsCount } from '~lib/services/wallet'
-import { LOCAL_STORE, SESSION_STORE, StoreArea, StoreKey } from '~lib/store'
+import {
+  LOCAL_STORE,
+  SESSION_STORE,
+  StoreKey,
+  initStorage,
+  useLocalStorage,
+  useSessionStorage
+} from '~lib/store'
 
 class Password {
-  private password!: string
+  private password?: string
 
-  constructor(private cacheLocal: boolean) {}
+  constructor(private cacheInMemory: boolean) {}
 
   async get() {
     if (!this.password) {
       const password = await SESSION_STORE.get(StoreKey.PASSWORD)
-      if (!this.cacheLocal) {
+      if (!this.cacheInMemory) {
         return password
       }
       this.password = password
@@ -26,7 +33,7 @@ class Password {
   }
 
   private async cache(password: string) {
-    if (this.cacheLocal) {
+    if (this.cacheInMemory) {
       this.password = password
     }
     if (password) {
@@ -40,6 +47,8 @@ class Password {
     if (await this.exists()) {
       throw new Error('Password exists')
     }
+    // initialize storage
+    await initStorage(password, true)
     // persistent local
     await LOCAL_STORE.set(
       StoreKey.PASSWORD_HASH,
@@ -91,13 +100,18 @@ class Password {
     if (!password) {
       return false
     }
-    if (password === (await this.get())) {
-      return true
+
+    if (await this.isUnlocked()) {
+      throw new Error('Already unlocked')
     }
+
     if (!(await this.check(password))) {
       return false
     }
+
     await this.cache(password)
+
+    await initStorage(password)
 
     return true
   }
@@ -128,14 +142,8 @@ export function usePassword(): {
   isLocked: boolean | undefined
   isUnlocked: boolean | undefined
 } {
-  const [p1] = useStorage({
-    key: StoreKey.PASSWORD_HASH,
-    area: StoreArea.LOCAL
-  })
-  const [p2] = useStorage({
-    key: StoreKey.PASSWORD,
-    area: StoreArea.SESSION
-  })
+  const [p1] = useLocalStorage(StoreKey.PASSWORD_HASH)
+  const [p2] = useSessionStorage(StoreKey.PASSWORD)
 
   const { value: result } = useAsync(async () => {
     const exists = await PASSWORD.exists()

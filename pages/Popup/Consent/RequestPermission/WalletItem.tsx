@@ -9,7 +9,7 @@ import { INetwork } from '~lib/schema/network'
 import { useBalance } from '~lib/services/provider'
 import { WalletEntry } from '~lib/services/wallet/tree'
 import { shortenString } from '~lib/utils'
-import { getWalletTypeIdentifier, isWalletGroup } from '~lib/wallet'
+import { getWalletTypeIdentifier, isGroupWallet } from '~archmage/wallet'
 
 import { SubWalletList } from './SubWalletList'
 
@@ -42,7 +42,7 @@ export const WalletItem = ({
     measure()
   }, [isOpen, measure])
 
-  const subWallet = !isWalletGroup(wallet) ? subWallets[0] : undefined
+  const subWallet = !isGroupWallet(wallet) ? subWallets[0] : undefined
   const account = subWallet?.account
 
   const balance = useBalance(network, account)
@@ -51,7 +51,7 @@ export const WalletItem = ({
   const [isIndeterminate, setIsIndeterminate] = useState<boolean>()
 
   useEffect(() => {
-    if (!isWalletGroup(wallet)) {
+    if (!isGroupWallet(wallet)) {
       setIsChecked(subWallet?.isChecked)
       return
     }
@@ -76,7 +76,7 @@ export const WalletItem = ({
         px={4}
         justifyContent="start"
         onClick={() => {
-          if (isWalletGroup(wallet)) {
+          if (isGroupWallet(wallet)) {
             onToggleOpen(wallet.id)
           } else {
             onChecked(wallet.id, !isChecked)
@@ -116,7 +116,7 @@ export const WalletItem = ({
                   </Text>
                 )}
 
-                {isWalletGroup(wallet) && (
+                {isGroupWallet(wallet) && (
                   <Text fontSize="sm" color="gray.500">
                     {subWallets.length} accounts
                   </Text>
@@ -155,7 +155,7 @@ export const WalletItem = ({
         </Box>
       </Button>
 
-      {isOpen && network && isWalletGroup(wallet) && (
+      {isOpen && network && isGroupWallet(wallet) && (
         <SubWalletList
           network={network}
           subWallets={subWallets}

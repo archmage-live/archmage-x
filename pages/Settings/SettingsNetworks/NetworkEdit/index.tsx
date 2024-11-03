@@ -1,4 +1,4 @@
-import { NetworkKind } from '~lib/network'
+import { NetworkKind } from '@/archmage/network'
 import { INetwork } from '~lib/schema/network'
 
 import { AptosNetworkEdit } from './AptosNetworkEdit'

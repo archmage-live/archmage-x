@@ -42,14 +42,14 @@ import { useCryptoComparePrice } from '~lib/services/datasource/cryptocompare'
 import { NetworkInfo } from '~lib/services/network'
 import {
   TransactionPayload,
-  formatTxPayload,
+  deserializeTxPayload,
   useNonce
 } from '~lib/services/provider'
 import { useCosmTransaction } from '~lib/services/provider/cosm/hooks'
 import { Amount } from '~lib/services/token'
 import { TransactionType } from '~lib/services/transaction'
 import { useCosmTxInfo } from '~lib/services/transaction/cosmService'
-import { isHardwareWallet, isStdSignDoc } from '~lib/wallet'
+import { isHardwareWallet, isStdSignDoc } from '~archmage/wallet'
 
 import { CosmGasFeeSection } from './CosmGasFeeSection'
 import {
@@ -81,7 +81,7 @@ export const CosmTransaction = ({
   suffix?: ReactNode
   onComplete: () => void
 }) => {
-  const payload = formatTxPayload(network, request.payload)
+  const payload = deserializeTxPayload(network, request.payload)
   const { txParams } = payload as {
     txParams: SignDoc | StdSignDoc
   }

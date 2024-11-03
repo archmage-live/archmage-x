@@ -10,12 +10,12 @@ import {
   Text
 } from '@chakra-ui/react'
 
-import { NetworkKind, getNetworkScope } from '~lib/network'
+import { NetworkKind, getNetworkScope } from '@/archmage/network'
 import {
   ExistingGroupWallet,
   useExistingGroupWallets
 } from '~lib/services/wallet'
-import { WalletType } from '~lib/wallet'
+import { WalletType } from '~archmage/wallet'
 
 import { WalletList } from './WalletList'
 
@@ -49,7 +49,7 @@ export const SelectExistingWalletModal = ({
     case WalletType.HW_GROUP:
       type = 'hardware'
       break
-    case WalletType.WALLET_CONNECT_GROUP:
+    case WalletType.REOWN_GROUP:
       type = 'WalletConnect'
       break
     case WalletType.KEYLESS_GROUP:

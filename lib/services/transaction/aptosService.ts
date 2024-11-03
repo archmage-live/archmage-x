@@ -10,7 +10,7 @@ import { useAsync } from 'react-use'
 
 import { DB } from '~lib/db'
 import { isBackgroundWorker } from '~lib/detect'
-import { NetworkKind } from '~lib/network'
+import { NetworkKind } from '@/archmage/network'
 import { SERVICE_WORKER_CLIENT, SERVICE_WORKER_SERVER } from '~lib/rpc'
 import {
   IAptosEvent,

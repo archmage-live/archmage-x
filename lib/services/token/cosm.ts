@@ -4,9 +4,9 @@ import { Metadata } from 'cosmjs-types/cosmos/bank/v1beta1/bank'
 import Decimal from 'decimal.js'
 
 import { DB, getNextField } from '~lib/db'
-import { NetworkKind } from '~lib/network'
-import { COSM_NETWORKS_PRESET, CosmAppChainInfo } from '~lib/network/cosm'
-import { Coin } from '~lib/network/cosm/coin'
+import { NetworkKind } from '@/archmage/network'
+import { COSM_NETWORKS_PRESET, CosmAppChainInfo } from '~archmage/network/cosm'
+import { Coin } from '~archmage/network/cosm/coin'
 import {
   ChainId,
   IChainAccount,

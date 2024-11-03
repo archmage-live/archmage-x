@@ -42,7 +42,7 @@ import {
 } from '~lib/schema'
 import { NETWORK_SERVICE, getAccountUrl } from '~lib/services/network'
 import { WALLET_SERVICE } from '~lib/services/wallet'
-import { WalletType, hasWalletKeystore } from '~lib/wallet'
+import { WalletType, isKeystoreWallet } from '~archmage/wallet'
 
 const isOpenAccountDetailModalAtom = atom<boolean>(false)
 const accountDetailModalArgsAtom = atom<
@@ -236,7 +236,7 @@ export const AccountDetailModal = () => {
                   </Button>
                 )}
 
-                {hasWalletKeystore(wallet) && (
+                {isKeystoreWallet(wallet) && (
                   <Button
                     colorScheme="gray"
                     onClick={() => {

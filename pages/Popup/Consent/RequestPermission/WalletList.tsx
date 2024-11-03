@@ -5,7 +5,7 @@ import { useRef } from 'react'
 import { WalletId } from '~lib/active'
 import { INetwork } from '~lib/schema'
 import { WalletEntry } from '~lib/services/wallet/tree'
-import { isWalletGroup } from '~lib/wallet'
+import { isGroupWallet } from '~archmage/wallet'
 
 import { WalletItem } from './WalletItem'
 
@@ -36,7 +36,7 @@ export const WalletList = ({
     getScrollElement: () => parentRef.current,
     estimateSize: (index) => {
       const wallet = wallets[index]
-      if (!wallet.isOpen || !isWalletGroup(wallet.wallet)) {
+      if (!wallet.isOpen || !isGroupWallet(wallet.wallet)) {
         return itemSize
       } else {
         return (

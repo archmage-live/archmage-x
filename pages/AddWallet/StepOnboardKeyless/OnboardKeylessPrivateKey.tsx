@@ -14,7 +14,7 @@ import {
   ExistingGroupWallet,
   useNextSubWalletIndex
 } from '~lib/services/wallet'
-import { KeylessWalletInfo, WalletType } from '~lib/wallet'
+import { KeylessWalletInfo, WalletType } from '~archmage/wallet'
 import { KeylessOnboardInfo } from '~pages/KeylessOnboard'
 
 import { AccountAbstractionChecker } from '../AccountAbstractionChecker'

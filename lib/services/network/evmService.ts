@@ -1,8 +1,8 @@
 import assert from 'assert'
 
 import { DB, getNextField } from '~lib/db'
-import { NetworkKind, checkNetworkKindInitialized } from '~lib/network'
-import { EVM_NETWORKS_PRESET, EvmChainInfo } from '~lib/network/evm'
+import { NetworkKind, checkNetworkKindInitialized } from '@/archmage/network'
+import { EVM_NETWORKS_PRESET, EthereumChainInfo } from '~archmage/network/evm'
 import { ChainId, INetwork, createSearchString } from '~lib/schema/network'
 
 export interface IEvmNetworkService {}
@@ -28,7 +28,7 @@ export class EvmNetworkService implements IEvmNetworkService {
     console.log('initialized evm networks')
   }
 
-  static buildNetwork(chainId: ChainId, info: EvmChainInfo): INetwork {
+  static buildNetwork(chainId: ChainId, info: EthereumChainInfo): INetwork {
     assert(chainId === info.chainId)
     return {
       kind: NetworkKind.EVM,

@@ -25,6 +25,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useAsyncRetry, useInterval } from 'react-use'
 import { useWizard } from 'react-use-wizard'
 
+import { WalletAccount, generatePath } from '~archmage/wallet'
 import { AccountAvatar } from '~components/AccountAvatar'
 import { AlertBox } from '~components/AlertBox'
 import { HdPathInput } from '~components/HdPathInput'
@@ -43,7 +44,7 @@ import {
   NetworkKind,
   getNetworkKind,
   getNetworkScope
-} from '~lib/network'
+} from '@/archmage/network'
 import {
   INetwork,
   formatAddressForNetwork,
@@ -54,7 +55,6 @@ import { getNetworkInfo, useNetwork, useNetworks } from '~lib/services/network'
 import { useBalance } from '~lib/services/provider'
 import { useSubWallets, useWallet } from '~lib/services/wallet'
 import { shortenString } from '~lib/utils'
-import { WalletAccount, generatePath } from '~lib/wallet'
 import {
   AddWalletKind,
   useAccounts,

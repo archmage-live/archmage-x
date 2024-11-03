@@ -11,4 +11,4 @@ __root="$(cd "$(dirname "${__dir}")" && pwd)"
 
 OPENZEPPELIN_CONTRACTS=./node_modules/@openzeppelin/contracts/build/contracts
 
-typechain --target ethers-v5 --out-dir lib/network/evm/abi $OPENZEPPELIN_CONTRACTS/{ERC20.json,ERC721.json,ERC1155.json}
+typechain --target ethers-v6 --out-dir lib/network/evm/abi $OPENZEPPELIN_CONTRACTS/{ERC20.json,ERC721.json,ERC1155.json}

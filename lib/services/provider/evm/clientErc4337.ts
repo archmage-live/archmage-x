@@ -9,9 +9,9 @@ import {
   isZeroDevSupported,
   makeZeroDevProvider
 } from '~lib/erc4337/zerodev'
-import { EvmChainInfo } from '~lib/network/evm'
+import { EthereumChainInfo } from '~archmage/network/evm'
 import { ChainId, IChainAccount, INetwork } from '~lib/schema'
-import { Erc4337Wallet, getSigningWallet } from '~lib/wallet'
+import { Erc4337Wallet, getSigningWallet } from '~archmage/wallet'
 
 import type { UserOperationReceipt, UserOperationResponse } from '.'
 import { EvmClient, getCachedProvider } from './client'
@@ -79,7 +79,7 @@ export class EvmErc4337Client extends EvmClient {
     )
     const cached = await cachedByAddress?.get(address)
     if (cached) {
-      const info = network.info as EvmChainInfo
+      const info = network.info as EthereumChainInfo
       const net = (await cached.originalProvider.getNetwork()) as Network & {
         rpcUrls: string[]
       }

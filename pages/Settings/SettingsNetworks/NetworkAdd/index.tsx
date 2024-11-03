@@ -1,4 +1,4 @@
-import { NetworkKind } from '~lib/network'
+import { NetworkKind } from '@/archmage/network'
 import { ChainId } from '~lib/schema'
 
 import { AptosNetworkAdd } from './AptosNetworkAdd'

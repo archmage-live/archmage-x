@@ -1,17 +1,17 @@
 import { AminoSignResponse, StdSignDoc } from '@cosmjs/amino'
 import { DirectSignResponse } from '@cosmjs/proto-signing'
 import { hexlify } from '@ethersproject/bytes'
+import { rpcErrors } from '@metamask/rpc-errors'
 import assert from 'assert'
 import { GetTxResponse } from 'cosmjs-types/cosmos/tx/v1beta1/service'
 import { SignDoc } from 'cosmjs-types/cosmos/tx/v1beta1/tx'
-import { ethErrors } from 'eth-rpc-errors'
 import PQueue from 'p-queue'
 
 import { CosmDirectSignResponse, CosmSignDoc } from '~lib/inject/cosm'
-import { CosmAppChainInfo } from '~lib/network/cosm'
+import { CosmAppChainInfo } from '~archmage/network/cosm'
 import { IChainAccount, INetwork } from '~lib/schema'
 import { Provider, TransactionPayload } from '~lib/services/provider'
-import { getSigningWallet, isStdSignDoc } from '~lib/wallet'
+import { getSigningWallet, isStdSignDoc } from '~archmage/wallet'
 
 import { CosmClient, getCosmClient } from './client'
 
@@ -105,7 +105,7 @@ export class CosmProvider implements Provider {
 
     const signer = await getSigningWallet(account)
     if (!signer) {
-      throw ethErrors.rpc.internal()
+      throw rpcErrors.internal()
     }
     const { signed, signature }: DirectSignResponse | AminoSignResponse =
       await signer.signTransaction(signDoc)

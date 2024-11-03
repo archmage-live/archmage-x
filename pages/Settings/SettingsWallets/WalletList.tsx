@@ -15,7 +15,7 @@ import {
   persistReorderWallets
 } from '~lib/services/wallet/reorder'
 import { SelectedWalletId, WalletEntry } from '~lib/services/wallet/tree'
-import { isWalletGroup } from '~lib/wallet'
+import { isGroupWallet } from '~archmage/wallet'
 
 import { WalletItem } from './WalletItem'
 

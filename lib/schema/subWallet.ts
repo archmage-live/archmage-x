@@ -3,7 +3,7 @@ import {
   Erc4337Info,
   KeylessWalletInfo,
   SafeInfo
-} from '~lib/wallet'
+} from '~archmage/wallet'
 
 export interface ISubWallet {
   id: number

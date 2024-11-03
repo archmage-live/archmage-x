@@ -18,19 +18,19 @@ import { useAsync, useInterval } from 'react-use'
 import { AlertBox } from '~components/AlertBox'
 import { useModalBox } from '~components/ModalBox'
 import { useActive } from '~lib/active'
-import { NetworkKind } from '~lib/network'
+import { NetworkKind } from '@/archmage/network'
 import { IChainAccount, INetwork, INft } from '~lib/schema'
 import { CONSENT_SERVICE, ConsentType } from '~lib/services/consentService'
 import { useNft } from '~lib/services/nft'
 import {
   Provider,
-  compactTxPayload,
+  serializeTxPayload,
   useBalance,
   useEstimateGasFee,
   useIsContract,
   useProvider
 } from '~lib/services/provider'
-import { canWalletSign, checkAddress } from '~lib/wallet'
+import { isSignableWallet, checkAddress } from '~archmage/wallet'
 import { useConsentModal } from '~pages/Popup/Consent'
 import { NftItem } from '~pages/Popup/Nfts/NftItem'
 
@@ -184,7 +184,7 @@ export const SendNft = ({
         networkId: network.id,
         accountId: account.id,
         type: ConsentType.TRANSACTION,
-        payload: compactTxPayload(network, txPayload)
+        payload: await serializeTxPayload(network, txPayload)
       },
       undefined,
       false
@@ -267,7 +267,7 @@ export const SendNft = ({
 
           <AlertBox>{feeAlert}</AlertBox>
 
-          {wallet && !canWalletSign(wallet) && (
+          {wallet && !isSignableWallet(wallet) && (
             <AlertBox level="error">
               You can&apos;t send NFT using the watch-only wallet.
             </AlertBox>
@@ -283,7 +283,7 @@ export const SendNft = ({
           colorScheme="purple"
           size="lg"
           flex={1}
-          isDisabled={!nextEnabled || (wallet && !canWalletSign(wallet))}
+          isDisabled={!nextEnabled || (wallet && !isSignableWallet(wallet))}
           isLoading={isLoading}
           onClick={onNext}>
           Next

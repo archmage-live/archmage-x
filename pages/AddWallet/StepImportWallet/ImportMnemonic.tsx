@@ -32,7 +32,7 @@ import { useWizard } from 'react-use-wizard'
 import { AlertBox } from '~components/AlertBox'
 import { HdPathInput } from '~components/HdPathInput'
 import { LEDGER_PATH_SCHEMAS, LedgerPathSchema } from '~lib/hardware/ledger'
-import { NETWORK_SCOPES, NetworkKind, getNetworkKind } from '~lib/network'
+import { NETWORK_SCOPES, NetworkKind, getNetworkKind } from '@/archmage/network'
 import { PSEUDO_INDEX } from '~lib/schema'
 import {
   ExistingGroupWallet,
@@ -42,7 +42,7 @@ import {
   WalletType,
   checkPrivateKeyFromMnemonic,
   isMnemonic
-} from '~lib/wallet'
+} from '~archmage/wallet'
 import {
   SelectExistingWalletModal,
   WalletItemButton

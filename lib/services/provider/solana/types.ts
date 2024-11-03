@@ -8,7 +8,7 @@ export interface SolanaTransactionPayload extends TransactionPayload {
   populatedParams: undefined
 }
 
-export function formatSolanaTxPayload(
+export function deserializeSolanaTxPayload(
   payload: SolanaTransactionPayload
 ): SolanaTransactionPayload {
   const { txParams } = payload
@@ -22,7 +22,7 @@ export function formatSolanaTxPayload(
   return payload
 }
 
-export function compactSolanaTxPayload(
+export function serializeSolanaTxPayload(
   payload: SolanaTransactionPayload
 ): SolanaTransactionPayload {
   const { txParams } = payload

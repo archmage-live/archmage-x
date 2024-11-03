@@ -15,7 +15,7 @@ import { useAsyncRetry } from 'react-use'
 import { AlertBox } from '~components/AlertBox'
 import { Web3AuthLogo } from '~components/Web3AuthLogo'
 import { Web3authModal } from '~lib/keyless/web3authModal'
-import { KeylessWalletInfo, KeylessWalletType } from '~lib/wallet'
+import { KeylessWalletInfo, KeylessWalletType } from '~archmage/wallet'
 
 import { OnboardKeylessHd } from './OnboardKeylessHd'
 import { OnboardKeylessPrivateKey } from './OnboardKeylessPrivateKey'

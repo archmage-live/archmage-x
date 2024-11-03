@@ -15,7 +15,7 @@ import * as React from 'react'
 import { ReactNode, useCallback, useState } from 'react'
 import ReactJson from 'react-json-view'
 
-import { NetworkKind } from '~lib/network'
+import { NetworkKind } from '@/archmage/network'
 import {
   CONSENT_SERVICE,
   ConsentRequest,
@@ -28,7 +28,7 @@ import {
   useWallet
 } from '~lib/services/wallet'
 import { useSiteIconUrl } from '~lib/tab'
-import { isWalletConnectProtocol } from '~lib/wallet'
+import { isReownWallet } from '~archmage/wallet'
 
 import { SignableChecker, useSignableChecker } from './Checker'
 import {
@@ -96,7 +96,7 @@ export const SignTypedData = ({
       setIsLoading(false)
     }
 
-    if (wallet && isWalletConnectProtocol(wallet)) {
+    if (wallet && isReownWallet(wallet)) {
       setWcPayload({ typedData: payload.originalTypedData })
       onWcSignedRef.current = ({ signature }) => {
         console.log(signature)
@@ -236,7 +236,7 @@ export const SignTypedData = ({
         </Stack>
       </Stack>
 
-      {network && wallet && account && isWalletConnectProtocol(wallet) && (
+      {network && wallet && account && isReownWallet(wallet) && (
         <WalletConnectSigningModel
           isOpen={isWcOpen}
           onClose={onWcClose}

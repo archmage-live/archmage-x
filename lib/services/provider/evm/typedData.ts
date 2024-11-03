@@ -12,7 +12,7 @@ import { id } from '@ethersproject/hash/src.ts/id'
 import { keccak256 } from '@ethersproject/keccak256'
 import { Logger } from '@ethersproject/logger'
 import { shallowCopy } from '@ethersproject/properties'
-import { BigNumber, version } from 'ethers'
+import { version } from 'ethers'
 
 const logger = new Logger(version)
 

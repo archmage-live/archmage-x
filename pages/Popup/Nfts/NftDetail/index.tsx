@@ -1,7 +1,7 @@
 import { atom, useAtom } from 'jotai'
 
 import { useModalBox } from '~components/ModalBox'
-import { NetworkKind } from '~lib/network'
+import { NetworkKind } from '@/archmage/network'
 import { INft } from '~lib/schema'
 import { EvmNftDetail } from '~pages/Popup/Nfts/NftDetail/evm'
 

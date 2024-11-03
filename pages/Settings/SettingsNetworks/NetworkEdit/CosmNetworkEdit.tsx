@@ -1,6 +1,6 @@
 import { FormControl, FormLabel, Input, Stack } from '@chakra-ui/react'
 
-import { CosmAppChainInfo } from '~lib/network/cosm'
+import { CosmAppChainInfo } from '~archmage/network/cosm'
 import { INetwork } from '~lib/schema'
 
 export const CosmNetworkEdit = ({

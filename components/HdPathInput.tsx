@@ -24,7 +24,7 @@ import assert from 'assert'
 import { useCallback, useEffect, useState } from 'react'
 import * as React from 'react'
 
-import { HardenedBit } from '~lib/crypto/ed25519'
+import { HardenedBit } from '~archmage/crypto/ed25519'
 import { DerivePosition } from '~lib/schema'
 
 interface HdPathInputProps {

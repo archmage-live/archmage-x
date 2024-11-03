@@ -5,7 +5,7 @@ import { AlertBox } from '~components/AlertBox'
 import { IChainAccount, INetwork, ISubWallet, IWallet } from '~lib/schema'
 import { useProvider } from '~lib/services/provider'
 import { createTab } from '~lib/tab'
-import { isKeylessWallet } from '~lib/wallet'
+import { isKeylessWallet } from '~archmage/wallet'
 
 export function useSignableChecker(
   network?: INetwork,

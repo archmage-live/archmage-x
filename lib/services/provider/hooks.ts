@@ -6,7 +6,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useAsync, useAsyncRetry, useInterval } from 'react-use'
 
-import { NetworkKind } from '~lib/network'
+import { NetworkKind } from '@/archmage/network'
 import { QueryService } from '~lib/query'
 import { IChainAccount, INetwork } from '~lib/schema'
 import {

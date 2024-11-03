@@ -10,7 +10,7 @@ import web3authLogo from 'data-base64:~assets/thirdparty/web3auth-favicon.svg'
 import { useMemo } from 'react'
 
 import { ISubWallet, IWallet } from '~lib/schema'
-import { WalletType } from '~lib/wallet'
+import { WalletType } from '~archmage/wallet'
 
 import { KeylessOnboardInfo } from './KeylessOnboardInfo'
 

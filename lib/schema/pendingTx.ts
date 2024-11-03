@@ -1,4 +1,4 @@
-import { NetworkKind } from '~lib/network'
+import { NetworkKind } from '@/archmage/network'
 
 import { ChainId } from './network'
 import { Index } from './subWallet'

@@ -1,6 +1,3 @@
-import { arrayify, hexlify } from '@ethersproject/bytes'
-import { entropyToMnemonic } from '@ethersproject/hdnode/src.ts'
-import type { KeystoreAccount } from '@ethersproject/json-wallets/lib/keystore'
 import { LOGIN_PROVIDER, LOGIN_PROVIDER_TYPE } from '@toruslabs/openlogin-utils'
 import {
   CHAIN_NAMESPACES,
@@ -14,13 +11,18 @@ import { Web3AuthNoModal } from '@web3auth/no-modal'
 import { OpenloginAdapter } from '@web3auth/openlogin-adapter'
 import type { OpenloginAdapterOptions } from '@web3auth/openlogin-adapter'
 import assert from 'assert'
-import { ethers } from 'ethers'
+import {
+  HDNodeWallet,
+  KeystoreAccount,
+  Mnemonic,
+  Wallet,
+  getBytes,
+  hexlify
+} from 'ethers'
 
-import { Storage } from '@plasmohq/storage'
-
-import { ISubWallet, IWallet, Index, PSEUDO_INDEX } from '~lib/schema'
-import { SESSION_STORE, StoreArea, StoreKey } from '~lib/store'
-import { WalletType, extractWalletHash } from '~lib/wallet'
+import { ISubWallet, IWallet } from '~lib/schema'
+import { SECURE_SESSION_STORE, SESSION_STORE, StoreKey } from '~lib/store'
+import { WalletType, extractWalletHash } from '~archmage/wallet'
 
 export const WEB3AUTH_LOGIN_PROVIDER = LOGIN_PROVIDER
 export type WEB3AUTH_LOGIN_PROVIDER_TYPE = LOGIN_PROVIDER_TYPE
@@ -219,9 +221,7 @@ export class Web3auth {
         return
       }
       // cache
-      this.privateKey = hexlify(
-        arrayify(privateKey, { allowMissingPrefix: true })
-      )
+      this.privateKey = hexlify(getBytes(privateKey))
     }
 
     return this.privateKey
@@ -233,7 +233,7 @@ export class Web3auth {
       return
     }
 
-    return entropyToMnemonic(privateKey)
+    return Mnemonic.fromEntropy(privateKey).phrase
   }
 
   async getUniqueHash() {
@@ -242,7 +242,7 @@ export class Web3auth {
       return
     }
 
-    return new ethers.Wallet(privateKey).address
+    return new Wallet(privateKey).address
   }
 
   async cacheKeystore() {
@@ -254,10 +254,7 @@ export class Web3auth {
 
     const key = keylessKey(hash)
 
-    await new Storage({
-      area: StoreArea.SESSION,
-      secretKeyList: [key]
-    }).set(key, privateKey)
+    await SECURE_SESSION_STORE.set(key, privateKey)
 
     return true
   }
@@ -311,14 +308,14 @@ export class Web3auth {
     let acc
     switch (wallet.type) {
       case WalletType.KEYLESS_HD: {
-        const mnemonic = entropyToMnemonic(privateKey)
-        acc = ethers.utils.HDNode.fromMnemonic(mnemonic)
+        const mnemonic = Mnemonic.fromEntropy(privateKey)
+        acc = HDNodeWallet.fromMnemonic(mnemonic)
         break
       }
       case WalletType.KEYLESS:
       // pass through
       case WalletType.KEYLESS_GROUP: {
-        acc = new ethers.Wallet(privateKey)
+        acc = new Wallet(privateKey)
         break
       }
       default:
@@ -328,8 +325,14 @@ export class Web3auth {
     return {
       address: acc.address,
       privateKey: acc.privateKey,
-      mnemonic: acc.mnemonic,
-      _isKeystoreAccount: true
+      mnemonic:
+        acc instanceof HDNodeWallet
+          ? {
+              path: acc.path,
+              locale: acc.mnemonic!.wordlist.locale,
+              entropy: acc.mnemonic!.entropy
+            }
+          : undefined
     } as KeystoreAccount
   }
 }

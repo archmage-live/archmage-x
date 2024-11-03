@@ -1,8 +1,8 @@
 import assert from 'assert'
 
 import { DB, getNextField } from '~lib/db'
-import { NetworkKind, checkNetworkKindInitialized } from '~lib/network'
-import { BTC_NETWORKS_PRESET, BtcChainInfo } from '~lib/network/btc'
+import { NetworkKind, checkNetworkKindInitialized } from '@/archmage/network'
+import { BTC_NETWORKS_PRESET, BtcChainInfo } from '~archmage/network/btc'
 import { ChainId, INetwork, createSearchString } from '~lib/schema'
 
 export class BtcNetworkService {

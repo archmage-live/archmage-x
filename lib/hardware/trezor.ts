@@ -1,6 +1,6 @@
 import TrezorConnect, { DEVICE, DEVICE_EVENT } from '@trezor/connect-web'
 
-import { WalletPathSchema } from '~lib/wallet'
+import { WalletPathSchema } from '~archmage/wallet'
 
 let initialized = false
 

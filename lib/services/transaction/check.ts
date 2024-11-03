@@ -1,7 +1,7 @@
 import browser from 'webextension-polyfill'
 
 import { DB } from '~lib/db'
-import { NetworkKind } from '~lib/network'
+import { NetworkKind } from '@/archmage/network'
 import { IPendingTx, ITransaction } from '~lib/schema'
 
 import { decodeTransaction, getTransactionService } from '.'

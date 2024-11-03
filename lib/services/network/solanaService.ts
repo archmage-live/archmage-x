@@ -1,8 +1,8 @@
 import assert from 'assert'
 
 import { DB, getNextField } from '~lib/db'
-import { NetworkKind, checkNetworkKindInitialized } from '~lib/network'
-import { SOLANA_NETWORKS_PRESET, SolanaChainInfo } from '~lib/network/solana'
+import { NetworkKind, checkNetworkKindInitialized } from '@/archmage/network'
+import { SOLANA_NETWORKS_PRESET, SolanaChainInfo } from '~archmage/network/solana'
 import { ChainId, INetwork, createSearchString } from '~lib/schema'
 
 export class SolanaNetworkService {

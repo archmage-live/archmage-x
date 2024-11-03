@@ -11,8 +11,8 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { SaveInput } from '~components/SaveInput'
 import { DB } from '~lib/db'
-import { NetworkKind } from '~lib/network'
-import { AptosChainInfo } from '~lib/network/aptos'
+import { NetworkKind } from '@/archmage/network'
+import { AptosChainInfo } from '~archmage/network/aptos'
 import { INetwork } from '~lib/schema'
 
 import { DeleteNetworkModal } from '../DeleteNetworkModal'

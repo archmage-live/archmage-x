@@ -1,4 +1,4 @@
-import { NetworkKind } from '~lib/network'
+import { NetworkKind } from '@/archmage/network'
 
 export interface INetwork {
   id: number

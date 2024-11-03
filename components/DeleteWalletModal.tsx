@@ -32,7 +32,7 @@ import {
   useWallet
 } from '~lib/services/wallet'
 import { shortenString } from '~lib/utils'
-import { WalletType } from '~lib/wallet'
+import { WalletType } from '~archmage/wallet'
 
 interface DeleteWalletModalProps {
   all?: boolean
@@ -171,8 +171,8 @@ export const DeleteWalletModal = ({
                   You can import watch accounts again from the account
                   drop-down.
                 </>
-              ) : wallet.type === WalletType.WALLET_CONNECT ||
-                wallet.type === WalletType.WALLET_CONNECT_GROUP ? (
+              ) : wallet.type === WalletType.REOWN ||
+                wallet.type === WalletType.REOWN_GROUP ? (
                 <>
                   You can connect accounts with WalletConnect again from the
                   account drop-down.

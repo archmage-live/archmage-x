@@ -1,6 +1,6 @@
 import { IChainAccount } from '~lib/schema'
 import { WALLET_SERVICE } from '~lib/services/wallet'
-import { AccountAbstractionType } from '~lib/wallet'
+import { AccountAbstractionType } from '~archmage/wallet'
 
 export enum Erc4337AccountType {
   SIMPLE_ACCOUNT_V1 = 'SimpleAccountV1',

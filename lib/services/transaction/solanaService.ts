@@ -11,7 +11,7 @@ import bs58 from 'bs58'
 
 import { DB } from '~lib/db'
 import { isBackgroundWorker } from '~lib/detect'
-import { NetworkKind } from '~lib/network'
+import { NetworkKind } from '@/archmage/network'
 import { SERVICE_WORKER_CLIENT, SERVICE_WORKER_SERVER } from '~lib/rpc'
 import { IChainAccount, IPendingTx, ITransaction } from '~lib/schema'
 import { NETWORK_SERVICE } from '~lib/services/network'

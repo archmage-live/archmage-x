@@ -54,7 +54,7 @@ export const allowedTransactionKeys: Array<string> = [
   'value'
 ]
 
-export function formatEvmTxPayload(payload: {
+export function deserializeEvmTxPayload(payload: {
   txParams?: EvmTxParams
   populatedParams?: EvmTxPopulatedParams
 }): TransactionPayload {

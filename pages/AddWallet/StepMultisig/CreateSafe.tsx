@@ -28,8 +28,8 @@ import { useAsyncRetry, useDebounce, useInterval } from 'react-use'
 
 import { ScanQRModal } from '~components/ScanQrModal'
 import { SelectAccountModal } from '~components/SelectAccountModal'
-import { NetworkKind } from '~lib/network'
-import { ETHEREUM_MAINNET_CHAINID } from '~lib/network/evm'
+import { NetworkKind } from '@/archmage/network'
+import { ETHEREUM_MAINNET_CHAINID } from '~archmage/network/evm'
 import { SAFE_VERSIONS, getSafeAccount } from '~lib/safe'
 import {
   ChainId,
@@ -42,7 +42,7 @@ import {
 } from '~lib/schema'
 import { EvmClient } from '~lib/services/provider/evm'
 import { WALLET_SERVICE, useChainAccounts } from '~lib/services/wallet'
-import { SafeInfo, SafeOwner, checkAddress } from '~lib/wallet'
+import { SafeInfo, SafeOwner, checkAddress } from '~archmage/wallet'
 
 export const CreateSafe = ({
   network,

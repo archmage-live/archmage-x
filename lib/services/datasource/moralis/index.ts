@@ -2,7 +2,7 @@ import { EvmChain, EvmNft } from '@moralisweb3/common-evm-utils'
 import assert from 'assert'
 import Moralis from 'moralis'
 
-import { NetworkKind } from '~lib/network'
+import { NetworkKind } from '@/archmage/network'
 import { INetwork } from '~lib/schema'
 
 const defaultApiKey =

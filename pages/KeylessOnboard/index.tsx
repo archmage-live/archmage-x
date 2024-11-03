@@ -11,7 +11,7 @@ import { Web3AuthLogo } from '~components/Web3AuthLogo'
 import { Web3auth } from '~lib/keyless/web3auth'
 import { useCheckUnlocked } from '~lib/password'
 import { useSubWallet, useWallet } from '~lib/services/wallet'
-import { WalletType, extractWalletHash } from '~lib/wallet'
+import { WalletType, extractWalletHash } from '~archmage/wallet'
 import { KeylessOnboardInfo } from '~pages/KeylessOnboard/KeylessOnboardInfo'
 
 export * from './KeylessOnboardInfo'

@@ -2,7 +2,7 @@ import assert from 'assert'
 import PQueue from 'p-queue'
 
 import { DB } from '~lib/db'
-import { NetworkKind } from '~lib/network'
+import { NetworkKind } from '@/archmage/network'
 import { makeSafeAccount } from '~lib/safe'
 import {
   ChainAccountInfo,
@@ -25,8 +25,8 @@ import {
   isHdWallet,
   isKeylessWallet,
   isMultisigWallet,
-  isWalletGroup
-} from '~lib/wallet'
+  isGroupWallet
+} from '~archmage/wallet'
 
 import { WALLET_SERVICE } from '.'
 
@@ -35,7 +35,7 @@ export async function ensureChainAccounts(
   networkKind: NetworkKind,
   chainId: ChainId
 ) {
-  if (!isWalletGroup(wallet)) {
+  if (!isGroupWallet(wallet)) {
     await ensureChainAccount(wallet, PSEUDO_INDEX, networkKind, chainId)
     return
   }
@@ -156,7 +156,7 @@ export async function ensureChainAccounts(
             }
             case WalletType.WATCH_GROUP:
             // pass through
-            case WalletType.WALLET_CONNECT_GROUP:
+            case WalletType.REOWN_GROUP:
             // pass through
             case WalletType.HW_GROUP: {
               const network = await NETWORK_SERVICE.getNetwork({
@@ -244,7 +244,7 @@ export async function ensureChainAccounts(
             }
             case WalletType.WATCH_GROUP:
             // pass through
-            case WalletType.WALLET_CONNECT_GROUP:
+            case WalletType.REOWN_GROUP:
             // pass through
             case WalletType.HW_GROUP: {
               const network = await NETWORK_SERVICE.getNetwork({
@@ -416,7 +416,7 @@ export async function ensureChainAccount(
     }
     case WalletType.WATCH:
     // pass through
-    case WalletType.WALLET_CONNECT:
+    case WalletType.REOWN:
     // pass through
     case WalletType.HW: {
       const network = await NETWORK_SERVICE.getNetwork({
@@ -431,7 +431,7 @@ export async function ensureChainAccount(
     }
     case WalletType.WATCH_GROUP:
     // pass through
-    case WalletType.WALLET_CONNECT_GROUP:
+    case WalletType.REOWN_GROUP:
     // pass through
     case WalletType.HW_GROUP: {
       const network = await NETWORK_SERVICE.getNetwork({
@@ -492,7 +492,7 @@ export async function getChainAccount(
   chainId: number | string
 ): Promise<IChainAccount | undefined> {
   assert(
-    index !== PSEUDO_INDEX ? isWalletGroup(wallet) : !isWalletGroup(wallet)
+    index !== PSEUDO_INDEX ? isGroupWallet(wallet) : !isGroupWallet(wallet)
   )
 
   return DB.chainAccounts

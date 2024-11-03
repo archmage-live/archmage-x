@@ -1,5 +1,5 @@
+import { rpcErrors } from '@metamask/rpc-errors'
 import assert from 'assert'
-import { ethErrors } from 'eth-rpc-errors'
 import PQueue from 'p-queue'
 import {
   Abi,
@@ -26,12 +26,12 @@ import {
   uint256
 } from 'starknet'
 
-import { STARKNET_ETH_TOKEN_ADDRESS } from '~lib/network/starknet'
-import erc20Abi from '~lib/network/starknet/abi/ERC20.json'
+import { STARKNET_ETH_TOKEN_ADDRESS } from '~archmage/network/starknet'
+import erc20Abi from '~archmage/network/starknet/abi/ERC20.json'
 import { IChainAccount, INetwork } from '~lib/schema'
 import { Provider, TransactionPayload } from '~lib/services/provider'
 import { stringifyBigNumberish } from '~lib/utils'
-import { getSigningWallet } from '~lib/wallet'
+import { getSigningWallet } from '~archmage/wallet'
 
 import { StarknetClient, getStarknetClient } from './client'
 import { SignType, StarknetTxParams, StarknetTxPopulatedParams } from './types'
@@ -164,7 +164,7 @@ export class StarknetProvider implements Provider {
   > {
     const signer = await getSigningWallet(account)
     if (!signer) {
-      throw ethErrors.rpc.internal()
+      throw rpcErrors.internal()
     }
 
     switch (txParams.type) {
@@ -267,7 +267,7 @@ export class StarknetProvider implements Provider {
   async signMessage(account: IChainAccount, message: any): Promise<any> {
     const signer = await getSigningWallet(account)
     if (!signer) {
-      throw ethErrors.rpc.internal()
+      throw rpcErrors.internal()
     }
     return signer.signMessage(message)
   }
@@ -275,7 +275,7 @@ export class StarknetProvider implements Provider {
   async signTypedData(account: IChainAccount, typedData: any): Promise<any> {
     const signer = await getSigningWallet(account)
     if (!signer) {
-      throw ethErrors.rpc.internal()
+      throw rpcErrors.internal()
     }
     return stringifyBigNumberish(await signer.signTypedData(typedData))
   }

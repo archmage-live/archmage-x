@@ -20,10 +20,10 @@ import { useWizard } from 'react-use-wizard'
 
 import { AlertBox } from '~components/AlertBox'
 import { WallectConnectQRCode } from '~components/WalletConnectQRCode'
-import { NETWORK_SCOPES, NetworkKind, getNetworkKind } from '~lib/network'
+import { NETWORK_SCOPES, NetworkKind, getNetworkKind } from '@/archmage/network'
 import { PSEUDO_INDEX } from '~lib/schema'
 import { NETWORK_SERVICE } from '~lib/services/network'
-import { checkAddress } from '~lib/wallet'
+import { checkAddress } from '~archmage/wallet'
 import { useWalletConnect } from '~lib/walletConnect'
 
 import { NameInput } from '../NameInput'

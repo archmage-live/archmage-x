@@ -1,11 +1,11 @@
 import { shallowCopy } from '@ethersproject/properties'
-import { normalizeStructTag } from '@mysten/sui.js/utils'
+import { normalizeStructTag } from '@mysten/sui/utils'
 import assert from 'assert'
 import Decimal from 'decimal.js'
 import { useAsync } from 'react-use'
 
 import { DB, getNextField } from '~lib/db'
-import { NetworkKind } from '~lib/network'
+import { NetworkKind } from '@/archmage/network'
 import {
   ChainId,
   IChainAccount,

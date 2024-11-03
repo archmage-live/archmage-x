@@ -22,9 +22,9 @@ import browser from 'webextension-polyfill'
 
 import { dayjs } from '~lib/dayjs'
 import { formatNumber } from '~lib/formatNumber'
-import { CosmAppChainInfo } from '~lib/network/cosm'
-import { pubkeyToAddress } from '~lib/network/cosm/amino'
-import { decodePubkey } from '~lib/network/cosm/proto-signing'
+import { CosmAppChainInfo } from '~archmage/network/cosm'
+import { pubkeyToAddress } from '~archmage/network/cosm/amino'
+import { decodePubkey } from '~archmage/network/cosm/proto-signing'
 import { IChainAccount, INetwork, IPendingTx, ITransaction } from '~lib/schema'
 import {
   useCosmTokenInfo,

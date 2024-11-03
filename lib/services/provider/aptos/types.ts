@@ -30,6 +30,13 @@ export function isAptosModuleBundlePayload(
   // return !!(payload as Types.TransactionPayload_ModuleBundlePayload).modules
 }
 
+export function isAptosMultisigPayload(
+  payload: Types.TransactionPayload
+): payload is Types.TransactionPayload_MultisigPayload {
+  return payload.type === 'multisig_payload'
+  // return !!(payload as Types.TransactionPayload_MultisigPayload).multisig_address
+}
+
 export interface SignMessagePayload {
   address?: boolean // Should we include the address of the account in the message
   application?: boolean // Should we include the domain of the dApp
@@ -55,7 +62,7 @@ export interface AptosTransactionPayload extends TransactionPayload {
   populatedParams: Types.UserTransaction | undefined
 }
 
-export function formatAptosTxPayload(
+export function deserializeAptosTxPayload(
   payload: AptosTransactionPayload
 ): AptosTransactionPayload {
   const { txParams } = payload
@@ -68,7 +75,7 @@ export function formatAptosTxPayload(
   return payload
 }
 
-export function compactAptosTxPayload(
+export function serializeAptosTxPayload(
   payload: AptosTransactionPayload
 ): AptosTransactionPayload {
   const { txParams } = payload

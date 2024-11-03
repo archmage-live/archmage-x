@@ -1,6 +1,6 @@
 import { ReactNode } from 'react'
 
-import { NetworkKind } from '~lib/network'
+import { NetworkKind } from '@/archmage/network'
 import { ConsentRequest } from '~lib/services/consentService'
 import { getNetworkInfo, useNetwork } from '~lib/services/network'
 import { useBalance } from '~lib/services/provider'

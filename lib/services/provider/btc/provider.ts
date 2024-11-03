@@ -1,15 +1,15 @@
+import { rpcErrors } from '@metamask/rpc-errors'
 import assert from 'assert'
 import * as bitcoin from 'bitcoinjs-lib'
-import { ethErrors } from 'eth-rpc-errors'
 import PQueue from 'p-queue'
 
-import { BtcChainInfo } from '~lib/network/btc'
+import { BtcChainInfo } from '~archmage/network/btc'
 import { IChainAccount, INetwork, Utxo } from '~lib/schema'
 import { EsploraApi } from '~lib/services/datasource/esplora'
 import { NETWORK_SERVICE } from '~lib/services/network'
 import { Provider, TransactionPayload } from '~lib/services/provider'
 import { WALLET_SERVICE } from '~lib/services/wallet'
-import { getSigningWallet } from '~lib/wallet'
+import { getSigningWallet } from '~archmage/wallet'
 
 import { BtcSubAccount, BtcTxParams } from './types'
 
@@ -136,7 +136,7 @@ export class BtcProvider implements Provider {
   ): Promise<any> {
     const signer = await getSigningWallet(account)
     if (!signer) {
-      throw ethErrors.rpc.internal()
+      throw rpcErrors.internal()
     }
     return signer.signTransaction(transaction)
   }

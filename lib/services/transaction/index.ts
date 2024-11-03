@@ -1,4 +1,4 @@
-import { NetworkKind } from '~lib/network'
+import { NetworkKind } from '@/archmage/network'
 import { IChainAccount, INetwork, IPendingTx, ITransaction } from '~lib/schema'
 
 import {

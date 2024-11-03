@@ -2,7 +2,7 @@ import { Checkbox, Radio, RadioGroup, Stack, chakra } from '@chakra-ui/react'
 import { useEffect, useState } from 'react'
 
 import { Erc4337AccountType } from '~lib/erc4337'
-import { AccountAbstractionType } from '~lib/wallet'
+import { AccountAbstractionType } from '~archmage/wallet'
 
 import { useAccountAbstraction, useErc4337 } from './addWallet'
 

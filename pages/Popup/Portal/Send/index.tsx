@@ -27,7 +27,7 @@ import { AlertBox } from '~components/AlertBox'
 import { useModalBox } from '~components/ModalBox'
 import { useActive } from '~lib/active'
 import { formatNumber } from '~lib/formatNumber'
-import { NetworkKind } from '~lib/network'
+import { NetworkKind } from '@/archmage/network'
 import { IChainAccount, INetwork, IToken } from '~lib/schema'
 import { CONSENT_SERVICE, ConsentType } from '~lib/services/consentService'
 import { useCoinGeckoTokenPrice } from '~lib/services/datasource/coingecko'
@@ -35,14 +35,14 @@ import { useCryptoComparePrice } from '~lib/services/datasource/cryptocompare'
 import {
   Provider,
   addressZero,
-  compactTxPayload,
+  serializeTxPayload,
   useBalance,
   useEstimateGasFee,
   useIsContract,
   useProvider
 } from '~lib/services/provider'
 import { NativeToken, getTokenBrief, useTokenById } from '~lib/services/token'
-import { canWalletSign, checkAddress } from '~lib/wallet'
+import { isSignableWallet, checkAddress } from '~archmage/wallet'
 import { useConsentModal } from '~pages/Popup/Consent'
 import { TokenItem, TokenItemStyle } from '~pages/Popup/Portal/TokenItem'
 
@@ -338,7 +338,7 @@ export const Send = ({
         networkId: network.id,
         accountId: account.id,
         type: ConsentType.TRANSACTION,
-        payload: compactTxPayload(network, txPayload)
+        payload: await serializeTxPayload(network, txPayload)
       },
       undefined,
       false
@@ -525,7 +525,7 @@ export const Send = ({
 
             <AlertBox>{amountAlert}</AlertBox>
 
-            {wallet && !canWalletSign(wallet) && (
+            {wallet && !isSignableWallet(wallet) && (
               <AlertBox level="error">
                 You can&apos;t send tokens using the watch-only wallet.
               </AlertBox>
@@ -542,7 +542,7 @@ export const Send = ({
           colorScheme="purple"
           size="lg"
           flex={1}
-          isDisabled={!nextEnabled || (wallet && !canWalletSign(wallet))}
+          isDisabled={!nextEnabled || (wallet && !isSignableWallet(wallet))}
           isLoading={isLoading}
           onClick={onNext}>
           Next

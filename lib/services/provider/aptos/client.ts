@@ -3,7 +3,7 @@ import { AptosClient } from 'aptos'
 import Axios from 'axios'
 
 import { DB } from '~lib/db'
-import { AptosChainInfo } from '~lib/network/aptos'
+import { AptosChainInfo } from '~archmage/network/aptos'
 import { ChainId, INetwork } from '~lib/schema'
 
 Axios.defaults.adapter = axiosFetchAdaptor

@@ -9,7 +9,7 @@ import { TypeBadge } from '~components/TypeBadge'
 import { dayjs } from '~lib/dayjs'
 import { SelectedWalletId, WalletEntry } from '~lib/services/wallet/tree'
 import { shortenString } from '~lib/utils'
-import { getWalletTypeIdentifier, isWalletGroup } from '~lib/wallet'
+import { getWalletTypeIdentifier, isGroupWallet } from '~archmage/wallet'
 
 import { SubWalletList } from './SubWalletList'
 
@@ -52,7 +52,7 @@ export const WalletItem = ({
     measure()
   }, [isOpen, measure])
 
-  const subWallet = !isWalletGroup(wallet) ? subWallets[0] : undefined
+  const subWallet = !isGroupWallet(wallet) ? subWallets[0] : undefined
   const account = subWallet?.account
 
   const infoVisibility = infoVisible
@@ -95,7 +95,7 @@ export const WalletItem = ({
             })
           }}
           onDoubleClick={() => {
-            if (isWalletGroup(wallet)) {
+            if (isGroupWallet(wallet)) {
               onToggleOpen?.(wallet.id)
             }
           }}
@@ -136,7 +136,7 @@ export const WalletItem = ({
                 </Text>
               )}
 
-              {isWalletGroup(wallet) && (
+              {isGroupWallet(wallet) && (
                 <Text>{subWallets.length} accounts</Text>
               )}
 
@@ -152,7 +152,7 @@ export const WalletItem = ({
         </HStack>
       </Box>
 
-      {isOpen && isWalletGroup(wallet) && (
+      {isOpen && isGroupWallet(wallet) && (
         <SubWalletList
           subWallets={subWallets}
           onSelectedId={(selected) => onSelected?.(selected)}

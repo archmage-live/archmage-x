@@ -1,11 +1,11 @@
 import assert from 'assert'
 
 import { DB, getNextField } from '~lib/db'
-import { NetworkKind, checkNetworkKindInitialized } from '~lib/network'
+import { NetworkKind, checkNetworkKindInitialized } from '@/archmage/network'
 import {
   STARKNET_NETWORKS_PRESET,
   StarknetChainInfo
-} from '~lib/network/starknet'
+} from '~archmage/network/starknet'
 import { ChainId, INetwork, createSearchString } from '~lib/schema'
 
 export class StarknetNetworkService {

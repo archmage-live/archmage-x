@@ -10,9 +10,9 @@ import {
 } from '@chakra-ui/react'
 import { MdQrCode } from '@react-icons/all-files/md/MdQrCode'
 
-import { NetworkKind } from '~lib/network'
+import { NetworkKind } from '@/archmage/network'
 import { IChainAccount, ISubWallet, IWallet } from '~lib/schema'
-import { checkAddress } from '~lib/wallet'
+import { checkAddress } from '~archmage/wallet'
 
 export const SafeOwnerInput = ({
   index,

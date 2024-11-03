@@ -1,10 +1,10 @@
 import { EventFilter } from '@ethersproject/abstract-provider'
 import { BaseProvider } from '@ethersproject/providers'
-import { ethErrors } from 'eth-rpc-errors'
+import { providerErrors, rpcErrors } from '@metamask/rpc-errors'
 import { ethers } from 'ethers'
 
 import { EVM_PROVIDER_NAME, IEvmProviderService } from '~lib/inject/evm'
-import { NetworkKind } from '~lib/network'
+import { NetworkKind } from '@/archmage/network'
 import { Context, Listener, SERVICE_WORKER_SERVER } from '~lib/rpc'
 import { INetwork } from '~lib/schema'
 import { PASSWORD_SERVICE } from '~lib/services/passwordService'
@@ -89,7 +89,7 @@ class EvmProviderService
   // https://geth.ethereum.org/docs/rpc/pubsub
   private async subscribe([subscription, ...params]: Array<any>) {
     if (!this.provider) {
-      throw ethErrors.provider.disconnected()
+      throw providerErrors.disconnected()
     }
 
     // generate subscription id
@@ -112,7 +112,7 @@ class EvmProviderService
         break
 
       case 'newPendingTransactions':
-        throw ethErrors.rpc.internal(
+        throw rpcErrors.internal(
           'unsupported subscription type "newPendingTransactions"'
         )
       // eventName = 'pending'
@@ -128,7 +128,7 @@ class EvmProviderService
         break
 
       default:
-        throw ethErrors.rpc.invalidParams(
+        throw rpcErrors.invalidParams(
           `unsupported subscription type "${subscription}"`
         )
     }

@@ -8,7 +8,7 @@ import { ConnectionInfo } from '@ethersproject/web'
 import { useMemo } from 'react'
 
 import { fetchJson, fetchJsonWithCache } from '~lib/fetch'
-import { EvmChainInfo } from '~lib/network/evm'
+import { EthereumChainInfo } from '~archmage/network/evm'
 import { INetwork } from '~lib/schema'
 
 const logger = new Logger(version)
@@ -110,7 +110,7 @@ class CachedEtherscanProvider extends EtherscanProvider {
   ])
 
   constructor(network: INetwork) {
-    const info = network.info as EvmChainInfo
+    const info = network.info as EthereumChainInfo
     super({
       name: info.name,
       chainId: +network.chainId,

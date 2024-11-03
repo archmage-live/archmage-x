@@ -12,7 +12,7 @@ import {
 import assert from 'assert'
 
 import { DB } from '~lib/db'
-import { NetworkKind } from '~lib/network'
+import { NetworkKind } from '@/archmage/network'
 import { IChainAccount, IPendingTx, ITransaction } from '~lib/schema'
 import {
   ETHERSCAN_API,

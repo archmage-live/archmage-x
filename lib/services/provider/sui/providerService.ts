@@ -1,6 +1,6 @@
 import { ISuiProviderService, SUI_PROVIDER_NAME } from '~lib/inject/sui'
-import { NetworkKind } from '~lib/network'
-import { SuiChainInfo } from '~lib/network/sui'
+import { NetworkKind } from '@/archmage/network'
+import { SuiChainInfo } from '~archmage/network/sui'
 import { Context, SERVICE_WORKER_SERVER } from '~lib/rpc'
 import { INetwork } from '~lib/schema'
 

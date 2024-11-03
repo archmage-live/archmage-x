@@ -2,7 +2,7 @@ import Dexie from 'dexie'
 
 import { DB } from '~lib/db'
 import { EXTENSION } from '~lib/extension'
-import { NetworkKind } from '~lib/network'
+import { NetworkKind } from '@/archmage/network'
 import { IChainAccount, INetwork, IPendingTx, ITransaction } from '~lib/schema'
 import { getTransactionUrl } from '~lib/services/network'
 import { shortenString } from '~lib/utils'

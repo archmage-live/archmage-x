@@ -2,8 +2,8 @@ import {
   IStarknetProviderService,
   STARKNET_PROVIDER_NAME
 } from '~lib/inject/starknet'
-import { NetworkKind } from '~lib/network'
-import { StarknetChainInfo } from '~lib/network/starknet'
+import { NetworkKind } from '@/archmage/network'
+import { StarknetChainInfo } from '~archmage/network/starknet'
 import { Context, SERVICE_WORKER_SERVER } from '~lib/rpc'
 import { INetwork } from '~lib/schema'
 import { BaseProviderService } from '~lib/services/provider/base'

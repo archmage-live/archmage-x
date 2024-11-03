@@ -1,14 +1,15 @@
-const tsconfig = require('./tsconfig.json')
-const { pathsToModuleNameMapper } = require('ts-jest')
+const { createDefaultPreset, pathsToModuleNameMapper } = require('ts-jest')
+const { compilerOptions } = require('./tsconfig.json')
 
+const defaultPreset = createDefaultPreset()
+
+/** @type {import("ts-jest").JestConfigWithTsJest} **/
 module.exports = {
-  transform: {
-    '^.+\\.tsx?$': 'ts-jest',
-  },
-  transformIgnorePatterns: [],
-  testRegex: '^.+\\.test.tsx?$',
-  moduleFileExtensions: ['js', 'ts', 'tsx'],
-  moduleNameMapper: pathsToModuleNameMapper(tsconfig.compilerOptions.paths, {
+  ...defaultPreset,
+  roots: ['<rootDir>'],
+  moduleDirectories: ['node_modules'],
+  modulePaths: [compilerOptions.baseUrl],
+  moduleNameMapper: pathsToModuleNameMapper(compilerOptions.paths, {
     prefix: '<rootDir>/'
   }),
   setupFiles: ['jest-webextension-mock']

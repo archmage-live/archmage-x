@@ -1,6 +1,6 @@
 import { Connection } from '@solana/web3.js'
 
-import { SolanaChainInfo } from '~lib/network/solana'
+import { SolanaChainInfo } from '~archmage/network/solana'
 import { ChainId, INetwork } from '~lib/schema'
 
 export type SolanaClient = Connection

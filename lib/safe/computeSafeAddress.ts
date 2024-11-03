@@ -1,8 +1,7 @@
-import { Provider } from '@ethersproject/abstract-provider'
 import { EthersAdapter, SafeFactory } from '@safe-global/protocol-kit'
 import { getFallbackHandlerDeployment } from '@safe-global/safe-deployments'
 import assert from 'assert'
-import { ethers } from 'ethers'
+import { ethers, Provider } from 'ethers'
 import semverSatisfies from 'semver/functions/satisfies'
 
 export type SafeVersion = '1.3.0' | '1.2.0' | '1.1.1' | '1.0.0'

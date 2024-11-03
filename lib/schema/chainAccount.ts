@@ -1,5 +1,5 @@
-import { NetworkKind } from '~lib/network'
-import { SafeInfo, StarknetInfo } from '~lib/wallet'
+import { NetworkKind } from '@/archmage/network'
+import { SafeInfo, StarknetInfo } from '~archmage/wallet'
 
 import { ChainId } from './network'
 import { Index } from './subWallet'

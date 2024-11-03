@@ -24,12 +24,12 @@ import semverSatisfies from 'semver/functions/satisfies'
 
 import { ScanQRModal } from '~components/ScanQrModal'
 import { TextLink } from '~components/TextLink'
-import { ETHEREUM_MAINNET_CHAINID } from '~lib/network/evm'
+import { ETHEREUM_MAINNET_CHAINID } from '~archmage/network/evm'
 import { getSafeAccount, getSafeService } from '~lib/safe'
 import { INetwork } from '~lib/schema'
 import { getAccountUrl } from '~lib/services/network'
 import { EvmClient } from '~lib/services/provider/evm'
-import { SafeInfo, SafeOwner, checkAddress } from '~lib/wallet'
+import { SafeInfo, SafeOwner, checkAddress } from '~archmage/wallet'
 
 export const ImportSafe = ({
   network,

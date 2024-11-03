@@ -7,7 +7,7 @@ import { Tx } from 'cosmjs-types/cosmos/tx/v1beta1/tx'
 import { Any } from 'cosmjs-types/google/protobuf/any'
 import { ReactNode } from 'react'
 
-import { CosmAppChainInfo } from '~lib/network/cosm'
+import { CosmAppChainInfo } from '~archmage/network/cosm'
 import { TokenInfo } from '~lib/services/datasource/cosmostation'
 
 import { TransactionType } from '..'

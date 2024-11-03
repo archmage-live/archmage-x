@@ -1,6 +1,6 @@
 import { Context } from '~lib/inject/client'
 import { COSM_PROVIDER_NAME, ICosmProviderService } from '~lib/inject/cosm'
-import { NetworkKind } from '~lib/network'
+import { NetworkKind } from '@/archmage/network'
 import { SERVICE_WORKER_SERVER } from '~lib/rpc'
 import { INetwork } from '~lib/schema'
 import { BaseProviderService } from '~lib/services/provider/base'

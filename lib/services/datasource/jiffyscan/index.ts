@@ -1,7 +1,7 @@
 import assert from 'assert'
 
 import { fetchJson } from '~lib/fetch'
-import { NetworkKind } from '~lib/network'
+import { NetworkKind } from '@/archmage/network'
 import { INetwork } from '~lib/schema'
 import { UserOperationResponse } from '~lib/services/provider/evm'
 

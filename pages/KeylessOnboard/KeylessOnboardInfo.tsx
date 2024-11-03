@@ -19,7 +19,7 @@ import {
   WEB3AUTH_LOGIN_PROVIDER,
   WEB3AUTH_LOGIN_PROVIDER_TYPE
 } from '~lib/keyless/web3authModal'
-import { KeylessWalletInfo, KeylessWalletType } from '~lib/wallet'
+import { KeylessWalletInfo, KeylessWalletType } from '~archmage/wallet'
 
 export const KeylessOnboardInfo = ({ info }: { info: KeylessWalletInfo }) => {
   const LoginProviderLogo = () => {

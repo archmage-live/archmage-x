@@ -1,3 +1,4 @@
+import { providerErrors, rpcErrors } from '@metamask/rpc-errors'
 import {
   AptosClient,
   BCS,
@@ -7,11 +8,10 @@ import {
   Types
 } from 'aptos'
 import assert from 'assert'
-import { ethErrors } from 'eth-rpc-errors'
 
 import { getActiveNetworkByKind } from '~lib/active'
 import { Context } from '~lib/inject/client'
-import { NetworkKind } from '~lib/network'
+import { NetworkKind } from '@/archmage/network'
 import { INetwork } from '~lib/schema'
 import {
   CONSENT_SERVICE,
@@ -23,13 +23,13 @@ import { getNetworkInfo } from '~lib/services/network'
 import { getAptosClient } from '~lib/services/provider/aptos/client'
 import { AptosProvider } from '~lib/services/provider/aptos/provider'
 import { BasePermissionedProvider } from '~lib/services/provider/base'
-import { getSigningWallet } from '~lib/wallet'
+import { getSigningWallet } from '~archmage/wallet'
 
 import {
   AptosTransactionPayload,
   SignMessagePayload,
   SignMessageResponse,
-  compactAptosTxPayload,
+  serializeAptosTxPayload,
   isAptosEntryFunctionPayload
 } from './types'
 
@@ -49,7 +49,7 @@ export class AptosPermissionedProvider extends BasePermissionedProvider {
     const provider = await AptosPermissionedProvider.from(fromUrl)
     if (!provider) {
       // no active network
-      throw ethErrors.provider.disconnected()
+      throw providerErrors.disconnected()
     }
     return provider
   }
@@ -178,7 +178,7 @@ export class AptosPermissionedProvider extends BasePermissionedProvider {
         break
     }
 
-    throw ethErrors.rpc.methodNotSupported()
+    throw rpcErrors.methodNotSupported()
   }
 
   async connect(ctx: Context) {
@@ -191,7 +191,7 @@ export class AptosPermissionedProvider extends BasePermissionedProvider {
 
   async getActiveAccount() {
     if (!this.account) {
-      throw ethErrors.provider.unauthorized()
+      throw providerErrors.unauthorized()
     }
     const signingWallet = await getSigningWallet(this.account)
     return {
@@ -211,12 +211,10 @@ export class AptosPermissionedProvider extends BasePermissionedProvider {
     payload: Types.TransactionPayload
   ) {
     if (!this.account?.address) {
-      throw ethErrors.provider.unauthorized()
+      throw providerErrors.unauthorized()
     }
     if (!isAptosEntryFunctionPayload(payload)) {
-      throw ethErrors.rpc.invalidRequest(
-        'now only support entry function payload'
-      )
+      throw rpcErrors.invalidRequest('now only support entry function payload')
     }
 
     const provider = new AptosProvider(this.client)
@@ -233,7 +231,7 @@ export class AptosPermissionedProvider extends BasePermissionedProvider {
     extraArgs?: OptionalTransactionArgs
   ): Promise<string> {
     if (!this.account?.address) {
-      throw ethErrors.provider.unauthorized()
+      throw providerErrors.unauthorized()
     }
 
     const rawTransaction = await this.client.generateRawTransaction(
@@ -311,7 +309,7 @@ export class AptosPermissionedProvider extends BasePermissionedProvider {
         accountId: this.account.id,
         type: ConsentType.TRANSACTION,
         origin: this.origin,
-        payload: compactAptosTxPayload(payload)
+        payload: serializeAptosTxPayload(payload)
       },
       ctx
     )
@@ -326,7 +324,7 @@ export class AptosPermissionedProvider extends BasePermissionedProvider {
     }
   ) {
     if (!this.account) {
-      throw ethErrors.provider.unauthorized()
+      throw providerErrors.unauthorized()
     }
     return new AptosProvider(this.client).simulateTransaction(
       this.account,
@@ -337,7 +335,7 @@ export class AptosPermissionedProvider extends BasePermissionedProvider {
 
   async signTypedData(ctx: Context, req: SignMessagePayload) {
     if (!this.account) {
-      throw ethErrors.provider.unauthorized()
+      throw providerErrors.unauthorized()
     }
 
     assert(req.message && req.nonce)

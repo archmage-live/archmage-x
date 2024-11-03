@@ -2,7 +2,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { useEffect, useMemo } from 'react'
 import { useAsyncRetry } from 'react-use'
 
-import { NetworkKind } from '~lib/network'
+import { NetworkKind } from '@/archmage/network'
 import { IChainAccount, INetwork } from '~lib/schema'
 import { formatEvmTransactions } from '~lib/services/transaction/evmService'
 import { getTransactionService } from '~lib/services/transaction/index'

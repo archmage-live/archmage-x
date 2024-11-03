@@ -48,7 +48,7 @@ import { useCryptoComparePrice } from '~lib/services/datasource/cryptocompare'
 import { NetworkInfo } from '~lib/services/network'
 import {
   TransactionPayload,
-  formatTxPayload,
+  deserializeTxPayload,
   useEstimateGasPrice,
   useIsContract,
   useNonce
@@ -70,7 +70,7 @@ import {
 import { Amount } from '~lib/services/token'
 import { useTransactionDescription } from '~lib/services/transaction/evmService'
 import { shortenString } from '~lib/utils'
-import { isHardwareWallet, isWalletConnectProtocol } from '~lib/wallet'
+import { isHardwareWallet, isReownWallet } from '~archmage/wallet'
 import { EvmGasFeeEditSection } from '~pages/Popup/Consent/Transaction/EvmGasFeeEditSection'
 import {
   WalletConnectSigningModel,
@@ -111,7 +111,7 @@ export const EvmTransaction = ({
   onComplete: () => void
 }) => {
   const payload = request.payload as TransactionPayload
-  formatTxPayload(network, payload)
+  deserializeTxPayload(network, payload)
 
   const txParams = payload.txParams as EvmTxParams
   const populated = payload.populatedParams as EvmTxPopulatedParams
@@ -361,7 +361,7 @@ export const EvmTransaction = ({
       setSpinning(false)
     }
 
-    if (isWalletConnectProtocol(wallet)) {
+    if (isReownWallet(wallet)) {
       setWcPayload({ tx })
       onWcSignedRef.current = ({ signedTx, txHash }) => {
         console.log(signedTx, txHash)
@@ -792,7 +792,7 @@ export const EvmTransaction = ({
         <></>
       )}
 
-      {isWalletConnectProtocol(wallet) && (
+      {isReownWallet(wallet) && (
         <WalletConnectSigningModel
           isOpen={isWcOpen}
           onClose={onWcClose}

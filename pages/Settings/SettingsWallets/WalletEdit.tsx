@@ -21,7 +21,7 @@ import { SaveInput } from '~components/SaveInput'
 import { WalletNameEdit } from '~components/WalletNameEdit'
 import { INetwork, IWallet, WalletInfo } from '~lib/schema'
 import { WALLET_SERVICE, useHdPath, useSubWallets } from '~lib/services/wallet'
-import { WalletType, getWalletTypeTitle } from '~lib/wallet'
+import { WalletType, getWalletTypeTitle } from '~archmage/wallet'
 
 interface WalletEditProps {
   network: INetwork

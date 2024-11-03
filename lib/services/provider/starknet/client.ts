@@ -1,7 +1,7 @@
 import { ProviderInterface, SequencerProvider } from 'starknet'
 import { constants } from 'starknet'
 
-import { StarknetChainInfo } from '~lib/network/starknet'
+import { StarknetChainInfo } from '~archmage/network/starknet'
 import { INetwork } from '~lib/schema'
 
 export type StarknetClient = ProviderInterface

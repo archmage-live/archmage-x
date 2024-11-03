@@ -1,5 +1,5 @@
 {
-  "extends": "@archmagelive/plasmo/templates/tsconfig.base",
+  "extends": "plasmo/templates/tsconfig.base",
   "exclude": [
     "node_modules"
   ],
@@ -13,7 +13,11 @@
     "strict": true,
     "experimentalDecorators": true,
     "importsNotUsedAsValues": "remove",
+    "verbatimModuleSyntax": false,
     "paths": {
+      "@/*": [
+        "./*"
+      ],
       "~*": [
         "./*"
       ]

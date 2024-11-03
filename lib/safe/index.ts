@@ -19,7 +19,13 @@ import { EthAdapter } from '@safe-global/safe-core-sdk-types'
 import assert from 'assert'
 import { ethers } from 'ethers'
 
-import { NetworkKind } from '~lib/network'
+import { NetworkKind } from '@/archmage/network'
+
+import {
+  AccountAbstractionType,
+  SafeInfo,
+  isMultisigWallet
+} from '~archmage/wallet'
 import {
   ChainId,
   IChainAccount,
@@ -29,7 +35,6 @@ import {
 } from '~lib/schema'
 import { EvmClient } from '~lib/services/provider/evm'
 import { WALLET_SERVICE } from '~lib/services/wallet'
-import { AccountAbstractionType, SafeInfo, isMultisigWallet } from '~lib/wallet'
 
 export type { SafeVersion } from '@safe-global/safe-core-sdk-types'
 export type { SafeAccountConfig }

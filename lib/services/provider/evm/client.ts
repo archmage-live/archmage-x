@@ -1,24 +1,18 @@
-import {
-  TransactionReceipt,
-  TransactionResponse
-} from '@ethersproject/abstract-provider'
-import { BigNumber } from '@ethersproject/bignumber'
-import { hexValue } from '@ethersproject/bytes'
-import { Logger } from '@ethersproject/logger'
 import { Network } from '@ethersproject/networks'
 import { resolveProperties } from '@ethersproject/properties'
-import { BaseProvider, BlockTag } from '@ethersproject/providers'
 import {
+  BaseProvider,
   UrlJsonRpcProvider as BaseUrlJsonRpcProvider,
-  JsonRpcProvider,
-  WebSocketProvider
+  BlockTag
 } from '@ethersproject/providers'
 import { ConnectionInfo } from '@ethersproject/web'
 import assert from 'assert'
+import { TransactionReceipt, TransactionResponse, toQuantity } from 'ethers'
+import { JsonRpcProvider, WebSocketProvider } from 'ethers'
 import { version } from 'ethers'
 
-import { NetworkKind } from '~lib/network'
-import { EvmChainInfo } from '~lib/network/evm'
+import { NetworkKind } from '@/archmage/network'
+import { EthereumChainInfo } from '~archmage/network/evm'
 import { ChainId, IChainAccount, INetwork } from '~lib/schema'
 import { IPFS_GATEWAY_API } from '~lib/services/datasource/ipfsGateway'
 import { NETWORK_SERVICE } from '~lib/services/network'
@@ -78,7 +72,7 @@ export class UrlJsonRpcProvider extends BaseUrlJsonRpcProvider {
         return [
           'eth_feeHistory',
           [
-            hexValue(params.numberOfBlocks),
+            toQuantity(params.numberOfBlocks),
             params.endBlockTag,
             params.percentiles
           ]
@@ -99,7 +93,7 @@ export class UrlJsonRpcProvider extends BaseUrlJsonRpcProvider {
 
 export class EvmClient extends UrlJsonRpcProvider {
   protected constructor(protected iNetwork: INetwork) {
-    const info = iNetwork.info as EvmChainInfo
+    const info = iNetwork.info as EthereumChainInfo
     super({
       name: info.name,
       chainId: +iNetwork.chainId,
@@ -189,7 +183,7 @@ export async function getCachedProvider(
     network = net
   }
 
-  const info = network.info as EvmChainInfo
+  const info = network.info as EthereumChainInfo
   const cached = await providers.get(+network.chainId)
   if (cached) {
     const net = (await cached.getNetwork()) as Network & {
