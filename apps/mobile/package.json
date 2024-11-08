@@ -28,6 +28,9 @@
   "devDependencies": {
     "@acme/eslint-config": "workspace:*",
     "@babel/core": "^7.24.5",
+    "@react-native/metro-config": "^0.76.1",
+    "@rnx-kit/metro-config": "^2.0.1",
+    "@rnx-kit/metro-resolver-symlinks": "^0.2.1",
     "@types/react": "~18.2.79",
     "@types/react-dom": "~18.2.25",
     "babel-preset-expo": "~11.0.11"

@@ -1,19 +1,20 @@
 {
+  "name": "archmage",
   "private": true,
-  "name": "@acme/monorepo",
+  "version": "1.0.0",
   "scripts": {
     "dev": "turbo dev",
     "dev:mobile": "turbo dev --filter=\"{./apps/mobile}...\"",
-    "dev:web": "turbo dev --filter=\"{./apps/web}...\"",
+    "dev:extension": "turbo dev --filter=\"{./apps/extension}...\"",
     "lint": "turbo lint",
     "test": "turbo test",
     "build": "turbo build",
     "build:mobile": "turbo build --filter=\"...{./apps/mobile}\"",
-    "build:web": "turbo build --filter=\"...{./apps/web}\""
+    "build:extension": "turbo build --filter=\"...{./apps/extension}\""
   },
   "devDependencies": {
-    "turbo": "^1.10.7",
-    "typescript": "^4.9.5"
+    "turbo": "^2.2.3",
+    "typescript": "^5.6.3"
   },
   "pnpm": {
     "peerDependencyRules": {
