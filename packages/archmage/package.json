@@ -1,0 +1,19 @@
+{
+  "name": "archmage",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "build": "tsc -b",
+    "lint": "eslint --ext js,ts,tsx .",
+    "test": "jest"
+  },
+  "main": "src/index.ts",
+  "devDependencies": {
+    "@types/chrome": "^0.0.280",
+    "@types/jest": "^29.5.12",
+    "@types/node": "^22.9.0",
+    "react": "^18.3.1",
+    "react-native": "0.74.2",
+    "tsconfig": "workspace:*"
+  }
+}
